@@ -1,0 +1,490 @@
+{"nick":"piscisaureus_","message":"igorzi: actually, GenerateConsoleCtrlEvent is very limited","date":"2011-11-02T00:00:47.326Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the semantics are too different from kill(2) to be meaningful","date":"2011-11-02T00:01:04.474Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: maybe we should just have some `DebugBreak` binding that invokes the debugger","date":"2011-11-02T00:01:34.661Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2011-11-02T00:02:31.269Z","type":"quit"}
+{"nick":"piscisaureus_","message":"igorzi: on linux it would kill(pid, SIGUSR1), on windows that would generate a ctrl break event","date":"2011-11-02T00:02:35.151Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think process.kill should just unconditionally terminate the process on windows","date":"2011-11-02T00:02:53.352Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: without checking the 2nd arg?","date":"2011-11-02T00:05:04.723Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: maybe we can do nothing when the second arg is 0","date":"2011-11-02T00:05:24.233Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: but, yeah","date":"2011-11-02T00:05:27.983Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the thing is, the only control message you can generate is CTRL_BREAK_EVENT","date":"2011-11-02T00:05:51.749Z","type":"message"}
+{"nick":"piscisaureus_","message":"and that only works if the child process was started as a new process group","date":"2011-11-02T00:06:05.291Z","type":"message"}
+{"nick":"piscisaureus_","message":"and then the child process of the receiving process also receive that signal","date":"2011-11-02T00:06:23.670Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's just too different from what people expect","date":"2011-11-02T00:06:36.685Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i was thinking whether that's better or worse than what we have now (which is to fail process.kill).  unconditionally killing might give people the impression that their ported code still works","date":"2011-11-02T00:06:40.820Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yeah, that's truee","date":"2011-11-02T00:07:02.744Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: if we fail fast - people will notice right away that process.kill probably won't do what they need, and if they really need to kill a process they'll use spawn().kill()","date":"2011-11-02T00:08:23.105Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yeah, but what if they want to kill something that's not a child process","date":"2011-11-02T00:08:54.458Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: (besides, how do we handle signals for child_process.kill? I think we just unconditionally kill it, right?)","date":"2011-11-02T00:09:16.840Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: actually yeah, we do unconditionally kill if signum!=0","date":"2011-11-02T00:10:20.990Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe we should back that up as well then","date":"2011-11-02T00:10:35.089Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes I like this","date":"2011-11-02T00:10:42.683Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: so then process.kill should probably follow the same semantics","date":"2011-11-02T00:10:42.929Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2011-11-02T00:10:49.283Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: so we need uv_kill then, and basically implement it the same way as we have uv_process_kill","date":"2011-11-02T00:11:49.231Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: actually, I think we should check if the signal is SIGTERM or SIGKILL or unspecified","date":"2011-11-02T00:14:05.145Z","type":"message"}
+{"nick":"piscisaureus_","message":"in that case we can kill the process","date":"2011-11-02T00:14:11.342Z","type":"message"}
+{"nick":"piscisaureus_","message":"if the user specifies some other signal he probably had special intentions that we can't satisfy","date":"2011-11-02T00:14:41.044Z","type":"message"}
+{"nick":"piscisaureus_","message":"so we throw","date":"2011-11-02T00:14:43.798Z","type":"message"}
+{"nick":"piscisaureus_","message":"if the specified signal is 0 then we can do this weird unix-y thing","date":"2011-11-02T00:15:00.722Z","type":"message"}
+{"nick":"piscisaureus_","message":"And I definitely think that child_process.kill and process.kill should have the same semantics.","date":"2011-11-02T00:15:36.968Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi bnoordhuis ^","date":"2011-11-02T00:15:43.671Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ok","date":"2011-11-02T00:15:48.183Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: feel free to disagree btw. You are now a core team member. It's now allowed to question me :-p","date":"2011-11-02T00:16:19.172Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: should i have an opinion?","date":"2011-11-02T00:16:50.701Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2011-11-02T00:16:56.548Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay","date":"2011-11-02T00:17:03.604Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, i feel it's going downhill with the euro zone lately","date":"2011-11-02T00:17:17.967Z","type":"message"}
+{"nick":"piscisaureus_","message":"labrador or jack russell, bnoordhuis?","date":"2011-11-02T00:17:35.183Z","type":"message"}
+{"nick":"bnoordhuis","message":"labrador, of course - i'm a family man","date":"2011-11-02T00:17:49.200Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: :).. i think i agree with you.  i was under the impression that child_process.kill already did the \"right thing\" (since I didn't know what signum means in unix world).","date":"2011-11-02T00:18:10.661Z","type":"message"}
+{"nick":"igorzi","message":"i must admit that it's kind of strange to have a kill api, that doesn't always actually kill :)","date":"2011-11-02T00:18:55.105Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2011-11-02T00:19:04.608Z","type":"message"}
+{"nick":"igorzi","message":"but i'm sure there's a very good reason for it","date":"2011-11-02T00:19:09.203Z","type":"message"}
+{"nick":"piscisaureus_","message":"unix","date":"2011-11-02T00:19:10.383Z","type":"message"}
+{"nick":"piscisaureus_","message":"hah","date":"2011-11-02T00:19:16.510Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-11-02T00:19:34.364Z","type":"quit"}
+{"nick":"piscisaureus_","message":"Just as good as having CreateFile2","date":"2011-11-02T00:19:55.100Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: https://plus.google.com/115094562986465477143/posts/aEJE2vff4jS <-- God admitting that signals were a mistake","date":"2011-11-02T00:24:58.627Z","type":"message"}
+{"nick":"mikeal","date":"2011-11-02T00:26:35.342Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus_: so what scenarios do people use signals for?","date":"2011-11-02T00:27:07.440Z","type":"message"}
+{"nick":"mikeal","reason":"Client Quit","date":"2011-11-02T00:27:15.646Z","type":"quit"}
+{"nick":"piscisaureus_","message":"igorzi: anything. Mostly starting a debugger, or re-initializing an application, or killing it \"softly\" e.g. giving the application the chance to clean up first","date":"2011-11-02T00:28:23.346Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the operating system also sends signals itself","date":"2011-11-02T00:28:35.617Z","type":"message"}
+{"nick":"piscisaureus_","message":"but that's not related to kill","date":"2011-11-02T00:28:46.530Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: for example, on linux you have a dd command that basically pumps data (for example from a disk image onto a disk)","date":"2011-11-02T00:29:27.925Z","type":"message"}
+{"nick":"igorzi","message":"so it's not really similar to SEH on windows?","date":"2011-11-02T00:29:48.750Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: if you want to know it's progress, you send it SIGUSR1 and it'll dump some info","date":"2011-11-02T00:29:53.632Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yes, it is somewhat similar to SEH","date":"2011-11-02T00:30:13.437Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: except that SEH destroys your stack and signals dont","date":"2011-11-02T00:30:23.411Z","type":"message"}
+{"nick":"igorzi","message":"if you deref a bad pointer - do you get a signal from the OS?","date":"2011-11-02T00:30:35.369Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yes, SIGSEGV :-)","date":"2011-11-02T00:30:45.930Z","type":"message"}
+{"nick":"igorzi","message":"is there some default handler that kills the process if SIGSEGV is sent and not handle?","date":"2011-11-02T00:31:46.210Z","type":"message"}
+{"nick":"igorzi","message":"*handled","date":"2011-11-02T00:31:57.160Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: if the application doesn't specify a handler, all signals kill the process","date":"2011-11-02T00:32:10.497Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ahh ok","date":"2011-11-02T00:32:46.180Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the os sends many more signals btw, e.g. when a child process exits, or when some types of asynchronous io complete, or when the user tries to write to a stdout pipe that's broken","date":"2011-11-02T00:33:15.905Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: http://en.wikipedia.org/wiki/POSIX_signal#List_of_signals","date":"2011-11-02T00:34:55.726Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 255 seconds","date":"2011-11-02T00:46:54.206Z","type":"quit"}
+{"nick":"AvianFlu","date":"2011-11-02T00:48:17.476Z","type":"join"}
+{"nick":"pfox___","reason":"Ping timeout: 260 seconds","date":"2011-11-02T00:59:46.465Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2011-11-02T01:05:14.883Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 244 seconds","date":"2011-11-02T01:11:19.317Z","type":"quit"}
+{"nick":"piscisaureus_","message":"I am going to bed -","date":"2011-11-02T01:15:23.234Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: sleep tight","date":"2011-11-02T01:18:11.144Z","type":"message"}
+{"nick":"piscisaureus_","message":"you should do that too bnoordhuis","date":"2011-11-02T01:18:24.464Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i will","date":"2011-11-02T01:18:43.022Z","type":"message"}
+{"nick":"piscisaureus_","message":"but thnx :-)","date":"2011-11-02T01:18:52.927Z","type":"message"}
+{"nick":"bnoordhuis","message":"but one thing before i go","date":"2011-11-02T01:18:59.869Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what?","date":"2011-11-02T01:19:16.167Z","type":"message"}
+{"nick":"bnoordhuis","message":"fuck, github is down","date":"2011-11-02T01:19:26.162Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, no more","date":"2011-11-02T01:19:37.614Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/bnoordhuis/linux/compare/master...epoll_ctl2","date":"2011-11-02T01:19:38.979Z","type":"message"}
+{"nick":"bnoordhuis","message":"FUCK YEAH!","date":"2011-11-02T01:19:40.594Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you think it'll make it?","date":"2011-11-02T01:20:14.900Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: give me a link to the post on lkml","date":"2011-11-02T01:20:31.497Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, i bet there'll be a couple of iterations","date":"2011-11-02T01:20:38.287Z","type":"message"}
+{"nick":"bnoordhuis","message":"the kernel guys are never fond of adding new syscalls","date":"2011-11-02T01:20:51.427Z","type":"message"}
+{"nick":"bnoordhuis","message":"but who knows","date":"2011-11-02T01:20:53.119Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so where's the lkml link? :-)","date":"2011-11-02T01:27:55.050Z","type":"message"}
+{"nick":"piscisaureus_","message":"I want to see how this works","date":"2011-11-02T01:27:59.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i haven't posted it yet :)","date":"2011-11-02T01:28:29.845Z","type":"message"}
+{"nick":"bnoordhuis","message":"gonna play around with it first for a couple of days","date":"2011-11-02T01:28:42.759Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm thinking of changing the api a little","date":"2011-11-02T01:29:03.626Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I wonder why you move epoll_create1 around","date":"2011-11-02T01:30:44.451Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i don't, it's a diff artifact","date":"2011-11-02T01:31:10.365Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2011-11-02T01:31:24.995Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe use diff --patience","date":"2011-11-02T01:31:30.571Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that works but github doesn't use it :)","date":"2011-11-02T01:33:19.272Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-11-02T01:36:38.042Z","type":"quit"}
+{"nick":"piscisaureus_","message":"if only the linux kernel wasn't so massive I would clone it","date":"2011-11-02T01:40:37.517Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, it only takes 15 minutes","date":"2011-11-02T01:42:12.597Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Read error: Operation timed out","date":"2011-11-02T01:54:23.269Z","type":"quit"}
+{"nick":"pfox___","date":"2011-11-02T01:59:19.434Z","type":"join"}
+{"nick":"pfox___","reason":"Ping timeout: 256 seconds","date":"2011-11-02T03:44:48.979Z","type":"quit"}
+{"nick":"erickt","date":"2011-11-02T03:54:35.039Z","type":"join"}
+{"nick":"mikeal","date":"2011-11-02T04:04:41.443Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-11-02T04:55:59.958Z","type":"quit"}
+{"nick":"mikeal","date":"2011-11-02T04:56:41.685Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-11-02T05:10:22.979Z","type":"quit"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-11-02T06:04:48.925Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2011-11-02T09:23:52.409Z","type":"join"}
+{"nick":"CIA-95","date":"2011-11-02T10:26:13.846Z","type":"join"}
+{"nick":"igorzi","reason":"*.net *.split","date":"2011-11-02T10:28:34.097Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"*.net *.split","date":"2011-11-02T10:28:35.500Z","type":"quit"}
+{"nick":"piscisaureus","reason":"*.net *.split","date":"2011-11-02T10:28:36.019Z","type":"quit"}
+{"nick":"rmustacc","reason":"*.net *.split","date":"2011-11-02T10:28:36.357Z","type":"quit"}
+{"nick":"ryah","reason":"*.net *.split","date":"2011-11-02T10:28:36.519Z","type":"quit"}
+{"nick":"ircretary","reason":"*.net *.split","date":"2011-11-02T10:28:36.893Z","type":"quit"}
+{"nick":"indutny","reason":"*.net *.split","date":"2011-11-02T10:28:37.808Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"*.net *.split","date":"2011-11-02T10:28:38.571Z","type":"quit"}
+{"nick":"CoverSlide","reason":"*.net *.split","date":"2011-11-02T10:28:39.927Z","type":"quit"}
+{"nick":"Marak","reason":"*.net *.split","date":"2011-11-02T10:28:40.089Z","type":"quit"}
+{"nick":"daurnimator","reason":"*.net *.split","date":"2011-11-02T10:28:40.090Z","type":"quit"}
+{"nick":"DrPizza","reason":"*.net *.split","date":"2011-11-02T10:28:40.250Z","type":"quit"}
+{"nick":"pquerna","reason":"*.net *.split","date":"2011-11-02T10:28:40.250Z","type":"quit"}
+{"nick":"raggi","reason":"*.net *.split","date":"2011-11-02T10:28:41.044Z","type":"quit"}
+{"nick":"jesusabdullah","reason":"*.net *.split","date":"2011-11-02T10:28:41.487Z","type":"quit"}
+{"nick":"CIA-53","reason":"*.net *.split","date":"2011-11-02T10:28:41.650Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2011-11-02T10:33:00.906Z","type":"join"}
+{"nick":"piscisaureus_","date":"2011-11-02T10:33:01.083Z","type":"join"}
+{"nick":"indutny","date":"2011-11-02T10:33:01.083Z","type":"join"}
+{"nick":"piscisaureus","date":"2011-11-02T10:33:01.083Z","type":"join"}
+{"nick":"ircretary","date":"2011-11-02T10:33:01.083Z","type":"join"}
+{"nick":"ryah","date":"2011-11-02T10:33:01.084Z","type":"join"}
+{"nick":"rmustacc","date":"2011-11-02T10:33:01.084Z","type":"join"}
+{"nick":"CoverSlide","date":"2011-11-02T10:33:09.479Z","type":"join"}
+{"nick":"Marak","date":"2011-11-02T10:33:09.636Z","type":"join"}
+{"nick":"daurnimator","date":"2011-11-02T10:33:09.636Z","type":"join"}
+{"nick":"DrPizza","date":"2011-11-02T10:33:09.636Z","type":"join"}
+{"nick":"pquerna","date":"2011-11-02T10:33:09.636Z","type":"join"}
+{"nick":"DrPizza","reason":"Excess Flood","date":"2011-11-02T10:33:32.288Z","type":"quit"}
+{"nick":"DrPizza","date":"2011-11-02T10:33:39.179Z","type":"join"}
+{"nick":"jesusabdullah","date":"2011-11-02T10:33:52.210Z","type":"join"}
+{"nick":"raggi","date":"2011-11-02T10:35:13.758Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 240 seconds","date":"2011-11-02T11:29:01.105Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2011-11-02T11:38:58.836Z","type":"join"}
+{"nick":"erickt","date":"2011-11-02T13:31:10.070Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-11-02T14:06:39.007Z","type":"quit"}
+{"nick":"erickt","date":"2011-11-02T14:09:31.256Z","type":"join"}
+{"nick":"pfox___","date":"2011-11-02T14:40:54.808Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ping","date":"2011-11-02T15:50:04.389Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: pnip","date":"2011-11-02T15:50:18.874Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i'm increasingly convinced that deferred socket creation is a bad thing","date":"2011-11-02T15:50:42.330Z","type":"message"}
+{"nick":"bnoordhuis","message":"remind me again, why do we do it?","date":"2011-11-02T15:50:49.741Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so we can decide on the address family at bind time","date":"2011-11-02T15:52:30.054Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: right","date":"2011-11-02T15:53:01.225Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the reason it sucks is that if you want to set flags, multicast groups, etc.","date":"2011-11-02T15:53:17.101Z","type":"message"}
+{"nick":"bnoordhuis","message":"you have to do a lot of leg work when the socket is not yet initialized","date":"2011-11-02T15:53:47.379Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: re address family: that's something we can fix in node, right?","date":"2011-11-02T15:55:21.115Z","type":"message"}
+{"nick":"sh1mmer","date":"2011-11-02T15:55:32.422Z","type":"join"}
+{"nick":"dap","date":"2011-11-02T16:00:04.200Z","type":"join"}
+{"nick":"brson","date":"2011-11-02T16:01:30.281Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-11-02T16:03:00.093Z","type":"quit"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002edea412\u000f \u000310\u000f/ (226 files in 16 dirs)\u0002:\u000f (log message trimmed)","date":"2011-11-02T16:04:29.798Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f Revert \"Upgrade V8 to 3.7.1\"","date":"2011-11-02T16:04:29.954Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f This reverts commit 92f5a5d3caf01f382f90c235e9057590a5e76870.","date":"2011-11-02T16:04:29.954Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f V8 3.7.1 in debug mode on ia32 has a curious race-like bug where an fs.Stats","date":"2011-11-02T16:04:29.954Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f object is not fully formed until some time after it's created. This is easy","date":"2011-11-02T16:04:29.954Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f to demonstrate by running `make test-debug`.","date":"2011-11-02T16:04:30.623Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f V8 3.7.0 does not exhibit this behaviour so back we go.","date":"2011-11-02T16:04:31.620Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ weird bug","date":"2011-11-02T16:06:44.495Z","type":"message"}
+{"nick":"bnoordhuis","message":"http://cvs.schmorp.de/libev/ev_epoll.c?r1=1.64&r2=1.65 <- so that rascal *did* fix the bug, he just kept quiet about it","date":"2011-11-02T16:14:44.169Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00028d5c64a\u000f \u000310\u000f/ src/unix/error.c \u0002:\u000f unix: map EAFNOSUPPORT error code - http://git.io/CImhow","date":"2011-11-02T16:21:18.744Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002672b453\u000f \u000310\u000f/ doc/api/http.markdown \u0002:\u000f docs: http: fix docs for the 'close' event - http://git.io/BaRCpg","date":"2011-11-02T16:32:36.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: just create a macro or function `uv_create_socket_if_needed`","date":"2011-11-02T16:35:15.598Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that won't work - because what type of socket should be created? ipv4 or ipv6?","date":"2011-11-02T16:36:04.399Z","type":"message"}
+{"nick":"piscisaureus_","message":"sure - okay","date":"2011-11-02T16:39:16.849Z","type":"message"}
+{"nick":"piscisaureus_","message":"can we discuss this somewhere after 0.6?","date":"2011-11-02T16:39:27.866Z","type":"message"}
+{"nick":"piscisaureus_","message":"or are you eternally bored right now?","date":"2011-11-02T16:39:37.901Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ^","date":"2011-11-02T16:39:43.492Z","type":"message"}
+{"nick":"felixge","date":"2011-11-02T16:40:31.439Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-11-02T16:40:31.596Z","type":"quit"}
+{"nick":"felixge","date":"2011-11-02T16:40:31.596Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: btw I cannot make it to the call tonight","date":"2011-11-02T16:41:04.894Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: not bored but it breaks e.g. the multicast patch","date":"2011-11-02T16:41:15.353Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: sure, np","date":"2011-11-02T16:41:19.485Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think igor know pretty well what the status is","date":"2011-11-02T16:41:41.495Z","type":"message"}
+{"nick":"piscisaureus_","message":"*knows","date":"2011-11-02T16:41:49.368Z","type":"message"}
+{"nick":"ryah","message":"hello","date":"2011-11-02T16:41:51.057Z","type":"message"}
+{"nick":"piscisaureus_","message":"hello","date":"2011-11-02T16:41:56.167Z","type":"message"}
+{"nick":"ryah","message":"im back now","date":"2011-11-02T16:42:00.921Z","type":"message"}
+{"nick":"felixge","message":"I just ran into a bug. Closing the process.stdin breaks stdin streams on all children","date":"2011-11-02T16:42:00.973Z","type":"message"}
+{"nick":"felixge","message":"I think it's a known problem: https://github.com/joyent/node/blob/v0.4/lib/net.js#L834","date":"2011-11-02T16:42:07.371Z","type":"message"}
+{"nick":"felixge","message":"test case: https://gist.github.com/1334027","date":"2011-11-02T16:42:21.898Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: good","date":"2011-11-02T16:42:26.855Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: I was just saying I won't be on the call with msft tonight","date":"2011-11-02T16:42:43.604Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: wb","date":"2011-11-02T16:43:00.477Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: do you have time to sync now?","date":"2011-11-02T16:43:13.790Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: yeah","date":"2011-11-02T16:43:19.538Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: can i skype you?","date":"2011-11-02T16:43:23.887Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: one sec","date":"2011-11-02T16:43:32.536Z","type":"message"}
+{"nick":"felixge","message":"ryah: wb, how was japan?","date":"2011-11-02T16:43:55.400Z","type":"message"}
+{"nick":"ryah","message":"japan was lots of fun","date":"2011-11-02T16:44:11.207Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_ ryah: can i join?","date":"2011-11-02T16:44:31.924Z","type":"message"}
+{"nick":"ryah","message":"aber klar","date":"2011-11-02T16:45:38.616Z","type":"message"}
+{"nick":"bnoordhuis","message":"super! machen wir","date":"2011-11-02T16:45:47.538Z","type":"message"}
+{"nick":"piscisaureus_","message":"ich bin zuruck","date":"2011-11-02T16:45:55.290Z","type":"message"}
+{"nick":"felixge","message":"ok, I've got to head out for an hour, if anybody has a comment on the bug above while I'm gone that'd be awesome. This is causing problems when executing children from a node program that also reads stdin","date":"2011-11-02T16:48:32.310Z","type":"message"}
+{"nick":"felixge","message":"can't figure out why close() doesn't work on the stdin fd of the process ","date":"2011-11-02T16:49:00.053Z","type":"message"}
+{"nick":"felixge","message":"maybe it special?","date":"2011-11-02T16:49:08.022Z","type":"message"}
+{"nick":"felixge","message":"* it is","date":"2011-11-02T16:49:11.678Z","type":"message"}
+{"nick":"felixge","message":"actually gotta close the machine / won't be able to read the backlog here. Need persistent IRC : ). Please comment on the gist","date":"2011-11-02T16:50:52.663Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2011-11-02T16:51:45.500Z","type":"quit"}
+{"nick":"felixge","date":"2011-11-02T16:52:27.240Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-11-02T16:52:27.575Z","type":"quit"}
+{"nick":"felixge","date":"2011-11-02T16:52:27.732Z","type":"join"}
+{"nick":"felixge","reason":"Client Quit","date":"2011-11-02T16:52:29.435Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2011-11-02T16:56:50.743Z","type":"quit"}
+{"nick":"bnoordhuis","message":"maybe we should put out one or two more 0.4 releases","date":"2011-11-02T17:04:02.321Z","type":"message"}
+{"nick":"bnoordhuis","message":"extended support, so to speak","date":"2011-11-02T17:04:06.300Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ryah: what about `process.debugBreak(pid)` or `child.debugBreak()`","date":"2011-11-02T17:06:07.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: haha","date":"2011-11-02T17:07:38.804Z","type":"message"}
+{"nick":"ryah","message":"[03:25|% 100|+ 307|-   4]: Done                                       ","date":"2011-11-02T17:09:15.928Z","type":"message"}
+{"nick":"ryah","message":"osx","date":"2011-11-02T17:09:18.943Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: that would work for me","date":"2011-11-02T17:09:33.125Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: maybe with a leading underscore","date":"2011-11-02T17:09:45.738Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2011-11-02T17:09:51.404Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: also we are going to make process.kill work if the signal is SIGTERM or SIGKILL","date":"2011-11-02T17:10:28.466Z","type":"message"}
+{"nick":"piscisaureus_","message":"otherwise it'll throw","date":"2011-11-02T17:10:38.757Z","type":"message"}
+{"nick":"ryah","message":"do we have a uv_kill() ?","date":"2011-11-02T17:12:13.008Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u000260818b9\u000f \u000310\u000f/ (15 files in 2 dirs)\u0002:\u000f Add missing copyright headers - http://git.io/J1H_Iw","date":"2011-11-02T17:12:56.115Z","type":"message"}
+{"nick":"ryah","message":"how do you do \"git reset --hard HEAD^\" in windows","date":"2011-11-02T17:13:28.544Z","type":"message"}
+{"nick":"ryah","message":"it seems to think ^ is a special character","date":"2011-11-02T17:13:35.798Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: git reset --hard HEAD^^","date":"2011-11-02T17:15:30.055Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: git reset --hard HEAD~1","date":"2011-11-02T17:15:40.561Z","type":"message"}
+{"nick":"indutny","message":"ryah: heya!","date":"2011-11-02T17:16:17.231Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 260 seconds","date":"2011-11-02T17:20:46.033Z","type":"quit"}
+{"nick":"igorzi","date":"2011-11-02T17:23:02.082Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus ryah: so, we're in agreement to add uv_kill to libuv?  and make uv_kill and uv_process_kill behave the same (terminate the process for SIGTERM or SIGKILL on windows)","date":"2011-11-02T17:24:44.896Z","type":"message"}
+{"nick":"ryah","message":"indutny: hi","date":"2011-11-02T17:26:48.257Z","type":"message"}
+{"nick":"ryah","message":"igorzi: yes, i think so","date":"2011-11-02T17:27:05.243Z","type":"message"}
+{"nick":"ryah","message":"igorzi: im just catching up - how many tests are we down on windows?","date":"2011-11-02T17:27:47.168Z","type":"message"}
+{"nick":"bnoordhuis","message":"[16:03|% 100|+ 615|-   7]: Done <- linux...","date":"2011-11-02T17:28:01.955Z","type":"message"}
+{"nick":"igorzi","message":"ryah: around 10-15 total.  out of those 2 fail because of fs.watchFile, and 3 because of process.kill","date":"2011-11-02T17:28:41.519Z","type":"message"}
+{"nick":"igorzi","message":"ryah: you're back in the states?","date":"2011-11-02T17:29:44.156Z","type":"message"}
+{"nick":"ryah","message":"igorzi: yep","date":"2011-11-02T17:29:54.827Z","type":"message"}
+{"nick":"isaacs","date":"2011-11-02T17:30:46.219Z","type":"join"}
+{"nick":"bnoordhuis","message":"hrm, 4 of the 7 failing tests are timing related","date":"2011-11-02T17:30:47.237Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: we need to hammer that down to 0 in the next few days","date":"2011-11-02T17:31:33.039Z","type":"message"}
+{"nick":"bnoordhuis","message":"can do, i think","date":"2011-11-02T17:33:02.186Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i will help - please let me know which tests you're working on","date":"2011-11-02T17:33:25.748Z","type":"message"}
+{"nick":"ryah","message":"so we dont overlap","date":"2011-11-02T17:33:33.401Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Maciej Małecki\u000f \u000307master\u000f * r\u00026bd0bcd\u000f \u000310\u000f/ lib/child_process.js \u0002:\u000f ","date":"2011-11-02T17:33:38.092Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f child_process: in a new `ChildProcess` set `killed` to false","date":"2011-11-02T17:33:38.256Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f This behavior is consistent with what v0.4 does. - http://git.io/0CjB8w","date":"2011-11-02T17:33:38.257Z","type":"message"}
+{"nick":"wankdanker","message":"hey all, do you guys want issues created for features that thow 'not yet implemented' or do you have another task list for those? (specifically i'm interested in dgram stuff)","date":"2011-11-02T17:34:36.225Z","type":"message"}
+{"nick":"erickt","date":"2011-11-02T17:35:00.167Z","type":"join"}
+{"nick":"ryah","message":"wankdanker: multicast?","date":"2011-11-02T17:35:03.265Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: plus broadcast and binding multiple processes to the same port/address (works in 4.x)","date":"2011-11-02T17:35:40.628Z","type":"message"}
+{"nick":"wankdanker","message":"i have a module which uses broadcast, which i can give up for multicast, but i need to be able to listen on the same port in multiple processes.","date":"2011-11-02T17:37:28.354Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002c8646e0\u000f \u000310\u000f/ test/simple/test-child-process-kill.js \u0002:\u000f test: add ChildProcess.prototype.killed test case - http://git.io/6mtaew","date":"2011-11-02T17:38:01.162Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2011-11-02T17:38:22.185Z","type":"action"}
+{"nick":"ryah","message":"wankdanker: hm","date":"2011-11-02T17:49:22.020Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: the problem is windows support","date":"2011-11-02T17:49:39.602Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: do you have a simple test case?","date":"2011-11-02T17:49:48.719Z","type":"message"}
+{"nick":"ryah","message":"it will help us discuss it","date":"2011-11-02T17:49:53.931Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: node-discover is the module, https://github.com/wankdanker/node-discover","date":"2011-11-02T17:50:28.412Z","type":"message"}
+{"nick":"wankdanker","message":"the examples folder has several examples","date":"2011-11-02T17:50:47.408Z","type":"message"}
+{"nick":"wankdanker","message":"i do not have a more simple test case at the moment. ","date":"2011-11-02T17:51:02.496Z","type":"message"}
+{"nick":"ryah","message":"[06:31|% 100|+ 273|-  12]: Done <-- win7, vcbuild.bat release test","date":"2011-11-02T17:51:06.303Z","type":"message"}
+{"nick":"wankdanker","message":"if you would like one other than this, i will be happy to put together the interesting bits for you.","date":"2011-11-02T17:51:19.008Z","type":"message"}
+{"nick":"wankdanker","message":"lmk","date":"2011-11-02T17:51:29.775Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: yes, please","date":"2011-11-02T17:51:37.850Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: will do.","date":"2011-11-02T17:51:46.758Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: our deadline for v0.6 is this friday","date":"2011-11-02T17:51:47.333Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: after which api changes will wait for v0.8 - so let's see if we can address this","date":"2011-11-02T17:52:02.627Z","type":"message"}
+{"nick":"ryah","message":"it might be too late though","date":"2011-11-02T17:52:07.173Z","type":"message"}
+{"nick":"igorzi","message":"ryah: [09:49|% 100|+ 295|-  16]: Done   <-- test-all","date":"2011-11-02T17:52:10.745Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: nice. ","date":"2011-11-02T17:52:11.551Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: i'll put it together for you right now.","date":"2011-11-02T17:52:39.598Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: do you want an issue posted?","date":"2011-11-02T17:52:46.622Z","type":"message"}
+{"nick":"ryah","message":"wankdanker: yes","date":"2011-11-02T17:53:05.275Z","type":"message"}
+{"nick":"wankdanker","message":"ryah: k. thank you.","date":"2011-11-02T17:53:13.517Z","type":"message"}
+{"nick":"igorzi","message":"ryah: os of these tests, 5 are known due to fs.watchFile + process.kill.  test-debugger-repl  also fails on unix","date":"2011-11-02T17:54:32.885Z","type":"message"}
+{"nick":"igorzi","message":"ryah: what other tests are failing on unix? (so that we know which ones are windows-specific)","date":"2011-11-02T17:54:49.298Z","type":"message"}
+{"nick":"ryah","message":"igorzi: https://gist.github.com/1334365","date":"2011-11-02T17:57:15.318Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: what's the deal with set proctitle?","date":"2011-11-02T17:58:52.365Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: basically it's only working in linux?","date":"2011-11-02T17:59:01.799Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: call","date":"2011-11-02T18:02:09.507Z","type":"message"}
+{"nick":"brson","date":"2011-11-02T18:03:17.312Z","type":"join"}
+{"nick":"AvianFlu","date":"2011-11-02T18:07:24.335Z","type":"join"}
+{"nick":"ryah","message":"igorzi: we're on now","date":"2011-11-02T18:12:08.265Z","type":"message"}
+{"nick":"igorzi","reason":"Quit: Page closed","date":"2011-11-02T18:24:10.451Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2011-11-02T18:36:38.445Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-11-02T18:42:09.857Z","type":"quit"}
+{"nick":"isaacs","new_nick":"isaacs[away]","date":"2011-11-02T18:48:26.771Z","type":"nick"}
+{"nick":"sh1mmer","date":"2011-11-02T19:12:34.139Z","type":"join"}
+{"nick":"AvianFlu_","date":"2011-11-02T19:27:42.573Z","type":"join"}
+{"nick":"AvianFlu","reason":"Disconnected by services","date":"2011-11-02T19:27:51.204Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2011-11-02T19:27:56.863Z","type":"nick"}
+{"nick":"piscisaureus_","date":"2011-11-02T19:32:49.943Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 252 seconds","date":"2011-11-02T19:48:13.318Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 260 seconds","date":"2011-11-02T19:54:45.834Z","type":"quit"}
+{"nick":"brson","date":"2011-11-02T19:55:14.602Z","type":"join"}
+{"nick":"kuebk^","date":"2011-11-02T19:57:07.118Z","type":"join"}
+{"nick":"mikeal","date":"2011-11-02T20:01:44.192Z","type":"join"}
+{"nick":"igorzi","date":"2011-11-02T20:02:33.859Z","type":"join"}
+{"nick":"igorzi","message":"http://developer.yahoo.com/blogs/ydn/posts/2011/11/yahoo-announces-cocktails-%E2%80%93-shaken-not-stirred/","date":"2011-11-02T20:21:19.240Z","type":"message"}
+{"nick":"felixge","date":"2011-11-02T20:22:04.097Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-11-02T20:22:04.708Z","type":"quit"}
+{"nick":"felixge","date":"2011-11-02T20:22:04.871Z","type":"join"}
+{"nick":"wankdanker","message":"mmm. mojito","date":"2011-11-02T20:24:19.262Z","type":"message"}
+{"nick":"felixge","reason":"Client Quit","date":"2011-11-02T20:26:36.898Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 252 seconds","date":"2011-11-02T20:35:33.860Z","type":"quit"}
+{"nick":"brson","date":"2011-11-02T20:36:27.327Z","type":"join"}
+{"nick":"sh1mmer","reason":"Ping timeout: 240 seconds","date":"2011-11-02T20:46:37.040Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2011-11-02T20:52:39.135Z","type":"join"}
+{"nick":"kuebk","date":"2011-11-02T20:53:41.257Z","type":"join"}
+{"nick":"kuebk^","reason":"Ping timeout: 240 seconds","date":"2011-11-02T20:53:49.110Z","type":"quit"}
+{"nick":"sh1mmer","date":"2011-11-02T20:53:55.677Z","type":"join"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307uv_kill\u000f * r\u000231f94db\u000f \u000310\u000f/ (5 files in 4 dirs)\u0002:\u000f uv_kill - http://git.io/BZ1FZA","date":"2011-11-02T21:06:19.974Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_ ryah bnoordhuis:    ^--- please review (uv_kill)","date":"2011-11-02T21:06:52.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: did anything come up at the call that I need to know about?","date":"2011-11-02T21:16:23.597Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: nope.. it was pretty short","date":"2011-11-02T21:16:51.574Z","type":"message"}
+{"nick":"pfox___","reason":"Ping timeout: 260 seconds","date":"2011-11-02T21:21:06.103Z","type":"quit"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307uv_kill\u000f * r\u000215c4253\u000f \u000310\u000f/ (7 files in 4 dirs)\u0002:\u000f review feedback fixes - http://git.io/Hh-t1A","date":"2011-11-02T21:26:59.427Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_ ryah: --^","date":"2011-11-02T21:27:11.118Z","type":"message"}
+{"nick":"indutny","message":"ryah: still I think that there're no place in core for that stuff","date":"2011-11-02T21:27:21.169Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yeah, lght","date":"2011-11-02T21:29:41.293Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: probably we should make sure thate we correctly map errors","date":"2011-11-02T21:30:17.231Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it's not terribly important now","date":"2011-11-02T21:30:25.614Z","type":"message"}
+{"nick":"ryah","message":"indutny: what stuff?","date":"2011-11-02T21:30:48.064Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u000274b49e8\u000f \u000310\u000f/ (10 files in 5 dirs)\u0002:\u000f uv_kill - http://git.io/bmrNdw","date":"2011-11-02T21:35:25.342Z","type":"message"}
+{"nick":"igorzi","message":"ok, i'll do the binding for uv_kill now","date":"2011-11-02T21:36:00.140Z","type":"message"}
+{"nick":"ryah","message":"do you guys ever get failures on the 'message' tests?","date":"2011-11-02T21:39:04.779Z","type":"message"}
+{"nick":"ryah","message":"test.py message","date":"2011-11-02T21:39:10.388Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: no failures here","date":"2011-11-02T21:39:50.439Z","type":"message"}
+{"nick":"ryah","message":"somehow i thought our write buffer wasn't flushing for tty - but that doesn't seem to be it","date":"2011-11-02T21:40:23.823Z","type":"message"}
+{"nick":"ryah","message":"we're getting sporadic message errors","date":"2011-11-02T21:40:44.610Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-11-02T21:41:13.051Z","type":"quit"}
+{"nick":"indutny","message":"hm...","date":"2011-11-02T21:47:52.049Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2011-11-02T21:48:10.263Z","type":"quit"}
+{"nick":"indutny","message":"when we started outputing `undefined` in repl?","date":"2011-11-02T21:48:10.911Z","type":"message"}
+{"nick":"ryah","message":"indutny: 2 weeks ago","date":"2011-11-02T21:50:37.203Z","type":"message"}
+{"nick":"indutny","message":"ryah: is that a bug or feature? :)","date":"2011-11-02T21:54:32.268Z","type":"message"}
+{"nick":"indutny","message":"I'm asking because of some debugger's UI problems","date":"2011-11-02T21:54:56.237Z","type":"message"}
+{"nick":"piscisaureus_","date":"2011-11-02T21:55:11.240Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2011-11-02T22:02:15.699Z","type":"quit"}
+{"nick":"mikeal","date":"2011-11-02T22:05:12.240Z","type":"join"}
+{"nick":"ryah","message":"indutny: feature","date":"2011-11-02T22:05:14.459Z","type":"message"}
+{"nick":"bnoordhuis","message":"back","date":"2011-11-02T22:07:54.571Z","type":"message"}
+{"nick":"bnoordhuis","message":"we had had the call already right?","date":"2011-11-02T22:08:04.107Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe we should reschedule it - it's at 7 PM local time now, just around dinner time","date":"2011-11-02T22:08:40.811Z","type":"message"}
+{"nick":"piscisaureus_","message":"for me 7pm is actually cook","date":"2011-11-02T22:12:29.530Z","type":"message"}
+{"nick":"piscisaureus_","message":"*cool","date":"2011-11-02T22:12:31.952Z","type":"message"}
+{"nick":"piscisaureus_","message":"except today","date":"2011-11-02T22:12:34.438Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: re message tests: yes, fails intermittently","date":"2011-11-02T22:15:30.858Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis, piscisaureus_: removing WAF is the main priority for v0.8","date":"2011-11-02T22:15:46.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"music to my ears","date":"2011-11-02T22:16:11.315Z","type":"message"}
+{"nick":"ryah","message":"i'd like that to happen early in the v0.7 cycle","date":"2011-11-02T22:16:20.529Z","type":"message"}
+{"nick":"ryah","message":"so we have a long time to play with it","date":"2011-11-02T22:16:26.359Z","type":"message"}
+{"nick":"ryah","message":"so.. ","date":"2011-11-02T22:17:51.252Z","type":"message"}
+{"nick":"ryah","message":"nm","date":"2011-11-02T22:18:02.491Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: https://github.com/joyent/node/issues/1988#issuecomment-2597208 <- can you do a quick review?","date":"2011-11-02T22:22:14.731Z","type":"message"}
+{"nick":"indutny","message":"ryah: https://github.com/joyent/node/pull/1994","date":"2011-11-02T22:29:51.697Z","type":"message"}
+{"nick":"ryah","message":"indutny: can you do this in a less hacky way?","date":"2011-11-02T22:31:53.805Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2011-11-02T22:32:24.039Z","type":"message"}
+{"nick":"indutny","message":"probably","date":"2011-11-02T22:32:25.573Z","type":"message"}
+{"nick":"ryah","message":"i.e. without monkey patching","date":"2011-11-02T22:32:31.466Z","type":"message"}
+{"nick":"indutny","message":"I need to introduce new option for that","date":"2011-11-02T22:32:32.305Z","type":"message"}
+{"nick":"ryah","message":"fine","date":"2011-11-02T22:32:36.092Z","type":"message"}
+{"nick":"indutny","message":"forgot that we don't have settings object in repl's arguments","date":"2011-11-02T22:33:26.380Z","type":"message"}
+{"nick":"indutny","message":"ryah: is it ok to just add fifth argument?","date":"2011-11-02T22:33:39.983Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yt?","date":"2011-11-02T22:35:56.281Z","type":"message"}
+{"nick":"sh1m","date":"2011-11-02T22:38:01.145Z","type":"join"}
+{"nick":"sh1m","reason":"Client Quit","date":"2011-11-02T22:38:01.310Z","type":"quit"}
+{"nick":"sh1m","date":"2011-11-02T22:38:16.683Z","type":"join"}
+{"nick":"sh1mmer","reason":"Disconnected by services","date":"2011-11-02T22:38:46.755Z","type":"quit"}
+{"nick":"sh1m","new_nick":"sh1mmer","date":"2011-11-02T22:38:46.920Z","type":"nick"}
+{"nick":"dap","date":"2011-11-02T22:39:44.456Z","type":"join"}
+{"nick":"indutny","message":"ryah: https://github.com/joyent/node/pull/1995 <- is that better?","date":"2011-11-02T22:40:54.875Z","type":"message"}
+{"nick":"ryah","message":"indutny: yes","date":"2011-11-02T22:42:13.918Z","type":"message"}
+{"nick":"ryah","message":"update the docs please","date":"2011-11-02T22:42:22.746Z","type":"message"}
+{"nick":"indutny","message":"ryah: ok!","date":"2011-11-02T22:42:27.930Z","type":"message"}
+{"nick":"dap","reason":"Client Quit","date":"2011-11-02T22:43:12.298Z","type":"quit"}
+{"nick":"isaacs[away]","reason":"Quit: isaacs[away]","date":"2011-11-02T22:43:16.235Z","type":"quit"}
+{"nick":"indutny","message":"updated: https://github.com/joyent/node/pull/1995","date":"2011-11-02T22:46:20.842Z","type":"message"}
+{"nick":"ryah","message":"indutny: thanks","date":"2011-11-02T22:53:30.433Z","type":"message"}
+{"nick":"ryah","message":"can't really figure out what's going on with the message tests","date":"2011-11-02T22:54:39.121Z","type":"message"}
+{"nick":"ryah","message":"indutny: what about the debugger changes?","date":"2011-11-02T22:56:34.918Z","type":"message"}
+{"nick":"ryah","message":"indutny: just squash it all into one commit please and gist it to me","date":"2011-11-02T22:57:09.470Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Fedor Indutny\u000f \u000307master\u000f * r\u00029ad27f7\u000f \u000310\u000f/ (doc/api/repl.markdown lib/_debugger.js lib/repl.js)\u0002:\u000f ","date":"2011-11-02T22:57:43.796Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f ignore undefined messages in the debugger repl","date":"2011-11-02T22:57:43.956Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f fixes #1995 - http://git.io/5x3t4A","date":"2011-11-02T22:57:43.956Z","type":"message"}
+{"nick":"ryah","message":"nm","date":"2011-11-02T22:58:00.909Z","type":"message"}
+{"nick":"indutny","message":"ryah: ok :)","date":"2011-11-02T22:58:08.371Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: bnoordhuis: on unix, when a user hits ^C, does that automatically kill all child processes?","date":"2011-11-02T23:03:31.953Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: no","date":"2011-11-02T23:03:41.247Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: no","date":"2011-11-02T23:04:20.914Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok, thanks","date":"2011-11-02T23:04:46.067Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: the process will send a SIGHUP to all processes in its process group","date":"2011-11-02T23:05:22.834Z","type":"message"}
+{"nick":"piscisaureus_","message":"which will implicitly kill them right?","date":"2011-11-02T23:05:47.155Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-11-02T23:06:10.194Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmmmm","date":"2011-11-02T23:06:18.561Z","type":"message"}
+{"nick":"rmustacc","message":"Assuming they aren't ignoring hup.","date":"2011-11-02T23:06:29.590Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah ok - I got that","date":"2011-11-02T23:06:46.580Z","type":"message"}
+{"nick":"ryah","message":"ok. figured out why message tests are fialing.","date":"2011-11-02T23:09:28.064Z","type":"message"}
+{"nick":"ryah","message":"they use require('util').error() to output stuff","date":"2011-11-02T23:10:05.250Z","type":"message"}
+{"nick":"ryah","message":"previously this called directly into fprintf(stderr)","date":"2011-11-02T23:10:19.162Z","type":"message"}
+{"nick":"ryah","message":"now util.error goes to process.stderr.write","date":"2011-11-02T23:10:53.146Z","type":"message"}
+{"nick":"ryah","message":"process.stderr could be either tty, file, or pipe stream","date":"2011-11-02T23:11:12.744Z","type":"message"}
+{"nick":"ryah","message":"depending on how you use it","date":"2011-11-02T23:11:26.915Z","type":"message"}
+{"nick":"ryah","message":"in the case of the test runner it's a file","date":"2011-11-02T23:11:32.244Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: what'sup?","date":"2011-11-02T23:11:36.393Z","type":"message"}
+{"nick":"ryah","message":"file streams use require('fs').WriteStream","date":"2011-11-02T23:11:43.945Z","type":"message"}
+{"nick":"ryah","message":"which does not flush","date":"2011-11-02T23:11:47.081Z","type":"message"}
+{"nick":"ryah","message":"-_-","date":"2011-11-02T23:11:49.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: I have a question about ASLR","date":"2011-11-02T23:12:01.865Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: is the randomization done every time a process loads?","date":"2011-11-02T23:12:21.198Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: probably!","date":"2011-11-02T23:13:44.202Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: or, suppose that I start 2 instances of node.exe, will the image be loaded at the same offset in both processes?","date":"2011-11-02T23:13:47.588Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i believe so (the randomization is only done at system boot), but let me find out for sure.  also, non-windows binaries need to opt-in to be ASLR'ed","date":"2011-11-02T23:16:02.859Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: I think they need to opt out","date":"2011-11-02T23:16:20.069Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the thing is, I am having trouble with starting the remote debugger","date":"2011-11-02T23:16:42.027Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a compiler switch, right?","date":"2011-11-02T23:16:51.536Z","type":"message"}
+{"nick":"bnoordhuis","message":"compiler|linker","date":"2011-11-02T23:17:01.356Z","type":"message"}
+{"nick":"igorzi","message":"yes","date":"2011-11-02T23:17:06.263Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: there are 2 things I can think of: (1) use a mailslot, (2) use CreateRemoteThread","date":"2011-11-02T23:17:14.311Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think aslr is opt-in by default now btw","date":"2011-11-02T23:17:32.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://msdn.microsoft.com/en-us/library/bb384887.aspx","date":"2011-11-02T23:17:54.046Z","type":"message"}
+{"nick":"igorzi","message":"right, vs2008 it wasn't on by default, vs2010 it is","date":"2011-11-02T23:18:13.958Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: why do you care about ASLR?","date":"2011-11-02T23:18:32.921Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: because if I go for the CreateRemoteThread option, I need to make assumptions about the other process' address spac","date":"2011-11-02T23:19:01.357Z","type":"message"}
+{"nick":"piscisaureus_","message":"e","date":"2011-11-02T23:19:02.211Z","type":"message"}
+{"nick":"ryah","message":"okay - tools/test.py message is also failing sometimes on windows","date":"2011-11-02T23:21:01.911Z","type":"message"}
+{"nick":"ryah","message":"if you run it a few times you'll see","date":"2011-11-02T23:21:19.113Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00021ba834b\u000f \u000310\u000f/ doc/api/http.markdown \u0002:\u000f docs: http: link to relevant net.Socket methods - http://git.io/5c-hrQ","date":"2011-11-02T23:22:23.211Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: not here, really.","date":"2011-11-02T23:22:50.368Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am not saying there is no problem btw","date":"2011-11-02T23:23:03.712Z","type":"message"}
+{"nick":"ryah","message":"C:\\Users\\ryan\\node>python tools\\test.py message","date":"2011-11-02T23:26:02.494Z","type":"message"}
+{"nick":"ryah","message":"=== release throw_custom_error ===","date":"2011-11-02T23:26:02.664Z","type":"message"}
+{"nick":"ryah","message":"Path: message/throw_custom_error","date":"2011-11-02T23:26:02.664Z","type":"message"}
+{"nick":"ryah","message":"node.js:201","date":"2011-11-02T23:26:02.664Z","type":"message"}
+{"nick":"ryah","message":"        throw e; // process.nextTick error, or 'error' event on first tick","date":"2011-11-02T23:26:02.664Z","type":"message"}
+{"nick":"ryah","message":"              ^","date":"2011-11-02T23:26:04.992Z","type":"message"}
+{"nick":"ryah","message":"MyCustomError: This is a custom message","date":"2011-11-02T23:26:07.471Z","type":"message"}
+{"nick":"ryah","message":"Command: C:\\Users\\ryan\\node\\Release\\node.exe C:\\Users\\ryan\\node\\test\\message\\thr","date":"2011-11-02T23:26:09.977Z","type":"message"}
+{"nick":"ryah","message":"ow_custom_error.js","date":"2011-11-02T23:26:12.475Z","type":"message"}
+{"nick":"ryah","message":"=== release throw_non_error ===","date":"2011-11-02T23:26:14.940Z","type":"message"}
+{"nick":"ryah","message":"Path: message/throw_non_error","date":"2011-11-02T23:26:17.477Z","type":"message"}
+{"nick":"ryah","message":"node.js:201","date":"2011-11-02T23:26:19.936Z","type":"message"}
+{"nick":"ryah","message":"        throw e; // process.nextTick error, or 'error' event on first tick","date":"2011-11-02T23:26:22.525Z","type":"message"}
+{"nick":"ryah","message":"              ^","date":"2011-11-02T23:26:24.976Z","type":"message"}
+{"nick":"ryah","message":"[object Object]","date":"2011-11-02T23:26:27.431Z","type":"message"}
+{"nick":"ryah","message":"Command: C:\\Users\\ryan\\node\\Release\\node.exe C:\\Users\\ryan\\node\\test\\message\\thr","date":"2011-11-02T23:26:29.991Z","type":"message"}
+{"nick":"ryah","message":"ow_non_error.js","date":"2011-11-02T23:26:32.461Z","type":"message"}
+{"nick":"ryah","message":"[00:01|% 100|+   4|-   2]: Done","date":"2011-11-02T23:26:34.955Z","type":"message"}
+{"nick":"ryah","message":"C:\\Users\\ryan\\node>","date":"2011-11-02T23:26:37.390Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe it's a gc timing issue","date":"2011-11-02T23:28:02.384Z","type":"message"}
+{"nick":"ryah","message":"my bug is because we don't flush streams on exit","date":"2011-11-02T23:29:43.197Z","type":"message"}
+{"nick":"ryah","message":"(im fairly certain)","date":"2011-11-02T23:29:59.675Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i think it may be that the layout of stack traces changed a bit","date":"2011-11-02T23:30:00.677Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2011-11-02T23:30:12.102Z","type":"message"}
+{"nick":"ryah","message":"no","date":"2011-11-02T23:30:16.313Z","type":"message"}
+{"nick":"piscisaureus_","message":"reverse heisenbug","date":"2011-11-02T23:30:18.222Z","type":"message"}
+{"nick":"piscisaureus_","message":"It suddenly appeared","date":"2011-11-02T23:30:25.964Z","type":"message"}
+{"nick":"piscisaureus_","message":"when analyzing it","date":"2011-11-02T23:30:41.247Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: in that case we should flush 'em :-)","date":"2011-11-02T23:31:28.319Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, not throw_custom_error btw","date":"2011-11-02T23:31:45.411Z","type":"message"}
+{"nick":"bnoordhuis","message":"that was undefined_reference_in_new_context","date":"2011-11-02T23:31:47.733Z","type":"message"}
+{"nick":"bnoordhuis","message":"but koichi fixed that one already","date":"2011-11-02T23:31:59.583Z","type":"message"}
+{"nick":"ryah","message":"it appeared in d77ce4b9989d143c7b5ab7640bd6c0cbe261e458","date":"2011-11-02T23:32:05.148Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: the problem is that we lack a proper way to do it","date":"2011-11-02T23:32:16.698Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-11-02T23:37:10.235Z","type":"quit"}
+{"nick":"bnoordhuis","message":"[16:13|% 100|+ 607|-  15]: Done <- sunos, better than it used to be","date":"2011-11-02T23:37:55.124Z","type":"message"}
+{"nick":"igorzi","message":"i need libuv updated in node.. any objections?","date":"2011-11-02T23:41:42.299Z","type":"message"}
+{"nick":"ryah","message":"can i land something first?","date":"2011-11-02T23:42:17.475Z","type":"message"}
+{"nick":"ryah","message":"give me 5 min","date":"2011-11-02T23:42:23.523Z","type":"message"}
+{"nick":"igorzi","message":"sure","date":"2011-11-02T23:43:26.218Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002850609e\u000f \u000310\u000f/ (110 files in 6 dirs)\u0002:\u000f Remove separation of libuv tests - http://git.io/eUr7MA","date":"2011-11-02T23:43:27.686Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002e1bee05\u000f \u000310\u000f/ (src/unix/stream.c src/unix/tty.c)\u0002:\u000f ","date":"2011-11-02T23:47:34.920Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f UNIX: Loop on blocking streams","date":"2011-11-02T23:47:35.079Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f Also removes a superfluous syscall during uv_tty_init for writable TTY","date":"2011-11-02T23:47:35.079Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f streams. - http://git.io/StRy_w","date":"2011-11-02T23:47:35.079Z","type":"message"}
+{"nick":"ryah","message":"igorzi: okay.","date":"2011-11-02T23:47:42.430Z","type":"message"}
+{"nick":"AvianFlu_","date":"2011-11-02T23:47:58.312Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs, ryah: why is https://github.com/joyent/node/issues/1884 closed?","date":"2011-11-02T23:48:29.337Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: probably a mistake","date":"2011-11-02T23:50:01.203Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 255 seconds","date":"2011-11-02T23:50:55.102Z","type":"quit"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u0002143aeb9\u000f \u000310\u000f/ (14 files in 5 dirs)\u0002:\u000f upgrade libuv to e1bee05ecdbffbe9de37830530ad2ae2f1fb41c8 - http://git.io/LwA3lw","date":"2011-11-02T23:52:27.438Z","type":"message"}

@@ -1,0 +1,588 @@
+{"nick":"igorzi","message":"bnoordhuis ryah_: so any ideas about how we can fix the ref-counting issue with child isolates?","date":"2012-01-20T00:03:56.513Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis ryah_: do we want the channel to keep the isolate alive?","date":"2012-01-20T00:04:04.674Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis ryah_: or at least it should be kept alive if someone has process.on('message')","date":"2012-01-20T00:05:11.706Z","type":"message"}
+{"nick":"isaacs","date":"2012-01-20T00:06:05.786Z","type":"join"}
+{"nick":"`3rdEden","reason":"Quit: Zzzzz","date":"2012-01-20T00:14:30.196Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: hey","date":"2012-01-20T00:24:14.559Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: rmustacc said that you had asked something or other?","date":"2012-01-20T00:24:24.615Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: the joyent sf office is under attack by internet gremlins of some sort.","date":"2012-01-20T00:24:37.658Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-01-20T00:35:58.411Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs: nothing special, i was just curious what kind of file descriptor that node app listens on","date":"2012-01-20T00:39:06.575Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: bert and i are fixing refcount behaviour in libuv","date":"2012-01-20T00:40:22.319Z","type":"message"}
+{"nick":"bnoordhuis","message":"(there's a lot of subtle differences between uv-win and uv-unix right now)","date":"2012-01-20T00:40:57.385Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it's a thing that node-zpool is doing.","date":"2012-01-20T00:43:14.347Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: some tricky business where it creates a connection between the global zone and the child zone, such that the GZ can route messages and such to just that child zone.","date":"2012-01-20T00:43:48.218Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: there's really no way to do it without using listenFD","date":"2012-01-20T00:43:56.303Z","type":"message"}
+{"nick":"isaacs","message":"(or at least, not without completely restructuring the app from the ground up)","date":"2012-01-20T00:44:15.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"i agree with bert that not having the ability to watch arbitrary fds is an oversight in the libuv api","date":"2012-01-20T00:44:43.807Z","type":"message"}
+{"nick":"bnoordhuis","message":"*arguably an oversight","date":"2012-01-20T00:45:08.536Z","type":"message"}
+{"nick":"bnoordhuis","message":"but seeing what the policy on new features is, i don't see this being fixed in v0.6","date":"2012-01-20T00:45:25.819Z","type":"message"}
+{"nick":"isaacs","message":"so, it sounds like the reasonable course of action would be to a) remove the assert in 0.6, and b) replac listenFD with a cleaner api in 0.7","date":"2012-01-20T00:45:39.385Z","type":"message"}
+{"nick":"isaacs","message":"whether or not this is \"new api\" is somewhat debatable.","date":"2012-01-20T00:45:49.021Z","type":"message"}
+{"nick":"isaacs","message":"i mean, we're not adding a function, we're just making it not throw..","date":"2012-01-20T00:46:01.061Z","type":"message"}
+{"nick":"isaacs","message":"same with the udp stuf.","date":"2012-01-20T00:46:08.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... listenFD was removed for a reason","date":"2012-01-20T00:47:10.908Z","type":"message"}
+{"nick":"bnoordhuis","message":"the udp multicast / broadcast / ttl patches simply didn't make the cut","date":"2012-01-20T00:47:32.398Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: presumably once the refcount is figured out in libuv we'll still come back to this problem.. something needs to keep the child isolate alive when it has process.on('message')","date":"2012-01-20T00:48:23.535Z","type":"message"}
+{"nick":"igorzi","message":"right now it seems like unix impl is just getting lucky","date":"2012-01-20T00:48:47.544Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: we can fix that by not unref'ing the message channel","date":"2012-01-20T00:49:08.262Z","type":"message"}
+{"nick":"bnoordhuis","message":"crying baby, biab","date":"2012-01-20T00:49:19.823Z","type":"message"}
+{"nick":"isaacs","message":"signal from the child process.","date":"2012-01-20T00:53:33.993Z","type":"message"}
+{"nick":"igorzi","message":"SIG-feed-me-now :)","date":"2012-01-20T00:57:58.699Z","type":"message"}
+{"nick":"bnoordhuis","message":"talking about, i think i'll be sending myself a SIGSUSP","date":"2012-01-20T00:58:34.804Z","type":"message"}
+{"nick":"bnoordhuis","message":"see you tomorrow, guys","date":"2012-01-20T00:58:43.260Z","type":"message"}
+{"nick":"igorzi","message":"night, bnoordhuis","date":"2012-01-20T01:00:15.183Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: have fun","date":"2012-01-20T01:02:08.871Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 248 seconds","date":"2012-01-20T01:02:59.627Z","type":"quit"}
+{"nick":"CoverSlide","reason":"Ping timeout: 240 seconds","date":"2012-01-20T01:21:52.008Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2012-01-20T01:33:17.950Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-01-20T01:36:10.429Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-01-20T01:44:51.467Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: short question","date":"2012-01-20T01:45:09.648Z","type":"message"}
+{"nick":"isaacs","message":"yo","date":"2012-01-20T01:45:21.390Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: at joyent you wanna do listenFD - but where does that fd come from?","date":"2012-01-20T01:45:27.307Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it's a socket opened up between the global zone and a child zone on the server.","date":"2012-01-20T01:46:05.659Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: a solaris zone thingie","date":"2012-01-20T01:46:11.143Z","type":"message"}
+{"nick":"ryah_","message":"piscisaureus_: we should probably do the listenFD if possible on windows","date":"2012-01-20T01:46:23.520Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ok - so who opens the socket?","date":"2012-01-20T01:46:24.042Z","type":"message"}
+{"nick":"ryah_","message":"there are various times when you need to interface with the system to do this sort fo stuff","date":"2012-01-20T01:46:38.977Z","type":"message"}
+{"nick":"ryah_","message":"also we're already exposing FDs to users through fs.open","date":"2012-01-20T01:47:04.063Z","type":"message"}
+{"nick":"ryah_","message":"piscisaureus_: an addon opens the socket","date":"2012-01-20T01:47:22.939Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah_: aha","date":"2012-01-20T01:47:53.057Z","type":"message"}
+{"nick":"ryah_","message":"(i think)","date":"2012-01-20T01:48:07.423Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah_: I think we should make uv_pipe_open and uv_tcp_open work well","date":"2012-01-20T01:48:49.751Z","type":"message"}
+{"nick":"piscisaureus_","message":"(insofar they don't already)","date":"2012-01-20T01:48:54.494Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah_: and we must allow compiled addons to create wraps","date":"2012-01-20T01:49:08.464Z","type":"message"}
+{"nick":"brson","date":"2012-01-20T01:50:19.117Z","type":"join"}
+{"nick":"piscisaureus_","message":"I am offline. No wired internet, and exceeded my limit for mobile :-(","date":"2012-01-20T01:51:23.926Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-01-20T01:51:31.344Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-01-20T02:02:53.353Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-01-20T02:03:18.159Z","type":"quit"}
+{"nick":"sh1mmer","date":"2012-01-20T02:04:38.751Z","type":"join"}
+{"nick":"dshaw_1","reason":"Quit: Leaving.","date":"2012-01-20T02:14:04.874Z","type":"quit"}
+{"nick":"igorzi","message":"ryah_: i don't know if we'll be able to get listenFD implemented on windows with the same semantics as on unix","date":"2012-01-20T02:23:03.667Z","type":"message"}
+{"nick":"igorzi","message":"ryah_: we can make uv_pipe_open/uv_tcp_open better with stdio FDs.. but not with arbitrary FDs","date":"2012-01-20T02:24:54.468Z","type":"message"}
+{"nick":"igorzi","message":"what we need is listenHandle(handle), where handle is an object not an integer","date":"2012-01-20T02:26:02.090Z","type":"message"}
+{"nick":"ryah_","message":"hm okay","date":"2012-01-20T02:29:20.393Z","type":"message"}
+{"nick":"ryah_","message":"we might need to do this one as a one-off then for unix addon people","date":"2012-01-20T02:29:34.723Z","type":"message"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-01-20T02:30:49.428Z","type":"quit"}
+{"nick":"isaacs","message":"ryah_: if we just remove the assert in libuv, then unix people can sort of hack it together for the short term.","date":"2012-01-20T02:33:14.763Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T02:33:25.194Z","type":"quit"}
+{"nick":"isaacs","message":"ryah_: and then do a better handle-wrapping API in 0.7","date":"2012-01-20T02:33:30.062Z","type":"message"}
+{"nick":"ryah_","message":"yeah - if ben is okay with it","date":"2012-01-20T02:34:22.396Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u00024afc46d\u000f \u000310\u000f/ (27 files in 6 dirs)\u0002:\u000f Upgrade V8 to 3.6.6.19 - http://git.io/Q5qATw","date":"2012-01-20T02:34:37.345Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-20T02:35:07.915Z","type":"join"}
+{"nick":"isaacs","message":"Test, please: http://nodejs.org/dist/v0.6.8-RC/node-v0.6.8-RC1.tar.gz","date":"2012-01-20T02:40:28.139Z","type":"message"}
+{"nick":"ryah_","message":"testing...","date":"2012-01-20T02:41:25.872Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T02:42:24.101Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#281 (v0.6 - 4afc46d : isaacs): The build was fixed.","date":"2012-01-20T02:42:24.306Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/4fdec07...4afc46d","date":"2012-01-20T02:42:24.307Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/547426","date":"2012-01-20T02:42:24.307Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T02:42:24.307Z","type":"part"}
+{"nick":"ryah_","message":"solaris: [12:55|% 100|+ 689|-   5]: Done ","date":"2012-01-20T03:06:20.721Z","type":"message"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-01-20T03:15:03.009Z","type":"quit"}
+{"nick":"ryah_","message":"linux: [22:31|% 100|+ 688|-   6]: Done ","date":"2012-01-20T03:17:23.352Z","type":"message"}
+{"nick":"ryah_","message":"osx: [25:22|% 100|+ 690|-   4]: Done","date":"2012-01-20T03:17:44.033Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T03:24:07.587Z","type":"quit"}
+{"nick":"isaacs","message":"yep, i'm seeing similiar results.","date":"2012-01-20T03:27:12.045Z","type":"message"}
+{"nick":"isaacs","message":"same old miscreants.","date":"2012-01-20T03:27:20.593Z","type":"message"}
+{"nick":"isaacs","message":"alright, pulling the trigger on this.","date":"2012-01-20T03:28:07.445Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-20T03:41:36.776Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-01-20T03:42:54.184Z","type":"quit"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002d18ceba\u000f \u000310\u000f/ (6 files in 4 dirs)\u0002:\u000f (log message trimmed)","date":"2012-01-20T03:55:26.385Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f 2012.01.19, Version 0.6.8 (stable)","date":"2012-01-20T03:55:26.595Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f * Update V8 to 3.6.6.19","date":"2012-01-20T03:55:26.595Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f * Numeric key hash collision fix for V8 (Erik Corry, Fedor Indutny)","date":"2012-01-20T03:55:26.595Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f * Add missing TTY key translations for F1-F5 on Windows (Brandon Benvie)","date":"2012-01-20T03:55:26.595Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f * path.extname bugfix with . and .. paths (Bert Belder)","date":"2012-01-20T03:55:26.815Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f * cluster: don't always kill the master on uncaughtException (Ben","date":"2012-01-20T03:55:27.936Z","type":"message"}
+{"nick":"isaacs","message":"retweet every tweet! https://twitter.com/#!/nodejs/status/160210072805453824","date":"2012-01-20T04:01:28.467Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T04:03:16.190Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#282 (v0.6 - d18ceba : isaacs): The build was broken.","date":"2012-01-20T04:03:16.394Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/4afc46d...d18ceba","date":"2012-01-20T04:03:16.395Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/547606","date":"2012-01-20T04:03:16.395Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T04:03:16.395Z","type":"part"}
+{"nick":"isaacs","message":"man, we gotta fix whatever race condition makes node's travis builds succeed *half* the time","date":"2012-01-20T04:05:18.429Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-20T04:08:51.941Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-01-20T04:09:06.487Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-01-20T04:13:39.651Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-20T04:17:15.068Z","type":"join"}
+{"nick":"pquerna","message":"https://github.com/joyent/node/blob/v0.6/ChangeLog","date":"2012-01-20T04:27:50.882Z","type":"message"}
+{"nick":"pquerna","message":"hrm, issacs gone, but some of the patches koichi did aren't reflected in that","date":"2012-01-20T04:28:05.641Z","type":"message"}
+{"nick":"pquerna","message":"double callback on error fix etc","date":"2012-01-20T04:28:18.011Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T04:36:28.425Z","type":"quit"}
+{"nick":"perezd","date":"2012-01-20T04:48:28.231Z","type":"join"}
+{"nick":"dshaw_","date":"2012-01-20T04:58:45.119Z","type":"join"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002ec1d1ee\u000f \u000310\u000f/ src/node_version.h \u0002:\u000f Now working on 0.6.9 - http://git.io/CyKjvg","date":"2012-01-20T05:15:37.547Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T05:23:25.006Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#283 (v0.6 - ec1d1ee : isaacs): The build is still failing.","date":"2012-01-20T05:23:25.214Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d18ceba...ec1d1ee","date":"2012-01-20T05:23:25.215Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/547750","date":"2012-01-20T05:23:25.215Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T05:23:25.215Z","type":"part"}
+{"nick":"mraleph1","date":"2012-01-20T06:05:32.766Z","type":"join"}
+{"nick":"igorzi","message":"isaacs: the signfificant fs.stat perf improvement on windows isn't in the changelog (https://github.com/joyent/node/issues/2521)","date":"2012-01-20T06:11:25.072Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-20T06:36:11.581Z","type":"join"}
+{"nick":"mraleph1","reason":"Quit: Leaving.","date":"2012-01-20T06:44:46.772Z","type":"quit"}
+{"nick":"indutny","message":"morning","date":"2012-01-20T06:44:46.984Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-01-20T06:45:47.405Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-01-20T06:52:37.934Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T07:14:49.959Z","type":"quit"}
+{"nick":"kuebk","date":"2012-01-20T07:20:22.676Z","type":"join"}
+{"nick":"mikeal","date":"2012-01-20T07:33:30.659Z","type":"join"}
+{"nick":"kuebk1","date":"2012-01-20T07:35:30.585Z","type":"join"}
+{"nick":"kuebk","reason":"Ping timeout: 252 seconds","date":"2012-01-20T07:38:48.990Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T07:44:45.886Z","type":"quit"}
+{"nick":"indutny","message":"q","date":"2012-01-20T07:44:56.078Z","type":"message"}
+{"nick":"indutny","message":"oops","date":"2012-01-20T07:44:58.011Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-20T07:54:38.571Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T08:11:31.033Z","type":"quit"}
+{"nick":"mraleph","reason":"Quit: Leaving","date":"2012-01-20T08:14:07.596Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-20T08:49:45.802Z","type":"join"}
+{"nick":"kuebk1","date":"2012-01-20T10:50:07.116Z","type":"part"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-01-20T11:22:35.803Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-01-20T11:38:04.945Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-01-20T12:40:47.328Z","type":"join"}
+{"nick":"bnoordhuis","date":"2012-01-20T13:10:27.865Z","type":"join"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Shigeki Ohtsu\u000f \u000307master\u000f * r\u00022156e5e\u000f \u000310\u000f/ src/node_file.cc \u0002:\u000f ","date":"2012-01-20T13:48:07.000Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f fs: don't assert on uv_fs_*() errors","date":"2012-01-20T13:48:07.208Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Pass errors to the JS callbacks, don't assert in C++ land.","date":"2012-01-20T13:48:07.208Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Fixes among other things the case where Node aborts because uv_fs_futimes()","date":"2012-01-20T13:48:07.208Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f returns ENOSYS. - http://git.io/syxsbg","date":"2012-01-20T13:48:07.208Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T14:00:52.306Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#284 (master - 2156e5e : Shigeki Ohtsu): The build is still failing.","date":"2012-01-20T14:00:52.515Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/0f33768...2156e5e","date":"2012-01-20T14:00:52.515Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/549026","date":"2012-01-20T14:00:52.515Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T14:00:52.515Z","type":"part"}
+{"nick":"indutny","message":"bnoordhuis: heya","date":"2012-01-20T14:12:28.710Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: hoya","date":"2012-01-20T14:12:35.518Z","type":"message"}
+{"nick":"mmalecki","message":"morning everyone!","date":"2012-01-20T14:18:50.868Z","type":"message"}
+{"nick":"bnoordhu1s","date":"2012-01-20T14:25:47.776Z","type":"join"}
+{"nick":"bnoordhu1s","reason":"Ping timeout: 244 seconds","date":"2012-01-20T14:30:08.774Z","type":"quit"}
+{"nick":"piscisaureus_","message":"uya","date":"2012-01-20T14:35:11.602Z","type":"message"}
+{"nick":"indutny","message":"oya","date":"2012-01-20T14:35:51.743Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wish github would prevent people from submitting pull requests without signing the CLA","date":"2012-01-20T14:50:00.803Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: bot?","date":"2012-01-20T14:52:58.387Z","type":"message"}
+{"nick":"piscisaureus_","message":"mmalecki: yeah write a bot for that","date":"2012-01-20T14:53:20.921Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: where do you store list of people who singed it?","date":"2012-01-20T14:54:07.566Z","type":"message"}
+{"nick":"piscisaureus_","message":"mmalecki: in google docs - but it's not a public list","date":"2012-01-20T14:54:29.025Z","type":"message"}
+{"nick":"mmalecki","action":"searches npm for google docs module","date":"2012-01-20T14:55:02.967Z","type":"action"}
+{"nick":"piscisaureus_","message":"mmalecki: but you can assume that everyone who is in AUTHORS has signed it as well","date":"2012-01-20T14:55:08.295Z","type":"message"}
+{"nick":"piscisaureus_","message":"mmalecki: I can't give you access to the CLA list at this point but if you can actually come up with something that works then we can probably work something out :-)","date":"2012-01-20T14:57:01.446Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: sounds fun. I'll put it on my TODO list :)","date":"2012-01-20T14:58:00.958Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00024e52477\u000f \u000310\u000f/ (src/handle_wrap.cc src/node_file.cc)\u0002:\u000f ","date":"2012-01-20T15:02:37.813Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f fs, handle_wrap: use Loop(), not uv_default_loop()","date":"2012-01-20T15:02:38.018Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Using the default loop will fail in unexpected and interesting ways when","date":"2012-01-20T15:02:38.018Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f isolates are used. - http://git.io/CNq80Q","date":"2012-01-20T15:02:38.018Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00026b58537\u000f \u000310\u000f/ common.gypi \u0002:\u000f ","date":"2012-01-20T15:02:38.019Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f build: disable NDEBUG in release builds for now","date":"2012-01-20T15:02:38.019Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f assert() sanity checks are a good thing. - http://git.io/d7lzSQ","date":"2012-01-20T15:02:38.819Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T15:15:52.864Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#285 (master - 6b58537 : Ben Noordhuis): The build is still failing.","date":"2012-01-20T15:15:53.077Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/2156e5e...6b58537","date":"2012-01-20T15:15:53.077Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/549274","date":"2012-01-20T15:15:53.077Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T15:15:53.077Z","type":"part"}
+{"nick":"bnoordhuis","message":"piscisaureus_: so what did we decide yesterday? ref/unref is persistent and idempotent, handles ref when created or when started?","date":"2012-01-20T15:19:45.435Z","type":"message"}
+{"nick":"isaacs","date":"2012-01-20T15:20:01.425Z","type":"join"}
+{"nick":"piscisaureus_","message":"handles ref when started","date":"2012-01-20T15:20:06.186Z","type":"message"}
+{"nick":"piscisaureus_","message":"ref/unref is persistent and idempotent","date":"2012-01-20T15:20:13.279Z","type":"message"}
+{"nick":"piscisaureus_","message":"all uv_req_t also refs","date":"2012-01-20T15:20:22.428Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2012-01-20T15:20:38.939Z","type":"message"}
+{"nick":"piscisaureus_","message":"uv_close also refs","date":"2012-01-20T15:20:39.153Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm going to split that in handle_refs and req_refs","date":"2012-01-20T15:20:46.888Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am not :-)","date":"2012-01-20T15:21:02.535Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but go ahead :-)","date":"2012-01-20T15:21:09.768Z","type":"message"}
+{"nick":"bnoordhuis","message":"i will","date":"2012-01-20T15:21:18.213Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: basically, the loop only exits when there's really nothing more to do","date":"2012-01-20T15:21:21.200Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but you have the option to ignore particular handles","date":"2012-01-20T15:21:39.851Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/xk/node-threads-a-gogo --> wtf","date":"2012-01-20T15:22:14.769Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, it's that jorge guy","date":"2012-01-20T15:22:50.580Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: very bold claim but if you look at the sources, they are all empty","date":"2012-01-20T15:22:54.451Z","type":"message"}
+{"nick":"piscisaureus_","message":"looks like BS to me","date":"2012-01-20T15:23:01.866Z","type":"message"}
+{"nick":"bnoordhuis","message":"he's probably from the school of less-is-more","date":"2012-01-20T15:23:30.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"and, truth be told, i don't see any immediate bugs in his code","date":"2012-01-20T15:23:46.060Z","type":"message"}
+{"nick":"piscisaureus_","message":"hahaha","date":"2012-01-20T15:23:53.130Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: wow, all the tests pass!","date":"2012-01-20T15:32:12.944Z","type":"message"}
+{"nick":"isaacs","message":"it must work.","date":"2012-01-20T15:32:23.345Z","type":"message"}
+{"nick":"bnoordhuis","message":"TDD at it's best!","date":"2012-01-20T15:42:48.392Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/joyent/libuv/pull/232 <- anyone have opinions on this PR?","date":"2012-01-20T15:43:02.734Z","type":"message"}
+{"nick":"bnoordhuis","message":"did i just type \"it's best\"? oh my","date":"2012-01-20T15:43:56.449Z","type":"message"}
+{"nick":"pietern","date":"2012-01-20T15:56:13.797Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: do we have a gyp command that builds only v8?","date":"2012-01-20T16:10:33.150Z","type":"message"}
+{"nick":"piscisaureus_","action":"needs to learn gyp","date":"2012-01-20T16:10:38.955Z","type":"action"}
+{"nick":"bnoordhuis","message":"piscisaureus_: cd into deps/v8, `gyp tools/gyp/v8.gyp`, make -j 8","date":"2012-01-20T16:11:03.131Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: thnx","date":"2012-01-20T16:11:18.214Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I am chopping up that patch that appeared on the ML to support x64 builds for v8","date":"2012-01-20T16:11:41.630Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: win x64 builds, right?","date":"2012-01-20T16:12:30.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yeah","date":"2012-01-20T16:12:38.044Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no more procrastination","date":"2012-01-20T16:17:12.811Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: who? you or me? :)","date":"2012-01-20T16:18:01.252Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yme","date":"2012-01-20T16:18:07.261Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i know a girl by that name","date":"2012-01-20T16:18:22.130Z","type":"message"}
+{"nick":"bnoordhuis","message":"tall, slender, blond - you'd like her","date":"2012-01-20T16:18:27.931Z","type":"message"}
+{"nick":"piscisaureus_","message":"who wouldn't?","date":"2012-01-20T16:18:35.730Z","type":"message"}
+{"nick":"piscisaureus_","message":"unless you are now going to enumerate her deficiencies?","date":"2012-01-20T16:18:49.577Z","type":"message"}
+{"nick":"bnoordhuis","message":"none whatsoever","date":"2012-01-20T16:18:57.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can have her if you don't mind sloppy seconds","date":"2012-01-20T16:19:05.505Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: hey.","date":"2012-01-20T16:25:28.991Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: ho","date":"2012-01-20T16:25:35.874Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: what's up with the udp stuff?  any chance we can get that in for 0.6.9?","date":"2012-01-20T16:25:44.529Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: you mean the multicast / broadcast / ttl stuff?","date":"2012-01-20T16:25:58.776Z","type":"message"}
+{"nick":"isaacs","message":"yeah, the stuff that fell on the floor.","date":"2012-01-20T16:26:07.127Z","type":"message"}
+{"nick":"bnoordhuis","message":"i asked the guy to rebase it","date":"2012-01-20T16:26:16.289Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am down with adding that to 0.6","date":"2012-01-20T16:28:15.235Z","type":"message"}
+{"nick":"piscisaureus_","message":"we always said we were going to add it to 0.6.2 or something","date":"2012-01-20T16:28:25.092Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, me too","date":"2012-01-20T16:28:27.632Z","type":"message"}
+{"nick":"bnoordhuis","message":"i actually feel kind of bad about postponing it for so long :/","date":"2012-01-20T16:28:42.763Z","type":"message"}
+{"nick":"isaacs","message":"yeah.  we need more core devs.","date":"2012-01-20T16:29:24.823Z","type":"message"}
+{"nick":"isaacs","message":"everyone's too busy.","date":"2012-01-20T16:29:28.592Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-01-20T16:30:28.229Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: github seems to think that https://github.com/joyent/node/pull/2163 will merge cleanly against 0.6","date":"2012-01-20T16:32:17.440Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: it needs to be split into libuv and node parts","date":"2012-01-20T16:33:18.426Z","type":"message"}
+{"nick":"bnoordhuis","message":"let me try that","date":"2012-01-20T16:33:26.186Z","type":"message"}
+{"nick":"bnoordhuis","message":"no wait, the guy didn't sign the cla yet","date":"2012-01-20T16:34:05.454Z","type":"message"}
+{"nick":"isaacs","message":"d'oh.","date":"2012-01-20T16:35:20.877Z","type":"message"}
+{"nick":"bnoordhuis","message":"the patch also doesn't apply","date":"2012-01-20T16:35:21.581Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok","date":"2012-01-20T16:35:26.154Z","type":"message"}
+{"nick":"isaacs","message":"yeah, that green bar is a bit of a liar sometimes.","date":"2012-01-20T16:35:32.841Z","type":"message"}
+{"nick":"isaacs","message":"not a liar.  just an idiot.","date":"2012-01-20T16:35:40.251Z","type":"message"}
+{"nick":"isaacs","message":"it's too trusting.","date":"2012-01-20T16:35:43.415Z","type":"message"}
+{"nick":"bnoordhuis","message":"computers, what can you expect?","date":"2012-01-20T16:35:50.649Z","type":"message"}
+{"nick":"AndreasMadsen","message":"Now that we talk UDP, when will `node -e \"require('dgram').createSocket('udp4');\"` be fixed?","date":"2012-01-20T16:36:46.274Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah we should fix that","date":"2012-01-20T16:37:18.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"it will be fixed in v0.7 anyway because we make the libuv refcount work differently","date":"2012-01-20T16:37:35.221Z","type":"message"}
+{"nick":"piscisaureus_","message":"but maybe we should \"backport\" that to 0.6 somehow","date":"2012-01-20T16:37:46.918Z","type":"message"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: working on that","date":"2012-01-20T16:38:13.203Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: Oh, good","date":"2012-01-20T16:38:26.590Z","type":"message"}
+{"nick":"bnoordhuis","message":"backport won't be trivial though, it changes libuv's semantics quite profoundly","date":"2012-01-20T16:38:38.716Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: true","date":"2012-01-20T16:58:07.944Z","type":"message"}
+{"nick":"perezd","date":"2012-01-20T16:59:37.746Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: what would be the result of that backporting?","date":"2012-01-20T17:02:59.171Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well for example node -e \"process.stdin\" would not hang :-)","date":"2012-01-20T17:03:20.905Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: basically we would go back to node 0.4 semantics","date":"2012-01-20T17:03:53.917Z","type":"message"}
+{"nick":"isaacs","message":"hm... i thought we already sort of hacked around that in 0.6.7","date":"2012-01-20T17:04:05.231Z","type":"message"}
+{"nick":"mrb_bk","reason":"Read error: Connection reset by peer","date":"2012-01-20T17:04:11.445Z","type":"quit"}
+{"nick":"Raynos","reason":"Write error: Broken pipe","date":"2012-01-20T17:04:11.975Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: yes but poorly","date":"2012-01-20T17:04:13.211Z","type":"message"}
+{"nick":"isaacs","message":"sure","date":"2012-01-20T17:04:16.711Z","type":"message"}
+{"nick":"isaacs","message":"but if it's going to be tricky to backport, i'd say skip it.","date":"2012-01-20T17:04:29.789Z","type":"message"}
+{"nick":"isaacs","message":"let's put the good fixes in 0.7, do the minimum possible for 0.6","date":"2012-01-20T17:04:40.333Z","type":"message"}
+{"nick":"isaacs","message":"we do need to get udp in there, and at least unblock listenFD, but hopefully 0.6.9 would be the last one.  (of course, we said that about 0.4.9, too)","date":"2012-01-20T17:05:10.036Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the v0.7 version would basically change libuv","date":"2012-01-20T17:05:11.831Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: and we would remove almost all uv_ref and uv_unref from node","date":"2012-01-20T17:05:12.044Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that sounds very exciting.","date":"2012-01-20T17:05:25.569Z","type":"message"}
+{"nick":"isaacs","message":"and much cleaner.","date":"2012-01-20T17:05:27.880Z","type":"message"}
+{"nick":"isaacs","message":"but also way too big a change for a stable branch.","date":"2012-01-20T17:05:38.727Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah so if we would do the backport then we would actually add more uv_ref and uv_unref :-0","date":"2012-01-20T17:06:00.611Z","type":"message"}
+{"nick":"isaacs","message":"every part of that makes my alarms start going off.","date":"2012-01-20T17:06:23.718Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i just replied to that listenFD email thread, actually","date":"2012-01-20T17:07:47.040Z","type":"message"}
+{"nick":"isaacs","message":"sweet, thanks.","date":"2012-01-20T17:07:55.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... read the email first :)","date":"2012-01-20T17:08:04.989Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: the more i think about it, the more i think uv_ref and uv_unref should go","date":"2012-01-20T17:08:36.610Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it sounds like we have consensus.","date":"2012-01-20T17:08:44.365Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: remove the assert.  no, a module like that doesn't exist yet, but if it can be done in pure-js, and you think it would be trivial to write, it would be much appreciated.","date":"2012-01-20T17:09:06.184Z","type":"message"}
+{"nick":"bnoordhuis","message":"ref handles and requests, not loops! (not, admittedly, a great slogan)","date":"2012-01-20T17:09:06.892Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: c++, not js - otherwise it's relatively trivial","date":"2012-01-20T17:09:39.104Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes, exactly","date":"2012-01-20T17:10:19.848Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: ok, well, let's try that, then.","date":"2012-01-20T17:10:39.167Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: just so i'm clear, is sendFD removed as well, or is that still there?","date":"2012-01-20T17:11:38.441Z","type":"message"}
+{"nick":"isaacs","message":"it looked like just listenFD was crippled.","date":"2012-01-20T17:11:46.053Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: sendFD is also removed I think, but we have sendHandle now","date":"2012-01-20T17:12:05.313Z","type":"message"}
+{"nick":"isaacs","message":"hm.  ok.","date":"2012-01-20T17:12:27.582Z","type":"message"}
+{"nick":"isaacs","message":"for 0.7, then, should we have Server.listenHandle(handle), and just try to replace all fd's with handles everywhere?","date":"2012-01-20T17:13:07.558Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yes, that's closer","date":"2012-01-20T17:13:14.861Z","type":"message"}
+{"nick":"isaacs","message":"so, fs.open() gives you a handle, fs.fchown takes a handle, etc, etc.","date":"2012-01-20T17:13:31.799Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well for files we don't do this yet","date":"2012-01-20T17:13:41.870Z","type":"message"}
+{"nick":"isaacs","message":"ok..","date":"2012-01-20T17:13:47.548Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but actually I would like to","date":"2012-01-20T17:13:49.314Z","type":"message"}
+{"nick":"isaacs","message":"i mean, that seems conceptually cleaner.","date":"2012-01-20T17:13:56.548Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I agree","date":"2012-01-20T17:14:01.082Z","type":"message"}
+{"nick":"isaacs","message":"but also sounds like a lot of tedious work :)","date":"2012-01-20T17:14:26.381Z","type":"message"}
+{"nick":"isaacs","action":".oO( maybe node needs some interns... )","date":"2012-01-20T17:14:50.943Z","type":"action"}
+{"nick":"piscisaureus_","message":"isaacs: it's also not really important though","date":"2012-01-20T17:14:51.445Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-01-20T17:14:58.236Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-20T17:15:00.579Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: where does the handle argument to Server.listenHandle() come from?","date":"2012-01-20T17:15:06.402Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: from opening a socket somewhere in another process, and then doing child.sendHandle(handle)","date":"2012-01-20T17:15:30.066Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it was never possible to use file FDs and socket FDs interchangeably in node anyway","date":"2012-01-20T17:15:33.097Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2012-01-20T17:15:34.504Z","type":"message"}
+{"nick":"bnoordhuis","message":"i mean, it won't work for systemd like approaches","date":"2012-01-20T17:15:45.452Z","type":"message"}
+{"nick":"bnoordhuis","message":"where a process gets an extra file descriptor at startup","date":"2012-01-20T17:15:56.270Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: for systemd we need a way for addon authors to create a HandleWrap","date":"2012-01-20T17:16:08.009Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: from an FD","date":"2012-01-20T17:16:40.322Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes","date":"2012-01-20T17:16:48.868Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: you can actually use file FDs and socket FDs as one another in some ways in node on unix.  it opens the door for weird behavior, but it's possible.","date":"2012-01-20T17:17:16.486Z","type":"message"}
+{"nick":"Raynos","date":"2012-01-20T17:17:23.544Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: gimme examples","date":"2012-01-20T17:17:43.103Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: maybe you could fstat a unix socket fd","date":"2012-01-20T17:17:49.964Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but that's about it","date":"2012-01-20T17:17:54.425Z","type":"message"}
+{"nick":"Raynos","reason":"Read error: Connection reset by peer","date":"2012-01-20T17:18:09.737Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: you used to be able to do fs.open(\"some-file\", function (fd) { var s = new net.Stream({fd: fd}); s.write(\"foo\") })","date":"2012-01-20T17:19:06.951Z","type":"message"}
+{"nick":"isaacs","message":"like i said, you get weird behavior a lot of the time.","date":"2012-01-20T17:19:13.490Z","type":"message"}
+{"nick":"isaacs","message":"but it kind of tries to work.","date":"2012-01-20T17:19:17.373Z","type":"message"}
+{"nick":"isaacs","message":"in 0.4, anyway.","date":"2012-01-20T17:19:26.951Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah that would create a blocking stream to a file","date":"2012-01-20T17:19:28.852Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that's pretty backwards if you ask me","date":"2012-01-20T17:19:38.729Z","type":"message"}
+{"nick":"isaacs","message":"sure.","date":"2012-01-20T17:19:42.465Z","type":"message"}
+{"nick":"isaacs","message":"in the 0.2 days there was some npm thing i remember having to work around using stupid tricks like that.","date":"2012-01-20T17:19:59.403Z","type":"message"}
+{"nick":"isaacs","message":"that's where the --outfd and --logfd arguments came from originally.","date":"2012-01-20T17:20:11.420Z","type":"message"}
+{"nick":"isaacs","message":"but anyway... yeah, we need to support the systemd and child.sendFD/server.listenFD use cases in a good way.","date":"2012-01-20T17:21:06.761Z","type":"message"}
+{"nick":"isaacs","message":"supporting them in a hacky way for 0.6 is fine.","date":"2012-01-20T17:21:13.158Z","type":"message"}
+{"nick":"isaacs","message":"or requiring a binary addon to do it.","date":"2012-01-20T17:21:27.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the good way would be (new net.Server({handle: the_handle}).)listen(1234) imho","date":"2012-01-20T17:21:58.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: and we need to export something like HandleWrap::HandleWrap(int fd) from node.h","date":"2012-01-20T17:22:30.194Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that sounds nice.","date":"2012-01-20T17:22:51.814Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: what would be the hazard in having HandleWrap exposed in JS?","date":"2012-01-20T17:23:27.890Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: var handle = handleWrap(fd);  new net.Server({handle: handle}).listen(1234)","date":"2012-01-20T17:23:47.806Z","type":"message"}
+{"nick":"creationix","date":"2012-01-20T17:25:07.663Z","type":"part"}
+{"nick":"piscisaureus_","message":"isaacs: nothing - except for the fact that that can't be made cross-platform","date":"2012-01-20T17:31:10.595Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: right, but there's no way to get a fd on windows anyway, right?","date":"2012-01-20T17:32:01.628Z","type":"message"}
+{"nick":"isaacs","message":"i mean, except by opening a file, i suppose.","date":"2012-01-20T17:32:11.856Z","type":"message"}
+{"nick":"isaacs","message":"but no way to get an fd to anything that you'd be able to listen on.","date":"2012-01-20T17:32:43.852Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well windows has something similar to FDs, namely sockets","date":"2012-01-20T17:35:20.114Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: or HANDLEs","date":"2012-01-20T17:35:38.617Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-01-20T17:35:49.625Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: and FDs even but they are normally not used for sockets, although you could","date":"2012-01-20T17:35:56.092Z","type":"message"}
+{"nick":"piscisaureus_","message":"piscisaureus_: but SOCKETs and HANDLEs  may be 64-bit so there's no way to represent them in JS","date":"2012-01-20T17:36:58.290Z","type":"message"}
+{"nick":"piscisaureus_","message":"er, isaacs ^","date":"2012-01-20T17:37:04.219Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so that's why I rather have people create a \"wrapper\" for FDs in c++ and then use that in node","date":"2012-01-20T17:38:17.747Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-20T17:38:28.662Z","type":"message"}
+{"nick":"isaacs","message":"i was a little surprised the first time i saw node just gives you a straight-up Number for that.","date":"2012-01-20T17:38:41.411Z","type":"message"}
+{"nick":"isaacs","message":"i mean, it's very rarely going to be larger than 2^53-1 or whatever","date":"2012-01-20T17:39:02.033Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well SOCKETs and HANDLEs are basically pointers so the value can be *anything*","date":"2012-01-20T17:39:36.733Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-01-20T17:39:42.534Z","type":"message"}
+{"nick":"piscisaureus_","message":"whereas on unix they're guaranteed to be small","date":"2012-01-20T17:39:43.415Z","type":"message"}
+{"nick":"isaacs","message":"unless you keep opening them, but the os will nuke you way before then","date":"2012-01-20T17:39:56.653Z","type":"message"}
+{"nick":"isaacs","message":"but yeah, otherwise we have like (2^64 - 2^53) time bombs","date":"2012-01-20T17:40:19.568Z","type":"message"}
+{"nick":"isaacs","message":"which is kind of a lot","date":"2012-01-20T17:40:24.111Z","type":"message"}
+{"nick":"mrb_bk","date":"2012-01-20T17:42:48.930Z","type":"join"}
+{"nick":"Raynos","date":"2012-01-20T17:44:05.875Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T17:47:58.922Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-20T17:48:36.155Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-01-20T17:59:23.919Z","type":"quit"}
+{"nick":"orlandov","date":"2012-01-20T18:02:57.594Z","type":"join"}
+{"nick":"orlandov","reason":"Client Quit","date":"2012-01-20T18:03:05.885Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-01-20T18:04:05.485Z","type":"join"}
+{"nick":"orlandovftw","message":"word up","date":"2012-01-20T18:04:29.681Z","type":"message"}
+{"nick":"isaacs","message":"orlandovftw: so, i summarized in xmpp, but http://piscisaureus.no.de has more of the discussion if you're curious. ","date":"2012-01-20T18:06:32.763Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: so, that's why i think it sounds sort of nice to just always have handles everywhere.","date":"2012-01-20T18:07:18.303Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: no integer fd's, period.  fs.open() gives you an object.  fs.fstat takes an object.  etc.","date":"2012-01-20T18:07:36.324Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah we could have handles everywhere","date":"2012-01-20T18:07:42.887Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I agree with that and ryan actually suggested that on the ml at some point","date":"2012-01-20T18:08:09.364Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think every time a user has to write C++ to do something other than bind to some external library, it should hurt a little.","date":"2012-01-20T18:08:14.987Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but we never really got around to oing it","date":"2012-01-20T18:08:18.501Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-20T18:08:22.568Z","type":"message"}
+{"nick":"isaacs","message":"0.6 is a lot like 0.2 in some ways.","date":"2012-01-20T18:08:29.955Z","type":"message"}
+{"nick":"isaacs","message":"i hope that 0.8 will be more like 0.4","date":"2012-01-20T18:08:37.522Z","type":"message"}
+{"nick":"isaacs","message":"but cross-platform","date":"2012-01-20T18:08:44.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-01-20T18:08:55.883Z","type":"message"}
+{"nick":"isaacs","message":"so we don't have just an even-odd stability cycle, we have a %2/%4 cycle","date":"2012-01-20T18:09:17.350Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-01-20T18:09:21.963Z","type":"message"}
+{"nick":"piscisaureus_","message":"actually we should keep polishing and not doing anything radical until 1.0 arrives","date":"2012-01-20T18:09:36.460Z","type":"message"}
+{"nick":"isaacs","message":"maybe 0.16 will be 1.0","date":"2012-01-20T18:09:39.483Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-20T18:09:44.742Z","type":"message"}
+{"nick":"orlandovftw","message":"isaacs: yep what you guys covered sounds good. i'm curious however if i'm doing the right thing by using pipe_wrap? i mean, it does work...","date":"2012-01-20T18:09:49.140Z","type":"message"}
+{"nick":"piscisaureus_","message":"we could use hex numbering","date":"2012-01-20T18:09:49.673Z","type":"message"}
+{"nick":"isaacs","message":"orlandovftw: it works in 0.6.8?","date":"2012-01-20T18:10:05.324Z","type":"message"}
+{"nick":"piscisaureus_","message":"orlandovftw: if it works then I guess it's fine","date":"2012-01-20T18:10:14.938Z","type":"message"}
+{"nick":"orlandovftw","message":"havent tried 0.6.8, but it works in 0.6.7","date":"2012-01-20T18:10:18.985Z","type":"message"}
+{"nick":"isaacs","message":"oh, baller.","date":"2012-01-20T18:10:23.214Z","type":"message"}
+{"nick":"piscisaureus_","message":"orlandovftw: we are not going to do anything fancy in 0.6","date":"2012-01-20T18:10:34.348Z","type":"message"}
+{"nick":"isaacs","message":"ok, i didn't realize that","date":"2012-01-20T18:10:36.949Z","type":"message"}
+{"nick":"isaacs","message":"yeah, let's not move anything around then.","date":"2012-01-20T18:10:43.698Z","type":"message"}
+{"nick":"orlandovftw","action":"happy","date":"2012-01-20T18:10:50.262Z","type":"action"}
+{"nick":"piscisaureus_","message":"if it works 0.6.7 then it will also work in 0.6.8","date":"2012-01-20T18:10:56.981Z","type":"message"}
+{"nick":"orlandovftw","message":"rad","date":"2012-01-20T18:11:03.161Z","type":"message"}
+{"nick":"isaacs","message":"awesome.","date":"2012-01-20T18:11:12.839Z","type":"message"}
+{"nick":"piscisaureus_","message":"orlandovftw: we will make sure we have a good story for you when 0.8.0 arrives","date":"2012-01-20T18:11:14.244Z","type":"message"}
+{"nick":"isaacs","message":"ok, then it's just udp, really.","date":"2012-01-20T18:11:22.686Z","type":"message"}
+{"nick":"orlandovftw","message":"that makes me feel warm and fuzzy :)","date":"2012-01-20T18:11:25.336Z","type":"message"}
+{"nick":"orlandovftw","message":"you guys rock","date":"2012-01-20T18:11:40.108Z","type":"message"}
+{"nick":"isaacs","message":"and whatever other small bug fixes we have lying about.","date":"2012-01-20T18:11:41.515Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-01-20T18:17:26.859Z","type":"quit"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002f25ec07\u000f \u000310\u000f/ ChangeLog \u0002:\u000f ","date":"2012-01-20T18:19:55.619Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Add missing ChangeLog item re: fs.stat improvement","date":"2012-01-20T18:19:55.825Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f This was a very significant improvement that should have been called out","date":"2012-01-20T18:19:55.826Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f explicitly.","date":"2012-01-20T18:19:55.826Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f I added 'review all libuv changes' to my build checklist. It won't","date":"2012-01-20T18:19:55.826Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f happen again. Sorry, @igorzi. - http://git.io/bphGLw","date":"2012-01-20T18:19:56.035Z","type":"message"}
+{"nick":"mmalecki","message":"we're missing one ChangeLog item as well","date":"2012-01-20T18:21:38.269Z","type":"message"}
+{"nick":"mmalecki","message":"net.connect(object) and tls.connect(object)","date":"2012-01-20T18:21:57.028Z","type":"message"}
+{"nick":"mmalecki","message":"with first one authored by koichik, second one by me","date":"2012-01-20T18:22:16.391Z","type":"message"}
+{"nick":"mmalecki","message":"or maybe the other way?","date":"2012-01-20T18:22:25.021Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T18:22:53.085Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-01-20T18:23:46.729Z","type":"join"}
+{"nick":"kuebk","date":"2012-01-20T18:24:38.865Z","type":"join"}
+{"nick":"isaacs","message":"mmalecki: what's net.connect(object) do?","date":"2012-01-20T18:25:12.172Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: net.connect({host: ..., port: ...})","date":"2012-01-20T18:25:31.384Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: instead of net.connect(host, port)","date":"2012-01-20T18:25:43.227Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: it's minor change, tho","date":"2012-01-20T18:25:49.381Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: that's not a major change.","date":"2012-01-20T18:25:50.967Z","type":"message"}
+{"nick":"pquerna","message":"isaacs: also https://github.com/joyent/node/issues/2549","date":"2012-01-20T18:25:58.706Z","type":"message"}
+{"nick":"isaacs","message":"if anyone wants to see *every* change they can run git log themselves.","date":"2012-01-20T18:26:01.869Z","type":"message"}
+{"nick":"isaacs","message":"pquerna: also minor.","date":"2012-01-20T18:26:25.416Z","type":"message"}
+{"nick":"isaacs","message":"pquerna: the changelog should only be items that are likely to upset someone, or likely to convince them to upgrade.","date":"2012-01-20T18:26:53.960Z","type":"message"}
+{"nick":"pquerna","message":"double error on https connections blocked us from upgrade to 0.6.x fwiw, but sure.","date":"2012-01-20T18:27:21.115Z","type":"message"}
+{"nick":"isaacs","message":"a lot of users were complaining about 0.6's fs.stat being super slow on windows, so omitting that was a significant drop.","date":"2012-01-20T18:27:24.633Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T18:27:40.854Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#286 (v0.6 - f25ec07 : isaacs): The build was fixed.","date":"2012-01-20T18:27:41.066Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/ec1d1ee...f25ec07","date":"2012-01-20T18:27:41.066Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/550312","date":"2012-01-20T18:27:41.066Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T18:27:41.066Z","type":"part"}
+{"nick":"isaacs","message":"changing the changelog fixes the build!","date":"2012-01-20T18:27:49.144Z","type":"message"}
+{"nick":"isaacs","message":"hooray!","date":"2012-01-20T18:27:50.375Z","type":"message"}
+{"nick":"isaacs","message":"race conditions in tests make every CI build exciting.","date":"2012-01-20T18:27:59.383Z","type":"message"}
+{"nick":"mmalecki","message":"I can try to fix this test later.","date":"2012-01-20T18:28:14.396Z","type":"message"}
+{"nick":"mmalecki","message":"oh, we should totally link to github users there...","date":"2012-01-20T18:29:23.939Z","type":"message"}
+{"nick":"mmalecki","message":"hm, thanks isaacs.","date":"2012-01-20T18:29:32.954Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yt?","date":"2012-01-20T18:38:56.685Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-01-20T18:40:07.923Z","type":"join"}
+{"nick":"mrb_bk","reason":"Remote host closed the connection","date":"2012-01-20T18:42:29.645Z","type":"quit"}
+{"nick":"Raynos","reason":"Write error: Broken pipe","date":"2012-01-20T18:42:30.073Z","type":"quit"}
+{"nick":"mraleph","date":"2012-01-20T18:43:17.787Z","type":"join"}
+{"nick":"igorzi","reason":"Ping timeout: 258 seconds","date":"2012-01-20T18:43:31.182Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 260 seconds","date":"2012-01-20T18:45:59.066Z","type":"quit"}
+{"nick":"Raynos","date":"2012-01-20T18:48:21.607Z","type":"join"}
+{"nick":"AndreasMadsen","message":"hi all, where is ryan these days?","date":"2012-01-20T18:48:51.195Z","type":"message"}
+{"nick":"AndreasMadsen","message":"he need to review that cluster patch, nothing happens when I write to him :/","date":"2012-01-20T18:49:18.122Z","type":"message"}
+{"nick":"igorzi","date":"2012-01-20T18:50:08.186Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-01-20T18:50:35.073Z","type":"join"}
+{"nick":"AndreasMadsen","message":"Oh, this channel is a void too :)","date":"2012-01-20T18:51:24.542Z","type":"message"}
+{"nick":"mrb_bk","date":"2012-01-20T18:54:53.932Z","type":"join"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-01-20T19:04:37.823Z","type":"quit"}
+{"nick":"kuebk","reason":"Ping timeout: 255 seconds","date":"2012-01-20T19:07:15.833Z","type":"quit"}
+{"nick":"isaacs","topic":"welcome to the void*","date":"2012-01-20T19:12:46.219Z","type":"topic"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-01-20T19:16:54.603Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-20T19:19:26.961Z","type":"join"}
+{"nick":"indutny","message":"isaacs: ++","date":"2012-01-20T19:25:48.277Z","type":"message"}
+{"nick":"kohai","message":"isaacs has 4 beers","date":"2012-01-20T19:25:48.802Z","type":"message"}
+{"nick":"isaacs","message":"indutny: ?","date":"2012-01-20T19:26:00.899Z","type":"message"}
+{"nick":"indutny","message":"isaacs: void*","date":"2012-01-20T19:26:49.363Z","type":"message"}
+{"nick":"isaacs","message":"oh, heh","date":"2012-01-20T19:27:03.618Z","type":"message"}
+{"nick":"isaacs","message":"yeah, the topic was causing a syntax error for me.","date":"2012-01-20T19:27:23.497Z","type":"message"}
+{"nick":"isaacs","action":"ftfy","date":"2012-01-20T19:27:27.195Z","type":"action"}
+{"nick":"indutny","action":"hopes that valgrind will finish running and he'll finally get sleeping","date":"2012-01-20T19:28:42.978Z","type":"action"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307ipc_threads\u000f * r\u00029811e0f\u000f \u000310\u000f/ (11 files in 6 dirs)\u0002:\u000f import/export streams accross loops - http://git.io/6VwEJA","date":"2012-01-20T19:32:56.122Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T19:33:28.179Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#43 (ipc_threads - 9811e0f : Igor Zinkovsky): The build failed.","date":"2012-01-20T19:33:28.385Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/commit/9811e0f","date":"2012-01-20T19:33:28.385Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/550623","date":"2012-01-20T19:33:28.385Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T19:33:28.385Z","type":"part"}
+{"nick":"igorzi","message":"bnoordhuis:  ^-- pls do the unix impl when you get a chance.. after that we can land this in master","date":"2012-01-20T19:33:37.418Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-01-20T19:46:01.950Z","type":"join"}
+{"nick":"brson","date":"2012-01-20T19:55:52.715Z","type":"join"}
+{"nick":"orlandovftw","reason":"Quit: leaving","date":"2012-01-20T19:57:21.610Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-01-20T19:57:38.040Z","type":"join"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-01-20T20:18:59.659Z","type":"quit"}
+{"nick":"isaacs","date":"2012-01-20T20:19:15.109Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-01-20T20:23:40.808Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T20:25:40.478Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-20T20:26:32.600Z","type":"join"}
+{"nick":"AndreasMadsen","date":"2012-01-20T20:39:29.584Z","type":"join"}
+{"nick":"AndreasMadsen","message":"Is this still a void?","date":"2012-01-20T20:40:19.320Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 272 seconds","date":"2012-01-20T20:40:41.886Z","type":"quit"}
+{"nick":"AndreasMadsen","message":"Oh, I see somebody has set a new topic, very funny isaacs :)","date":"2012-01-20T20:43:02.086Z","type":"message"}
+{"nick":"isaacs","message":"AndreasMadsen: it's not a void.  it's a void*.  that could be *LITERALLY ANYTHING!*","date":"2012-01-20T20:43:39.017Z","type":"message"}
+{"nick":"isaacs","message":"you have no idea.","date":"2012-01-20T20:43:44.932Z","type":"message"}
+{"nick":"mmalecki","message":"so meta.","date":"2012-01-20T20:44:04.321Z","type":"message"}
+{"nick":"AndreasMadsen","message":"isaacs: libuv is a void (the essence of nothingness), anything else would be false advertising.","date":"2012-01-20T20:45:48.281Z","type":"message"}
+{"nick":"AndreasMadsen","message":"isaacs: anyway do you know where ryan is, he it pretty lazy about landing that cluster patch.","date":"2012-01-20T20:46:12.852Z","type":"message"}
+{"nick":"ryah_","message":"AndreasMadsen: link?","date":"2012-01-20T20:57:29.337Z","type":"message"}
+{"nick":"ryah_","message":"ill land it","date":"2012-01-20T20:57:33.559Z","type":"message"}
+{"nick":"AndreasMadsen","message":"https://github.com/joyent/node/pull/2470","date":"2012-01-20T20:57:48.343Z","type":"message"}
+{"nick":"AndreasMadsen","message":"wow","date":"2012-01-20T20:57:49.399Z","type":"message"}
+{"nick":"AndreasMadsen","message":"ryah_: ^","date":"2012-01-20T20:58:28.888Z","type":"message"}
+{"nick":"indutny","message":"ryah_: tough guy","date":"2012-01-20T21:01:58.480Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-01-20T21:02:01.845Z","type":"message"}
+{"nick":"ryah_","message":"=== release test-eio-limit ===                                     ","date":"2012-01-20T21:08:48.723Z","type":"message"}
+{"nick":"ryah_","message":"Path: simple/test-eio-limit","date":"2012-01-20T21:08:48.934Z","type":"message"}
+{"nick":"ryah_","message":"node.js:216","date":"2012-01-20T21:08:48.934Z","type":"message"}
+{"nick":"ryah_","message":"        throw e; // process.nextTick error, or 'error' event on first tick","date":"2012-01-20T21:08:48.934Z","type":"message"}
+{"nick":"ryah_","message":"              ^","date":"2012-01-20T21:08:48.934Z","type":"message"}
+{"nick":"ryah_","message":"AssertionError: false == true","date":"2012-01-20T21:08:51.185Z","type":"message"}
+{"nick":"ryah_","message":"^-- ","date":"2012-01-20T21:08:53.668Z","type":"message"}
+{"nick":"ryah_","message":"=== release test-zlib-dictionary ===                                           ","date":"2012-01-20T21:09:49.388Z","type":"message"}
+{"nick":"ryah_","message":"Path: simple/test-zlib-dictionary","date":"2012-01-20T21:09:49.595Z","type":"message"}
+{"nick":"ryah_","message":"../src/node_zlib.cc:338: failed assertion `err == Z_OK && \"Failed to set dictionary\"'","date":"2012-01-20T21:09:49.596Z","type":"message"}
+{"nick":"ryah_","message":"Command: out/Release/node /Users/ryan/projects/node/test/simple/test-zlib-dictionary.js","date":"2012-01-20T21:09:52.556Z","type":"message"}
+{"nick":"ryah_","message":"^-- master","date":"2012-01-20T21:09:55.545Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Andreas Madsen\u000f \u000307master\u000f * r\u0002f9a47de\u000f \u000310\u000f/ (5 files in 3 dirs)\u0002:\u000f ","date":"2012-01-20T21:10:35.775Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Add cluster.setupMaster","date":"2012-01-20T21:10:35.987Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Fixes #2470 - http://git.io/LuiJKA","date":"2012-01-20T21:10:35.987Z","type":"message"}
+{"nick":"indutny","message":"hm..","date":"2012-01-20T21:11:16.089Z","type":"message"}
+{"nick":"ryah_","message":"AndreasMadsen: thanks","date":"2012-01-20T21:11:17.495Z","type":"message"}
+{"nick":"indutny","message":"ryah_: Debug ?","date":"2012-01-20T21:11:26.333Z","type":"message"}
+{"nick":"indutny","message":"ryah_: mode=debug ?","date":"2012-01-20T21:11:37.436Z","type":"message"}
+{"nick":"ryah_","message":"release","date":"2012-01-20T21:11:48.925Z","type":"message"}
+{"nick":"indutny","message":"k","date":"2012-01-20T21:12:02.650Z","type":"message"}
+{"nick":"indutny","message":"ll look","date":"2012-01-20T21:12:06.518Z","type":"message"}
+{"nick":"`3rdEden","reason":"Read error: Connection reset by peer","date":"2012-01-20T21:12:07.414Z","type":"quit"}
+{"nick":"AndreasMadsen","message":"ryah_: awesome, next patch will be graceful disconnect. Remember to close https://github.com/joyent/node/pull/2420 as well.","date":"2012-01-20T21:12:16.237Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-01-20T21:12:18.238Z","type":"join"}
+{"nick":"indutny","new_nick":"indutny_sleeping","date":"2012-01-20T21:12:55.339Z","type":"nick"}
+{"nick":"indutny_sleeping","message":"going to sleep, ttyl!","date":"2012-01-20T21:12:58.824Z","type":"message"}
+{"nick":"mmalecki","message":"AndreasMadsen: ++ for graceful disconnect","date":"2012-01-20T21:13:00.938Z","type":"message"}
+{"nick":"kohai","message":"AndreasMadsen has 5 beers","date":"2012-01-20T21:13:01.641Z","type":"message"}
+{"nick":"mmalecki","message":"indutny_sleeping: night!","date":"2012-01-20T21:13:03.051Z","type":"message"}
+{"nick":"mmalecki","message":"so, indutny_sleeping has some awesome idea here. going to sleep as well, night.","date":"2012-01-20T21:16:09.113Z","type":"message"}
+{"nick":"AndreasMadsen","message":"mmalecki: The code and testcases has been made but it would be nice to get that \"disconnect and process isolation thing\" landed first.","date":"2012-01-20T21:16:24.771Z","type":"message"}
+{"nick":"mmalecki","new_nick":"mmalecki[sleep]","date":"2012-01-20T21:16:59.654Z","type":"nick"}
+{"nick":"AndreasMadsen","message":"If someone could review that patch it would be awesome: https://github.com/joyent/node/pull/2426","date":"2012-01-20T21:17:13.742Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Nicolas LaCasse\u000f \u000307v0.6\u000f * r\u000240c9348\u000f \u000310\u000f/ (lib/zlib.js test/simple/test-zlib-invalid-input.js)\u0002:\u000f ","date":"2012-01-20T21:19:15.998Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Fix #2365 zlib crashing on invalid input","date":"2012-01-20T21:19:16.208Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Fix zlib crashes on error due to improper use of removeListener","date":"2012-01-20T21:19:16.208Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f in the error handler - http://git.io/a98zYw","date":"2012-01-20T21:19:16.208Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T21:23:23.210Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#287 (master - f9a47de : Andreas Madsen): The build is still failing.","date":"2012-01-20T21:23:23.424Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/6b58537...f9a47de","date":"2012-01-20T21:23:23.424Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/550931","date":"2012-01-20T21:23:23.424Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T21:23:23.424Z","type":"part"}
+{"nick":"travis-ci","date":"2012-01-20T21:26:56.186Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#288 (v0.6 - 40c9348 : Nicolas LaCasse): The build passed.","date":"2012-01-20T21:26:56.395Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/f25ec07...40c9348","date":"2012-01-20T21:26:56.396Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/550954","date":"2012-01-20T21:26:56.396Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-20T21:26:56.396Z","type":"part"}
+{"nick":"dshaw_","date":"2012-01-20T21:28:19.641Z","type":"join"}
+{"nick":"sh1mmer","date":"2012-01-20T21:32:30.817Z","type":"join"}
+{"nick":"mmalecki[sleep]","new_nick":"mmalecki","date":"2012-01-20T21:36:15.197Z","type":"nick"}
+{"nick":"mmalecki","message":"damn.","date":"2012-01-20T21:37:07.267Z","type":"message"}
+{"nick":"AndreasMadsen","message":"mmalecki: did you got a nightmare","date":"2012-01-20T21:38:01.560Z","type":"message"}
+{"nick":"mmalecki","message":"no, just one of these nights I know I ain't getting no sleep","date":"2012-01-20T21:38:28.532Z","type":"message"}
+{"nick":"AndreasMadsen","message":"mmalecki: UTC+1 going to bed too - long day tomorrow :)","date":"2012-01-20T21:40:28.920Z","type":"message"}
+{"nick":"mmalecki","message":"AndreasMadsen: sleep tight :)","date":"2012-01-20T21:40:58.171Z","type":"message"}
+{"nick":"AndreasMadsen","message":"Thanks","date":"2012-01-20T21:41:21.517Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-01-20T21:41:22.789Z","type":"quit"}
+{"nick":"mrb_bk","message":"mikeal: sup","date":"2012-01-20T21:44:01.814Z","type":"message"}
+{"nick":"mmalecki","message":"moving path.exists{,Sync} to fs.exists{,Sync} and aliasing first to another. opinions?","date":"2012-01-20T21:44:05.154Z","type":"message"}
+{"nick":"mikeal","message":"hiya","date":"2012-01-20T21:44:13.923Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-01-20T22:03:34.752Z","type":"quit"}
+{"nick":"isaacs","message":"mmalecki: i'd say we should just get rid of exists, and tell people how to use stat","date":"2012-01-20T22:19:21.387Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: it breaks the pattern of all other fs modules, and is the only non-string-munging thing on path","date":"2012-01-20T22:19:33.300Z","type":"message"}
+{"nick":"isaacs","message":"but, if it can't go, then it belongs on fs.","date":"2012-01-20T22:19:38.571Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: feel free to send a pull req against master that moves it from path to fs.","date":"2012-01-20T22:19:56.524Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: ok. with aliasing?","date":"2012-01-20T22:20:54.978Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: no.  it should just be moved from path to fs.","date":"2012-01-20T22:21:07.879Z","type":"message"}
+{"nick":"isaacs","message":"maybe put a \"path.exists has been moved to fs.exists\" deprecation thingie","date":"2012-01-20T22:21:36.206Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: ok","date":"2012-01-20T22:22:23.878Z","type":"message"}
+{"nick":"isaacs","message":"also, there's a serious problem with it:","date":"2012-01-20T22:22:50.981Z","type":"message"}
+{"nick":"isaacs","message":"if you try to stat something that you don't have permission to look at, then it fails.","date":"2012-01-20T22:22:59.801Z","type":"message"}
+{"nick":"isaacs","message":"but the thing *does* exist","date":"2012-01-20T22:23:02.085Z","type":"message"}
+{"nick":"isaacs","message":"really, it should return true unless there's an error AND the error.code === \"ENOENT\"","date":"2012-01-20T22:23:25.733Z","type":"message"}
+{"nick":"mmalecki","message":"agreed. but you know, warm and fuzzy feeling of doing that with one line.","date":"2012-01-20T22:24:42.715Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-01-20T22:46:23.932Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-01-20T22:55:24.582Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T22:57:07.757Z","type":"quit"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-01-20T23:02:08.516Z","type":"quit"}
+{"nick":"isaacs","message":"mmalecki: you can still do it in one line :)","date":"2012-01-20T23:12:50.718Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: cb(!er || er.code !== \"ENOENT\")","date":"2012-01-20T23:13:11.595Z","type":"message"}
+{"nick":"isaacs","message":"but, just move it for now.","date":"2012-01-20T23:13:29.494Z","type":"message"}
+{"nick":"isaacs","message":"dont' change semantics.","date":"2012-01-20T23:13:33.533Z","type":"message"}
+{"nick":"isaacs","message":"even though they're wrong.","date":"2012-01-20T23:13:35.822Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-01-20T23:13:37.057Z","type":"message"}
+{"nick":"isaacs","action":"knows when he's in the minority","date":"2012-01-20T23:13:43.408Z","type":"action"}
+{"nick":"mmalecki","message":"I mean, if semantics is wrong, it should be changed","date":"2012-01-20T23:14:57.307Z","type":"message"}
+{"nick":"mmalecki","message":"and that https://github.com/joyent/node/blob/master/lib/path.js#L404-408 looks wrong to me as well","date":"2012-01-20T23:15:06.791Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-01-20T23:18:48.788Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-01-20T23:22:29.863Z","type":"quit"}
+{"nick":"rmustacc","date":"2012-01-20T23:26:50.052Z","type":"part"}
+{"nick":"mikeal","date":"2012-01-20T23:33:02.114Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-20T23:57:08.089Z","type":"quit"}

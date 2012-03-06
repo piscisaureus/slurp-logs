@@ -1,0 +1,745 @@
+{"nick":"bnoordhuis","message":"igorzi_: a printf(\"refcount=%d\\n\", uv_loop_refcount(loop)); in uv_run() would help too","date":"2012-01-18T00:01:36.497Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: https://gist.github.com/1629906","date":"2012-01-18T00:04:08.813Z","type":"message"}
+{"nick":"mmalecki","reason":"Quit: Reconnecting","date":"2012-01-18T00:04:27.817Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-01-18T00:04:32.153Z","type":"join"}
+{"nick":"bnoordhuis","message":"igorzi_: hrm, the first one should have 1-2-1 as the refcounts","date":"2012-01-18T00:05:37.895Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: that's the 1st (default) isolate?","date":"2012-01-18T00:05:56.756Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2012-01-18T00:06:10.144Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: i'll look into that","date":"2012-01-18T00:07:09.386Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: why should the 1st one be 1-2-1?  where does that ref come from?","date":"2012-01-18T00:12:15.864Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: i'm not 100% sure, it might be an idle watcher or something","date":"2012-01-18T00:17:16.859Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we have no idle watchers that ref the loop","date":"2012-01-18T00:17:49.394Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it could be a nexttick callback watcher though","date":"2012-01-18T00:17:59.413Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: hence the 'or something' :)","date":"2012-01-18T00:18:13.904Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe i should land that handle walker patch sometime...","date":"2012-01-18T00:18:59.981Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: so whatever causes the ref on the parent isolate probably also causes that ref on the child isolate as well, and that's what probably keeps it alive","date":"2012-01-18T00:21:45.064Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: probably yes","date":"2012-01-18T00:22:02.880Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis piscisaureus_: should we add an artificial ref to the child isolate?  we never want it to go away on its own, right?","date":"2012-01-18T00:23:08.692Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: do you mean ref the parent's loop or the child's loop?","date":"2012-01-18T00:24:09.606Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: child","date":"2012-01-18T00:24:22.912Z","type":"message"}
+{"nick":"igorzi_","message":"with child processses, the child never exits the event-loop even if it does nothing (i think what holds the event-loop there is stdin pipe)","date":"2012-01-18T00:25:22.403Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: child_exit_ <- that's the uv_async_t that keeps the parent's event loop alive","date":"2012-01-18T00:25:28.740Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, that's true but i consider that a bug","date":"2012-01-18T00:25:44.043Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: ok, i thought that was a feature :)(","date":"2012-01-18T00:26:02.464Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2012-01-18T00:26:10.908Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: on unix, if you create an isolate that does nothing - does it go away?","date":"2012-01-18T00:27:14.976Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: yes","date":"2012-01-18T00:28:05.444Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: ok, so for that unix and windows do the same thing","date":"2012-01-18T00:28:32.719Z","type":"message"}
+{"nick":"igorzi_","message":"bnoordhuis: so, with test-isolate1, it's process.on('message') that keeps it alive?","date":"2012-01-18T00:29:40.573Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi_: yes. it probably works accidentally","date":"2012-01-18T00:31:00.049Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: could it not be the console.log statement that keeps it alive","date":"2012-01-18T00:32:40.774Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: remember, on unix uv_write() refs, on windows it doesn't","date":"2012-01-18T00:32:58.603Z","type":"message"}
+{"nick":"piscisaureus_","message":"when the write is completed the message has already arrived","date":"2012-01-18T00:33:23.411Z","type":"message"}
+{"nick":"Raynos","date":"2012-01-18T00:35:19.588Z","type":"join"}
+{"nick":"piscisaureus_","message":"oh wait I am looking at the wrong spot (shoot me)","date":"2012-01-18T00:35:30.035Z","type":"message"}
+{"nick":"mrb_bk","date":"2012-01-18T00:39:40.821Z","type":"join"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-01-18T00:45:08.884Z","type":"quit"}
+{"nick":"piscisaureus_","action":"quits","date":"2012-01-18T00:47:06.726Z","type":"action"}
+{"nick":"bnoordhuis","message":"sleep tight bertje","date":"2012-01-18T00:49:22.015Z","type":"message"}
+{"nick":"creationix","message":"get some sleep for me, I need to catch a plane in a couple hours","date":"2012-01-18T00:49:46.833Z","type":"message"}
+{"nick":"creationix","message":"goodbye europe","date":"2012-01-18T00:49:58.080Z","type":"message"}
+{"nick":"piscisaureus_","message":"goodbye tim. when are you back?","date":"2012-01-18T00:50:15.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"(in europe)","date":"2012-01-18T00:50:23.629Z","type":"message"}
+{"nick":"creationix","message":"I think end of May","date":"2012-01-18T00:50:28.649Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah ok","date":"2012-01-18T00:51:10.461Z","type":"message"}
+{"nick":"piscisaureus_","message":"company trip to texas then :-p","date":"2012-01-18T00:51:18.894Z","type":"message"}
+{"nick":"creationix","message":"sweet!","date":"2012-01-18T00:52:34.212Z","type":"message"}
+{"nick":"creationix","message":"I think github is blocking me, or node is messing up","date":"2012-01-18T00:53:04.065Z","type":"message"}
+{"nick":"creationix","message":"can't make https requests to github","date":"2012-01-18T00:53:08.280Z","type":"message"}
+{"nick":"creationix","message":"socket keeps hanging up","date":"2012-01-18T00:53:17.948Z","type":"message"}
+{"nick":"piscisaureus_","message":"github has a lot of issues with https lately","date":"2012-01-18T00:53:23.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"try git://","date":"2012-01-18T00:53:31.396Z","type":"message"}
+{"nick":"creationix","message":"hrm, I need it to fetch snippets","date":"2012-01-18T00:53:37.551Z","type":"message"}
+{"nick":"creationix","message":"that may work, but I would have to clone and pull using git in a sub process","date":"2012-01-18T00:54:19.679Z","type":"message"}
+{"nick":"creationix","message":"a lot of work to just load a single file","date":"2012-01-18T00:54:24.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh hmm","date":"2012-01-18T00:54:53.468Z","type":"message"}
+{"nick":"creationix","message":"if I request from the browser it's fine","date":"2012-01-18T00:55:44.728Z","type":"message"}
+{"nick":"creationix","message":"raw urls like this https://raw.github.com/luvit/luvit/master/examples/event-emitters.lua","date":"2012-01-18T00:55:57.086Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes I was just going to suggest you use raw","date":"2012-01-18T00:56:18.863Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm I have the same","date":"2012-01-18T00:57:41.204Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Zzzzz gnite","date":"2012-01-18T00:57:52.321Z","type":"quit"}
+{"nick":"piscisaureus_","message":"D:\\>node -e \"require('https').get(require('querystring').parse('https://raw.github.com:80/luvit/luvit/master/examples/event-emitters.lua'))\"","date":"2012-01-18T00:58:31.270Z","type":"message"}
+{"nick":"piscisaureus_","message":"node.js:201","date":"2012-01-18T00:58:31.477Z","type":"message"}
+{"nick":"piscisaureus_","message":"        throw e; // process.nextTick error, or 'error' event on first tick","date":"2012-01-18T00:58:31.477Z","type":"message"}
+{"nick":"piscisaureus_","message":"              ^","date":"2012-01-18T00:58:31.477Z","type":"message"}
+{"nick":"piscisaureus_","message":"Error: connect ECONNREFUSED","date":"2012-01-18T00:58:31.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"    at errnoException (net.js:616:11)","date":"2012-01-18T00:58:32.046Z","type":"message"}
+{"nick":"piscisaureus_","message":"    at Object.afterConnect [as oncomplete] (net.js:607:18)","date":"2012-01-18T00:58:32.832Z","type":"message"}
+{"nick":"creationix","message":"well, you used port 80 on https","date":"2012-01-18T01:00:03.514Z","type":"message"}
+{"nick":"creationix","message":"don't do that","date":"2012-01-18T01:00:05.628Z","type":"message"}
+{"nick":"creationix","message":"I get socket hangups","date":"2012-01-18T01:00:10.751Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah that was wrong","date":"2012-01-18T01:00:14.539Z","type":"message"}
+{"nick":"piscisaureus_","message":"it was a second try that also failed :-)","date":"2012-01-18T01:00:20.405Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am also doing something else wrong","date":"2012-01-18T01:01:31.379Z","type":"message"}
+{"nick":"piscisaureus_","message":"because node is trying to connect to localhost","date":"2012-01-18T01:01:38.811Z","type":"message"}
+{"nick":"creationix","message":"I like the query string parse trick","date":"2012-01-18T01:01:54.182Z","type":"message"}
+{"nick":"creationix","message":"then I can use normal urls","date":"2012-01-18T01:01:59.583Z","type":"message"}
+{"nick":"bradleymeck","date":"2012-01-18T01:02:00.840Z","type":"join"}
+{"nick":"piscisaureus_","message":"creationix: I think it doesn't work","date":"2012-01-18T01:02:08.438Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002ad42a82\u000f \u000310\u000f/ configure \u0002:\u000f build: remove node_debug from config.gypi - http://git.io/cx_DTQ","date":"2012-01-18T01:02:21.769Z","type":"message"}
+{"nick":"creationix","message":"though, wouldn't it be Url.parse","date":"2012-01-18T01:02:27.563Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: oh shit","date":"2012-01-18T01:02:40.967Z","type":"message"}
+{"nick":"piscisaureus_","message":"I really need sleep :-)","date":"2012-01-18T01:02:45.845Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, with url it works","date":"2012-01-18T01:03:13.476Z","type":"message"}
+{"nick":"piscisaureus_","message":"node -e \"require('https').get(require('url').parse('https://raw.github.com/luvit/luvit/master/examples/event-emitters.lua'), function(s) { s.pipe(process.stdout) })\"","date":"2012-01-18T01:04:40.104Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: ^-- wfm","date":"2012-01-18T01:04:44.708Z","type":"message"}
+{"nick":"creationix","message":"hmm, me too","date":"2012-01-18T01:05:20.740Z","type":"message"}
+{"nick":"creationix","message":"well, that's good, means I have a bug in my code","date":"2012-01-18T01:05:39.674Z","type":"message"}
+{"nick":"creationix","message":"easy to fix","date":"2012-01-18T01:05:49.916Z","type":"message"}
+{"nick":"creationix","message":"I was worried github had blocked me or something","date":"2012-01-18T01:06:07.205Z","type":"message"}
+{"nick":"piscisaureus_","message":"Ok now I am really off. creationix, good luck, ttyl.","date":"2012-01-18T01:07:38.392Z","type":"message"}
+{"nick":"creationix","message":"night","date":"2012-01-18T01:07:44.448Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-01-18T01:08:29.243Z","type":"quit"}
+{"nick":"travis-ci","date":"2012-01-18T01:15:12.631Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#273 (master - ad42a82 : Ben Noordhuis): The build is still failing.","date":"2012-01-18T01:15:12.839Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/29ce743...ad42a82","date":"2012-01-18T01:15:12.839Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/538808","date":"2012-01-18T01:15:12.839Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T01:15:12.839Z","type":"part"}
+{"nick":"bradleymeck","reason":"Ping timeout: 252 seconds","date":"2012-01-18T01:19:30.799Z","type":"quit"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-01-18T01:36:37.469Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-01-18T02:09:27.119Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-01-18T02:12:13.928Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-01-18T02:12:46.273Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 248 seconds","date":"2012-01-18T02:13:23.548Z","type":"quit"}
+{"nick":"dshaw_","reason":"Read error: Operation timed out","date":"2012-01-18T02:16:30.617Z","type":"quit"}
+{"nick":"pietern","date":"2012-01-18T02:32:58.951Z","type":"join"}
+{"nick":"pietern","reason":"Client Quit","date":"2012-01-18T02:34:05.749Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-01-18T02:45:57.526Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-01-18T02:53:24.458Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-01-18T03:03:32.310Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-01-18T03:08:17.989Z","type":"quit"}
+{"nick":"pquerna","reason":"Remote host closed the connection","date":"2012-01-18T04:02:37.652Z","type":"quit"}
+{"nick":"rphillips","reason":"Ping timeout: 252 seconds","date":"2012-01-18T04:05:14.752Z","type":"quit"}
+{"nick":"pquerna","date":"2012-01-18T04:13:38.001Z","type":"join"}
+{"nick":"rphillips","date":"2012-01-18T04:18:33.716Z","type":"join"}
+{"nick":"pquerna","reason":"Changing host","date":"2012-01-18T04:18:42.164Z","type":"quit"}
+{"nick":"pquerna","date":"2012-01-18T04:18:42.377Z","type":"join"}
+{"nick":"perezd","date":"2012-01-18T04:33:49.373Z","type":"join"}
+{"nick":"felixge","date":"2012-01-18T05:55:31.050Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-01-18T05:55:31.259Z","type":"quit"}
+{"nick":"felixge","date":"2012-01-18T05:55:31.259Z","type":"join"}
+{"nick":"mraleph","date":"2012-01-18T05:59:58.858Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-01-18T06:01:26.714Z","type":"quit"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-01-18T06:38:52.119Z","type":"quit"}
+{"nick":"felixge","date":"2012-01-18T06:40:27.640Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-01-18T06:46:06.216Z","type":"quit"}
+{"nick":"felixge","date":"2012-01-18T07:10:31.833Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-01-18T07:10:32.040Z","type":"quit"}
+{"nick":"felixge","date":"2012-01-18T07:10:32.040Z","type":"join"}
+{"nick":"paddybyers","date":"2012-01-18T07:15:38.493Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-01-18T07:16:01.031Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-01-18T07:43:08.543Z","type":"quit"}
+{"nick":"isaacs","date":"2012-01-18T07:48:16.751Z","type":"join"}
+{"nick":"felixge","date":"2012-01-18T07:55:31.855Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-01-18T07:55:32.061Z","type":"quit"}
+{"nick":"felixge","date":"2012-01-18T07:55:32.061Z","type":"join"}
+{"nick":"felixge","reason":"Quit: http://www.debuggable.com/","date":"2012-01-18T08:01:45.041Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-01-18T08:37:16.948Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-01-18T09:32:08.891Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-01-18T09:32:48.699Z","type":"quit"}
+{"nick":"benvie","reason":"Ping timeout: 276 seconds","date":"2012-01-18T10:23:33.073Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-01-18T11:41:32.868Z","type":"join"}
+{"nick":"indutny_away","message":"piscisaureus_: hey man!","date":"2012-01-18T11:42:16.513Z","type":"message"}
+{"nick":"indutny_away","message":"can you help me writing a makefile? :)","date":"2012-01-18T11:42:23.864Z","type":"message"}
+{"nick":"piscisaureus_","message":"hey fedor","date":"2012-01-18T11:42:27.411Z","type":"message"}
+{"nick":"piscisaureus_","message":"hehe","date":"2012-01-18T11:42:28.824Z","type":"message"}
+{"nick":"piscisaureus_","message":"what's the issue?","date":"2012-01-18T11:42:38.773Z","type":"message"}
+{"nick":"indutny_away","message":"piscisaureus_: I'm trying to write rule for creating static lib","date":"2012-01-18T11:42:47.473Z","type":"message"}
+{"nick":"indutny_away","message":"piscisaureus_: \"all: libname.a\" doesn't work","date":"2012-01-18T11:42:59.171Z","type":"message"}
+{"nick":"indutny_away","message":"experimenting with C :)","date":"2012-01-18T11:43:13.218Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny_away: you have to create a rule for libname.a then :-)","date":"2012-01-18T11:43:15.539Z","type":"message"}
+{"nick":"indutny_away","message":"piscisaureus_: https://github.com/joyent/libuv/blob/master/Makefile#L83","date":"2012-01-18T11:43:34.384Z","type":"message"}
+{"nick":"indutny_away","message":"how does it work?","date":"2012-01-18T11:43:36.508Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny_away: https://github.com/joyent/libuv/blob/master/config-unix.mk#L128","date":"2012-01-18T11:44:31.429Z","type":"message"}
+{"nick":"indutny_away","new_nick":"indutny","date":"2012-01-18T11:44:41.326Z","type":"nick"}
+{"nick":"piscisaureus_","message":"indutny_away: it is included from makefile","date":"2012-01-18T11:44:43.865Z","type":"message"}
+{"nick":"indutny","message":"oooh","date":"2012-01-18T11:44:46.670Z","type":"message"}
+{"nick":"indutny","message":"ah, I see","date":"2012-01-18T11:44:55.991Z","type":"message"}
+{"nick":"piscisaureus_","message":"because the linker rule is different between mingw and unix","date":"2012-01-18T11:44:58.559Z","type":"message"}
+{"nick":"indutny","message":"conditional comments","date":"2012-01-18T11:45:00.490Z","type":"message"}
+{"nick":"indutny","message":"thanks a lot!","date":"2012-01-18T11:45:33.090Z","type":"message"}
+{"nick":"indutny","message":"going to write C implementation of append-only b+ tree","date":"2012-01-18T11:50:13.309Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: for what?","date":"2012-01-18T11:51:23.522Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: for fun","date":"2012-01-18T11:53:07.105Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: and probably for building database with node.js","date":"2012-01-18T11:53:14.943Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: ++","date":"2012-01-18T12:07:11.863Z","type":"message"}
+{"nick":"kohai","message":"indutny has 7 beers","date":"2012-01-18T12:07:12.395Z","type":"message"}
+{"nick":"mmalecki","message":"hello!","date":"2012-01-18T12:07:14.020Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: hi","date":"2012-01-18T12:10:37.138Z","type":"message"}
+{"nick":"bnoordhuis","date":"2012-01-18T12:52:49.259Z","type":"join"}
+{"nick":"bnoordhuis","message":"sup nerds","date":"2012-01-18T12:53:51.419Z","type":"message"}
+{"nick":"mmalecki","message":"sup no","date":"2012-01-18T12:54:04.857Z","type":"message"}
+{"nick":"mmalecki","message":"*bno","date":"2012-01-18T12:54:07.313Z","type":"message"}
+{"nick":"mmalecki","message":"damn","date":"2012-01-18T12:54:11.537Z","type":"message"}
+{"nick":"mmalecki","message":"sup bnoordhuis ","date":"2012-01-18T12:54:15.405Z","type":"message"}
+{"nick":"bnoordhuis","message":"heh","date":"2012-01-18T12:54:27.560Z","type":"message"}
+{"nick":"indutny","message":"hi","date":"2012-01-18T12:56:45.576Z","type":"message"}
+{"nick":"bnoordhuis","message":"so... who here cares about jslint?","date":"2012-01-18T13:18:04.705Z","type":"message"}
+{"nick":"mmalecki","message":"https://github.com/joyent/node/pull/2572/files is pretty bad","date":"2012-01-18T13:19:11.616Z","type":"message"}
+{"nick":"mmalecki","message":"if that's what you mean :)","date":"2012-01-18T13:19:16.224Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2012-01-18T13:19:24.488Z","type":"message"}
+{"nick":"mmalecki","message":"but yeah, anyway, I don't care. I care only about real warnings","date":"2012-01-18T13:20:09.311Z","type":"message"}
+{"nick":"mmalecki","message":"(redefinition, etc.)","date":"2012-01-18T13:20:14.231Z","type":"message"}
+{"nick":"mmalecki","message":"that's why I keep jshinting in my vim","date":"2012-01-18T13:20:22.494Z","type":"message"}
+{"nick":"bnoordhuis","message":"same here (sans vim jshinting)","date":"2012-01-18T13:21:02.708Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ^","date":"2012-01-18T13:21:18.734Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: sup?","date":"2012-01-18T13:21:27.213Z","type":"message"}
+{"nick":"bnoordhuis","message":"yo homie","date":"2012-01-18T13:21:35.699Z","type":"message"}
+{"nick":"bnoordhuis","message":"did you discuss js linting with andreas?","date":"2012-01-18T13:21:45.577Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: kind of","date":"2012-01-18T13:25:46.299Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I landed a lot of changes but left some out","date":"2012-01-18T13:25:55.986Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: because some make the code uglier not nicer","date":"2012-01-18T13:26:11.140Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2012-01-18T13:26:20.846Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I told him to make a new pull request for the stuff he still wants to fix","date":"2012-01-18T13:26:35.328Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't want to be that guy but i don't like it :/","date":"2012-01-18T13:26:51.399Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what exactly don't you like?","date":"2012-01-18T13:27:08.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"all of it?","date":"2012-01-18T13:27:10.785Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... yes","date":"2012-01-18T13:27:19.970Z","type":"message"}
+{"nick":"bnoordhuis","message":"ideally we'd only land patches that are bug fixes or features, not changes to appease a style checker","date":"2012-01-18T13:29:01.114Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well, I don't agree","date":"2012-01-18T13:29:54.268Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: node's code style can be much more consistent","date":"2012-01-18T13:30:23.578Z","type":"message"}
+{"nick":"piscisaureus_","message":"== easier to read","date":"2012-01-18T13:30:26.918Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we we should not appease the style checker for the sake of the style checer","date":"2012-01-18T13:30:40.141Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: well, that's what #2572 is","date":"2012-01-18T13:31:45.358Z","type":"message"}
+{"nick":"bnoordhuis","message":"as an aside, most of node's code is pretty readable imo","date":"2012-01-18T13:32:15.558Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/joyent/node/pull/2572/files#L2L187 is an improvement imo","date":"2012-01-18T13:33:10.857Z","type":"message"}
+{"nick":"piscisaureus_","message":"\\","date":"2012-01-18T13:33:11.068Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: mwah, not earth shatteringly so","date":"2012-01-18T13:34:03.884Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: another reason i don't like such changes is that it makes `git blame` less effective and gives false positives with `git log -S`","date":"2012-01-18T13:36:03.363Z","type":"message"}
+{"nick":"luxigo_","date":"2012-01-18T13:52:06.791Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what should path.extname('.gitignore') do?","date":"2012-01-18T13:54:34.058Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: return an empty string, i think","date":"2012-01-18T13:55:20.757Z","type":"message"}
+{"nick":"luxigo_","new_nick":"luxigo","date":"2012-01-18T13:55:59.961Z","type":"nick"}
+{"nick":"bnoordhuis","message":"piscisaureus_: which it does on unices","date":"2012-01-18T13:56:17.066Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok. and path.extname('..gitignore') ?","date":"2012-01-18T13:58:07.122Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: that was the last question btw","date":"2012-01-18T13:58:33.269Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: '.gitignore'","date":"2012-01-18T13:58:49.994Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the question is not what node does, but what it *should* do","date":"2012-01-18T13:58:50.870Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: is there an extname command in unix?","date":"2012-01-18T13:59:10.624Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: node does what i expect it to","date":"2012-01-18T13:59:49.861Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes, `basename path .ext`","date":"2012-01-18T13:59:59.530Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok, fine","date":"2012-01-18T14:00:17.909Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, that's not really extname","date":"2012-01-18T14:00:19.654Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I bet `basename .gitignore .gitignore` returns the empty string","date":"2012-01-18T14:00:41.363Z","type":"message"}
+{"nick":"piscisaureus_","message":"btw: http://www.php.net/","date":"2012-01-18T14:00:47.375Z","type":"message"}
+{"nick":"piscisaureus_","message":"*sigh*","date":"2012-01-18T14:00:51.245Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, it returns '.gitignore'","date":"2012-01-18T14:01:04.443Z","type":"message"}
+{"nick":"bnoordhuis","message":"php.net should keep that design","date":"2012-01-18T14:01:21.974Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: a = malloc(...);  a +=2 ; free(a) <- will it work?","date":"2012-01-18T14:04:08.616Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: no","date":"2012-01-18T14:04:24.474Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: no","date":"2012-01-18T14:04:25.704Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: cool, I knew it! :)","date":"2012-01-18T14:04:40.064Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: piscisaureus_ thanks","date":"2012-01-18T14:04:46.255Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: then why do you ask? :-p","date":"2012-01-18T14:04:52.416Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: recheking myself","date":"2012-01-18T14:08:29.765Z","type":"message"}
+{"nick":"indutny","message":"s/k/ck","date":"2012-01-18T14:08:36.449Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002dee86dd\u000f \u000310\u000f/ (src/unix/core.c src/unix/internal.h)\u0002:\u000f ","date":"2012-01-18T14:09:10.932Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f unix: don't retry close() on EINTR","date":"2012-01-18T14:09:11.137Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f Linux 2.6 always closes the file descriptor, even on EINTR. Retrying the close()","date":"2012-01-18T14:09:11.138Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f call isn't merely useless, it's actively harmful - the file descriptor may have","date":"2012-01-18T14:09:11.138Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f been acquired by another thread. - http://git.io/GZ24nA","date":"2012-01-18T14:09:11.138Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T14:11:00.846Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#37 (master - dee86dd : Ben Noordhuis): The build is still failing.","date":"2012-01-18T14:11:01.059Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/52511b9...dee86dd","date":"2012-01-18T14:11:01.059Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/540702","date":"2012-01-18T14:11:01.059Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T14:11:01.060Z","type":"part"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://gist.github.com/1633192","date":"2012-01-18T14:15:44.917Z","type":"message"}
+{"nick":"piscisaureus_","message":"review?","date":"2012-01-18T14:15:47.072Z","type":"message"}
+{"nick":"piscisaureus_","message":"crap","date":"2012-01-18T14:16:18.022Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: scrap that, mistake","date":"2012-01-18T14:16:23.889Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: scrap that, mistake. That patch is the right one after all.","date":"2012-01-18T14:17:10.283Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-01-18T14:17:12.390Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: lgtm","date":"2012-01-18T14:21:18.234Z","type":"message"}
+{"nick":"bnoordhuis","message":"what would path.extname('........') return?","date":"2012-01-18T14:21:25.786Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: .","date":"2012-01-18T14:21:31.896Z","type":"message"}
+{"nick":"bnoordhuis","action":"guesses '.'","date":"2012-01-18T14:21:32.600Z","type":"action"}
+{"nick":"bnoordhuis","message":"right","date":"2012-01-18T14:21:34.399Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I though a test for '....'  was enough","date":"2012-01-18T14:22:01.507Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: sure, just double-checking","date":"2012-01-18T14:22:15.484Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307v0.6\u000f * r\u0002d489a01\u000f \u000310\u000f/ (lib/path.js test/simple/test-path.js)\u0002:\u000f ","date":"2012-01-18T14:22:29.615Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Make path.extname do the right thing when the last path component is . or ..","date":"2012-01-18T14:22:29.825Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f Closes GH-2526 - http://git.io/f-qt5w","date":"2012-01-18T14:22:29.825Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/joyent/node/issues/2439","date":"2012-01-18T14:24:42.714Z","type":"message"}
+{"nick":"piscisaureus_","message":"still valid?","date":"2012-01-18T14:24:46.054Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i think i fixed that but let me check","date":"2012-01-18T14:25:43.813Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes, it's fixed. i've closed the issue","date":"2012-01-18T14:27:46.539Z","type":"message"}
+{"nick":"benvie","date":"2012-01-18T14:30:01.907Z","type":"join"}
+{"nick":"travis-ci","date":"2012-01-18T14:30:27.442Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#274 (v0.6 - d489a01 : Bert Belder): The build was broken.","date":"2012-01-18T14:30:27.646Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d44ce97...d489a01","date":"2012-01-18T14:30:27.646Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/540740","date":"2012-01-18T14:30:27.646Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T14:30:27.646Z","type":"part"}
+{"nick":"piscisaureus_","message":"^-- yes I am against sopa already? Now can we remove the blackout crap?","date":"2012-01-18T14:31:16.549Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean blackout wikipedia = fine. Blackout google = also fine.","date":"2012-01-18T14:32:18.548Z","type":"message"}
+{"nick":"piscisaureus_","message":"But annoying developers is pretty pointless since they mostly are against sopa anyway","date":"2012-01-18T14:32:53.702Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002fbbc085\u000f \u000310\u000f/ (9 files in 3 dirs)\u0002:\u000f ","date":"2012-01-18T14:57:44.639Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f Rename COUNTOF() to ARRAY_SIZE().","date":"2012-01-18T14:57:44.853Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f Consistent with Node, it has an ARRAY_SIZE() macro but not COUNTOF(). - http://git.io/dRszaQ","date":"2012-01-18T14:57:44.853Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00021161d31\u000f \u000310\u000f/ (4 files)\u0002:\u000f test: move container_of() macro into task.h - http://git.io/Vmr3gg","date":"2012-01-18T14:57:44.853Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00026ede034\u000f \u000310\u000f/ test/test-thread.c \u0002:\u000f test: #include missing <string.h> - http://git.io/n6h8ew","date":"2012-01-18T14:57:45.365Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T14:59:38.566Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#38 (master - 6ede034 : Ben Noordhuis): The build is still failing.","date":"2012-01-18T14:59:38.775Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/dee86dd...6ede034","date":"2012-01-18T14:59:38.775Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/540835","date":"2012-01-18T14:59:38.775Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T14:59:38.775Z","type":"part"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Brandon Benvie\u000f \u000307v0.6\u000f * r\u0002f7b6125\u000f \u000310\u000f/ lib/tty.js \u0002:\u000f Add missing TTY key translations for F1-F5 on Windows - http://git.io/SFcYCg","date":"2012-01-18T15:01:31.858Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- bnoordhuis, I added that to v0.6","date":"2012-01-18T15:01:47.276Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I considered not parsing the escape codes libuv generates a bug","date":"2012-01-18T15:01:58.963Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T15:09:17.878Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#275 (v0.6 - f7b6125 : Brandon Benvie): The build was fixed.","date":"2012-01-18T15:09:18.088Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d489a01...f7b6125","date":"2012-01-18T15:09:18.088Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/540838","date":"2012-01-18T15:09:18.089Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T15:09:18.089Z","type":"part"}
+{"nick":"piscisaureus_","message":"indutny: https://github.com/joyent/node/pull/2500","date":"2012-01-18T15:21:49.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: why should only ttys be paused by default","date":"2012-01-18T15:22:07.788Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-01-18T15:22:09.192Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think this should apply to stdin regardless of their type right?","date":"2012-01-18T15:22:34.469Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: hm","date":"2012-01-18T15:29:57.795Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yes, that should be applied to stdin","date":"2012-01-18T15:30:09.777Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: but only for TTY stdin","date":"2012-01-18T15:30:17.159Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: huh why","date":"2012-01-18T15:30:25.278Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: others ain't refing loop ","date":"2012-01-18T15:30:34.815Z","type":"message"}
+{"nick":"indutny","message":"at leaset on unix","date":"2012-01-18T15:30:38.890Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: pause is not related to refing","date":"2012-01-18T15:30:53.667Z","type":"message"}
+{"nick":"piscisaureus_","message":"pause means that we do not emit data events","date":"2012-01-18T15:31:00.535Z","type":"message"}
+{"nick":"piscisaureus_","message":"unlike any other stream type stdin always starts in paused mode no matter what the type is","date":"2012-01-18T15:31:23.762Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ah","date":"2012-01-18T15:31:32.079Z","type":"message"}
+{"nick":"piscisaureus_","message":"to give the user time to set up listeners","date":"2012-01-18T15:31:33.484Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ok","date":"2012-01-18T15:31:38.420Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: so I agree with you, stdin should be paused by default, regardless of it's type","date":"2012-01-18T15:32:33.173Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so this is already done :-)","date":"2012-01-18T15:32:44.210Z","type":"message"}
+{"nick":"indutny","message":"but it should not ref loop! :)","date":"2012-01-18T15:32:55.028Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: it refs the loop only when it is resumed","date":"2012-01-18T15:33:08.931Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: nope","date":"2012-01-18T15:33:18.598Z","type":"message"}
+{"nick":"indutny","message":"have we fixed it?","date":"2012-01-18T15:33:22.999Z","type":"message"}
+{"nick":"piscisaureus_","message":"umm","date":"2012-01-18T15:33:27.727Z","type":"message"}
+{"nick":"piscisaureus_","message":"*shrug*","date":"2012-01-18T15:33:31.240Z","type":"message"}
+{"nick":"indutny","message":"node -e 'process.stdin'","date":"2012-01-18T15:33:35.635Z","type":"message"}
+{"nick":"piscisaureus_","message":"was there ever an issue?","date":"2012-01-18T15:33:40.421Z","type":"message"}
+{"nick":"indutny","message":"it's paused by default?","date":"2012-01-18T15:33:45.870Z","type":"message"}
+{"nick":"indutny","message":"and not refing loop, right?","date":"2012-01-18T15:33:51.212Z","type":"message"}
+{"nick":"indutny","message":"so it should not prevent process from exiting","date":"2012-01-18T15:33:57.720Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh wait that's not working on windows either","date":"2012-01-18T15:34:09.156Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: heh","date":"2012-01-18T15:34:26.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: it *does* start paused though","date":"2012-01-18T15:36:13.730Z","type":"message"}
+{"nick":"piscisaureus_","message":"there's a bug","date":"2012-01-18T15:36:29.589Z","type":"message"}
+{"nick":"piscisaureus_","message":"no shit sherlock","date":"2012-01-18T15:36:34.813Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: hehe :) that's it","date":"2012-01-18T15:37:16.315Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ^^^ see ^^^","date":"2012-01-18T15:37:22.050Z","type":"message"}
+{"nick":"indutny","message":"I told ya","date":"2012-01-18T15:37:25.232Z","type":"message"}
+{"nick":"bnoordhuis","message":"wut? i never said there wasn't, did i?","date":"2012-01-18T15:37:56.032Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: you did","date":"2012-01-18T15:38:04.610Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-01-18T15:38:07.070Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: and you was persuading me that is how it supposed to work","date":"2012-01-18T15:38:21.838Z","type":"message"}
+{"nick":"piscisaureus_","message":"kids","date":"2012-01-18T15:38:34.422Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: what in particular are we talking about? node -e process.stdin?","date":"2012-01-18T15:38:54.798Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yes","date":"2012-01-18T15:39:02.499Z","type":"message"}
+{"nick":"indutny","message":"excessive reffering of loop","date":"2012-01-18T15:39:25.074Z","type":"message"}
+{"nick":"bnoordhuis","message":"i didn't say that it's not a bug","date":"2012-01-18T15:39:32.006Z","type":"message"}
+{"nick":"indutny","message":"huh, sorry","date":"2012-01-18T15:39:42.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"i did say that it's not trivial to fix :)","date":"2012-01-18T15:39:47.807Z","type":"message"}
+{"nick":"indutny","message":"I misunderstood you","date":"2012-01-18T15:39:48.860Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-01-18T15:39:56.781Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: let's fix libuv's refcounting","date":"2012-01-18T15:40:29.085Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: working on it :)","date":"2012-01-18T15:40:36.785Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so we can get rid of all this crazy compensation in node","date":"2012-01-18T15:40:42.071Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-01-18T15:40:51.491Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: unfortunately it won't help us fix 0.6","date":"2012-01-18T15:41:00.775Z","type":"message"}
+{"nick":"piscisaureus_","message":"actually there's another bug","date":"2012-01-18T15:41:39.462Z","type":"message"}
+{"nick":"piscisaureus_","message":"calling resume twice on a pipe will effectively uv_ref","date":"2012-01-18T15:41:59.333Z","type":"message"}
+{"nick":"piscisaureus_","message":":-/","date":"2012-01-18T15:42:06.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"it is not idempotent","date":"2012-01-18T15:42:13.088Z","type":"message"}
+{"nick":"indutny","message":"hhh","date":"2012-01-18T15:42:13.440Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's another thing, we should ref handles, not event loops","date":"2012-01-18T15:42:15.201Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ++","date":"2012-01-18T15:42:22.934Z","type":"message"}
+{"nick":"kohai","message":"bnoordhuis has 4 beers","date":"2012-01-18T15:42:23.291Z","type":"message"}
+{"nick":"piscisaureus_","message":"I agree","date":"2012-01-18T15:42:27.505Z","type":"message"}
+{"nick":"piscisaureus_","message":"but this is a node bug","date":"2012-01-18T15:42:31.374Z","type":"message"}
+{"nick":"indutny","message":"and do assertions","date":"2012-01-18T15:42:32.431Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-01-18T15:42:34.371Z","type":"join"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-01-18T15:42:38.113Z","type":"message"}
+{"nick":"indutny","message":"inside handles","date":"2012-01-18T15:42:40.574Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2012-01-18T15:42:43.956Z","type":"message"}
+{"nick":"indutny","message":"you can just overload uv_ref","date":"2012-01-18T15:43:08.199Z","type":"message"}
+{"nick":"indutny","message":"to support handle argument","date":"2012-01-18T15:43:12.045Z","type":"message"}
+{"nick":"indutny","message":"or even better, replace loop with handle type","date":"2012-01-18T15:43:27.630Z","type":"message"}
+{"nick":"indutny","message":"and see where it failed","date":"2012-01-18T15:43:34.353Z","type":"message"}
+{"nick":"indutny","message":"can I help you with that?","date":"2012-01-18T15:43:41.753Z","type":"message"}
+{"nick":"AndreasMadsen","message":"piscisaureus_: I have made another jslint, if you could land it the conflicts would be minimal.","date":"2012-01-18T15:43:53.618Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_ indutny: https://github.com/bnoordhuis/libuv/compare/refcounts-again <- been doing some work on that","date":"2012-01-18T15:44:03.998Z","type":"message"}
+{"nick":"piscisaureus_","message":"AndreasMadsen: yes I saw it but bnoordhuis does't like it","date":"2012-01-18T15:44:06.282Z","type":"message"}
+{"nick":"AndreasMadsen","message":"piscisaureus_: oh","date":"2012-01-18T15:44:21.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: are we also going to change handle ref semantics?","date":"2012-01-18T15:45:00.656Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: like, a stream only refs when it is reading?","date":"2012-01-18T15:45:12.109Z","type":"message"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: i appreciate the effort but i don't like purely aesthetic changes","date":"2012-01-18T15:45:12.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: reading or writing. at least, that seems most sensible to me","date":"2012-01-18T15:45:38.668Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: this is not aesthetic, when I jslint my own changes I need to do `make jslint | grep cluster` and I do not get it all.","date":"2012-01-18T15:46:28.264Z","type":"message"}
+{"nick":"AndreasMadsen","message":"There is simply to many errors already, so you can't se you own","date":"2012-01-18T15:46:43.616Z","type":"message"}
+{"nick":"AndreasMadsen","message":"s/errors/jslint issues/","date":"2012-01-18T15:46:58.036Z","type":"message"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: i'll let you in on a secret - i never jslint patches, i just want them to be readable","date":"2012-01-18T15:47:22.714Z","type":"message"}
+{"nick":"bnoordhuis","message":"and broadly conform to our coding convention","date":"2012-01-18T15:47:46.786Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: then we should remove it, I just follow https://github.com/joyent/node/wiki/Contributing","date":"2012-01-18T15:48:19.303Z","type":"message"}
+{"nick":"mmalecki","message":"jshint is a hint.","date":"2012-01-18T15:48:46.011Z","type":"message"}
+{"nick":"mmalecki","message":"*hint*","date":"2012-01-18T15:48:50.230Z","type":"message"}
+{"nick":"AndreasMadsen","message":" mmalecki: I know, but what is the usage if you can't find the hit for you own changes","date":"2012-01-18T15:49:20.658Z","type":"message"}
+{"nick":"bnoordhuis","message":"people don't read that page anyway :(","date":"2012-01-18T15:50:10.631Z","type":"message"}
+{"nick":"pietern","date":"2012-01-18T15:52:11.371Z","type":"join"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: well there is an issue here. Wiki page or `make jslint` or just the files - I do not care ","date":"2012-01-18T15:53:13.038Z","type":"message"}
+{"nick":"igorzi_","reason":"Ping timeout: 258 seconds","date":"2012-01-18T15:54:06.051Z","type":"quit"}
+{"nick":"AndreasMadsen","message":"Perhaps we could move to jshint, it is not as strict","date":"2012-01-18T15:54:21.981Z","type":"message"}
+{"nick":"pietern","reason":"Client Quit","date":"2012-01-18T15:56:23.948Z","type":"quit"}
+{"nick":"pietern","date":"2012-01-18T15:56:31.364Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we should not need it for writing as uv_write_t itself should ref the loop","date":"2012-01-18T16:01:03.024Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: how would that work for luvit?","date":"2012-01-18T16:01:58.071Z","type":"message"}
+{"nick":"rphillips","message":"worked out a lot better once I started passing in 0 for ipc on the pipes","date":"2012-01-18T16:02:57.837Z","type":"message"}
+{"nick":"rphillips","message":"still curious on what the right answer is for stdout file handing on windows though","date":"2012-01-18T16:03:22.856Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: unfortunately there is no right answer for that atm. In node we have \"file streams\" that wraps uv_fs stuff and we use that","date":"2012-01-18T16:04:30.297Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: adding file streams is something we always wanted to add to libuv but we never did","date":"2012-01-18T16:04:44.193Z","type":"message"}
+{"nick":"piscisaureus_","message":"we take patches though :-)","date":"2012-01-18T16:04:51.050Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: eventually we want the distinction between stream types to go away ... uv_tcp_t, uv_tty_t, uv_pipe_t should all be the same type","date":"2012-01-18T16:05:33.363Z","type":"message"}
+{"nick":"sh1mmer","date":"2012-01-18T16:05:41.805Z","type":"join"}
+{"nick":"piscisaureus_","message":"and libuv should itself figure out what to use","date":"2012-01-18T16:05:48.834Z","type":"message"}
+{"nick":"rphillips","message":"gotcha","date":"2012-01-18T16:06:00.821Z","type":"message"}
+{"nick":"rphillips","message":"piscisaureus_: going to the nodejs meetup next monday?","date":"2012-01-18T16:06:42.376Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: I know nothing about it, and I am based in amsterdam so I don't think so","date":"2012-01-18T16:07:04.714Z","type":"message"}
+{"nick":"rphillips","message":"hah!","date":"2012-01-18T16:07:17.201Z","type":"message"}
+{"nick":"rphillips","message":"yeah, that would be a trek","date":"2012-01-18T16:07:23.182Z","type":"message"}
+{"nick":"piscisaureus_","message":"rphillips: always have been :-) That's why I never visited your office even when I was still working for cloudkick","date":"2012-01-18T16:07:42.804Z","type":"message"}
+{"nick":"pietern","message":"bnoordhuis: piscisaureus_ hi guys","date":"2012-01-18T16:14:08.182Z","type":"message"}
+{"nick":"pietern","message":"how's it going?","date":"2012-01-18T16:14:11.533Z","type":"message"}
+{"nick":"pietern","message":"are you flying in for nodesummit next week?","date":"2012-01-18T16:14:21.551Z","type":"message"}
+{"nick":"piscisaureus_","message":"Netiher of us is going I think","date":"2012-01-18T16:14:34.667Z","type":"message"}
+{"nick":"piscisaureus_","message":"pietern: are you going there?","date":"2012-01-18T16:17:06.995Z","type":"message"}
+{"nick":"pietern","message":"yes","date":"2012-01-18T16:17:19.306Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmmm ~","date":"2012-01-18T16:17:24.357Z","type":"message"}
+{"nick":"pietern","message":"sounded like fun","date":"2012-01-18T16:17:25.463Z","type":"message"}
+{"nick":"pietern","message":"and, while i'm in the neighborhood ;)","date":"2012-01-18T16:17:33.202Z","type":"message"}
+{"nick":"piscisaureus_","message":"pietern: I suppose you work for a company with infinite money","date":"2012-01-18T16:18:06.829Z","type":"message"}
+{"nick":"pietern","message":"haha lol","date":"2012-01-18T16:18:14.248Z","type":"message"}
+{"nick":"pietern","message":"not really","date":"2012-01-18T16:18:19.376Z","type":"message"}
+{"nick":"pietern","message":"at least, not infinite afaik ;)","date":"2012-01-18T16:18:33.939Z","type":"message"}
+{"nick":"pietern","message":"piscisaureus_: I'd assume anyone would be more than happy sponsoring you guys to come?","date":"2012-01-18T16:21:57.102Z","type":"message"}
+{"nick":"pietern","message":"being a big piece of the 0.6 puzzle and all","date":"2012-01-18T16:22:14.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"pietern: yeah maybe I should have gone there although I have not much to tell the business","date":"2012-01-18T16:34:45.849Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wonder if igorzi is going","date":"2012-01-18T16:34:55.171Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/joyent/node/pull/2014/files","date":"2012-01-18T16:35:05.019Z","type":"message"}
+{"nick":"piscisaureus_","message":"is that land-able","date":"2012-01-18T16:35:11.002Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-01-18T16:35:12.411Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I don't understand the issue thb","date":"2012-01-18T16:35:54.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"*tbh","date":"2012-01-18T16:36:00.791Z","type":"message"}
+{"nick":"pietern","message":"piscisaureus_: it is primarily a VC+biz kind of thing, not too much dev-focused?","date":"2012-01-18T16:36:20.309Z","type":"message"}
+{"nick":"piscisaureus_","message":"pietern: it's vc/biz focused","date":"2012-01-18T16:36:42.521Z","type":"message"}
+{"nick":"pietern","message":"ok, thanks for the head up ;)","date":"2012-01-18T16:41:59.192Z","type":"message"}
+{"nick":"pietern","message":"at least that means that there should be tons of free food/beer/etc","date":"2012-01-18T16:42:13.047Z","type":"message"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-01-18T16:59:56.216Z","type":"quit"}
+{"nick":"isaacs","date":"2012-01-18T17:04:20.819Z","type":"join"}
+{"nick":"dap","date":"2012-01-18T17:11:24.046Z","type":"join"}
+{"nick":"bnoordhuis","message":"mmalecki: another thing for the 'v0.6 => v0.8 upgrade' page: node now builds the bundled openssl by default","date":"2012-01-18T17:24:35.815Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: which makes vm provisioning take ages","date":"2012-01-18T17:24:58.563Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: but yeah, worth noticing","date":"2012-01-18T17:25:28.406Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: then don't build from source :)","date":"2012-01-18T17:25:31.012Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: lol","date":"2012-01-18T17:25:52.773Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: hm... you might have a point here","date":"2012-01-18T17:26:58.781Z","type":"message"}
+{"nick":"mmalecki","action":"adds something to his TODO list","date":"2012-01-18T17:27:30.292Z","type":"action"}
+{"nick":"bnoordhuis","message":"i've been toying with the idea of providing official debs and rpms","date":"2012-01-18T17:27:35.570Z","type":"message"}
+{"nick":"bnoordhuis","message":"it'd probably be a good thing but i don't want to have to maintain them...","date":"2012-01-18T17:27:45.649Z","type":"message"}
+{"nick":"mmalecki","message":"well, noone wnats","date":"2012-01-18T17:27:55.012Z","type":"message"}
+{"nick":"mmalecki","message":"*wants","date":"2012-01-18T17:27:56.596Z","type":"message"}
+{"nick":"mmalecki","message":"like, never. people who want to do that are crazy","date":"2012-01-18T17:28:11.946Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: re #2014: looks like an okay change","date":"2012-01-18T17:30:18.948Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it adds api. What is the use case for it","date":"2012-01-18T17:30:34.959Z","type":"message"}
+{"nick":"mikeal","date":"2012-01-18T17:30:41.634Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: some encryption algorithms require that the input is a multiple of CHUNK_SIZE","date":"2012-01-18T17:30:52.976Z","type":"message"}
+{"nick":"bnoordhuis","message":"where CHUNK_SIZE is 8, 16 or 32 bytes or so","date":"2012-01-18T17:31:06.605Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you feed it input that's not a multiple, it'll fail","date":"2012-01-18T17:31:23.543Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes okay. So we automatically pad input","date":"2012-01-18T17:31:36.229Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so why would people want to disable it?","date":"2012-01-18T17:31:43.980Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: because there'","date":"2012-01-18T17:32:11.022Z","type":"message"}
+{"nick":"bnoordhuis","message":"*there's more than one way to pad the input","date":"2012-01-18T17:32:17.961Z","type":"message"}
+{"nick":"bnoordhuis","message":"pkcs5 is the most common but padding with 0 bytes happens a lot too","date":"2012-01-18T17:32:45.507Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: okay so let's land it in master","date":"2012-01-18T17:33:05.582Z","type":"message"}
+{"nick":"bnoordhuis","message":"let me review it one more time","date":"2012-01-18T17:33:50.233Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: okay let me prepare a squashed commit :-)","date":"2012-01-18T17:34:05.036Z","type":"message"}
+{"nick":"piscisaureus_","message":"because I dislike fixup commits","date":"2012-01-18T17:34:21.845Z","type":"message"}
+{"nick":"mmalecki","message":"people should learn to `git commit --amend`","date":"2012-01-18T17:35:14.621Z","type":"message"}
+{"nick":"piscisaureus_","message":"or just rebase after work","date":"2012-01-18T17:35:27.477Z","type":"message"}
+{"nick":"bnoordhuis","message":"hrm, patch doesn't seem to apply anymore","date":"2012-01-18T17:36:20.621Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: seems we already have support for it somehow","date":"2012-01-18T17:39:21.614Z","type":"message"}
+{"nick":"piscisaureus_","message":"DecipherFinal now has \"template <bool TOLERATE_PADDING>\"","date":"2012-01-18T17:39:45.365Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: oh wait that is from squashing DecipherFinalTolerate","date":"2012-01-18T17:41:52.694Z","type":"message"}
+{"nick":"piscisaureus_","message":"that you dud","date":"2012-01-18T17:41:54.303Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's not my code, i just cleaned it up","date":"2012-01-18T17:42:16.186Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: #2014 is not quite the same thing, it lets you disable auto-padding while encrypting","date":"2012-01-18T17:43:35.182Z","type":"message"}
+{"nick":"bnoordhuis","message":"TOLERATE_PADDING lets you ignore padding errors when decrypting","date":"2012-01-18T17:44:05.330Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok I am fixing conflicts","date":"2012-01-18T17:46:15.093Z","type":"message"}
+{"nick":"mraleph","date":"2012-01-18T17:55:51.631Z","type":"join"}
+{"nick":"perezd","date":"2012-01-18T18:16:30.057Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-01-18T18:24:18.770Z","type":"join"}
+{"nick":"pietern","date":"2012-01-18T18:25:42.686Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-18T18:29:57.565Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-18T18:41:07.725Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-01-18T18:42:01.764Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-01-18T18:46:09.504Z","type":"quit"}
+{"nick":"dap","date":"2012-01-18T18:47:36.067Z","type":"join"}
+{"nick":"`3rdEden","reason":"Ping timeout: 240 seconds","date":"2012-01-18T18:47:37.827Z","type":"quit"}
+{"nick":"dap","reason":"Client Quit","date":"2012-01-18T18:48:06.394Z","type":"quit"}
+{"nick":"dap","date":"2012-01-18T18:48:58.243Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-01-18T18:52:13.769Z","type":"join"}
+{"nick":"dshaw_","date":"2012-01-18T19:05:07.910Z","type":"join"}
+{"nick":"igorzi","date":"2012-01-18T19:13:42.040Z","type":"join"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-01-18T19:16:51.714Z","type":"quit"}
+{"nick":"brson","date":"2012-01-18T19:18:22.174Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-18T19:26:37.823Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-18T19:28:48.839Z","type":"join"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002dd7e6f0\u000f \u000310\u000f/ test/test-timer.c \u0002:\u000f test: don't use malloc/free in test-timer - http://git.io/nQkZdA","date":"2012-01-18T19:31:26.483Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002ee10cb7\u000f \u000310\u000f/ src/unix/core.c \u0002:\u000f unix: use container_of() instead of w->data - http://git.io/-LiLPw","date":"2012-01-18T19:31:26.752Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000228b0867\u000f \u000310\u000f/ (src/unix/core.c src/unix/internal.h src/unix/udp.c)\u0002:\u000f unix: clean up udp shutdown sequence - http://git.io/BegSYQ","date":"2012-01-18T19:31:27.213Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002454e021\u000f \u000310\u000f/ src/unix/udp.c \u0002:\u000f unix: clean up udp read/write watchers - http://git.io/SBrDUg","date":"2012-01-18T19:31:27.490Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T19:33:15.082Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#39 (master - 454e021 : Ben Noordhuis): The build is still failing.","date":"2012-01-18T19:33:15.296Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/6ede034...454e021","date":"2012-01-18T19:33:15.296Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/541669","date":"2012-01-18T19:33:15.296Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T19:33:15.296Z","type":"part"}
+{"nick":"isaacs","date":"2012-01-18T19:37:50.647Z","type":"join"}
+{"nick":"kuebk","date":"2012-01-18T19:39:11.695Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-01-18T19:43:37.316Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: building an official deb and rpm is a good idea.","date":"2012-01-18T19:44:51.733Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: would it be enough to just build them and host them along with the .pkg and msi?","date":"2012-01-18T19:45:07.434Z","type":"message"}
+{"nick":"isaacs","message":"or does more go into it than that?","date":"2012-01-18T19:45:23.948Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: a little more, apt and yum expect the repository to have a certain layout","date":"2012-01-18T19:45:46.122Z","type":"message"}
+{"nick":"bnoordhuis","message":"nothing overly complex though","date":"2012-01-18T19:45:51.925Z","type":"message"}
+{"nick":"isaacs","message":"right, but i mean, we could just kinda nudge things into place to build it, right?","date":"2012-01-18T19:46:09.543Z","type":"message"}
+{"nick":"isaacs","message":"or would it require changing our actual repo folders and stuff?","date":"2012-01-18T19:46:26.669Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: repo as in git repo?","date":"2012-01-18T19:46:45.326Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-18T19:47:00.092Z","type":"message"}
+{"nick":"isaacs","message":"it'd be a binary, though, wouldn't it?","date":"2012-01-18T19:47:21.516Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, sorry for the confusion - when i said repository i meant apt or yum repository :)","date":"2012-01-18T19:47:32.435Z","type":"message"}
+{"nick":"isaacs","message":"so it's just a matter of building it, making the proper folder whatevers, writing like a dozen random config files, etc.","date":"2012-01-18T19:47:38.130Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2012-01-18T19:47:43.201Z","type":"message"}
+{"nick":"isaacs","message":"that seems like something we should do.","date":"2012-01-18T19:47:54.288Z","type":"message"}
+{"nick":"bnoordhuis","message":"however...","date":"2012-01-18T19:47:57.816Z","type":"message"}
+{"nick":"isaacs","message":"next obvious step.","date":"2012-01-18T19:47:59.950Z","type":"message"}
+{"nick":"isaacs","action":"uh oh...","date":"2012-01-18T19:48:11.190Z","type":"action"}
+{"nick":"bnoordhuis","message":"you probably want to support ubuntu 10.04 and up, debian stable, and one or two rhel releases","date":"2012-01-18T19:48:35.488Z","type":"message"}
+{"nick":"bnoordhuis","message":"then there's the different architectures: x86, x86_64, maybe arm","date":"2012-01-18T19:48:54.586Z","type":"message"}
+{"nick":"isaacs","message":"god, linux is so awful...","date":"2012-01-18T19:49:02.286Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a rapidly growing intersection...","date":"2012-01-18T19:49:13.411Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-01-18T19:49:18.403Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ingmar Runge\u000f \u000307cryptopad\u000f * r\u00022cafc70\u000f \u000310\u000f/ src/node_crypto.cc \u0002:\u000f Crypto: Adding ability to turn off automatic PKCS padding. - http://git.io/eiwLbw","date":"2012-01-18T19:49:20.894Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ingmar Runge\u000f \u000307cryptopad\u000f * r\u0002b617ec8\u000f \u000310\u000f/ test/simple/test-crypto-padding.js \u0002:\u000f Crypto: Adding tests for new padding control. - http://git.io/R2JpUA","date":"2012-01-18T19:49:21.107Z","type":"message"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ingmar Runge\u000f \u000307cryptopad\u000f * r\u00028b7d809\u000f \u000310\u000f/ doc/api/crypto.markdown \u0002:\u000f Documentation for crypto's setAutoPadding. - http://git.io/Cn4XoQ","date":"2012-01-18T19:49:21.504Z","type":"message"}
+{"nick":"isaacs","message":"is there maybe a way that we could at least make it easier for users to build their own yum/rpm's?","date":"2012-01-18T19:49:40.916Z","type":"message"}
+{"nick":"isaacs","message":"debs","date":"2012-01-18T19:49:46.639Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, by including the deb and rpm build files in the repo","date":"2012-01-18T19:50:07.374Z","type":"message"}
+{"nick":"isaacs","message":"like, \"On the architecture you want to support, run `make deb`, and it'll make a deb for that arch, and you can use it in your organization\"","date":"2012-01-18T19:50:09.672Z","type":"message"}
+{"nick":"isaacs","message":"then at least we could empower travis and other companies to do it themselves.","date":"2012-01-18T19:50:31.034Z","type":"message"}
+{"nick":"isaacs","message":"not that they can't now, but it'd be less tedious for them to","date":"2012-01-18T19:50:39.371Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can you review it like this? https://github.com/joyent/node/compare/master...cryptopad","date":"2012-01-18T19:50:47.134Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: sure, 1 sec","date":"2012-01-18T19:51:02.616Z","type":"message"}
+{"nick":"isaacs","message":"or we could just recruit chris lea to do it for us :)","date":"2012-01-18T19:51:04.537Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: chris rea?","date":"2012-01-18T19:52:24.162Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://launchpad.net/~chris-lea/+ppa-packages","date":"2012-01-18T19:52:56.400Z","type":"message"}
+{"nick":"isaacs","message":"hm, looks like he hasn't updated it since 0.6.2","date":"2012-01-18T19:53:54.000Z","type":"message"}
+{"nick":"isaacs","message":"wonder if he's over it, or on vacation or something.","date":"2012-01-18T19:53:59.544Z","type":"message"}
+{"nick":"mmalecki","message":"I could try my luck at rpms","date":"2012-01-18T19:54:00.368Z","type":"message"}
+{"nick":"isaacs","message":"but yeah, it looks like he builds a separate one for each version of ubuntu","date":"2012-01-18T19:54:26.510Z","type":"message"}
+{"nick":"isaacs","message":"gah, that's so painful.","date":"2012-01-18T19:54:34.304Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: you need a build farm anyway :)","date":"2012-01-18T19:54:44.006Z","type":"message"}
+{"nick":"bnoordhuis","message":"node hasn't many dependencies so you can probably cheat a little","date":"2012-01-18T19:54:53.545Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-01-18T19:54:59.972Z","type":"message"}
+{"nick":"isaacs","message":"jsconf tickets go on sale in 5 minutes.","date":"2012-01-18T19:56:20.249Z","type":"message"}
+{"nick":"dshaw_","reason":"Ping timeout: 240 seconds","date":"2012-01-18T19:56:37.965Z","type":"quit"}
+{"nick":"dshaw_1","date":"2012-01-18T19:56:44.108Z","type":"join"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-01-18T19:57:05.222Z","type":"message"}
+{"nick":"piscisaureus_","message":"start f5-ing","date":"2012-01-18T19:57:09.097Z","type":"message"}
+{"nick":"isaacs","message":"lol, windows user","date":"2012-01-18T19:58:56.932Z","type":"message"}
+{"nick":"isaacs","message":";P","date":"2012-01-18T19:59:02.041Z","type":"message"}
+{"nick":"isaacs","action":"is cmd-R-ing","date":"2012-01-18T19:59:07.315Z","type":"action"}
+{"nick":"mmalecki","message":"isaacs: jsconf.eu or .us?","date":"2012-01-18T19:59:09.880Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: ++","date":"2012-01-18T19:59:11.624Z","type":"message"}
+{"nick":"kohai","message":"isaacs has 3 beers","date":"2012-01-18T19:59:12.165Z","type":"message"}
+{"nick":"isaacs","message":"us","date":"2012-01-18T19:59:13.520Z","type":"message"}
+{"nick":"dshaw_1","new_nick":"dshaw_","date":"2012-01-18T19:59:16.975Z","type":"nick"}
+{"nick":"mmalecki","message":"meh, web-5 man","date":"2012-01-18T19:59:21.027Z","type":"message"}
+{"nick":"isaacs","message":"wtf","date":"2012-01-18T20:00:31.629Z","type":"message"}
+{"nick":"isaacs","message":"sold out already?","date":"2012-01-18T20:00:39.357Z","type":"message"}
+{"nick":"mmalecki","message":"ahahaha","date":"2012-01-18T20:00:46.621Z","type":"message"}
+{"nick":"piscisaureus_","message":"for me too","date":"2012-01-18T20:00:48.733Z","type":"message"}
+{"nick":"piscisaureus_","message":"crap","date":"2012-01-18T20:00:50.667Z","type":"message"}
+{"nick":"isaacs","message":"i clicked submit at like 12:00:02","date":"2012-01-18T20:01:09.456Z","type":"message"}
+{"nick":"piscisaureus_","message":"me too","date":"2012-01-18T20:01:15.166Z","type":"message"}
+{"nick":"mmalecki","message":"you guys should try http://www.web-5.org/en/ :). a bit different profile, but awesome people","date":"2012-01-18T20:01:31.052Z","type":"message"}
+{"nick":"mmalecki","message":"(like me and `3rdEden)","date":"2012-01-18T20:01:56.068Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T20:02:19.461Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#276 (cryptopad - 8b7d809 : Ingmar Runge): The build failed.","date":"2012-01-18T20:02:19.675Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/2cafc70^...8b7d809","date":"2012-01-18T20:02:19.675Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/541742","date":"2012-01-18T20:02:19.675Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T20:02:19.675Z","type":"part"}
+{"nick":"piscisaureus_","message":"isaacs: we have not been nice enough to him","date":"2012-01-18T20:06:52.376Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-01-18T20:07:55.053Z","type":"quit"}
+{"nick":"dap","date":"2012-01-18T20:08:22.887Z","type":"join"}
+{"nick":"`3rdEden","message":"mmalecki \\o/","date":"2012-01-18T20:14:02.762Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: maybe lowercase / depunctuate the commit header, otherwise lgtm","date":"2012-01-18T20:17:38.490Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok then I will squash land","date":"2012-01-18T20:18:07.922Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: you could use String::Empty() instead of String::New(\"\") but it doesn't really matter","date":"2012-01-18T20:18:18.347Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I didn't do that","date":"2012-01-18T20:18:34.881Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-01-18T20:18:36.965Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, indeed","date":"2012-01-18T20:18:45.235Z","type":"message"}
+{"nick":"bnoordhuis","message":"are you squashing it into a single commit?","date":"2012-01-18T20:18:54.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ^","date":"2012-01-18T20:19:08.998Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, bnoordhuis","date":"2012-01-18T20:19:18.850Z","type":"message"}
+{"nick":"bnoordhuis","message":"very good","date":"2012-01-18T20:19:23.469Z","type":"message"}
+{"nick":"kuebk","reason":"Ping timeout: 255 seconds","date":"2012-01-18T20:20:36.697Z","type":"quit"}
+{"nick":"CIA-115","message":"\u0002node:\u000f \u000303Ingmar Runge\u000f \u000307master\u000f * r\u00020ca3018\u000f \u000310\u000f/ (3 files in 3 dirs)\u0002:\u000f Crypto: adding ability to turn off automatic PKCS padding - http://git.io/lPVbew","date":"2012-01-18T20:21:33.323Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: no jsconf for me I'm afraid :-(","date":"2012-01-18T20:28:03.474Z","type":"message"}
+{"nick":"isaacs","message":"yep","date":"2012-01-18T20:28:16.567Z","type":"message"}
+{"nick":"isaacs","message":"gotta get into the non-early-bird, i guess","date":"2012-01-18T20:28:22.030Z","type":"message"}
+{"nick":"isaacs","message":"or try to, anyway","date":"2012-01-18T20:28:26.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so see you ehm, somewhere else some day","date":"2012-01-18T20:28:29.512Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-01-18T20:28:32.876Z","type":"message"}
+{"nick":"isaacs","message":"i'll be at node conf","date":"2012-01-18T20:28:35.412Z","type":"message"}
+{"nick":"isaacs","message":"probably speaking or somethign","date":"2012-01-18T20:28:42.404Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well if I practice my refreshing skills I might make it to nodeconf","date":"2012-01-18T20:28:58.540Z","type":"message"}
+{"nick":"isaacs","message":"you should give a talk.","date":"2012-01-18T20:29:52.636Z","type":"message"}
+{"nick":"piscisaureus_","message":"a talk about what?","date":"2012-01-18T20:30:00.648Z","type":"message"}
+{"nick":"isaacs","message":"maybe talk about how libuv makes node's awesomeness portable.","date":"2012-01-18T20:30:02.191Z","type":"message"}
+{"nick":"`3rdEden","message":"you probably need to write a bot to get some tickets for jsconf","date":"2012-01-18T20:30:07.403Z","type":"message"}
+{"nick":"isaacs","message":"the internal design or something","date":"2012-01-18T20:30:07.666Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_, isaacs, web-5?","date":"2012-01-18T20:30:13.388Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: i try not to go to any confs that are more than a 2 hour flight away.","date":"2012-01-18T20:30:40.568Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: oh, I'll be talking about that soon","date":"2012-01-18T20:30:43.664Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: i really hate traveling","date":"2012-01-18T20:30:47.970Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: libuv and node, I mean","date":"2012-01-18T20:30:51.764Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: kewl.","date":"2012-01-18T20:30:56.397Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: sorry to hear that","date":"2012-01-18T20:30:56.604Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah I could probably do a talk about that","date":"2012-01-18T20:31:20.680Z","type":"message"}
+{"nick":"`3rdEden","reason":"Read error: Connection reset by peer","date":"2012-01-18T20:31:30.124Z","type":"quit"}
+{"nick":"isaacs","message":"if i'm going to travel 12 hours somewhere, i want to stay for at least 2 weeks, otherwise it's not worth the headaches.","date":"2012-01-18T20:31:34.163Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: for me libuv sounds like old news but maybe even that could be interesting to some","date":"2012-01-18T20:31:36.994Z","type":"message"}
+{"nick":"V1","date":"2012-01-18T20:31:39.102Z","type":"join"}
+{"nick":"mmalecki","message":"only thing I wonder about is, how the fuck did I go from 0 talks/year to 3 talks/4 months","date":"2012-01-18T20:31:40.686Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it's black magic to most node users.","date":"2012-01-18T20:31:50.626Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: and you had a huge hand in designing it.","date":"2012-01-18T20:32:02.504Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the way ryah_ tells it, you basically did all the hard parts.","date":"2012-01-18T20:32:15.274Z","type":"message"}
+{"nick":"isaacs","action":"maybe overselling a little...","date":"2012-01-18T20:33:05.601Z","type":"action"}
+{"nick":"isaacs","message":"srsly","date":"2012-01-18T20:33:08.208Z","type":"message"}
+{"nick":"isaacs","message":"you should, though.","date":"2012-01-18T20:33:11.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: nah it was actually not so hard, the only advantage I had is that I had thought about it for half a year :-p","date":"2012-01-18T20:33:31.827Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: plus I did only the windows crap","date":"2012-01-18T20:33:40.464Z","type":"message"}
+{"nick":"piscisaureus_","message":"domains, now that's har","date":"2012-01-18T20:33:45.392Z","type":"message"}
+{"nick":"piscisaureus_","message":"d","date":"2012-01-18T20:33:46.269Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that's usually how it goes.","date":"2012-01-18T20:33:46.862Z","type":"message"}
+{"nick":"piscisaureus_","message":"fucking domains","date":"2012-01-18T20:33:48.559Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: whatever seems old and boring to you is probably what you're qualified to talk about.","date":"2012-01-18T20:34:07.232Z","type":"message"}
+{"nick":"isaacs","message":"just have to find something that's boring to you, but not to other people.","date":"2012-01-18T20:34:15.831Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T20:34:16.055Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#277 (master - 0ca3018 : Ingmar Runge): The build is still failing.","date":"2012-01-18T20:34:16.268Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/ad42a82...0ca3018","date":"2012-01-18T20:34:16.269Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/541850","date":"2012-01-18T20:34:16.269Z","type":"message"}
+{"nick":"travis-ci","date":"2012-01-18T20:34:16.269Z","type":"part"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-01-18T20:34:38.070Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I gotta run or the shop will be closed","date":"2012-01-18T20:35:12.374Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ttyl","date":"2012-01-18T20:35:14.484Z","type":"message"}
+{"nick":"isaacs","message":"have fun","date":"2012-01-18T20:35:17.597Z","type":"message"}
+{"nick":"V1","new_nick":"`3rdEden","date":"2012-01-18T20:36:23.372Z","type":"nick"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 252 seconds","date":"2012-01-18T20:39:38.900Z","type":"quit"}
+{"nick":"luxigo","reason":"Remote host closed the connection","date":"2012-01-18T20:54:55.740Z","type":"quit"}
+{"nick":"kuebk","date":"2012-01-18T20:55:48.654Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-01-18T20:57:04.356Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-01-18T20:57:22.905Z","type":"join"}
+{"nick":"mraleph","date":"2012-01-18T21:04:29.960Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-01-18T21:15:41.623Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-01-18T21:20:51.653Z","type":"join"}
+{"nick":"piscisaureus_","message":"hello","date":"2012-01-18T21:21:48.378Z","type":"message"}
+{"nick":"bnoordhuis","message":"olla","date":"2012-01-18T21:23:06.904Z","type":"message"}
+{"nick":"isaacs","new_nick":"evil-political-m","date":"2012-01-18T21:34:51.962Z","type":"nick"}
+{"nick":"evil-political-m","new_nick":"evil-politico-2","date":"2012-01-18T21:35:25.146Z","type":"nick"}
+{"nick":"evil-politico-2","new_nick":"evil-political-m","date":"2012-01-18T21:35:45.589Z","type":"nick"}
+{"nick":"evil-political-m","new_nick":"evil-politico-2","date":"2012-01-18T21:35:56.105Z","type":"nick"}
+{"nick":"evil-politico-2","new_nick":"isaacs","date":"2012-01-18T21:36:30.530Z","type":"nick"}
+{"nick":"kuebk","date":"2012-01-18T21:46:39.342Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Read error: Operation timed out","date":"2012-01-18T21:46:53.999Z","type":"quit"}
+{"nick":"Raynos","reason":"Remote host closed the connection","date":"2012-01-18T21:52:54.046Z","type":"quit"}
+{"nick":"russell_h","reason":"Changing host","date":"2012-01-18T21:56:07.834Z","type":"quit"}
+{"nick":"russell_h","date":"2012-01-18T21:56:08.039Z","type":"join"}
+{"nick":"Raynos","date":"2012-01-18T21:58:52.867Z","type":"join"}
+{"nick":"piscisaureus_","message":"http://groups.google.com/group/nodejs/pendmsg?view=full&sort=date&pending_id=978648579734864852&ind=0","date":"2012-01-18T22:03:47.274Z","type":"message"}
+{"nick":"piscisaureus_","message":"sigh","date":"2012-01-18T22:03:49.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: hey, yt?","date":"2012-01-18T22:04:43.681Z","type":"message"}
+{"nick":"Raynos","reason":"Read error: Connection reset by peer","date":"2012-01-18T22:06:39.417Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-18T22:10:16.173Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-18T22:10:47.513Z","type":"join"}
+{"nick":"Raynos","date":"2012-01-18T22:12:41.831Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus_: whatsup?","date":"2012-01-18T22:17:25.493Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: (1) what are you working on? Did you have time to benchmark fs?","date":"2012-01-18T22:19:50.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"(2) is the bench cluster available?","date":"2012-01-18T22:19:57.131Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: working on sharing sockets between isolates","date":"2012-01-18T22:20:38.349Z","type":"message"}
+{"nick":"piscisaureus_","message":"(3) I have seen a few reports like this -> https://github.com/joyent/node/issues/2536","date":"2012-01-18T22:20:58.733Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i benchmarked fs.stat","date":"2012-01-18T22:21:04.003Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: oh yeah. but not file reading / writing / thread pool stuff in general?","date":"2012-01-18T22:21:32.163Z","type":"message"}
+{"nick":"piscisaureus_","message":"I can do that","date":"2012-01-18T22:21:34.803Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: wrt 3, do you have any idea how we might figure out what happens?","date":"2012-01-18T22:21:57.722Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: no, didn't profile thread pool stuff in general.. what i saw with fs.stat was sync version was about 1.5 times faster than async version, and async version scaled linearly with the number of pending stat operations","date":"2012-01-18T22:23:22.822Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: for #3, i saw something similar at some point.. i needed to flush the browser cache for it to work.","date":"2012-01-18T22:24:46.039Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: maybe we can suggest trying to connect to the server using ab (or some other tool) instead of the browser, just to eliminate that the browser is doing something wrong on his machine?","date":"2012-01-18T22:25:15.902Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: well this guy says curl also doesn't work for him","date":"2012-01-18T22:26:38.606Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ahh, i missed that he used curl","date":"2012-01-18T22:27:07.370Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am somewhat afraid that some networking drivers or WSPs may not like the funky short-circuiting stuff we do","date":"2012-01-18T22:27:40.992Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: we could try disabling that and getting him to try it?","date":"2012-01-18T22:28:42.493Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-01-18T22:29:25.911Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: has he tried to do NODE_DEBUG=net?  do you know if we just never get the accept IOCP packet?","date":"2012-01-18T22:29:45.594Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: this guy did -> http://groups.google.com/group/nodejs/browse_thread/thread/9d608f19d9f7b5c4/624e3cc9f780628b?#624e3cc9f780628b","date":"2012-01-18T22:31:24.414Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: hmm, so this means we never even accept the connection.  but that seems to contradict #2536, where he claims that his client programs are able to connect, but don't receive any data","date":"2012-01-18T22:33:46.601Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: maybe the connection gets accepted, but the accept package never makes it to libuv/node","date":"2012-01-18T22:35:08.917Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: yeah, that's also likely","date":"2012-01-18T22:35:47.512Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: there was another issue similar to this that someone at MS ran into, but that turned out to be a bug in express","date":"2012-01-18T22:36:11.818Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, I have seen that too, but I think it is now resolved","date":"2012-01-18T22:36:27.260Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ok","date":"2012-01-18T22:36:35.881Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am going to send this cork an email, see if I can get him to work with us a little more","date":"2012-01-18T22:37:13.867Z","type":"message"}
+{"nick":"piscisaureus_","message":"what was the command again to show WSPs","date":"2012-01-18T22:37:39.638Z","type":"message"}
+{"nick":"piscisaureus_","message":"must be something with 'netsh'","date":"2012-01-18T22:38:03.718Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah netsh winsock show catalog","date":"2012-01-18T22:38:46.998Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: we could also get him to capture ETW trace (with NETWORKTRACE enabled)","date":"2012-01-18T22:45:29.936Z","type":"message"}
+{"nick":"piscisaureus_","action":"googles ETW","date":"2012-01-18T22:47:15.397Z","type":"action"}
+{"nick":"igorzi","message":"piscisaureus_: i think etw equivalent in unix is dtrace","date":"2012-01-18T22:48:17.474Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: oh, I always use process monitor. Is ETW better?","date":"2012-01-18T22:48:44.886Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: proc monitor uses ETW, i think","date":"2012-01-18T22:50:30.814Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: aho k","date":"2012-01-18T22:50:38.083Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: are there better tools to do ETW tracing? What do you use?","date":"2012-01-18T22:50:50.931Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ETW is a pluggable tracing system.. windows ships with a bunch of trace providers out of the box","date":"2012-01-18T22:52:11.734Z","type":"message"}
+{"nick":"igorzi","message":"here are the trace events that are supported: https://gist.github.com/1636324","date":"2012-01-18T22:52:33.780Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i use xperf - http://msdn.microsoft.com/en-us/performance/cc825801","date":"2012-01-18T22:53:29.187Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah, cool","date":"2012-01-18T22:53:50.111Z","type":"message"}
+{"nick":"piscisaureus_","message":"I didn't know that","date":"2012-01-18T22:53:54.156Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ETW has been around for a while, but starting with vista you also get stacks for every etw event","date":"2012-01-18T22:54:01.415Z","type":"message"}
+{"nick":"piscisaureus_","message":"but then I am not a microsoft certified system engineer","date":"2012-01-18T22:54:15.251Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-01-18T22:54:24.399Z","type":"message"}
+{"nick":"piscisaureus_","message":"i am going to try it","date":"2012-01-18T22:54:27.915Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: makes profiling very nice.. you could basically collect a profile with sample stacks (on every 1ms) + context switch + syscall, etc","date":"2012-01-18T22:55:01.792Z","type":"message"}
+{"nick":"igorzi","message":"there are some tools (that come with xperf) to view the trace.. it also can output the trace into csv format.  we have some tools here that visualize csv","date":"2012-01-18T22:56:45.245Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ok, cool. I am going to try it a bit. If I have questions I will be sure to find you","date":"2012-01-18T22:59:05.053Z","type":"message"}
+{"nick":"dap","message":"Just filed #2577.  Seeing what looks like a memory leak in the HTTP client, but calling response.destroy() seems to alleviate most of it.  Presumably that's supposed to happen automatically, but how is that supposed to work?","date":"2012-01-18T23:10:43.652Z","type":"message"}
+{"nick":"dap","message":"(https://github.com/joyent/node/issues/2577)","date":"2012-01-18T23:10:50.412Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: I think this may have been solved. Can you try with latest v0.6","date":"2012-01-18T23:19:13.079Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: https://github.com/joyent/node/commit/dd9593ccc4dd1de21faa1996c2577c7a6ac3d8ae","date":"2012-01-18T23:19:17.137Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- that's the commit that should do it","date":"2012-01-18T23:19:28.508Z","type":"message"}
+{"nick":"dap","message":"piscisaureus_: sure, I'll try that now.","date":"2012-01-18T23:19:47.054Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-01-18T23:33:30.343Z","type":"quit"}
+{"nick":"mikeal","date":"2012-01-18T23:35:54.457Z","type":"join"}
+{"nick":"dap","message":"piscisaureus_: same result: https://skitch.com/dapsays/g3687/0.6.8-pre-memory","date":"2012-01-18T23:43:36.403Z","type":"message"}
+{"nick":"dap","message":"Looking closer, that makes sense, as the leak I'm seeing appears to be in the *client* response object, not the server's, but that commit only changed the server's.","date":"2012-01-18T23:43:56.564Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Zzzz gnite","date":"2012-01-18T23:45:32.868Z","type":"quit"}
+{"nick":"piscisaureus_","message":"dap: will look into it tomorrow.","date":"2012-01-18T23:50:33.985Z","type":"message"}
+{"nick":"dap","message":"thanks.","date":"2012-01-18T23:50:43.682Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: if you need an answer now, I'm afraid ryah_ is your only hope :-)","date":"2012-01-18T23:50:49.115Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-01-18T23:50:56.392Z","type":"quit"}
+{"nick":"dap","message":"It's not /that/ urgent, but I've talked with several people who have seen similar issues, and it's blocking some of us moving to 0.6.","date":"2012-01-18T23:51:44.568Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: I am not convinced that you're looking at a leak when you end up with 17mb rss","date":"2012-01-18T23:54:36.351Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: but yeah this looks serious","date":"2012-01-18T23:54:45.258Z","type":"message"}
+{"nick":"dap","message":"piscisaureus_: it's 61MB","date":"2012-01-18T23:54:50.870Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: yes that's without your \"fix\"","date":"2012-01-18T23:55:03.598Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: \"As described in that gist, I've found that by adding a call to \"subresponse.destroy()\" to destroy the client HTTP response object in its \"end\" event handler, memory usage is much closer to normal (though still leaks a bit).\"","date":"2012-01-18T23:55:24.408Z","type":"message"}
+{"nick":"dap","message":"Yeah, that one needs more investigation.  I'm much more worried about the 50MB leak than the 2MB one :)","date":"2012-01-18T23:55:53.735Z","type":"message"}
+{"nick":"piscisaureus_","message":"dap: sure :-)","date":"2012-01-18T23:56:03.174Z","type":"message"}
+{"nick":"piscisaureus_","message":"mikeal might have a clue what's going on too","date":"2012-01-18T23:56:53.860Z","type":"message"}
+{"nick":"dap","message":"Interesting: I'm running another test with agent: false, and the behavior is definitely different.  I'll know in a couple of minutes if the leak is gone.","date":"2012-01-18T23:58:45.276Z","type":"message"}

@@ -1,0 +1,815 @@
+{"nick":"travis-ci","date":"2011-12-20T00:05:50.125Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#114 (v0.6 - 348d8cd : James Hartig): The build was fixed.","date":"2011-12-20T00:05:50.353Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d87f551...348d8cd","date":"2011-12-20T00:05:50.353Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/425500","date":"2011-12-20T00:05:50.353Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T00:05:50.353Z","type":"part"}
+{"nick":"bnoordhuis","message":"ryah: https://github.com/bnoordhuis/node/compare/isolates2...eio_poll <- a belated 'it works'","date":"2011-12-20T00:17:27.150Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's hideous of course","date":"2011-12-20T00:17:40.828Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: hey! nice","date":"2011-12-20T00:18:35.898Z","type":"message"}
+{"nick":"ryah","message":"checking it out...","date":"2011-12-20T00:23:08.125Z","type":"message"}
+{"nick":"ryah","message":"there is only a single response queue still","date":"2011-12-20T00:23:44.492Z","type":"message"}
+{"nick":"ryah","message":"when eio_poll is called - it will make all callbacks on that thread","date":"2011-12-20T00:23:54.036Z","type":"message"}
+{"nick":"ryah","message":"or?","date":"2011-12-20T00:24:02.929Z","type":"message"}
+{"nick":"ryah","message":"even ones that belong to other threads","date":"2011-12-20T00:24:41.761Z","type":"message"}
+{"nick":"ryah","message":"somehow etp_poll needs to check uv__loop","date":"2011-12-20T00:24:55.345Z","type":"message"}
+{"nick":"ryah","message":"btw it would be awesome to get a libuv test for this","date":"2011-12-20T00:25:37.344Z","type":"message"}
+{"nick":"ryah","message":"start two threads - issue some fs calls at different times","date":"2011-12-20T00:25:58.987Z","type":"message"}
+{"nick":"bnoordhuis","message":"(just pushed a minor fix)","date":"2011-12-20T00:29:35.263Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe it's better to catch the eio callbacks in a single thread, then dispatch them to their owning thread","date":"2011-12-20T00:30:20.287Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's possibly a lot of overhead though","date":"2011-12-20T00:30:43.390Z","type":"message"}
+{"nick":"ryah","message":"we have to make the callbacks on the owning thread","date":"2011-12-20T00:31:04.496Z","type":"message"}
+{"nick":"ryah","message":"i think your patch is part of the solution - certainly each eio_req needs to be associated with a loop","date":"2011-12-20T00:32:09.024Z","type":"message"}
+{"nick":"ryah","message":"and notifications need to be based on that loop","date":"2011-12-20T00:32:19.078Z","type":"message"}
+{"nick":"bnoordhuis","message":"i was thinking of an intermediate callback that wakes up the owning thread - so libeio calls intermediate, intermediate queues final callback, intermediate wakes up thread, final callback runs","date":"2011-12-20T00:34:08.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"the queue would be some kind of thread-safe fifo","date":"2011-12-20T00:34:44.474Z","type":"message"}
+{"nick":"bnoordhuis","action":"digs through eio some more","date":"2011-12-20T00:36:37.490Z","type":"action"}
+{"nick":"ryah","message":"bnoordhuis: https://gist.github.com/1499619 <-- sometimes hangs with your patch","date":"2011-12-20T00:37:31.906Z","type":"message"}
+{"nick":"bnoordhuis","message":"asserts for me -> uv_eio_want_poll: Assertion `req->uv__loop != ((void *)0)' failed.","date":"2011-12-20T00:39:06.205Z","type":"message"}
+{"nick":"bnoordhuis","message":"i probably haven't updated all eio_*() call sites yet","date":"2011-12-20T00:39:39.598Z","type":"message"}
+{"nick":"ryah","message":"do we want to share the thread pool?","date":"2011-12-20T00:40:10.191Z","type":"message"}
+{"nick":"ryah","message":"we could try to namespace it and have one per isolate","date":"2011-12-20T00:40:19.588Z","type":"message"}
+{"nick":"ryah","message":"i think i'd rather have it shared","date":"2011-12-20T00:40:33.635Z","type":"message"}
+{"nick":"ryah","message":"we could also just get rid of eio entirely :)","date":"2011-12-20T00:40:51.604Z","type":"message"}
+{"nick":"bnoordhuis","message":"heh, don't give me ideas :)","date":"2011-12-20T00:41:10.685Z","type":"message"}
+{"nick":"rmustacc","message":"If you're going to share it, you'll need to increase the size.","date":"2011-12-20T00:41:25.371Z","type":"message"}
+{"nick":"ryah","message":"it grows on demand","date":"2011-12-20T00:41:41.199Z","type":"message"}
+{"nick":"ryah","message":"we could bump the max number of threads","date":"2011-12-20T00:41:57.715Z","type":"message"}
+{"nick":"rmustacc","message":"Is that new?","date":"2011-12-20T00:42:01.025Z","type":"message"}
+{"nick":"rmustacc","message":"Oh, I meant the max.","date":"2011-12-20T00:42:05.771Z","type":"message"}
+{"nick":"ryah","message":"no","date":"2011-12-20T00:42:14.698Z","type":"message"}
+{"nick":"rmustacc","message":"It's going to be a lot easier to hit the max.","date":"2011-12-20T00:42:21.112Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-12-20T00:42:24.272Z","type":"message"}
+{"nick":"ryah","message":"i guess :)","date":"2011-12-20T00:42:28.163Z","type":"message"}
+{"nick":"rmustacc","message":"Of course, I'd just say use separate processes.","date":"2011-12-20T00:42:29.888Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah...","date":"2011-12-20T00:43:57.441Z","type":"message"}
+{"nick":"bnoordhuis","message":"sweet, hit my first threading bug","date":"2011-12-20T00:47:13.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"#3  0x000000000047b681 in uv_eio_want_poll (req=0xf51780) at ../deps/uv/src/unix/uv-eio.c:82","date":"2011-12-20T00:47:14.738Z","type":"message"}
+{"nick":"bnoordhuis","message":"82        assert(req->uv__loop != NULL);","date":"2011-12-20T00:47:14.959Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) p req->uv__loop ","date":"2011-12-20T00:47:14.959Z","type":"message"}
+{"nick":"bnoordhuis","message":"$6 = (void *) 0xe87560","date":"2011-12-20T00:47:14.959Z","type":"message"}
+{"nick":"ryah","message":"nice - we lost the json.py dep","date":"2011-12-20T00:50:22.066Z","type":"message"}
+{"nick":"ryah","message":"and the options output looks better even","date":"2011-12-20T00:50:42.627Z","type":"message"}
+{"nick":"ryah","message":"<3 open source","date":"2011-12-20T00:50:48.682Z","type":"message"}
+{"nick":"ryah","message":"i should start using python 2.5","date":"2011-12-20T00:51:25.425Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T01:04:44.410Z","type":"quit"}
+{"nick":"mjr_","date":"2011-12-20T01:16:20.686Z","type":"join"}
+{"nick":"mjr_","message":"Hey guys, getting a strange error-less segfault crash recently","date":"2011-12-20T01:18:50.850Z","type":"message"}
+{"nick":"mjr_","message":"Dec 18 14:44:06 prod-06 kernel: [1054313.616909] node[28097]: segfault at 880454e ip 00007f4502f05d30 sp 00007fff278448c8 error 4 in libc-2.11.1.so[7f4502e7f000+17a000]","date":"2011-12-20T01:18:53.121Z","type":"message"}
+{"nick":"mjr_","message":"Dec 19 12:12:42 prod-06 kernel: [1131611.568678] node[1426]: segfault at 738c34e ip 00007f371ac31d30 sp 00007fff39112cf8 error 4 in libc-2.11.1.so[7f371abab000+17a000]","date":"2011-12-20T01:18:53.376Z","type":"message"}
+{"nick":"mjr_","message":"Dec 19 16:56:09 prod-06 kernel: [1148613.731204] node[3493]: segfault at 926516f ip 00007f3cbf86fd30 sp 00007fff635af208 error 4 in libc-2.11.1.so[7f3cbf7e9000+17a000]","date":"2011-12-20T01:18:53.616Z","type":"message"}
+{"nick":"ryah","message":"mjr_: oh joy","date":"2011-12-20T01:19:05.526Z","type":"message"}
+{"nick":"mjr_","message":"Any idea how to figure out what this is, or do we need core files?","date":"2011-12-20T01:19:10.250Z","type":"message"}
+{"nick":"TooTallNate","date":"2011-12-20T01:19:31.303Z","type":"join"}
+{"nick":"mjr_","message":"Like, what is the libc address that's the same every time?","date":"2011-12-20T01:19:53.036Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-12-20T01:20:20.383Z","type":"message"}
+{"nick":"ryah","message":"mjr_: if you nm libc","date":"2011-12-20T01:20:28.494Z","type":"message"}
+{"nick":"ryah","message":"nm libc-2.11.1.so","date":"2011-12-20T01:20:37.435Z","type":"message"}
+{"nick":"ryah","message":"maybe you can find that offset?","date":"2011-12-20T01:20:41.939Z","type":"message"}
+{"nick":"ryah","message":"i think we need a core file though","date":"2011-12-20T01:21:33.298Z","type":"message"}
+{"nick":"mjr_","message":"nm: /lib/libc-2.11.1.so: no symbols","date":"2011-12-20T01:23:48.453Z","type":"message"}
+{"nick":"mjr_","message":"boo","date":"2011-12-20T01:23:50.067Z","type":"message"}
+{"nick":"mjr_","message":"I think there's some other tool for dumping symbols in shared libraries, isn't there?","date":"2011-12-20T01:24:05.162Z","type":"message"}
+{"nick":"mjr_","message":"Anyway, I'll get some cores","date":"2011-12-20T01:24:09.570Z","type":"message"}
+{"nick":"rmustacc","message":"Well, you'll need to get your distros debug symbols.","date":"2011-12-20T01:24:54.156Z","type":"message"}
+{"nick":"pquerna","message":"do you have debuginfo installed?","date":"2011-12-20T01:25:02.061Z","type":"message"}
+{"nick":"rmustacc","message":"They usually have some kind of package so you can see where you are.","date":"2011-12-20T01:25:04.333Z","type":"message"}
+{"nick":"rmustacc","message":"Otherwise a stripped binary is pretty useless for debugging.","date":"2011-12-20T01:25:12.185Z","type":"message"}
+{"nick":"TooTallNate","reason":"Ping timeout: 240 seconds","date":"2011-12-20T01:25:20.048Z","type":"quit"}
+{"nick":"rmustacc","message":"Or stipped so for that matter.","date":"2011-12-20T01:25:37.376Z","type":"message"}
+{"nick":"mjr_","message":"I'm on ubuntu 10.04, if that matters.","date":"2011-12-20T01:25:58.773Z","type":"message"}
+{"nick":"ryah","message":"the symbols are in tehre - when i run 'strings /lib/libc.so.6' i see all the function","date":"2011-12-20T01:26:04.226Z","type":"message"}
+{"nick":"bnoordhuis","message":"`objdump -T` will print all dynamic symbols","date":"2011-12-20T01:26:25.447Z","type":"message"}
+{"nick":"mjr_","message":"ooo","date":"2011-12-20T01:26:31.102Z","type":"message"}
+{"nick":"ryah","message":"there you go","date":"2011-12-20T01:26:48.788Z","type":"message"}
+{"nick":"bnoordhuis","message":"but (there's always a but) the problem with dynamic symbols is that they're dynamic","date":"2011-12-20T01:27:04.350Z","type":"message"}
+{"nick":"ryah","message":"why doesn't nm work?","date":"2011-12-20T01:27:10.568Z","type":"message"}
+{"nick":"pquerna","message":"apt-get install libc6-dbg","date":"2011-12-20T01:27:24.426Z","type":"message"}
+{"nick":"ryah","action":"emerge -i libc6-dbg","date":"2011-12-20T01:27:43.670Z","type":"action"}
+{"nick":"ryah","message":"i dont even remember distro this is or why im using it","date":"2011-12-20T01:28:08.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think `nm -D` will work too","date":"2011-12-20T01:28:17.040Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: it does","date":"2011-12-20T01:28:36.727Z","type":"message"}
+{"nick":"mjr_","message":"oh yeah, that does work","date":"2011-12-20T01:29:07.167Z","type":"message"}
+{"nick":"mjr_","message":"So how to convert that offset in the kernel message to something from nm -D?","date":"2011-12-20T01:29:22.382Z","type":"message"}
+{"nick":"bnoordhuis","message":"you should take pquerna's advice :)","date":"2011-12-20T01:29:32.817Z","type":"message"}
+{"nick":"mjr_","message":"Sure, did that. ","date":"2011-12-20T01:29:38.410Z","type":"message"}
+{"nick":"rmustacc","message":"I always find it easier to work from a core file.","date":"2011-12-20T01:30:51.039Z","type":"message"}
+{"nick":"bnoordhuis","message":"same here, especially if the process is already dead","date":"2011-12-20T01:31:22.994Z","type":"message"}
+{"nick":"mjr_","message":"Does libc6-dbg give you a shared lib with symbols?","date":"2011-12-20T01:31:33.267Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you really, really want to and don't have ASLR enabled, you can map an address to a symbol","date":"2011-12-20T01:31:46.990Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's a lot of work","date":"2011-12-20T01:31:49.642Z","type":"message"}
+{"nick":"pquerna","message":"/usr/lib/debug/lib32/libc-2.11.1.so","date":"2011-12-20T01:31:53.046Z","type":"message"}
+{"nick":"pquerna","message":"is there now","date":"2011-12-20T01:31:55.015Z","type":"message"}
+{"nick":"pquerna","message":"er","date":"2011-12-20T01:32:07.325Z","type":"message"}
+{"nick":"pquerna","message":"/usr/lib/debug/lib/libc-2.11.1.so","date":"2011-12-20T01:32:07.753Z","type":"message"}
+{"nick":"pquerna","message":"and i believe your symbols/nm should map into that","date":"2011-12-20T01:32:16.520Z","type":"message"}
+{"nick":"mjr_","message":"It is now painfully clear that I don't actually know the details of how shared libraries work on linux.","date":"2011-12-20T01:34:10.779Z","type":"message"}
+{"nick":"mjr_","message":"So I'll enable cores for the future.  Right now though, is there any hope of dereferencing that kernel message with the debug libc?","date":"2011-12-20T01:34:35.107Z","type":"message"}
+{"nick":"mjr_","message":"I don't find those strings from the kernel messages in the nm output, but maybe that's a silly thing to look for.","date":"2011-12-20T01:35:02.974Z","type":"message"}
+{"nick":"ryah","message":"what's at offset 17a000 ?","date":"2011-12-20T01:35:54.351Z","type":"message"}
+{"nick":"mjr_","message":"Trying to reconcile the last comments from bnoordhuis and pquerna, they seem to conflict.","date":"2011-12-20T01:35:56.970Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: what does `sysctl kernel.randomize_va_space` say?","date":"2011-12-20T01:36:16.127Z","type":"message"}
+{"nick":"mjr_","message":"kernel.randomize_va_space = 2","date":"2011-12-20T01:36:31.999Z","type":"message"}
+{"nick":"pquerna","message":"well, libc6-dbg just contains the .so of /lib/libc* without the symbols stripped","date":"2011-12-20T01:36:35.426Z","type":"message"}
+{"nick":"pquerna","message":"so the same addresses as the non-debug one","date":"2011-12-20T01:36:47.059Z","type":"message"}
+{"nick":"pquerna","message":"so if you get the right address, you can see what func that is","date":"2011-12-20T01:36:56.493Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: set it to 0, turns off ASLR - else the address will be different for each crash","date":"2011-12-20T01:37:19.956Z","type":"message"}
+{"nick":"mikeal","date":"2011-12-20T01:38:52.935Z","type":"join"}
+{"nick":"mjr_","message":"Oh man, I did not know about randomize_va_space.","date":"2011-12-20T01:38:58.388Z","type":"message"}
+{"nick":"mjr_","message":"And here I thought I mostly knew how computers worked.","date":"2011-12-20T01:39:20.515Z","type":"message"}
+{"nick":"ryah","message":"i think he should still be able to find it via the offset","date":"2011-12-20T01:39:21.406Z","type":"message"}
+{"nick":"ryah","message":"the dmesgs show libc loaded at different addresses but crashing at the same offset","date":"2011-12-20T01:40:00.156Z","type":"message"}
+{"nick":"ryah","message":"mjr_: gist nm /usr/lib/debug/lib/libc-2.11.1.so","date":"2011-12-20T01:42:15.636Z","type":"message"}
+{"nick":"mjr_","message":"Yeah, that does seem suspicious","date":"2011-12-20T01:42:18.891Z","type":"message"}
+{"nick":"mjr_","message":"https://gist.github.com/ba32eb824a387c4f448b","date":"2011-12-20T01:42:20.473Z","type":"message"}
+{"nick":"mjr_","message":"actually, that's nm --numeric-sort","date":"2011-12-20T01:42:29.419Z","type":"message"}
+{"nick":"erickt","reason":"Ping timeout: 248 seconds","date":"2011-12-20T01:42:49.651Z","type":"quit"}
+{"nick":"mjr_","message":"I can send the whole thing, but that's right where 17 a0 00 should be","date":"2011-12-20T01:42:56.134Z","type":"message"}
+{"nick":"ryah","message":"__FRAME_END__ ?","date":"2011-12-20T01:43:35.840Z","type":"message"}
+{"nick":"ryah","message":"*shrug*","date":"2011-12-20T01:44:15.484Z","type":"message"}
+{"nick":"mjr_","message":"yeah, who knows.  I'll get cores.","date":"2011-12-20T01:51:30.303Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T01:54:10.136Z","type":"quit"}
+{"nick":"CIA-111","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002b603578\u000f \u000310\u000f/ tools/installer.js \u0002:\u000f ","date":"2011-12-20T02:07:27.637Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002node:\u000f Fix 'make install'","date":"2011-12-20T02:07:27.857Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002node:\u000f Broken in 45605c because configure does not spit out proper JavaScript.","date":"2011-12-20T02:07:27.857Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002node:\u000f Needed to change single quotes to double. - http://git.io/5s5VTg","date":"2011-12-20T02:07:27.857Z","type":"message"}
+{"nick":"ryah","message":"#FML --^","date":"2011-12-20T02:07:50.497Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T02:18:49.379Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#115 (master - b603578 : Ryan Dahl): The build is still failing.","date":"2011-12-20T02:18:49.603Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/aac717d...b603578","date":"2011-12-20T02:18:49.603Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/425758","date":"2011-12-20T02:18:49.603Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T02:18:49.603Z","type":"part"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 248 seconds","date":"2011-12-20T02:19:05.680Z","type":"quit"}
+{"nick":"mikeal","date":"2011-12-20T02:19:12.930Z","type":"join"}
+{"nick":"sh1mmer","reason":"Read error: Connection reset by peer","date":"2011-12-20T02:20:27.313Z","type":"quit"}
+{"nick":"sh1mmer","date":"2011-12-20T02:20:51.284Z","type":"join"}
+{"nick":"erickt","date":"2011-12-20T02:23:21.344Z","type":"join"}
+{"nick":"pietern","date":"2011-12-20T02:32:33.836Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T02:36:16.456Z","type":"quit"}
+{"nick":"mikeal","date":"2011-12-20T02:44:59.923Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2011-12-20T02:49:23.595Z","type":"quit"}
+{"nick":"mikeal","date":"2011-12-20T02:49:55.043Z","type":"join"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2011-12-20T02:56:04.019Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T03:07:59.685Z","type":"quit"}
+{"nick":"erickt","date":"2011-12-20T03:18:29.300Z","type":"join"}
+{"nick":"erickt_","date":"2011-12-20T03:19:37.761Z","type":"join"}
+{"nick":"erickt","reason":"Read error: Connection reset by peer","date":"2011-12-20T03:19:45.196Z","type":"quit"}
+{"nick":"erickt_","new_nick":"erickt","date":"2011-12-20T03:19:45.463Z","type":"nick"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T03:32:20.810Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T03:58:13.535Z","type":"quit"}
+{"nick":"indutny","message":"oh a lot of hacks this night ;)","date":"2011-12-20T04:29:26.434Z","type":"message"}
+{"nick":"mikeal","date":"2011-12-20T04:55:40.704Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T05:11:06.682Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2011-12-20T05:28:08.071Z","type":"quit"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-12-20T05:48:36.770Z","type":"quit"}
+{"nick":"mikeal","date":"2011-12-20T06:01:57.668Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2011-12-20T06:03:30.576Z","type":"quit"}
+{"nick":"isaacs","date":"2011-12-20T06:27:23.691Z","type":"join"}
+{"nick":"erickt","date":"2011-12-20T06:29:26.838Z","type":"join"}
+{"nick":"TooTallNate","date":"2011-12-20T06:42:10.736Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2011-12-20T06:43:10.456Z","type":"quit"}
+{"nick":"paddybyers","date":"2011-12-20T06:45:06.088Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T06:48:07.738Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Read error: Connection reset by peer","date":"2011-12-20T06:53:04.960Z","type":"quit"}
+{"nick":"ljackson","reason":"Read error: Operation timed out","date":"2011-12-20T07:19:18.400Z","type":"quit"}
+{"nick":"ljackson","date":"2011-12-20T07:33:56.225Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2011-12-20T08:13:47.267Z","type":"quit"}
+{"nick":"kuebk","date":"2011-12-20T08:16:21.955Z","type":"join"}
+{"nick":"kuebk1","date":"2011-12-20T08:26:17.955Z","type":"join"}
+{"nick":"kuebk","reason":"Ping timeout: 245 seconds","date":"2011-12-20T08:29:42.621Z","type":"quit"}
+{"nick":"kuebk","date":"2011-12-20T08:36:49.288Z","type":"join"}
+{"nick":"kuebk1","reason":"Read error: Connection reset by peer","date":"2011-12-20T08:36:49.515Z","type":"quit"}
+{"nick":"paddybyers","date":"2011-12-20T08:41:57.220Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2011-12-20T09:05:19.373Z","type":"quit"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-12-20T09:10:32.260Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2011-12-20T09:48:00.254Z","type":"join"}
+{"nick":"txdv_","message":"Is it okay to use MIT for a language binding of libuv?","date":"2011-12-20T10:54:10.173Z","type":"message"}
+{"nick":"txdv_","new_nick":"txdv","date":"2011-12-20T10:57:01.550Z","type":"nick"}
+{"nick":"paddybyers","date":"2011-12-20T11:08:35.903Z","type":"join"}
+{"nick":"piscisaureus_","message":"txdv: I don't really know if I understand your question","date":"2011-12-20T11:19:46.882Z","type":"message"}
+{"nick":"txdv","message":"I am creating some language bindings for libuv","date":"2011-12-20T11:40:45.866Z","type":"message"}
+{"nick":"txdv","message":"cant I release these under the MIT license","date":"2011-12-20T11:40:52.461Z","type":"message"}
+{"nick":"txdv","message":"does it comply with the license of libuv?","date":"2011-12-20T11:41:00.737Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: well libuv is licensed under a pretty liberal license, you can certainly use it","date":"2011-12-20T11:46:25.917Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: but I think you cannot just say \"everything is MIT\" because libuv's license is somewhat complicated","date":"2011-12-20T11:46:57.616Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: but if you add a license that says \"it's mit and contains libuv which has license XX\" then you should be fine","date":"2011-12-20T11:48:37.464Z","type":"message"}
+{"nick":"txdv","message":"I am compiling uv to an so and I am using the ABI","date":"2011-12-20T11:50:33.404Z","type":"message"}
+{"nick":"txdv","message":"guess i can add the note that libuv is licensed under other stuff","date":"2011-12-20T11:50:59.063Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: well I think if it is an so you should be fine (I mean, you're using an glibc so but you don't care about GPL either right)","date":"2011-12-20T11:51:45.710Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: which language btw?","date":"2011-12-20T11:51:57.248Z","type":"message"}
+{"nick":"txdv","message":"C#","date":"2011-12-20T11:53:36.686Z","type":"message"}
+{"nick":"txdv","message":"https://github.com/txdv/LibuvSharp","date":"2011-12-20T11:53:53.339Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah ok, nice","date":"2011-12-20T11:55:05.882Z","type":"message"}
+{"nick":"piscisaureus_","message":"does c# not have standard libraries that do the same? (I don't know - just wondering.)","date":"2011-12-20T11:55:35.602Z","type":"message"}
+{"nick":"txdv","message":"no","date":"2011-12-20T11:55:47.337Z","type":"message"}
+{"nick":"piscisaureus_","message":"then how do people do tcp with c#?","date":"2011-12-20T11:56:02.686Z","type":"message"}
+{"nick":"txdv","message":"they created thousand of threads","date":"2011-12-20T11:56:12.063Z","type":"message"}
+{"nick":"txdv","message":"and buy expensive servers","date":"2011-12-20T11:56:15.823Z","type":"message"}
+{"nick":"mmalecki","message":"best explanation ever.","date":"2011-12-20T11:56:50.841Z","type":"message"}
+{"nick":"txdv","message":"There is an async API, but it has a ThreadPool ","date":"2011-12-20T11:57:04.834Z","type":"message"}
+{"nick":"txdv","message":"And there is the sync API, which sucks if you have a shitload of connections","date":"2011-12-20T11:57:33.028Z","type":"message"}
+{"nick":"txdv","message":"piscisaureus_: what language does have a standard library to do async api? node.js and java","date":"2011-12-20T12:00:18.123Z","type":"message"}
+{"nick":"txdv","message":"but java has no inline/anonymous functions","date":"2011-12-20T12:00:33.344Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: yeah I know about java","date":"2011-12-20T12:01:08.711Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: I don't fully know .net / c# standard libs but I kind of supposed it would have it too, since it is a java competitor :-)","date":"2011-12-20T12:01:53.506Z","type":"message"}
+{"nick":"mmalecki","message":"btw, https://github.com/noderb/noderb","date":"2011-12-20T12:02:42.549Z","type":"message"}
+{"nick":"mmalecki","message":"this is quite awesome.","date":"2011-12-20T12:02:53.016Z","type":"message"}
+{"nick":"txdv","message":"standard? no. But there is Manos.IO some bindings for libev (obviously doesn't work on windows) and now there will be LibuvSharp","date":"2011-12-20T12:02:55.743Z","type":"message"}
+{"nick":"txdv","message":"hmm nice","date":"2011-12-20T12:03:02.882Z","type":"message"}
+{"nick":"txdv","message":"i like ruby","date":"2011-12-20T12:03:06.642Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, so do I","date":"2011-12-20T12:03:12.601Z","type":"message"}
+{"nick":"txdv","message":"the api of noderb sucks","date":"2011-12-20T12:06:10.707Z","type":"message"}
+{"nick":"mmalecki","message":"just a bit","date":"2011-12-20T12:06:19.518Z","type":"message"}
+{"nick":"piscisaureus_","message":"looks like it could use some work yeah","date":"2011-12-20T12:07:30.146Z","type":"message"}
+{"nick":"txdv","message":"https://github.com/txdv/LibuvSharp/blob/master/Test/UdpTest.cs // this is how it looks like in my bindings for C#","date":"2011-12-20T12:07:55.749Z","type":"message"}
+{"nick":"txdv","message":"the tcp api of noderb should be more 'blockier' (block is like a callback function in ruby)","date":"2011-12-20T12:09:47.942Z","type":"message"}
+{"nick":"piscisaureus_","message":"anyone seen bnoordhuis around?","date":"2011-12-20T12:26:57.108Z","type":"message"}
+{"nick":"indutny","message":"oh, transcompiling is soo interesting","date":"2011-12-20T13:20:02.877Z","type":"message"}
+{"nick":"indutny","message":"ometajs -> AST -> DSL #1 -> AST # 2 -> DSL #2 -> Javascript","date":"2011-12-20T13:20:33.315Z","type":"message"}
+{"nick":"indutny","message":"hehe","date":"2011-12-20T13:20:33.954Z","type":"message"}
+{"nick":"bnoordhuis","date":"2011-12-20T14:33:43.080Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: bertje, jij zocht mij?","date":"2011-12-20T14:33:59.179Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ik ben er over 5 minuten weer","date":"2011-12-20T14:42:43.457Z","type":"message"}
+{"nick":"erickt","date":"2011-12-20T15:05:34.220Z","type":"join"}
+{"nick":"piscisaureus_","message":"DrPizza: yt?","date":"2011-12-20T15:15:09.990Z","type":"message"}
+{"nick":"DrPizza","message":"hello","date":"2011-12-20T15:15:20.378Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: can you comment on https://github.com/joyent/node/issues/2318 ?","date":"2011-12-20T15:19:51.938Z","type":"message"}
+{"nick":"DrPizza","message":"isn't there the other command, the one that adds the cmd /c on the javascript side, for this kind of scenario?","date":"2011-12-20T15:20:35.675Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: we have .exec()","date":"2011-12-20T15:20:51.202Z","type":"message"}
+{"nick":"DrPizza","message":"there's no particularly good or nice way of telling if something is a .exe file","date":"2011-12-20T15:20:55.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: but exec() buffers all the output","date":"2011-12-20T15:21:09.766Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: also, people kind of expect this to work because on unices you can safely use spawn() with a bash script","date":"2011-12-20T15:21:36.734Z","type":"message"}
+{"nick":"piscisaureus_","message":"One super annoying thing would be that we'd have to apply ^ quoting :-/","date":"2011-12-20T15:25:57.517Z","type":"message"}
+{"nick":"bnoordhuis","message":"how can i initialize a CRITICAL_SECTION statically?","date":"2011-12-20T15:26:23.547Z","type":"message"}
+{"nick":"bnoordhuis","message":"please don't say \"you can't\"","date":"2011-12-20T15:26:27.681Z","type":"message"}
+{"nick":"DrPizza","message":"bnoordhuis: you can't","date":"2011-12-20T15:26:29.822Z","type":"message"}
+{"nick":"bnoordhuis","message":":(","date":"2011-12-20T15:26:35.988Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah that suck heh","date":"2011-12-20T15:26:46.775Z","type":"message"}
+{"nick":"bnoordhuis","message":"so what's a good way to do one-time initialization? the InitOnce*() functions are vista and newer only, it seems","date":"2011-12-20T15:30:11.071Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: uv_once :-)","date":"2011-12-20T15:30:23.250Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it's already in libuv","date":"2011-12-20T15:30:29.176Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: just not exported atm","date":"2011-12-20T15:30:46.166Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, i've seen it","date":"2011-12-20T15:30:58.868Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it has a static initializer which is called UV_ONCE_INIT","date":"2011-12-20T15:31:26.817Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, that's useful","date":"2011-12-20T15:31:50.241Z","type":"message"}
+{"nick":"bnoordhuis","message":"and easy to implement on unices too","date":"2011-12-20T15:31:57.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"think i'll go with that","date":"2011-12-20T15:32:01.488Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/joyent/libuv/blob/master/src/win/internal.h#L347-364 <-- make that publiv","date":"2011-12-20T15:32:18.827Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and implement on unix","date":"2011-12-20T15:32:26.173Z","type":"message"}
+{"nick":"piscisaureus_","message":"the uv_once_s struct could be a little smarter btw","date":"2011-12-20T15:33:36.545Z","type":"message"}
+{"nick":"bnoordhuis","message":"how so?","date":"2011-12-20T15:33:55.971Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, because of the alignment requirements?","date":"2011-12-20T15:34:54.952Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well uv_once_s not takes up 3x the size of a pointer","date":"2011-12-20T15:34:57.084Z","type":"message"}
+{"nick":"piscisaureus_","message":"in practice","date":"2011-12-20T15:35:00.661Z","type":"message"}
+{"nick":"bnoordhuis","message":"meh, i don't care","date":"2011-12-20T15:35:14.949Z","type":"message"}
+{"nick":"piscisaureus_","message":"kk","date":"2011-12-20T15:35:25.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"in practice you'll only use a handful of them in any sane application","date":"2011-12-20T15:35:27.842Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: anyway; I don't know any good way to even figure out whether something is a PE or not, short of trying to load the file and examining it to see if it's a PE","date":"2011-12-20T15:35:47.650Z","type":"message"}
+{"nick":"DrPizza","message":"and I'm not really comfortable with libuv trying to do that","date":"2011-12-20T15:35:55.361Z","type":"message"}
+{"nick":"isaacs","date":"2011-12-20T15:36:22.129Z","type":"join"}
+{"nick":"piscisaureus_","message":"DrPizza: I think we should just check for .com or .exe","date":"2011-12-20T15:36:49.425Z","type":"message"}
+{"nick":"DrPizza","message":"but that's not right","date":"2011-12-20T15:36:56.649Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: because?","date":"2011-12-20T15:37:04.998Z","type":"message"}
+{"nick":"DrPizza","message":"well, you can spawn things without an extension too","date":"2011-12-20T15:37:12.413Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: yeah but running it through cmd doesn't hurt, it's just a little slower :-)","date":"2011-12-20T15:37:32.424Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: this is what the crt does too btw. (not that the crt is my standard)","date":"2011-12-20T15:38:26.341Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: we could also just try CreateProcess and only if that fails prefix cmd","date":"2011-12-20T15:38:40.991Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok well it could actually matter if the file is on an unc path because then cmd won't be able to run it but CreateProcess can","date":"2011-12-20T15:39:44.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"fucking edge cases","date":"2011-12-20T15:40:01.190Z","type":"message"}
+{"nick":"DrPizza","message":"I think cmd's rules are even more nuanced aren't they?","date":"2011-12-20T15:40:24.077Z","type":"message"}
+{"nick":"piscisaureus_","message":"like what?","date":"2011-12-20T15:40:40.128Z","type":"message"}
+{"nick":"DrPizza","message":"like it can spawn executables from UNC, but can't 'cd' to a UNC path","date":"2011-12-20T15:40:44.173Z","type":"message"}
+{"nick":"DrPizza","message":"so batch files are a problem","date":"2011-12-20T15:40:52.228Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh god","date":"2011-12-20T15:41:29.678Z","type":"message"}
+{"nick":"piscisaureus_","message":"\\\\piscisaureus\\c$\\windows\\system32\\cmd.exe <-- wfm!","date":"2011-12-20T15:41:35.157Z","type":"message"}
+{"nick":"DrPizza","message":"C:\\Users\\DrPizza>cd \\\\awkawk\\c$\\","date":"2011-12-20T15:44:30.020Z","type":"message"}
+{"nick":"DrPizza","message":"'\\\\awkawk\\c$\\'","date":"2011-12-20T15:44:30.246Z","type":"message"}
+{"nick":"DrPizza","message":"CMD does not support UNC paths as current directories.","date":"2011-12-20T15:44:30.246Z","type":"message"}
+{"nick":"DrPizza","message":"kwality.","date":"2011-12-20T15:44:32.188Z","type":"message"}
+{"nick":"piscisaureus_","action":"gets pot","date":"2011-12-20T15:44:51.413Z","type":"action"}
+{"nick":"DrPizza","message":"oh, I don't think it's as simple as trying CreateProcess and then failing is it?","date":"2011-12-20T15:45:03.543Z","type":"message"}
+{"nick":"DrPizza","message":"because there's the stupid ordering","date":"2011-12-20T15:45:08.177Z","type":"message"}
+{"nick":"DrPizza","message":"iirc .com comes before .exe","date":"2011-12-20T15:45:14.236Z","type":"message"}
+{"nick":"DrPizza","message":"and .bat maybe before either","date":"2011-12-20T15:45:17.207Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: yeah but we can just test which files exist right?","date":"2011-12-20T15:45:45.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"and then supply a fully specified path name","date":"2011-12-20T15:45:54.647Z","type":"message"}
+{"nick":"DrPizza","message":"you'd have to test for all of the","date":"2011-12-20T15:45:58.443Z","type":"message"}
+{"nick":"DrPizza","message":"them","date":"2011-12-20T15:46:00.281Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah we used to do that","date":"2011-12-20T15:46:10.528Z","type":"message"}
+{"nick":"DrPizza","message":"oh right, with the pathext stuff","date":"2011-12-20T15:46:20.138Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2011-12-20T15:46:24.840Z","type":"message"}
+{"nick":"DrPizza","message":"imo if people want cmd's poorly-documented spawning behaviour, they should invoke cmd explicitly","date":"2011-12-20T15:46:55.435Z","type":"message"}
+{"nick":"piscisaureus_","message":"My kingdom for an OS that doesn't have these complications","date":"2011-12-20T15:47:13.410Z","type":"message"}
+{"nick":"piscisaureus_","message":"people don't want this stuff","date":"2011-12-20T15:47:21.698Z","type":"message"}
+{"nick":"piscisaureus_","message":"they want something that just works","date":"2011-12-20T15:47:26.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"the problem is that cmd'ing is actually pretty painful","date":"2011-12-20T15:48:15.553Z","type":"message"}
+{"nick":"piscisaureus_","message":"btw this is not a debate - I just don't know what to do :-/","date":"2011-12-20T15:48:36.417Z","type":"message"}
+{"nick":"piscisaureus_","message":"require('child_process').spawn('cmd', ['/s', '/c', '\"C:\\\\util\\\\mycmd.bat\"'], {","date":"2011-12-20T15:48:41.947Z","type":"message"}
+{"nick":"piscisaureus_","message":"  windowsVerbatimArguments: true","date":"2011-12-20T15:48:42.172Z","type":"message"}
+{"nick":"piscisaureus_","message":"});","date":"2011-12-20T15:48:42.172Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: would a tolerable halfway house be","date":"2011-12-20T15:49:00.221Z","type":"message"}
+{"nick":"DrPizza","message":"instead of making them do that","date":"2011-12-20T15:49:03.702Z","type":"message"}
+{"nick":"DrPizza","message":"have something like","date":"2011-12-20T15:49:05.788Z","type":"message"}
+{"nick":"piscisaureus_","message":"shell: true :-)","date":"2011-12-20T15:49:21.034Z","type":"message"}
+{"nick":"piscisaureus_","message":"{ shell: true }","date":"2011-12-20T15:49:28.592Z","type":"message"}
+{"nick":"DrPizza","message":"spawn('my-batch-file.bat', [], { spawnWithShell: true })","date":"2011-12-20T15:49:28.936Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-12-20T15:49:29.827Z","type":"message"}
+{"nick":"DrPizza","message":"yeah","date":"2011-12-20T15:49:30.635Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah I would like that","date":"2011-12-20T15:50:18.894Z","type":"message"}
+{"nick":"DrPizza","message":"so basically, push exec's logic into spawn(), and make it an option","date":"2011-12-20T15:50:20.298Z","type":"message"}
+{"nick":"piscisaureus_","message":"the current exec / execFile / spawn logic is also pretty misty","date":"2011-12-20T15:50:38.325Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: there's also more fun, what if people would want to run powershell?","date":"2011-12-20T15:52:20.196Z","type":"message"}
+{"nick":"DrPizza","message":"I don't know what the implications are","date":"2011-12-20T15:52:35.057Z","type":"message"}
+{"nick":"DrPizza","message":"maybe spawnViaCmd then","date":"2011-12-20T15:52:41.093Z","type":"message"}
+{"nick":"DrPizza","message":"so that there's no doubt about which shell it is!","date":"2011-12-20T15:52:45.789Z","type":"message"}
+{"nick":"piscisaureus_","message":"still my kingdom + all my daugthers for an OS  that doesn't suck","date":"2011-12-20T15:57:31.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: http://groups.google.com/group/nodejs/pendmsg?view=full&sort=date&pending_id=5121385192867397414&ind=0","date":"2011-12-20T15:58:32.563Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: You have to be a manager of this group to view this page.  :(","date":"2011-12-20T15:59:24.500Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: are you not?","date":"2011-12-20T15:59:39.658Z","type":"message"}
+{"nick":"bnoordhuis","message":"apparently not","date":"2011-12-20T15:59:51.181Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: try again","date":"2011-12-20T16:02:45.283Z","type":"message"}
+{"nick":"kuebk","reason":"Quit: Leaving.","date":"2011-12-20T16:03:01.134Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: you promoted me to admin just to show me that? :)","date":"2011-12-20T16:03:25.896Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yup","date":"2011-12-20T16:03:41.441Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: implement one in node.js","date":"2011-12-20T16:04:11.877Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-12-20T16:04:12.300Z","type":"join"}
+{"nick":"bnoordhuis","message":"i won't ask if you don't have anything better to do because that's clearly not the case :)","date":"2011-12-20T16:04:17.501Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I reviewed all the new windows issues and it were only 8 :-)","date":"2011-12-20T16:04:44.337Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2011-12-20T16:04:46.695Z","type":"quit"}
+{"nick":"piscisaureus_","message":"and mostly boring issues","date":"2011-12-20T16:05:01.405Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-12-20T16:05:24.255Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: while you're at it, can you op me for nodejs-dev too","date":"2011-12-20T16:06:45.187Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I don't have karma for nodejs-dev","date":"2011-12-20T16:07:07.345Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh okay, no biggie","date":"2011-12-20T16:07:22.923Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I can up you for http://groups.google.com/group/libuv but I don't think it's going to do much :-)","date":"2011-12-20T16:08:23.125Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: I see this list is full of people who care about PHP.","date":"2011-12-20T16:09:18.803Z","type":"message"}
+{"nick":"indutny","message":".away","date":"2011-12-20T16:23:32.721Z","type":"message"}
+{"nick":"indutny","message":"oops","date":"2011-12-20T16:23:44.863Z","type":"message"}
+{"nick":"indutny","message":"sorry","date":"2011-12-20T16:23:46.603Z","type":"message"}
+{"nick":"bnoordhuis","message":"paddybyers: ping","date":"2011-12-20T16:33:00.958Z","type":"message"}
+{"nick":"paddybyers","message":"bnoordhuis: hi","date":"2011-12-20T16:33:13.277Z","type":"message"}
+{"nick":"bnoordhuis","message":"hey","date":"2011-12-20T16:33:23.250Z","type":"message"}
+{"nick":"bnoordhuis","message":"you've been working on libeio + multiple event loops, right?","date":"2011-12-20T16:33:36.297Z","type":"message"}
+{"nick":"paddybyers","message":"yes; as in that last exchange on libev","date":"2011-12-20T16:33:54.816Z","type":"message"}
+{"nick":"bnoordhuis","message":"what did you end up doing?","date":"2011-12-20T16:34:07.281Z","type":"message"}
+{"nick":"paddybyers","message":"it's in that pull request that I linked","date":"2011-12-20T16:34:28.196Z","type":"message"}
+{"nick":"paddybyers","message":"I'll try to remind myself :)","date":"2011-12-20T16:34:52.354Z","type":"message"}
+{"nick":"bnoordhuis","message":"paddybyers: what PR is that?","date":"2011-12-20T16:35:28.550Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/joyent/libuv/pull/235 <- this one?","date":"2011-12-20T16:35:42.618Z","type":"message"}
+{"nick":"paddybyers","message":"hang on","date":"2011-12-20T16:36:18.008Z","type":"message"}
+{"nick":"bnoordhuis","action":"hangs on","date":"2011-12-20T16:36:23.697Z","type":"action"}
+{"nick":"paddybyers","message":"this is the commit: https://github.com/paddybyers/libuv/commit/3ad1de77598e09ed0da19a61cddac7fff137ee02","date":"2011-12-20T16:36:41.272Z","type":"message"}
+{"nick":"paddybyers","message":"I didn't update the PR","date":"2011-12-20T16:36:47.398Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T16:37:01.596Z","type":"quit"}
+{"nick":"paddybyers","message":"it's as I said in that email: one res_queue per event loop, but one req_queue (and thread pool) only per process","date":"2011-12-20T16:37:32.976Z","type":"message"}
+{"nick":"paddybyers","message":"so calls to want_poll and done_poll are done on a per-event-loop basis","date":"2011-12-20T16:38:41.937Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2011-12-20T16:39:00.768Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm working on something similar","date":"2011-12-20T16:39:08.463Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i was thinking about doing the ev_poll() from a random thread, then signaling the owning thread with ev_async","date":"2011-12-20T16:39:40.209Z","type":"message"}
+{"nick":"bnoordhuis","message":"thoughts?","date":"2011-12-20T16:39:42.912Z","type":"message"}
+{"nick":"paddybyers","message":"that was Marc's suggestion, but I wanted to avoid the extra context switch","date":"2011-12-20T16:40:10.734Z","type":"message"}
+{"nick":"bnoordhuis","message":"does it have a measurable impact?","date":"2011-12-20T16:41:06.006Z","type":"message"}
+{"nick":"bnoordhuis","message":"in the grand scheme of things, i mean","date":"2011-12-20T16:41:11.247Z","type":"message"}
+{"nick":"paddybyers","message":"I don't know and didn't measure it; but I knew that you are all paranoid about performance :)","date":"2011-12-20T16:41:42.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, we are :)","date":"2011-12-20T16:41:50.574Z","type":"message"}
+{"nick":"bnoordhuis","message":"but in this case, since it's all in the same address space, there won't be any tlb flushes","date":"2011-12-20T16:42:11.940Z","type":"message"}
+{"nick":"paddybyers","message":"I need to go back, but I thought also that there was some eio state I would need access to to do that","date":"2011-12-20T16:42:17.612Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll tinker with it","date":"2011-12-20T16:43:49.610Z","type":"message"}
+{"nick":"bnoordhuis","message":"less context switches is better obviously but i'd rather not chop up libeio too much","date":"2011-12-20T16:44:15.435Z","type":"message"}
+{"nick":"paddybyers","message":"so your idea is that there's a dedicated thread to read the res_queue, and dispatch it to the relevant loop","date":"2011-12-20T16:44:23.673Z","type":"message"}
+{"nick":"paddybyers","message":"that thread will need to know if that other loop is already processing outstanding responses, if you want to preserve the poll/done behaviour","date":"2011-12-20T16:45:43.702Z","type":"message"}
+{"nick":"paddybyers","message":"from memory I think that was my problem: I couldn't see a way to do that using only the eio API, because i would need to be able to count how many pending responses were in the res_queue for that loop","date":"2011-12-20T16:47:27.837Z","type":"message"}
+{"nick":"paddybyers","message":"BTW how's the isolate stuff going generally? I found out yesterday that Android doesn't support __thread :(","date":"2011-12-20T16:48:19.679Z","type":"message"}
+{"nick":"bnoordhuis","message":"neither does the default gcc on os x, it turns out, so we dropped that :)","date":"2011-12-20T16:53:07.904Z","type":"message"}
+{"nick":"bnoordhuis","message":"re eio: no, not a separate thread (i think), any thread may ev_poll()","date":"2011-12-20T16:54:06.952Z","type":"message"}
+{"nick":"bnoordhuis","message":"a separate thread would be easier to implement though","date":"2011-12-20T16:54:24.615Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2011-12-20T16:54:26.650Z","type":"join"}
+{"nick":"paddybyers","message":"bnoordhuis: ok","date":"2011-12-20T16:54:28.101Z","type":"message"}
+{"nick":"paddybyers","message":"v8 has some fast inline assembler for TLS stuff","date":"2011-12-20T16:55:13.626Z","type":"message"}
+{"nick":"AndreasMadsen","message":"The cluster 2.0 - step 4 pull request is uploaded please checkout and comment on it: https://github.com/joyent/node/pull/2388","date":"2011-12-20T16:55:25.585Z","type":"message"}
+{"nick":"paddybyers","message":"but on Android it falls back to pthread_specific","date":"2011-12-20T16:55:32.026Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, we went with stuffing everything into a big struct","date":"2011-12-20T16:55:50.188Z","type":"message"}
+{"nick":"bnoordhuis","message":"not elegant but it works","date":"2011-12-20T16:55:57.808Z","type":"message"}
+{"nick":"paddybyers","message":"that's what I did, using node_extensions.h","date":"2011-12-20T16:56:46.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe we should steal each other's code more","date":"2011-12-20T16:59:24.477Z","type":"message"}
+{"nick":"paddybyers","message":"bnoordhuis: I'll have a look at isolates2 (I guess that's where the new stuff is). Mine's all there and free free to ask.","date":"2011-12-20T17:05:28.204Z","type":"message"}
+{"nick":"felixge","date":"2011-12-20T17:05:45.996Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-12-20T17:05:46.335Z","type":"quit"}
+{"nick":"felixge","date":"2011-12-20T17:05:46.572Z","type":"join"}
+{"nick":"paddybyers","message":"Whatever happens I've got a monster rebase to do when isolates2 lands, and anything that minimises that is good","date":"2011-12-20T17:06:02.879Z","type":"message"}
+{"nick":"erickt","date":"2011-12-20T17:09:12.120Z","type":"join"}
+{"nick":"CIA-111","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307v0.6\u000f * r\u0002f4e34f1\u000f \u000310\u000f/ lib/path.js \u0002:\u000f Remove unnecessary statement - http://git.io/AgS5cA","date":"2011-12-20T17:16:30.260Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2011-12-20T17:22:30.982Z","type":"quit"}
+{"nick":"travis-ci","date":"2011-12-20T17:24:46.207Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#116 (v0.6 - f4e34f1 : Bert Belder): The build passed.","date":"2011-12-20T17:24:46.429Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/348d8cd...f4e34f1","date":"2011-12-20T17:24:46.430Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/428496","date":"2011-12-20T17:24:46.430Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T17:24:46.430Z","type":"part"}
+{"nick":"indexzero","date":"2011-12-20T17:39:24.703Z","type":"join"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-12-20T17:39:54.482Z","type":"quit"}
+{"nick":"isaacs","date":"2011-12-20T18:02:16.908Z","type":"join"}
+{"nick":"piscisaureus_","message":"ryah: bnoordhuis: isaacs: I'm back. I don't know if you guys wanna have a call tonight. If so, I'd like to have it at noon / 9","date":"2011-12-20T18:09:02.467Z","type":"message"}
+{"nick":"piscisaureus_","message":"is that okay with you?","date":"2011-12-20T18:09:38.195Z","type":"message"}
+{"nick":"txdv","message":"call of duty","date":"2011-12-20T18:11:07.965Z","type":"message"}
+{"nick":"piscisaureus_","message":"booty call :x","date":"2011-12-20T18:12:03.884Z","type":"message"}
+{"nick":"sh1mmer","date":"2011-12-20T18:20:43.342Z","type":"join"}
+{"nick":"TooTallNate","date":"2011-12-20T18:21:12.770Z","type":"join"}
+{"nick":"brson","date":"2011-12-20T18:25:38.448Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T18:29:02.425Z","type":"quit"}
+{"nick":"ryah","message":"yo","date":"2011-12-20T18:36:47.391Z","type":"message"}
+{"nick":"indutny","message":"нщ","date":"2011-12-20T18:37:09.495Z","type":"message"}
+{"nick":"indutny","message":"yo","date":"2011-12-20T18:37:10.525Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: I am not here. call at noon?","date":"2011-12-20T18:37:37.015Z","type":"message"}
+{"nick":"erickt","date":"2011-12-20T18:38:01.410Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2011-12-20T18:38:14.426Z","type":"quit"}
+{"nick":"ryah","message":"piscisaureus_: yeah","date":"2011-12-20T18:39:51.251Z","type":"message"}
+{"nick":"ryah","message":"it's just you me and bnoordhuis ","date":"2011-12-20T18:40:02.102Z","type":"message"}
+{"nick":"brson","date":"2011-12-20T18:45:25.135Z","type":"join"}
+{"nick":"TooTallNate","message":"ryah: were you gonna merge that iOS pull request?","date":"2011-12-20T18:56:27.518Z","type":"message"}
+{"nick":"ryah","message":"TooTallNate: link?","date":"2011-12-20T18:56:48.444Z","type":"message"}
+{"nick":"ryah","message":"TooTallNate: we moved the platform stuff to libuv","date":"2011-12-20T18:56:58.016Z","type":"message"}
+{"nick":"ryah","message":"TooTallNate: can you rebase?","date":"2011-12-20T18:57:00.994Z","type":"message"}
+{"nick":"ryah","message":"then i'll merge","date":"2011-12-20T18:57:12.752Z","type":"message"}
+{"nick":"TooTallNate","message":"it's not mine :p","date":"2011-12-20T18:57:44.307Z","type":"message"}
+{"nick":"TooTallNate","message":"one sec","date":"2011-12-20T18:57:45.820Z","type":"message"}
+{"nick":"TooTallNate","message":"ryah: https://github.com/joyent/libuv/pull/243","date":"2011-12-20T18:58:07.694Z","type":"message"}
+{"nick":"ryah","message":"TooTallNate: oops sorry ;)","date":"2011-12-20T19:00:31.639Z","type":"message"}
+{"nick":"AndreasMadsen","message":"ryah: The cluster2 step 4 is uploaded, I would like to wait one or two days, before landing it. I'm hoping people will comment it before it gets merged this time. ","date":"2011-12-20T19:01:43.654Z","type":"message"}
+{"nick":"AndreasMadsen","message":"Also it's a big patch so take your time, the other patches won't be that big. ","date":"2011-12-20T19:03:29.964Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f \u000303Daisuke Murase\u000f \u000307master\u000f * r\u00023cbe7c3\u000f \u000310\u000f/ (AUTHORS src/unix/darwin.c)\u0002:\u000f ","date":"2011-12-20T19:09:08.079Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f Fixes for iOS","date":"2011-12-20T19:09:08.319Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f replace AbsoluteToNanoseconds to alternate implementation in uv_hrtime when","date":"2011-12-20T19:09:08.319Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f target OS is iOS which does not have CoreServices.framework","date":"2011-12-20T19:09:08.319Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f Fixes #243 - http://git.io/poYE0A","date":"2011-12-20T19:09:08.319Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:10:41.984Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#11 (master - 3cbe7c3 : Daisuke Murase): The build is still failing.","date":"2011-12-20T19:10:42.217Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/cb70db1...3cbe7c3","date":"2011-12-20T19:10:42.218Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/428993","date":"2011-12-20T19:10:42.218Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:10:42.218Z","type":"part"}
+{"nick":"ryah","message":"AndreasMadsen: link?","date":"2011-12-20T19:12:26.992Z","type":"message"}
+{"nick":"AndreasMadsen","message":"https://github.com/joyent/node/pull/2388","date":"2011-12-20T19:12:43.251Z","type":"message"}
+{"nick":"ryah","message":"Showing 8 changed files with 856 additions and 167 deletions","date":"2011-12-20T19:14:17.999Z","type":"message"}
+{"nick":"ryah","message":":(","date":"2011-12-20T19:14:18.852Z","type":"message"}
+{"nick":"AndreasMadsen","message":"Is it too big ?","date":"2011-12-20T19:14:40.381Z","type":"message"}
+{"nick":"ryah","message":"large changes are scary","date":"2011-12-20T19:16:18.739Z","type":"message"}
+{"nick":"ryah","action":"shakes GYP","date":"2011-12-20T19:16:38.268Z","type":"action"}
+{"nick":"AndreasMadsen","message":"I know but it is very hard to split this up.","date":"2011-12-20T19:16:50.126Z","type":"message"}
+{"nick":"ryah","message":"GYP WHY WONT YOU DO WHAT I WANT","date":"2011-12-20T19:16:52.912Z","type":"message"}
+{"nick":"ryah","message":"AndreasMadsen: that's fine - we'll review","date":"2011-12-20T19:17:01.185Z","type":"message"}
+{"nick":"ryah","message":"AndreasMadsen: you have some changes in there that could be removed","date":"2011-12-20T19:17:09.092Z","type":"message"}
+{"nick":"ryah","message":"like the cpus.length doc change","date":"2011-12-20T19:17:25.301Z","type":"message"}
+{"nick":"AndreasMadsen","message":"I will remove that one, but I will give you some time to point other mistakes out.","date":"2011-12-20T19:19:11.183Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: did you perhaps forget to merge uv_thread_self() back into libuv?","date":"2011-12-20T19:26:43.848Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's either that or my `git grep` fu failing me","date":"2011-12-20T19:27:05.227Z","type":"message"}
+{"nick":"ryah","message":"oh yeah","date":"2011-12-20T19:29:04.534Z","type":"message"}
+{"nick":"ryah","message":"i did","date":"2011-12-20T19:29:07.048Z","type":"message"}
+{"nick":"ryah","message":"let me put that in ","date":"2011-12-20T19:29:09.006Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: oh, i can too","date":"2011-12-20T19:30:35.589Z","type":"message"}
+{"nick":"bnoordhuis","message":"just wanted to know if i hadn't overlooked it","date":"2011-12-20T19:30:43.728Z","type":"message"}
+{"nick":"ryah","message":"one sec - almost done","date":"2011-12-20T19:33:27.116Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002a993329\u000f \u000310\u000f/ (4 files in 3 dirs)\u0002:\u000f add uv_thread_self - http://git.io/z6C-Og","date":"2011-12-20T19:34:44.226Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:36:15.619Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#12 (master - a993329 : Ryan Dahl): The build is still failing.","date":"2011-12-20T19:36:15.847Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/3cbe7c3...a993329","date":"2011-12-20T19:36:15.848Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/429123","date":"2011-12-20T19:36:15.848Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:36:15.848Z","type":"part"}
+{"nick":"ryah","message":"  SOLINK(target) out/Default/libbinding.dylib","date":"2011-12-20T19:37:56.071Z","type":"message"}
+{"nick":"ryah","message":"Undefined symbols:","date":"2011-12-20T19:37:56.888Z","type":"message"}
+{"nick":"ryah","message":"anger","date":"2011-12-20T19:37:58.564Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/bnoordhuis/node/compare/isolates2...eio_poll","date":"2011-12-20T19:42:43.231Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ took paddybyers's patch, works great","date":"2011-12-20T19:42:56.840Z","type":"message"}
+{"nick":"ryah","message":"oh yes - this looks good","date":"2011-12-20T19:43:52.816Z","type":"message"}
+{"nick":"paddybyers","message":"cool","date":"2011-12-20T19:44:07.216Z","type":"message"}
+{"nick":"ryah","message":"there's some merge cruft there","date":"2011-12-20T19:44:34.455Z","type":"message"}
+{"nick":"ryah","message":"do you intend to add #if !TARGET_OS_IPHONE ?","date":"2011-12-20T19:44:43.002Z","type":"message"}
+{"nick":"ryah","message":"rebase isolates2","date":"2011-12-20T19:45:09.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i will","date":"2011-12-20T19:45:15.242Z","type":"message"}
+{"nick":"bnoordhuis","message":"this is still proof-of-concept mode :)","date":"2011-12-20T19:45:31.380Z","type":"message"}
+{"nick":"ryah","message":"but yeah - this looks quite nice. let me review more deeply once the patch is clean","date":"2011-12-20T19:45:44.706Z","type":"message"}
+{"nick":"AndreasMadsen","message":"ryah: What is the policy about not allowing overwrite, using Object.defineProperty ?","date":"2011-12-20T19:47:51.247Z","type":"message"}
+{"nick":"ryah","message":"*shrug*","date":"2011-12-20T19:48:24.956Z","type":"message"}
+{"nick":"ryah","message":"AndreasMadsen: those things used to be unoptimized in v8 so we would avoid them","date":"2011-12-20T19:48:45.224Z","type":"message"}
+{"nick":"ryah","message":"im not sure what the situation is now","date":"2011-12-20T19:48:49.962Z","type":"message"}
+{"nick":"AndreasMadsen","message":"https://github.com/joyent/node/pull/2388/files#L1R68","date":"2011-12-20T19:49:47.204Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000269ce014\u000f \u000310\u000f/ (5 files in 4 dirs)\u0002:\u000f Wrap platform \"thread-safe run once\" APIs. - http://git.io/lsef-w","date":"2011-12-20T19:50:37.976Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00026a9cb90\u000f \u000310\u000f/ include/uv-private/ngx-queue.h \u0002:\u000f Add ngx_queue_foreach() macro. - http://git.io/Re2Lkg","date":"2011-12-20T19:50:38.478Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000210de090\u000f \u000310\u000f/ src/unix/core.c \u0002:\u000f ","date":"2011-12-20T19:50:38.780Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f unix: centralize loop init logic","date":"2011-12-20T19:50:39.008Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f Also fixes a bug where loops other than the main loop didn't pick the kqueue","date":"2011-12-20T19:50:39.008Z","type":"message"}
+{"nick":"CIA-111","message":"\u0002libuv:\u000f backend, which broke the fs event watcher on Darwin and the BSDs. - http://git.io/KdfNYQ","date":"2011-12-20T19:50:39.008Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:52:14.284Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#13 (master - 10de090 : Ben Noordhuis): The build is still failing.","date":"2011-12-20T19:52:14.507Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/a993329...10de090","date":"2011-12-20T19:52:14.507Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/429177","date":"2011-12-20T19:52:14.507Z","type":"message"}
+{"nick":"travis-ci","date":"2011-12-20T19:52:14.507Z","type":"part"}
+{"nick":"AndreasMadsen","message":"ryah: https://github.com/joyent/node/pull/2388/files#L1R68","date":"2011-12-20T19:56:40.065Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah bnoordhuis: are we going to have the kall now?","date":"2011-12-20T20:02:35.169Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-12-20T20:03:46.682Z","type":"message"}
+{"nick":"dshaw_","date":"2011-12-20T20:16:20.686Z","type":"join"}
+{"nick":"mjr_","message":"Behold, the cores:  https://gist.github.com/6823d43a34cf4c6ca8bb","date":"2011-12-20T20:19:47.864Z","type":"message"}
+{"nick":"mjr_","message":"With actual symbols from believable parts of V8.","date":"2011-12-20T20:20:27.512Z","type":"message"}
+{"nick":"ryah","message":"http parser!","date":"2011-12-20T20:25:39.017Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-12-20T20:25:42.505Z","type":"message"}
+{"nick":"ryah","message":"this is definitely from ben's optimization","date":"2011-12-20T20:25:48.099Z","type":"message"}
+{"nick":"ryah","message":"very good to find this","date":"2011-12-20T20:26:06.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"now to reproduce it :)","date":"2011-12-20T20:26:25.653Z","type":"message"}
+{"nick":"ryah","message":"mjr_: can you open the first core and do this","date":"2011-12-20T20:27:09.802Z","type":"message"}
+{"nick":"ryah","message":"frame 2","date":"2011-12-20T20:27:19.967Z","type":"message"}
+{"nick":"ryah","message":"print size_","date":"2011-12-20T20:27:38.261Z","type":"message"}
+{"nick":"mjr_","message":"It's very reproducible.  We get about 200 crashes / day right now.","date":"2011-12-20T20:27:38.739Z","type":"message"}
+{"nick":"ryah","message":"print str_","date":"2011-12-20T20:27:43.759Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: can you send over a core file and the node binary?","date":"2011-12-20T20:27:57.203Z","type":"message"}
+{"nick":"piscisaureus_","message":"bad interaction with gc?","date":"2011-12-20T20:28:03.455Z","type":"message"}
+{"nick":"ryah","message":"mjr_: can i have the core too?","date":"2011-12-20T20:28:10.852Z","type":"message"}
+{"nick":"ryah","message":"i love smoking guns","date":"2011-12-20T20:28:35.437Z","type":"message"}
+{"nick":"piscisaureus_","message":"lets try to get the ssl certs out ::troll::","date":"2011-12-20T20:29:07.627Z","type":"message"}
+{"nick":"mjr_","message":"Yeah, let me put them somewhere","date":"2011-12-20T20:29:36.270Z","type":"message"}
+{"nick":"txdv","message":"what does off_t in fs_read do?","date":"2011-12-20T20:30:04.919Z","type":"message"}
+{"nick":"bnoordhuis","message":"txdv: file offset to read from","date":"2011-12-20T20:30:24.352Z","type":"message"}
+{"nick":"piscisaureus_","message":"txdv: read file at position","date":"2011-12-20T20:30:28.428Z","type":"message"}
+{"nick":"txdv","message":"and what happens if i provide -1?","date":"2011-12-20T20:31:09.148Z","type":"message"}
+{"nick":"bnoordhuis","message":"txdv: gremlins will eat your computer","date":"2011-12-20T20:31:31.088Z","type":"message"}
+{"nick":"mjr_","message":"Let's see fi this works:","date":"2011-12-20T20:31:51.745Z","type":"message"}
+{"nick":"mjr_","message":"http://ranney.com/node_cores.tar.gz","date":"2011-12-20T20:31:57.441Z","type":"message"}
+{"nick":"bnoordhuis","message":"104M!","date":"2011-12-20T20:32:45.164Z","type":"message"}
+{"nick":"mjr_","message":"You'll note that 2 of them are in the same place, but the third is actually in a different place in node string handling.","date":"2011-12-20T20:32:47.816Z","type":"message"}
+{"nick":"mjr_","message":"It's a 3-pack of cores with a bonus executable thrown in for free.","date":"2011-12-20T20:33:04.029Z","type":"message"}
+{"nick":"bnoordhuis","message":"wicked!","date":"2011-12-20T20:33:09.845Z","type":"message"}
+{"nick":"mjr_","message":"Linux x86_64","date":"2011-12-20T20:33:18.382Z","type":"message"}
+{"nick":"bnoordhuis","message":"nothing makes me feel more unix greybeard than post-mortem core debugging","date":"2011-12-20T20:33:42.618Z","type":"message"}
+{"nick":"mjr_","message":"Oh, but it's dynamically linked","date":"2011-12-20T20:33:50.074Z","type":"message"}
+{"nick":"bnoordhuis","message":"ubuntu 10.04?","date":"2011-12-20T20:33:58.096Z","type":"message"}
+{"nick":"mjr_","message":"yes","date":"2011-12-20T20:34:01.324Z","type":"message"}
+{"nick":"bnoordhuis","message":"it'll probably work, i run 10.04 x86_64 too","date":"2011-12-20T20:34:23.034Z","type":"message"}
+{"nick":"mjr_","message":"I guess it's not crashed in any shared libraries.","date":"2011-12-20T20:34:35.544Z","type":"message"}
+{"nick":"mjr_","message":"ryah: does that core work for you in your Solaris play land, or do you want me to paste you some output from gdb?","date":"2011-12-20T20:35:38.069Z","type":"message"}
+{"nick":"ryah","message":"mjr_: it wont work in solaris - but im loading it up in linux","date":"2011-12-20T20:36:12.760Z","type":"message"}
+{"nick":"mjr_","message":"I kid.  Of course you have access to Linux.  But if it doesn't load up properly on you machine, I can do it on mine if that helps.","date":"2011-12-20T20:37:39.611Z","type":"message"}
+{"nick":"ryah","message":"\"/home/ryan/mjr/node\": not in executable format: File format not recognized","date":"2011-12-20T20:38:53.468Z","type":"message"}
+{"nick":"ryah","message":"\"/home/ryan/mjr/prod-26-11847-node.core\" is not a core dump: File format not recognized","date":"2011-12-20T20:38:53.692Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-12-20T20:38:56.974Z","type":"message"}
+{"nick":"bnoordhuis","message":"wfm","date":"2011-12-20T20:39:47.665Z","type":"message"}
+{"nick":"mjr_","message":"You should get Bryan to throw a chair at that error.","date":"2011-12-20T20:39:53.022Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's what you get for being a gentoo user","date":"2011-12-20T20:40:04.388Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: are you just doing","date":"2011-12-20T20:41:11.342Z","type":"message"}
+{"nick":"ryah","message":"gdb --core=prod-26-11847-node.core node","date":"2011-12-20T20:41:11.914Z","type":"message"}
+{"nick":"ryah","message":" ?","date":"2011-12-20T20:41:14.478Z","type":"message"}
+{"nick":"bnoordhuis","message":"other way around","date":"2011-12-20T20:41:45.089Z","type":"message"}
+{"nick":"bnoordhuis","message":"gdb ./node core","date":"2011-12-20T20:41:47.724Z","type":"message"}
+{"nick":"ryah","message":"meh","date":"2011-12-20T20:42:16.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"did it work?","date":"2011-12-20T20:42:32.084Z","type":"message"}
+{"nick":"ryah","message":"nope","date":"2011-12-20T20:42:40.794Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i bet you need a handlescope in StringPtr::ToString","date":"2011-12-20T20:43:44.037Z","type":"message"}
+{"nick":"mjr_","message":"ryah you have x86_64?","date":"2011-12-20T20:43:48.494Z","type":"message"}
+{"nick":"mjr_","message":"Just caught another one:  https://gist.github.com/0e6302bd8143aff75bfb","date":"2011-12-20T20:43:55.388Z","type":"message"}
+{"nick":"mjr_","message":"Want me to poke at that one for you?","date":"2011-12-20T20:44:13.221Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: plausible... but there's also a crash in node::StringPtr::Update()","date":"2011-12-20T20:44:45.614Z","type":"message"}
+{"nick":"ryah","message":"mjr_: yeah","date":"2011-12-20T20:46:37.320Z","type":"message"}
+{"nick":"bnoordhuis","message":"it looks like an uninitialized StringPtr","date":"2011-12-20T20:47:36.704Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) p *(class node::StringPtr *)0x4487598","date":"2011-12-20T20:47:43.206Z","type":"message"}
+{"nick":"bnoordhuis","message":"No struct type named node.","date":"2011-12-20T20:47:43.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) p *(class StringPtr *)0x4487598","date":"2011-12-20T20:47:43.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"$2 = {","date":"2011-12-20T20:47:43.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"  str_ = 0xb209113208 <Address 0xb209113208 out of bounds>, ","date":"2011-12-20T20:47:43.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"  on_heap_ = 255, ","date":"2011-12-20T20:47:44.064Z","type":"message"}
+{"nick":"bnoordhuis","message":"  size_ = 281474976776193","date":"2011-12-20T20:47:45.750Z","type":"message"}
+{"nick":"bnoordhuis","message":"}","date":"2011-12-20T20:47:47.788Z","type":"message"}
+{"nick":"bnoordhuis","message":"skip the first two lines :)","date":"2011-12-20T20:47:58.321Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-12-20T20:48:15.392Z","type":"message"}
+{"nick":"ryah","message":"CreateHeaders also needs HandleScope","date":"2011-12-20T20:48:58.164Z","type":"message"}
+{"nick":"ryah","message":"not sure if that's related","date":"2011-12-20T20:49:02.003Z","type":"message"}
+{"nick":"bnoordhuis","message":"there is supposed to be a handlescope in on_headers_complete","date":"2011-12-20T20:50:12.281Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suspect that's the culprit","date":"2011-12-20T20:50:34.033Z","type":"message"}
+{"nick":"bnoordhuis","message":"or at least a culprit","date":"2011-12-20T20:51:07.210Z","type":"message"}
+{"nick":"ryah","message":"we should try to reproduce it","date":"2011-12-20T20:51:16.813Z","type":"message"}
+{"nick":"ryah","message":"like instanciate a http parser and throw a bunch of long headers at it?","date":"2011-12-20T20:51:39.844Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's a couple of tests that do that","date":"2011-12-20T20:51:54.185Z","type":"message"}
+{"nick":"mjr_","message":"Our headers are fairly small compared to real web browser headers.","date":"2011-12-20T20:52:08.451Z","type":"message"}
+{"nick":"ryah","message":"the fact that you crash in Update suggests that you have some long headers","date":"2011-12-20T20:53:02.880Z","type":"message"}
+{"nick":"mjr_","message":"Perhaps unintentionally long.","date":"2011-12-20T20:53:25.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"re handlescope, there's one a few frames below in Execute()","date":"2011-12-20T20:53:26.193Z","type":"message"}
+{"nick":"mjr_","message":"Would a very large query string perhaps also cause this?","date":"2011-12-20T20:55:40.761Z","type":"message"}
+{"nick":"ryah","message":"mjr_: yeah","date":"2011-12-20T20:56:49.436Z","type":"message"}
+{"nick":"luxigo","reason":"Ping timeout: 276 seconds","date":"2011-12-20T20:57:16.301Z","type":"quit"}
+{"nick":"mjr_","message":"Looking at some other cores, it does seem die on these URLs like message_id=profile_picture_user.ryan.dahl_1235548_3832848","date":"2011-12-20T20:57:37.269Z","type":"message"}
+{"nick":"mjr_","message":"I wonder if we are sticking some extra garbage in there sometimes.","date":"2011-12-20T20:58:04.712Z","type":"message"}
+{"nick":"ryah","message":"https://gist.github.com/1503241 ?","date":"2011-12-20T20:59:02.755Z","type":"message"}
+{"nick":"luxigo","date":"2011-12-20T20:59:21.820Z","type":"join"}
+{"nick":"mjr_","message":"Want us to try that on one?","date":"2011-12-20T21:00:15.706Z","type":"message"}
+{"nick":"ryah","message":"i wanted to ask what ben thinks","date":"2011-12-20T21:00:38.629Z","type":"message"}
+{"nick":"mjr_","message":"Oh,OK","date":"2011-12-20T21:00:43.292Z","type":"message"}
+{"nick":"ryah","message":"it seems i changed some return value inadvertently :)","date":"2011-12-20T21:01:50.653Z","type":"message"}
+{"nick":"ryah","message":"gist updated","date":"2011-12-20T21:02:41.201Z","type":"message"}
+{"nick":"bnoordhuis","message":"i was just about to ask about that :)","date":"2011-12-20T21:03:01.480Z","type":"message"}
+{"nick":"bnoordhuis","message":"it won't hurt but i don't think it's the real cause","date":"2011-12-20T21:03:26.123Z","type":"message"}
+{"nick":"bnoordhuis","message":"that segfault in StringPtr::Update() doesn't touch v8 at all","date":"2011-12-20T21:03:55.204Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-12-20T21:04:04.554Z","type":"quit"}
+{"nick":"ryah","message":"yeah","date":"2011-12-20T21:04:06.365Z","type":"message"}
+{"nick":"ryah","message":"i dont feel good about it either","date":"2011-12-20T21:04:13.482Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2011-12-20T21:06:20.102Z","type":"quit"}
+{"nick":"bnoordhuis","message":"  fields_ = {{","date":"2011-12-20T21:14:44.815Z","type":"message"}
+{"nick":"bnoordhuis","message":"      str_ = 0x84d2901 <Address 0x84d2901 out of bounds>, ","date":"2011-12-20T21:14:45.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"      on_heap_ = false, ","date":"2011-12-20T21:14:45.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"      size_ = 4","date":"2011-12-20T21:14:45.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"    }, {","date":"2011-12-20T21:14:45.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"      str_ = 0x84d2920 <Address 0x84d2920 out of bounds>, ","date":"2011-12-20T21:14:45.593Z","type":"message"}
+{"nick":"bnoordhuis","message":"      on_heap_ = false, ","date":"2011-12-20T21:14:47.832Z","type":"message"}
+{"nick":"bnoordhuis","message":"      size_ = 15","date":"2011-12-20T21:14:51.564Z","type":"message"}
+{"nick":"bnoordhuis","message":"    }, {","date":"2011-12-20T21:14:53.584Z","type":"message"}
+{"nick":"bnoordhuis","message":"      str_ = 0x5ec4c79 \"User-Agent: Voxer 2.3.6 rv:0649 (iPhone; iPhone:1\\r\\n:11\\r\\n:11\\r\\n\\004\\062\\062\\n    a000\\nw[\\276\\307ș\\237V\\255\\305F\\357\\376\\367\\374J7\\321\\361\\037\\351","date":"2011-12-20T21:14:55.601Z","type":"message"}
+{"nick":"bnoordhuis","message":"h\\225d\\341\\336\\354[ʿ4\\376\\266\\377\\004\\061e\\n    a014\\nw\\034m\\202R\\210S8\\373ڶ\\321p\\022\\371:\\323R\\026x\\226\\252\\352\\206\\302\\355\\336y\\242/\\004\\062\\062\\n    a028\\ng\\337\\341\\243ex ","date":"2011-12-20T21:14:58.638Z","type":"message"}
+{"nick":"bnoordhuis","message":"\\233\\303\\313\\062\\260un+\\345\\060\\213\\354\\345M\\353\\243\\066P\\377\\021\\060\\025B~o\\201E\\r\\n\"..., ","date":"2011-12-20T21:15:01.523Z","type":"message"}
+{"nick":"bnoordhuis","message":"      on_heap_ = false, ","date":"2011-12-20T21:15:03.721Z","type":"message"}
+{"nick":"bnoordhuis","message":"      size_ = 10","date":"2011-12-20T21:15:05.529Z","type":"message"}
+{"nick":"bnoordhuis","message":"  num_fields_ = 3, ","date":"2011-12-20T21:15:07.584Z","type":"message"}
+{"nick":"bnoordhuis","message":"  num_values_ = 3, ","date":"2011-12-20T21:15:09.606Z","type":"message"}
+{"nick":"bnoordhuis","message":"so that's bad","date":"2011-12-20T21:15:11.639Z","type":"message"}
+{"nick":"bnoordhuis","message":"now the why","date":"2011-12-20T21:15:19.052Z","type":"message"}
+{"nick":"mjr_","message":"wow, that's a really mangled UA string.","date":"2011-12-20T21:17:21.266Z","type":"message"}
+{"nick":"mjr_","message":"I'll send that back to the iOS guys.","date":"2011-12-20T21:17:30.252Z","type":"message"}
+{"nick":"pietern","date":"2011-12-20T21:17:40.829Z","type":"join"}
+{"nick":"bnoordhuis","message":"mjr_: it could be a left-over from the previous request","date":"2011-12-20T21:19:04.217Z","type":"message"}
+{"nick":"bnoordhuis","message":"and in this particular case it's a slice of the first 10 bytes (\"User-Agent\")","date":"2011-12-20T21:19:53.085Z","type":"message"}
+{"nick":"mjr_","message":"But they bytes after iPhone; iPhone are I think right where the objc code is doing some string manipulation to insert the version number.","date":"2011-12-20T21:21:47.793Z","type":"message"}
+{"nick":"mjr_","message":"And a few bytes later I see what looks like our audio framing data.  Hard to say if those are leftover on the server or if the client is sending them up that way I guess.","date":"2011-12-20T21:22:25.958Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: what's bad - that the first two elements have str_ to a bad address?","date":"2011-12-20T21:22:58.480Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-12-20T21:23:22.433Z","type":"message"}
+{"nick":"bnoordhuis","message":"while num_fields_ and and num_values_ equal 3","date":"2011-12-20T21:23:36.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"and while (important detail!) CreateHeaders() is looping over the fields","date":"2011-12-20T21:24:32.690Z","type":"message"}
+{"nick":"ryah","message":"hmm...","date":"2011-12-20T21:32:40.441Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: do you have the raw buffer ?","date":"2011-12-20T21:34:25.942Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can look it up","date":"2011-12-20T21:34:35.401Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: can you go down to the Execute frame and see wht the packet it","date":"2011-12-20T21:34:37.168Z","type":"message"}
+{"nick":"ryah","message":"*is","date":"2011-12-20T21:34:45.836Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) p {char}0x8a0405e@62","date":"2011-12-20T21:35:33.722Z","type":"message"}
+{"nick":"bnoordhuis","message":"$2 = \"message_id=profile_picture_user.karli.gande.1323462443912_6398\"","date":"2011-12-20T21:35:33.950Z","type":"message"}
+{"nick":"ryah","message":"that's current_buffer_data ?","date":"2011-12-20T21:36:27.927Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's what's passed to http_parser_execute()","date":"2011-12-20T21:37:11.272Z","type":"message"}
+{"nick":"bnoordhuis","message":"current_buffer = NULL","date":"2011-12-20T21:37:38.403Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's set to NULL right before the call to http_parser_execute()","date":"2011-12-20T21:38:02.674Z","type":"message"}
+{"nick":"ryah","message":"mjr_: is that part of the URL?","date":"2011-12-20T21:38:03.564Z","type":"message"}
+{"nick":"mjr_","message":"yes","date":"2011-12-20T21:38:16.901Z","type":"message"}
+{"nick":"ryah","message":"what about current_buffer_data ?","date":"2011-12-20T21:38:24.419Z","type":"message"}
+{"nick":"mjr_","message":"full url is like this:  /get_body?message_id=profile_picture_user.karli.gande.1323462443912_6398","date":"2011-12-20T21:38:45.488Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) p current_buffer_data ","date":"2011-12-20T21:38:58.707Z","type":"message"}
+{"nick":"bnoordhuis","message":"$2 = 0x5e63800 \"8d\\r\\n\\004\\062\\061\\n    5e4c\\np-M0\\236͗\\370\\216\\223\\345\\371^]\\021U*RE\\006\\354\\263'\\343\\064þ\\321\\377]\\315\\032?\\004\\062\\062\\n    5e60\\np*\\250\\377\\263kIA\\021\\205-\\235]\\222\\264Q\\303\\322$5h\\320(\\vw\\\"\\200\\254\\001\\263G\\004\\062\\063\\n    5f64\\np-\\271M\\002\\065\\025N\\357G\\344\\213\\320x\\223nSh\\247o\\001m\\216f@\\342\\232\\066\\326\\023\\221\\234%\\212\\233\\r\\n\\004\\062a\\n     4b0\\ny\\261\\304\\034\\256m\\271\\037cy\\022\\275\\030\\\\5\\v\\252","date":"2011-12-20T21:38:58.934Z","type":"message"}
+{"nick":"bnoordhuis","message":"\\244\\004\\061\\200sȠ\\302\\205*\\252\\257O\\342\\306M\\242\\217\\333\\066\\374V\", <incomplete sequence \\325>...","date":"2011-12-20T21:38:58.934Z","type":"message"}
+{"nick":"ryah","message":"why would it be getting a packet with just that?","date":"2011-12-20T21:39:01.844Z","type":"message"}
+{"nick":"mjr_","message":"Hmm, there might be another qs elem or two on there sometimes.","date":"2011-12-20T21:39:02.073Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2011-12-20T21:39:14.660Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2011-12-20T21:39:34.838Z","type":"quit"}
+{"nick":"bnoordhuis","message":"let me inspect the other two core dumps","date":"2011-12-20T21:39:38.154Z","type":"message"}
+{"nick":"mjr_","message":"I've got lots of other core dumps I can batch process if you like.","date":"2011-12-20T21:41:08.749Z","type":"message"}
+{"nick":"ryah","message":"im not sure if i trust this:","date":"2011-12-20T21:41:39.775Z","type":"message"}
+{"nick":"ryah","message":"    else if (on_heap_ || str_ + size != str) {","date":"2011-12-20T21:41:40.521Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: can you send a few more?","date":"2011-12-20T21:41:59.497Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: why not?","date":"2011-12-20T21:42:20.168Z","type":"message"}
+{"nick":"ryah","action":"wants a core dump","date":"2011-12-20T21:42:22.440Z","type":"action"}
+{"nick":"ryah","message":":(","date":"2011-12-20T21:42:23.470Z","type":"message"}
+{"nick":"bnoordhuis","message":"install a decent distro >:)","date":"2011-12-20T21:42:33.611Z","type":"message"}
+{"nick":"mjr_","message":"Which is to say, install the exact same one that I happen to use.  ","date":"2011-12-20T21:43:11.498Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: im not sure why i dont trust it - because it's very clever","date":"2011-12-20T21:43:54.821Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... it was supposed to be fast, right?","date":"2011-12-20T21:45:00.344Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's essentially a check to find out if the new chunk is adjacent to the old chunk","date":"2011-12-20T21:45:28.701Z","type":"message"}
+{"nick":"bnoordhuis","message":"if yes, great - if no, need to make a copy on the heap","date":"2011-12-20T21:45:37.324Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-12-20T21:45:55.539Z","type":"message"}
+{"nick":"ryah","message":"but what if the next packet somehow aligns in the same area","date":"2011-12-20T21:46:17.124Z","type":"message"}
+{"nick":"mjr_","message":"Is there a way to have gdb dump the stack from a core in some kind of batch mode so I can run it across all of these core files?","date":"2011-12-20T21:46:33.462Z","type":"message"}
+{"nick":"ryah","message":"mjr_: probably - but i dont know how","date":"2011-12-20T21:46:53.910Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: why would that matter?","date":"2011-12-20T21:46:55.451Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: well the beginning of the str_ could be unallocated","date":"2011-12-20T21:47:19.092Z","type":"message"}
+{"nick":"ryah","message":"say you parse one packet - it ends in the middle of a string","date":"2011-12-20T21:47:41.552Z","type":"message"}
+{"nick":"mikeal","date":"2011-12-20T21:47:52.996Z","type":"join"}
+{"nick":"ryah","message":"then you go to parse the next packet - which happens to overlap where the previous packet was","date":"2011-12-20T21:47:57.523Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: `for FILE in *.core; do gdb -X script /path/to/node $FILE; done`?","date":"2011-12-20T21:47:58.778Z","type":"message"}
+{"nick":"ryah","message":"(not sure if that's possible)","date":"2011-12-20T21:48:02.406Z","type":"message"}
+{"nick":"bnoordhuis","message":"if the two packets belong to the same request and they're adjacent in memory, no problem","date":"2011-12-20T21:48:40.998Z","type":"message"}
+{"nick":"bnoordhuis","message":"if they're from separate requests - the parser is reset between requests","date":"2011-12-20T21:48:52.548Z","type":"message"}
+{"nick":"ryah","message":"same request - imagine the first packet is freed","date":"2011-12-20T21:49:29.527Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: sorry, it's -x, not -X","date":"2011-12-20T21:49:48.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: like that - i'm pretty sure i checked that","date":"2011-12-20T21:50:10.686Z","type":"message"}
+{"nick":"mjr_","message":"https://gist.github.com/7e42c6d805be38576085","date":"2011-12-20T21:50:24.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i will check it again just to be sure","date":"2011-12-20T21:50:25.039Z","type":"message"}
+{"nick":"ryah","message":"mjr_: can you apply the handlescope patch","date":"2011-12-20T21:51:13.048Z","type":"message"}
+{"nick":"ryah","message":"mjr_: just to check?","date":"2011-12-20T21:51:16.920Z","type":"message"}
+{"nick":"ryah","message":"or is it a big process?","date":"2011-12-20T21:51:20.263Z","type":"message"}
+{"nick":"mjr_","message":"I think it'll be easy enough","date":"2011-12-20T21:52:30.315Z","type":"message"}
+{"nick":"mjr_","message":"So this one, you feel good about?  https://gist.github.com/1503241","date":"2011-12-20T21:53:25.366Z","type":"message"}
+{"nick":"ryah","message":"let me double check that, but yes","date":"2011-12-20T21:53:46.031Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: what do you think about landing the handlescope patch?","date":"2011-12-20T21:55:06.451Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i think those are necessary","date":"2011-12-20T21:55:11.822Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't think they are, Locals end up in the Execute() HandleScope","date":"2011-12-20T21:55:48.188Z","type":"message"}
+{"nick":"ryah","message":"yeah..","date":"2011-12-20T21:56:09.176Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-12-20T21:56:10.854Z","type":"message"}
+{"nick":"ryah","message":"im worried about these stack allocated locals getting destructors called","date":"2011-12-20T21:56:46.404Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i'm checking out your suggestion about buffers being freed prematurely","date":"2011-12-20T21:56:47.827Z","type":"message"}
+{"nick":"ryah","message":"i should learn how v8 works","date":"2011-12-20T21:57:11.172Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, i suppose it won't hurt from a stability / robustness perspective to add HandleScopes","date":"2011-12-20T21:57:11.547Z","type":"message"}
+{"nick":"bnoordhuis","message":"but maybe from a performance perspective...","date":"2011-12-20T21:57:29.983Z","type":"message"}
+{"nick":"ryah","message":"mjr_: yeah, please test that patch","date":"2011-12-20T21:58:45.291Z","type":"message"}
+{"nick":"ryah","message":"we're getting kicked out of the office","date":"2011-12-20T22:06:32.864Z","type":"message"}
+{"nick":"ryah","message":"bb in an hour when i get home","date":"2011-12-20T22:06:37.899Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2011-12-20T22:07:28.477Z","type":"quit"}
+{"nick":"paddybyers","date":"2011-12-20T22:08:16.818Z","type":"join"}
+{"nick":"bnoordhuis","message":"https://gist.github.com/435260955c95d2ca0851 <- if it's a lifecycle issue, this should \"fix\" it","date":"2011-12-20T22:13:53.536Z","type":"message"}
+{"nick":"isaacs","date":"2011-12-20T22:16:40.126Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T22:27:05.412Z","type":"quit"}
+{"nick":"mikeal","date":"2011-12-20T22:31:14.304Z","type":"join"}
+{"nick":"isaacs_","date":"2011-12-20T22:35:17.384Z","type":"join"}
+{"nick":"isaacs","reason":"Disconnected by services","date":"2011-12-20T22:37:00.733Z","type":"quit"}
+{"nick":"isaacs_","new_nick":"isaacs","date":"2011-12-20T22:37:00.962Z","type":"nick"}
+{"nick":"ryah","message":"mjr_: can you keep us updated on the patch? ","date":"2011-12-20T22:39:09.603Z","type":"message"}
+{"nick":"ryah","message":"i feel like a hungry dog","date":"2011-12-20T22:39:17.739Z","type":"message"}
+{"nick":"ryah","message":"wrt to this bug","date":"2011-12-20T22:39:20.828Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-12-20T22:40:57.673Z","type":"quit"}
+{"nick":"mjr_","message":"Sorry, went to lunch.  Yes, we'll try that patch","date":"2011-12-20T22:46:02.561Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-12-20T22:46:16.388Z","type":"quit"}
+{"nick":"bnoordhuis","message":"mjr_: if that doesn't fix it, can you try my patch separately?","date":"2011-12-20T22:47:04.941Z","type":"message"}
+{"nick":"mjr_","message":"sure","date":"2011-12-20T22:47:10.719Z","type":"message"}
+{"nick":"mjr_","message":"Seems like there are two different places/ways it crashes anyway.","date":"2011-12-20T22:47:34.395Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's a 3-4% overhead so don't roll it out on all your systems just yet :)","date":"2011-12-20T22:47:43.679Z","type":"message"}
+{"nick":"mjr_","message":"With yours there's a slowdown you mean?","date":"2011-12-20T22:48:05.995Z","type":"message"}
+{"nick":"bnoordhuis","message":"in pure http parser performance, yes","date":"2011-12-20T22:48:20.124Z","type":"message"}
+{"nick":"bnoordhuis","message":"in the grand scheme of things it's probably unnoticeable","date":"2011-12-20T22:48:35.528Z","type":"message"}
+{"nick":"mjr_","message":"We have an increasingly grand scheme over here.","date":"2011-12-20T22:52:40.862Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2011-12-20T22:56:07.764Z","type":"quit"}
+{"nick":"bnoordhuis","message":"ryah: you should get your wife a bread machine for christmas, i can recommend it","date":"2011-12-20T23:05:47.116Z","type":"message"}
+{"nick":"piscisaureus_","message":"I can't","date":"2011-12-20T23:06:11.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"the thing will occupy space until the end of days","date":"2011-12-20T23:06:25.782Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, the chromium people compile openssl with OPENSSL_NO_ASM :/","date":"2011-12-20T23:06:26.597Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, they're pretty big","date":"2011-12-20T23:06:35.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"probably at least a third of ryah's apartment","date":"2011-12-20T23:06:55.046Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2011-12-20T23:12:16.117Z","type":"quit"}
+{"nick":"felixge","date":"2011-12-20T23:13:36.968Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-12-20T23:13:37.412Z","type":"quit"}
+{"nick":"felixge","date":"2011-12-20T23:13:37.641Z","type":"join"}
+{"nick":"felixge","reason":"Client Quit","date":"2011-12-20T23:13:41.138Z","type":"quit"}
+{"nick":"mjr_","message":"OK, that patch is running on 8 processes now.","date":"2011-12-20T23:14:46.534Z","type":"message"}
+{"nick":"bnoordhuis","message":"http://news.ycombinator.com/item?id=3375379 <- priceless, someone calling poul-henning kamp a newb","date":"2011-12-20T23:20:30.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: how is node working out for you guys so far?","date":"2011-12-20T23:23:22.225Z","type":"message"}
+{"nick":"bnoordhuis","message":"apart from a segmentation fault every now and then, i mean","date":"2011-12-20T23:25:34.980Z","type":"message"}
+{"nick":"mjr_","message":"node is kicking ass","date":"2011-12-20T23:25:34.980Z","type":"message"}
+{"nick":"bnoordhuis","message":"any rough edges?","date":"2011-12-20T23:25:34.980Z","type":"message"}
+{"nick":"mjr_","message":"Well, you know the memory leak stuff is still super painful","date":"2011-12-20T23:25:34.980Z","type":"message"}
+{"nick":"mjr_","message":"I think we might have fd leaks in there too that cause slowdowns which eventually fix themselves.","date":"2011-12-20T23:25:34.980Z","type":"message"}
+{"nick":"ryah!~ry@tinyclouds.org","topic":"http://drewww.github.com/socket.io-benchmarking/","date":"2011-12-20T23:25:51.117Z","type":"topic"}
+{"nick":"mjr_","message":"We are moving our whole operation to Joyent soon, so hopefully we'll be able to use some of this awesome stack helper stuff.","date":"2011-12-20T23:26:37.510Z","type":"message"}
+{"nick":"pquerna","message":"bnoordhuis: who are these people on HN now days :=/","date":"2011-12-20T23:27:09.006Z","type":"message"}
+{"nick":"bnoordhuis","message":"pquerna: hah, i know right?","date":"2011-12-20T23:27:31.018Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: yeah, node + dtrace is great","date":"2011-12-20T23:27:47.936Z","type":"message"}
+{"nick":"bnoordhuis","message":"i've been thinking about adding systemtap probe points so you can do something similar on linux","date":"2011-12-20T23:28:14.458Z","type":"message"}
+{"nick":"mmalecki","message":"well, *.nodejitsu.com was once blocked because of \"sock-puppeting\" on hn.","date":"2011-12-20T23:28:49.281Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: It should just work out of the box I'm told.","date":"2011-12-20T23:29:00.002Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: I think I've seen some project trying to port dtrace to linux","date":"2011-12-20T23:29:02.435Z","type":"message"}
+{"nick":"bnoordhuis","message":"also because your boss can be an ass","date":"2011-12-20T23:29:11.933Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: which one?","date":"2011-12-20T23:29:29.565Z","type":"message"}
+{"nick":"bnoordhuis","message":"marek","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"re dtrace port - yeah, oracle is apparently working on that","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is good news if it'll work outside of unbreakable linux","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"mjr_","message":"But it's going to be for their own commercial version though, right?","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"rmustacc","message":"I wouldn't hold your breath on that for a while.","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: that wasn't the case here. also, everyone can be an ass.","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"some more than others :)","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"mmalecki","message":"I think I was an ass yestarday.","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"rmustacc","message":"They displayed that they didn't really understand the code.","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: yes?","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"rmustacc","message":"Plus, they said they weren't going to do usdt.","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"how so?","date":"2011-12-20T23:31:14.736Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: and yeah, that'd be Oracle","date":"2011-12-20T23:31:20.470Z","type":"message"}
+{"nick":"mjr_","message":"rmustacc: you guys could totally clean up with smartos if you tried to make most of the user land tools work like they do on Linux.","date":"2011-12-20T23:31:26.990Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: Uh, you diff the drivers and see what safety portions they ripped out and replaced with comments that said they didn't understand why it was there.","date":"2011-12-20T23:31:29.395Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, that makes it rather less useful...","date":"2011-12-20T23:31:32.618Z","type":"message"}
+{"nick":"mjr_","message":"I keep trying to go be Mr. Solaris again, but the years of typing commands into Linux have worn deep grooves into my brain.","date":"2011-12-20T23:31:57.388Z","type":"message"}
+{"nick":"rmustacc","message":"Yeah, at least SystemTap didn't reinvent their own USDT method and consume the DTrace one.","date":"2011-12-20T23:32:00.268Z","type":"message"}
+{"nick":"rmustacc","message":"mjr_: If you end up generating a list of things that you hit and are frustrating, that'd be good. On the new stuff by default, the GNU tools should be in your path first for example.","date":"2011-12-20T23:32:26.108Z","type":"message"}
+{"nick":"rmustacc","message":"mjr_: Or just send me a brain dump some day.","date":"2011-12-20T23:32:39.358Z","type":"message"}
+{"nick":"rmustacc","message":"There are a bunch of small things we have as TODOs to make that experience friendlier.","date":"2011-12-20T23:32:54.525Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: can i have signalfd()?","date":"2011-12-20T23:32:57.968Z","type":"message"}
+{"nick":"mjr_","message":"Well, like htop and top should be there, and ps should not overflow the columns.","date":"2011-12-20T23:33:08.607Z","type":"message"}
+{"nick":"mjr_","message":"If there's a wiki somewhere, I'd be happy to contribute to it as I find things.","date":"2011-12-20T23:33:16.747Z","type":"message"}
+{"nick":"rmustacc","message":"mjr_: Yeah, we've been meaning to do a top compatibility mode to prstat.","date":"2011-12-20T23:33:38.741Z","type":"message"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2011-12-20T23:33:40.547Z","type":"quit"}
+{"nick":"rmustacc","message":"It'll make everyone happier.","date":"2011-12-20T23:33:42.733Z","type":"message"}
+{"nick":"rmustacc","message":"Because top is a resource hog.","date":"2011-12-20T23:33:47.318Z","type":"message"}
+{"nick":"mjr_","message":"Yes, prstat is completely amazing, but it's just different in surprising ways.","date":"2011-12-20T23:34:04.056Z","type":"message"}
+{"nick":"rmustacc","message":"mjr_: Yeah, we should just beat out a top compatibility mode for that.","date":"2011-12-20T23:34:21.334Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: So receiving a singla through an event port basically?","date":"2011-12-20T23:34:52.153Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: yes","date":"2011-12-20T23:35:01.209Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: Sounds reasonable, I'll file an internal ticket as something for us to look at adding.","date":"2011-12-20T23:35:19.453Z","type":"message"}
+{"nick":"pietern","date":"2011-12-20T23:35:22.016Z","type":"join"}
+{"nick":"mjr_","message":"For me if you just made htop work, I'd sit comfortably by with that in one window and some new Solaris man pages in the other.","date":"2011-12-20T23:35:23.598Z","type":"message"}
+{"nick":"bnoordhuis","message":"single greatest addition to the kernel api in 10 years","date":"2011-12-20T23:35:33.588Z","type":"message"}
+{"nick":"mjr_","message":"FYI, no cores since that patch.  We won't know for sure until tomorrow.","date":"2011-12-20T23:36:18.576Z","type":"message"}
+{"nick":"erickt","date":"2011-12-20T23:36:18.983Z","type":"join"}
+{"nick":"bnoordhuis","message":"oh man, would i feel silly if it turns out to be a couple of missing handlescope declarations...","date":"2011-12-20T23:39:54.903Z","type":"message"}
+{"nick":"ryah!~ry@tinyclouds.org","topic":"http://drewww.github.com/socket.io-benchmarking/","date":"2011-12-20T23:40:02.118Z","type":"topic"}
+{"nick":"mjr_","message":"Glad I could provide some high volume QA.","date":"2011-12-20T23:40:11.473Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast","date":"2011-12-20T23:42:15.342Z","type":"message"}
+{"nick":"bnoordhuis","message":"much appreciated, mjr_ :)","date":"2011-12-20T23:42:15.909Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: couldn't find the source code, should be somewhere around http://src.chromium.org/viewvc/chrome/trunk/src/webkit/plugins/ppapi/message_channel.cc?view=markup","date":"2011-12-20T23:42:30.414Z","type":"message"}
+{"nick":"piscisaureus_","message":"but chromium gets just as complex as v8 :-/","date":"2011-12-20T23:42:48.702Z","type":"message"}
+{"nick":"mjr_","message":"If we hadn't built in retry logic at all layers of our app, it'd be basically impossible to fix these sorts of problems.","date":"2011-12-20T23:44:17.430Z","type":"message"}
+{"nick":"mjr_","message":"I guess I should do a blog post about this.","date":"2011-12-20T23:44:50.803Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that's easy to emulate, no? just detach the malloc'd blob from object A in isolate #1 and attach it to object B in isolate #2","date":"2011-12-20T23:45:01.253Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least that's how i read it","date":"2011-12-20T23:45:13.845Z","type":"message"}
+{"nick":"bnoordhuis","message":"or does the original isolate also retain a reference to the arraybuffer?","date":"2011-12-20T23:46:14.828Z","type":"message"}
+{"nick":"luxigo","reason":"Remote host closed the connection","date":"2011-12-20T23:47:04.915Z","type":"quit"}

@@ -1,0 +1,678 @@
+{"nick":"piscisaureus","message":"I wonder how one would only get \"...\"","date":"2011-08-19T00:03:21.922Z","type":"message"}
+{"nick":"ryah","message":"i bet they typed it in the repl","date":"2011-08-19T00:03:59.585Z","type":"message"}
+{"nick":"piscisaureus","message":"he says he used `node example.js`","date":"2011-08-19T00:04:31.966Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah piscisaureus: if you uv_close a handle that has pending writes","date":"2011-08-19T00:12:14.621Z","type":"message"}
+{"nick":"bnoordhuis","message":"what should happen?","date":"2011-08-19T00:12:17.585Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u000205e6f31\u000f \u000310\u000f/ (129 files in 14 dirs)\u0002:\u000f Upgrade V8 to 3.5.6 - http://bit.ly/p7ZXM7","date":"2011-08-19T00:12:17.754Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: write callbacks fire","date":"2011-08-19T00:12:24.548Z","type":"message"}
+{"nick":"ryah","message":"then close callback","date":"2011-08-19T00:12:29.724Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, but with what status code?","date":"2011-08-19T00:12:39.119Z","type":"message"}
+{"nick":"bnoordhuis","message":"the writes don't actually happen do they?","date":"2011-08-19T00:12:53.452Z","type":"message"}
+{"nick":"ryah","message":"well we guarentee that uv_close() will close(2) synchronously","date":"2011-08-19T00:13:12.187Z","type":"message"}
+{"nick":"ryah","message":"so they can't","date":"2011-08-19T00:13:20.093Z","type":"message"}
+{"nick":"ryah","message":"not sure which status code - but they should error","date":"2011-08-19T00:13:28.746Z","type":"message"}
+{"nick":"bnoordhuis","message":"and callbacks fire","date":"2011-08-19T00:13:53.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"but does that actually happen right now?","date":"2011-08-19T00:14:00.569Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't see code that does that","date":"2011-08-19T00:14:07.249Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-19T00:14:07.499Z","type":"message"}
+{"nick":"ryah","message":"i think","date":"2011-08-19T00:14:09.082Z","type":"message"}
+{"nick":"ryah","message":"i dont think we have a test for it though","date":"2011-08-19T00:14:20.249Z","type":"message"}
+{"nick":"ryah","message":"we should!","date":"2011-08-19T00:14:23.602Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, i'll write one","date":"2011-08-19T00:14:34.787Z","type":"message"}
+{"nick":"bnoordhuis","message":"but good to know that the callbacks should fire","date":"2011-08-19T00:14:43.667Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp is ahead of the pack!","date":"2011-08-19T00:14:53.999Z","type":"message"}
+{"nick":"DrPizza","message":"I wonder if there would be value in some kind of a drain_and_close that allowed all outstanding activity to complete, then called close.","date":"2011-08-19T00:14:57.161Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, probably","date":"2011-08-19T00:15:18.354Z","type":"message"}
+{"nick":"DrPizza","message":"since the caller doesn't easily know how many outstanding actions there are","date":"2011-08-19T00:15:20.337Z","type":"message"}
+{"nick":"DrPizza","message":"(though uv itself does)","date":"2011-08-19T00:15:23.489Z","type":"message"}
+{"nick":"DrPizza","message":"I mean the caller could track it","date":"2011-08-19T00:15:30.097Z","type":"message"}
+{"nick":"DrPizza","message":"but it'd just be duplicating things that uv already pays attention to","date":"2011-08-19T00:15:36.979Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the next feature request is going to be a drain_and_close that takes a timeout","date":"2011-08-19T00:15:42.350Z","type":"message"}
+{"nick":"bnoordhuis","message":"but yes, it's probably a good thing to have","date":"2011-08-19T00:16:03.574Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: people can implement that with the write callbacks","date":"2011-08-19T00:16:52.789Z","type":"message"}
+{"nick":"ryah","message":"and we do in node","date":"2011-08-19T00:16:57.607Z","type":"message"}
+{"nick":"piscisaureus","message":"I am +1 for a drain-and-close","date":"2011-08-19T00:17:09.182Z","type":"message"}
+{"nick":"ryah","message":"socket.end()","date":"2011-08-19T00:17:10.119Z","type":"message"}
+{"nick":"bnoordhuis","message":"me too","date":"2011-08-19T00:17:20.862Z","type":"message"}
+{"nick":"piscisaureus","message":"right now we have shutdown()","date":"2011-08-19T00:17:24.875Z","type":"message"}
+{"nick":"ryah","message":"not in libuv","date":"2011-08-19T00:17:26.054Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: right but wouldn't it mean that callers would have to track their own write_reqs value, which would just duplicate what uv already tracks?","date":"2011-08-19T00:17:32.905Z","type":"message"}
+{"nick":"bnoordhuis","message":"a fire-and-forget method is much easier to use","date":"2011-08-19T00:17:34.138Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: well...","date":"2011-08-19T00:17:39.110Z","type":"message"}
+{"nick":"DrPizza","message":"it just seems strange to track it in uv, but to require the caller to track it manually","date":"2011-08-19T00:17:44.826Z","type":"message"}
+{"nick":"DrPizza","message":"or does unix uv not track it?","date":"2011-08-19T00:17:51.648Z","type":"message"}
+{"nick":"bnoordhuis","message":"unix knows how many pending writes there are","date":"2011-08-19T00:18:06.536Z","type":"message"}
+{"nick":"bnoordhuis","message":"(of course)","date":"2011-08-19T00:18:24.499Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: node's closeSoon relies on socket linger etc to make sure no data is discarded but this is somewhat complicated on windows","date":"2011-08-19T00:18:42.531Z","type":"message"}
+{"nick":"piscisaureus","message":"also for pipes","date":"2011-08-19T00:18:44.745Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: they just need to have a callback on the last write","date":"2011-08-19T00:18:50.532Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: they dont have to track the earlier ones","date":"2011-08-19T00:19:01.393Z","type":"message"}
+{"nick":"piscisaureus","message":"I'd like to have something that does \"graceful close after flushing the write buffer\"","date":"2011-08-19T00:19:07.874Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: but it means they hav eto know the last write is the last write at the time they submit it","date":"2011-08-19T00:19:21.932Z","type":"message"}
+{"nick":"DrPizza","message":"oh I suppose they could submit a zero write ","date":"2011-08-19T00:19:32.686Z","type":"message"}
+{"nick":"DrPizza","message":"(I guess)","date":"2011-08-19T00:19:40.619Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: just shutdown() and close from the shutdown callback will do","date":"2011-08-19T00:19:48.697Z","type":"message"}
+{"nick":"piscisaureus","message":"right now","date":"2011-08-19T00:19:55.771Z","type":"message"}
+{"nick":"DrPizza","message":"I thought you were changing shutdown to immediately close","date":"2011-08-19T00:20:09.037Z","type":"message"}
+{"nick":"DrPizza","message":"or were you changing close to immediately close","date":"2011-08-19T00:20:13.614Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: uv-unix changed close to immediately close (windows has always done this)","date":"2011-08-19T00:20:41.468Z","type":"message"}
+{"nick":"DrPizza","message":"oh","date":"2011-08-19T00:20:48.362Z","type":"message"}
+{"nick":"DrPizza","message":"k.","date":"2011-08-19T00:20:57.033Z","type":"message"}
+{"nick":"DrPizza","message":"is that approach equally applicable to udp?","date":"2011-08-19T00:21:21.592Z","type":"message"}
+{"nick":"DrPizza","message":"it probably won't be for files","date":"2011-08-19T00:21:34.452Z","type":"message"}
+{"nick":"piscisaureus","message":"udp has no shutdown","date":"2011-08-19T00:21:44.376Z","type":"message"}
+{"nick":"ryah","message":"windows is clearly broken in this area","date":"2011-08-19T00:22:11.343Z","type":"message"}
+{"nick":"DrPizza","message":"so there's no way without manual tracking to ensure all outstanding requests are done","date":"2011-08-19T00:22:14.530Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: why is windows broken?","date":"2011-08-19T00:22:44.222Z","type":"message"}
+{"nick":"ryah","message":"write() close() should work as it does on unix","date":"2011-08-19T00:22:54.238Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: it almost works like that for sockets","date":"2011-08-19T00:23:13.094Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: pipes was a big problem","date":"2011-08-19T00:23:26.146Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: pipes are a bit fucked actually. right now to be sure that all data reaches the other side you have to call uv_shutdown on the pipe. just uv_close() will discard the kernel send buffer. But uv_shutdown on the pipe actually closes it (but not the uv handle).","date":"2011-08-19T00:25:16.821Z","type":"message"}
+{"nick":"ryah","message":"hm.. do we not have a shutdown test using pipes/","date":"2011-08-19T00:26:25.669Z","type":"message"}
+{"nick":"ryah","message":"we should..","date":"2011-08-19T00:26:27.813Z","type":"message"}
+{"nick":"piscisaureus","message":"shutdown can't work properly on pipes in windows","date":"2011-08-19T00:26:40.806Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-08-19T00:26:48.732Z","type":"message"}
+{"nick":"ryah","message":"you can't have a half-duplex pipe?","date":"2011-08-19T00:26:54.756Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: yeah but you can't switch from full to half duplex","date":"2011-08-19T00:27:17.265Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: but that's not the real problem","date":"2011-08-19T00:27:32.092Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: tcp semantics are that shutdown sends an EOF packet that will be noticed by the other side. We can't do this. So we could make shutdown a no-op that just ensures that all data in the kernel buffer is transmitted.","date":"2011-08-19T00:28:28.050Z","type":"message"}
+{"nick":"piscisaureus","message":"But the other side will never know that you want to close the connection so you will end up in a deadlock","date":"2011-08-19T00:28:47.554Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: it also marks the pipe as \"shutdown\" doesn't it, blocking further attempts to write to it?","date":"2011-08-19T00:29:06.757Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: yeah, this is implemented in libuv","date":"2011-08-19T00:29:23.978Z","type":"message"}
+{"nick":"piscisaureus","message":"it'll disallow further writes","date":"2011-08-19T00:29:30.514Z","type":"message"}
+{"nick":"DrPizza","message":"right","date":"2011-08-19T00:29:31.277Z","type":"message"}
+{"nick":"DrPizza","message":"yeah","date":"2011-08-19T00:29:32.651Z","type":"message"}
+{"nick":"ryah","message":"does the other side get marked?","date":"2011-08-19T00:29:43.679Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: but actually we CloseHandle on shutdown","date":"2011-08-19T00:29:48.731Z","type":"message"}
+{"nick":"DrPizza","message":"well, same thing","date":"2011-08-19T00:29:56.876Z","type":"message"}
+{"nick":"DrPizza","message":"it stops writes","date":"2011-08-19T00:29:58.659Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: unfortunately it also stops reads","date":"2011-08-19T00:30:10.156Z","type":"message"}
+{"nick":"DrPizza","message":"yes true","date":"2011-08-19T00:30:15.556Z","type":"message"}
+{"nick":"DrPizza","message":"well you could keep it open","date":"2011-08-19T00:30:22.680Z","type":"message"}
+{"nick":"DrPizza","message":"and just manually block writes","date":"2011-08-19T00:30:25.770Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: no","date":"2011-08-19T00:30:28.829Z","type":"message"}
+{"nick":"DrPizza","message":"no?","date":"2011-08-19T00:30:32.203Z","type":"message"}
+{"nick":"ryah","message":"the problem is the other side doesn't know the state of the pipe","date":"2011-08-19T00:30:43.309Z","type":"message"}
+{"nick":"piscisaureus","message":"exactly","date":"2011-08-19T00:30:51.395Z","type":"message"}
+{"nick":"DrPizza","message":"sure, but closing the handle doesn't change that does it?","date":"2011-08-19T00:31:02.168Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: if you close the pipe the other end will see ERROR_PIPE_CLOSED","date":"2011-08-19T00:31:16.943Z","type":"message"}
+{"nick":"piscisaureus","message":"so it knows :-)","date":"2011-08-19T00:31:21.546Z","type":"message"}
+{"nick":"DrPizza","message":"aah","date":"2011-08-19T00:31:22.158Z","type":"message"}
+{"nick":"DrPizza","message":"hmm","date":"2011-08-19T00:31:29.829Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: the bottom line is that you shouldn't expect tcp semantics from named pipes","date":"2011-08-19T00:32:04.976Z","type":"message"}
+{"nick":"ryah","message":"can you use GetNamedPipeHandleState() on the other side?","date":"2011-08-19T00:32:26.583Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I'm pretty sure that protocols that are designed to work with named pipes have a protocol-layer graceful close.","date":"2011-08-19T00:32:44.553Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: what state are you interested in?","date":"2011-08-19T00:33:17.193Z","type":"message"}
+{"nick":"piscisaureus","message":"there is no \"slot\" for half-closed or something","date":"2011-08-19T00:33:37.369Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: yes I think they must","date":"2011-08-19T00:34:13.189Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: it could be a bit unfortunate for node users. They'll expect tcp-like semantics if they make pipes to other node processes. For connections to databases and such it probably won't matter","date":"2011-08-19T00:35:19.170Z","type":"message"}
+{"nick":"DrPizza","message":"the other option is you have two kinds of pipe","date":"2011-08-19T00:35:32.604Z","type":"message"}
+{"nick":"DrPizza","message":"a UV pipe which encapsulates its data","date":"2011-08-19T00:35:37.414Z","type":"message"}
+{"nick":"DrPizza","message":"and a raw pipe which doesn't","date":"2011-08-19T00:35:40.214Z","type":"message"}
+{"nick":"graydon","reason":"Ping timeout: 258 seconds","date":"2011-08-19T00:36:03.534Z","type":"quit"}
+{"nick":"DrPizza","message":"so it can provided a built-in protocol for graceful closure","date":"2011-08-19T00:36:04.752Z","type":"message"}
+{"nick":"DrPizza","message":"maybe do it in node instead","date":"2011-08-19T00:36:08.352Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: yeah we may actually have this for ipc-type pipes","date":"2011-08-19T00:36:09.458Z","type":"message"}
+{"nick":"piscisaureus","message":"because then we could also send handles to the other side","date":"2011-08-19T00:36:19.845Z","type":"message"}
+{"nick":"ryah","message":"hmm sucks..","date":"2011-08-19T00:36:22.203Z","type":"message"}
+{"nick":"ryah","message":"so do you get UV_EOF immediately?","date":"2011-08-19T00:36:39.608Z","type":"message"}
+{"nick":"ryah","message":"when you call uv_shtudown on a pipe?","date":"2011-08-19T00:36:47.739Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: yeah","date":"2011-08-19T00:36:52.139Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: you might actually miss data that the other side is sending you","date":"2011-08-19T00:37:04.017Z","type":"message"}
+{"nick":"DrPizza","message":"you give the other side no chance to respond","date":"2011-08-19T00:37:23.341Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I have actually tried to write 0 bytes to the other side","date":"2011-08-19T00:37:59.157Z","type":"message"}
+{"nick":"piscisaureus","message":"so the other end would see a read of 0 bytes","date":"2011-08-19T00:38:11.512Z","type":"message"}
+{"nick":"DrPizza","message":"as the shutdown protocol?","date":"2011-08-19T00:38:21.138Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-19T00:38:24.309Z","type":"message"}
+{"nick":"DrPizza","message":"problem is that's still no good for connecting to 3rd party code","date":"2011-08-19T00:38:35.023Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: according to msdn this could work","date":"2011-08-19T00:38:38.910Z","type":"message"}
+{"nick":"DrPizza","message":"but for IPC sure","date":"2011-08-19T00:38:46.313Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: the issue is that if the kernel buffer is not empty at the time you write 0 bytes windows concatenates your 0 bytes to the rest of the send buffer","date":"2011-08-19T00:39:31.954Z","type":"message"}
+{"nick":"DrPizza","message":"ah yes","date":"2011-08-19T00:39:40.298Z","type":"message"}
+{"nick":"piscisaureus","message":"so the other end doesn't see it","date":"2011-08-19T00:39:41.161Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: although","date":"2011-08-19T00:39:45.793Z","type":"message"}
+{"nick":"DrPizza","message":"so that's why you do the buffer test","date":"2011-08-19T00:39:51.291Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: ?","date":"2011-08-19T00:40:03.553Z","type":"message"}
+{"nick":"DrPizza","message":"don't you?","date":"2011-08-19T00:40:08.348Z","type":"message"}
+{"nick":"DrPizza","message":"at the moment I mean","date":"2011-08-19T00:40:10.288Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: the buffer test?","date":"2011-08-19T00:40:12.105Z","type":"message"}
+{"nick":"DrPizza","message":"use some NTQIF function to test the kernel buffer?","date":"2011-08-19T00:40:24.814Z","type":"message"}
+{"nick":"DrPizza","message":"in the uv_pipe_endgame","date":"2011-08-19T00:41:04.631Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: no","date":"2011-08-19T00:41:12.783Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: oooh","date":"2011-08-19T00:41:18.997Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: that is just an optimization","date":"2011-08-19T00:41:30.216Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: to make sure the kernel buffer is flushed you have to call FlushFileBuffers on the pipe","date":"2011-08-19T00:41:53.255Z","type":"message"}
+{"nick":"DrPizza","message":"right","date":"2011-08-19T00:42:00.089Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: but there is no overlapped verion of that and it might block indefinitely","date":"2011-08-19T00:42:09.989Z","type":"message"}
+{"nick":"DrPizza","message":"so if you call FFB() zerowrite() that doesn't get coalesced?","date":"2011-08-19T00:42:14.202Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: not so fast...","date":"2011-08-19T00:42:34.108Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: so we run FlushFileBuffers in the thread pool. The NTQIF is just to check if the kernel buffer is already empty - because we can skip going to the thread pool then","date":"2011-08-19T00:43:31.429Z","type":"message"}
+{"nick":"DrPizza","message":"right I get that","date":"2011-08-19T00:43:39.133Z","type":"message"}
+{"nick":"DrPizza","message":"but once that's finished you know the buffer is empty","date":"2011-08-19T00:43:47.351Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: exactly","date":"2011-08-19T00:43:53.434Z","type":"message"}
+{"nick":"DrPizza","message":"and so a zero write won't get coalesced","date":"2011-08-19T00:43:53.590Z","type":"message"}
+{"nick":"DrPizza","message":"don't you?","date":"2011-08-19T00:43:55.125Z","type":"message"}
+{"nick":"piscisaureus","message":"I was just thinking that","date":"2011-08-19T00:44:05.246Z","type":"message"}
+{"nick":"piscisaureus","message":"that might work","date":"2011-08-19T00:44:07.551Z","type":"message"}
+{"nick":"DrPizza","message":"so you can always safely do a zero write","date":"2011-08-19T00:44:12.335Z","type":"message"}
+{"nick":"piscisaureus","message":"That would be pretty nice heh :-)","date":"2011-08-19T00:44:28.347Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: I think as a way of doing IPC pipes that should work","date":"2011-08-19T00:44:32.186Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: what intrigues me is that the NTQIF function can return a pipe state of \"FILE_PIPE_CLOSING_STATE\", almost as if pipes could exist in some half-way state, not quite closed, not quite open","date":"2011-08-19T00:45:21.592Z","type":"message"}
+{"nick":"DrPizza","message":"but I have no idea what could put the pipe into such a state","date":"2011-08-19T00:45:40.682Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: the only risk is that - say you're talking to mssql via a pipe and it inadvertedly sends you 0 bytes","date":"2011-08-19T00:46:15.184Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: libuv is going to mistake that for EOF","date":"2011-08-19T00:46:24.441Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: right, this is only safe for IPC pipes I think","date":"2011-08-19T00:46:26.833Z","type":"message"}
+{"nick":"DrPizza","message":"because it's still a custom protocol","date":"2011-08-19T00:46:33.682Z","type":"message"}
+{"nick":"piscisaureus","message":"for ipc pipes it's not really needed","date":"2011-08-19T00:46:35.937Z","type":"message"}
+{"nick":"piscisaureus","message":"Let me check \u0003\u000301FILE_PIPE_CLOSING_STATE\u0003\u000301","date":"2011-08-19T00:46:49.949Z","type":"message"}
+{"nick":"DrPizza","message":"well, ti's probably the simplest/lowest overhead protocol","date":"2011-08-19T00:46:50.147Z","type":"message"}
+{"nick":"DrPizza","message":"http://msdn.microsoft.com/en-us/library/dd414577%28v=PROT.10%29","date":"2011-08-19T00:47:20.128Z","type":"message"}
+{"nick":"DrPizza","message":"\"The server end of the specified named pipe has been closed, but data is still available for the client to read.\"","date":"2011-08-19T00:47:25.960Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307many_accepts\u000f * r\u00028448ee4\u000f \u000310\u000f/ (include/uv-win.h src/win/tcp.c)\u0002:\u000f Windows: Do simultaneous pending AcceptEx calls. - http://bit.ly/oqo0VE","date":"2011-08-19T00:47:32.914Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: ---^","date":"2011-08-19T00:47:41.382Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: yeah isn't that weird","date":"2011-08-19T00:47:41.538Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: that feels very close to what you want","date":"2011-08-19T00:47:52.816Z","type":"message"}
+{"nick":"DrPizza","message":"maybe not exactly right, I dunno","date":"2011-08-19T00:48:04.270Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I don't know how to put a pipe in that state. In my tests I found that CloseHandle would drop the kernel buffers.","date":"2011-08-19T00:48:49.425Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: no, nor me, and it gives no indication of how the pipe can get into that state","date":"2011-08-19T00:49:04.276Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: can you still not email me the windows source code ;P","date":"2011-08-19T00:49:29.565Z","type":"message"}
+{"nick":"piscisaureus","message":"(btw Im reviewing ur patch)","date":"2011-08-19T00:50:02.191Z","type":"message"}
+{"nick":"mjr__","date":"2011-08-19T00:55:43.843Z","type":"join"}
+{"nick":"mjr__","new_nick":"mjr_","date":"2011-08-19T00:56:33.836Z","type":"nick"}
+{"nick":"mjr_","message":"bnoordhuis: do you remember this patch  421b6e89aa58d1cdc3344d6fadb878f7b37eee1c","date":"2011-08-19T00:56:53.485Z","type":"message"}
+{"nick":"mjr_","message":"I'm wondering if it might help my mysterious https uncatchable exceptions.","date":"2011-08-19T00:57:17.664Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: yes","date":"2011-08-19T00:57:24.953Z","type":"message"}
+{"nick":"mjr_","message":"so what case did this one fix?","date":"2011-08-19T00:57:48.846Z","type":"message"}
+{"nick":"bnoordhuis","message":"that ReceivedShutdown always reported true","date":"2011-08-19T00:58:05.240Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: if it was up to me - you'd already be looking at it :)","date":"2011-08-19T00:58:46.240Z","type":"message"}
+{"nick":"mjr_","message":"But how would you notice this?","date":"2011-08-19T00:58:47.568Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: can you rephrase that question?","date":"2011-08-19T00:59:00.733Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: funny - somewhere in the libuv history we actually did post multiple accepts. But I removed that because it did not make a difference (on my local computer).","date":"2011-08-19T00:59:30.276Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: before that change went in, what would happen because that flag wasn't getting set properly?","date":"2011-08-19T00:59:31.357Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: connections would stay open after they should have been shutdown?","date":"2011-08-19T00:59:40.400Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: btw, who *is* it up to then btw?","date":"2011-08-19T00:59:42.693Z","type":"message"}
+{"nick":"DrPizza","message":"steve sinofsky","date":"2011-08-19T01:00:49.154Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yep, it doesn't make any difference for me running locally either.. but it makes a pretty large difference (40-50% running over the network with a real workload)","date":"2011-08-19T01:01:16.757Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: nothing changes really, node core doesn't use that method","date":"2011-08-19T01:01:23.120Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: ahh, thanks.","date":"2011-08-19T01:01:43.766Z","type":"message"}
+{"nick":"igorzi","message":"(real workload = http_simple.js)","date":"2011-08-19T01:02:13.083Z","type":"message"}
+{"nick":"piscisaureus","message":"yes that is awesome","date":"2011-08-19T01:02:33.068Z","type":"message"}
+{"nick":"piscisaureus","message":"so 32 was the sweet spot","date":"2011-08-19T01:02:42.270Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yep, any higher or lower caused req/s to drop","date":"2011-08-19T01:03:43.454Z","type":"message"}
+{"nick":"piscisaureus","message":"http://www.microsoft.com/resources/sharedsource/mvp.mspx","date":"2011-08-19T01:04:43.786Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- This is how one gets windows source code. I should go help grannies getting rid of adware...","date":"2011-08-19T01:04:43.947Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: btw, patch looks good","date":"2011-08-19T01:04:53.037Z","type":"message"}
+{"nick":"piscisaureus","message":"+1 from me","date":"2011-08-19T01:04:59.706Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: thanks","date":"2011-08-19T01:05:10.191Z","type":"message"}
+{"nick":"piscisaureus","message":"thanks yourself","date":"2011-08-19T01:06:33.682Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u00028448ee4\u000f \u000310\u000f/ (include/uv-win.h src/win/tcp.c)\u0002:\u000f Windows: Do simultaneous pending AcceptEx calls. - http://bit.ly/oqo0VE","date":"2011-08-19T01:08:35.502Z","type":"message"}
+{"nick":"ryah","message":"igorzi++","date":"2011-08-19T01:09:16.109Z","type":"message"}
+{"nick":"ryah","message":"not too often you get 100% perf improvements","date":"2011-08-19T01:09:24.867Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: you're seeing it too?","date":"2011-08-19T01:10:25.935Z","type":"message"}
+{"nick":"ryah","message":"no i havent tried","date":"2011-08-19T01:11:02.561Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: hey","date":"2011-08-19T01:17:27.542Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: hello","date":"2011-08-19T01:17:52.144Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: we may actually be able to switch a pipe from duplex to something else","date":"2011-08-19T01:18:13.156Z","type":"message"}
+{"nick":"piscisaureus","message":"Because this is mapped to share privileges under the hood","date":"2011-08-19T01:18:35.621Z","type":"message"}
+{"nick":"piscisaureus","message":"I just don't know if there is an api to do this. Do you?","date":"2011-08-19T01:18:55.053Z","type":"message"}
+{"nick":"DrPizza","message":"I think share privilege can only be specified at handle creation time","date":"2011-08-19T01:19:07.976Z","type":"message"}
+{"nick":"DrPizza","message":"I guess there may be some undocumented way of changing share state","date":"2011-08-19T01:20:47.403Z","type":"message"}
+{"nick":"DrPizza","message":"but I don't know it","date":"2011-08-19T01:20:49.189Z","type":"message"}
+{"nick":"DrPizza","message":"and I don't know how that woudl be communicated to the other end anyway","date":"2011-08-19T01:20:55.937Z","type":"message"}
+{"nick":"piscisaureus","message":"I'd think the other end would get a read error.","date":"2011-08-19T01:22:13.394Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-19T01:43:44.825Z","type":"quit"}
+{"nick":"piscisaureus","message":"I'm going","date":"2011-08-19T01:45:57.773Z","type":"message"}
+{"nick":"piscisaureus","message":"I know it's early but","date":"2011-08-19T01:46:06.251Z","type":"message"}
+{"nick":"bnoordhuis","message":"sleep tight, piscisaureus","date":"2011-08-19T01:54:16.719Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: ReOpenfile. Sadly not on xp tho","date":"2011-08-19T01:55:01.800Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: oh interesting","date":"2011-08-19T01:55:31.194Z","type":"message"}
+{"nick":"DrPizza","message":"I did not know of that","date":"2011-08-19T01:56:03.430Z","type":"message"}
+{"nick":"DrPizza","message":"you can even force file handles to be overlapped","date":"2011-08-19T01:56:09.788Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm. The sharing mode of the object. You cannot request a sharing mode that conflicts with the access mode specified in a previous open request whose handle is still open.","date":"2011-08-19T02:00:52.855Z","type":"message"}
+{"nick":"piscisaureus","message":"anyway. bye.","date":"2011-08-19T02:01:04.102Z","type":"message"}
+{"nick":"DrPizza","message":"bye","date":"2011-08-19T02:01:23.958Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-19T02:25:01.730Z","type":"join"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2011-08-19T02:30:18.803Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-08-19T02:33:18.212Z","type":"join"}
+{"nick":"piscisaureus","reason":"Ping timeout: 258 seconds","date":"2011-08-19T02:51:10.231Z","type":"quit"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-19T02:56:44.112Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2011-08-19T03:02:11.262Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Read error: Operation timed out","date":"2011-08-19T03:36:29.568Z","type":"quit"}
+{"nick":"mraleph","date":"2011-08-19T07:05:58.810Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-19T08:02:36.238Z","type":"quit"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2011-08-19T09:22:06.441Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-08-19T11:49:49.209Z","type":"join"}
+{"nick":"johnm1234","reason":"Ping timeout: 246 seconds","date":"2011-08-19T12:08:50.958Z","type":"quit"}
+{"nick":"johnm1234","date":"2011-08-19T12:15:56.468Z","type":"join"}
+{"nick":"bnoordhuis","date":"2011-08-19T13:10:24.940Z","type":"join"}
+{"nick":"piscisaureus","message":"bnoordhuis: shouldn't uv_udp_send_s have a \"handle\" field?","date":"2011-08-19T13:40:42.482Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: maybe","date":"2011-08-19T13:40:56.278Z","type":"message"}
+{"nick":"bnoordhuis","message":"the other request types don't, i think","date":"2011-08-19T13:41:05.190Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: uv_write_t has it too","date":"2011-08-19T13:41:06.323Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, but uv_connect_req hasn't","date":"2011-08-19T13:41:14.574Z","type":"message"}
+{"nick":"piscisaureus","message":"that may be dumb","date":"2011-08-19T13:41:29.463Z","type":"message"}
+{"nick":"piscisaureus","message":"I guess both unix and win define that in uv_connect_private_fields","date":"2011-08-19T13:41:46.026Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm okay with adding it, makes things easier for users","date":"2011-08-19T13:41:47.008Z","type":"message"}
+{"nick":"piscisaureus","message":"i'm adding it","date":"2011-08-19T13:42:20.547Z","type":"message"}
+{"nick":"piscisaureus","message":"also it needs a cb","date":"2011-08-19T13:42:43.950Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: want to hear a fun story?","date":"2011-08-19T13:42:44.676Z","type":"message"}
+{"nick":"piscisaureus","message":"sure","date":"2011-08-19T13:42:48.586Z","type":"message"}
+{"nick":"piscisaureus","message":"hear or \"hear\" ?","date":"2011-08-19T13:42:59.380Z","type":"message"}
+{"nick":"bnoordhuis","message":"so my ex co-workers at nrc have been battling with nrcnext.nl the whole morning","date":"2011-08-19T13:43:03.156Z","type":"message"}
+{"nick":"bnoordhuis","message":"the site was going down as often as your mom, so to speak","date":"2011-08-19T13:43:18.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"they called me, asked if i wanted to step in","date":"2011-08-19T13:43:32.836Z","type":"message"}
+{"nick":"bnoordhuis","message":"so i tweaked the apache conf in five minutes","date":"2011-08-19T13:43:44.192Z","type":"message"}
+{"nick":"bnoordhuis","message":"problem solved and EUR 100 i can bill :)","date":"2011-08-19T13:43:54.298Z","type":"message"}
+{"nick":"piscisaureus","message":"ha!","date":"2011-08-19T13:44:02.123Z","type":"message"}
+{"nick":"piscisaureus","message":"way too little","date":"2011-08-19T13:44:04.410Z","type":"message"}
+{"nick":"piscisaureus","message":"you could have pulled 5 times as much :-)","date":"2011-08-19T13:44:15.296Z","type":"message"}
+{"nick":"bnoordhuis","message":"probably yes :)","date":"2011-08-19T13:44:25.028Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the newspapers are falling on hard times already","date":"2011-08-19T13:44:38.405Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: well since nrc can still cover Peter Vandermeersch's travel expenses","date":"2011-08-19T13:45:39.004Z","type":"message"}
+{"nick":"piscisaureus","message":"(dwdd studio every other day)","date":"2011-08-19T13:45:53.266Z","type":"message"}
+{"nick":"piscisaureus","message":"they should be able to afford you","date":"2011-08-19T13:46:00.997Z","type":"message"}
+{"nick":"bnoordhuis","message":"true but peter v. lives in amsterdam nowadays","date":"2011-08-19T13:46:16.119Z","type":"message"}
+{"nick":"bnoordhuis","message":"amsterdam <-> hilversum is 30 minutes i think","date":"2011-08-19T13:46:30.701Z","type":"message"}
+{"nick":"piscisaureus","message":"guess who pays the rent?","date":"2011-08-19T13:46:34.257Z","type":"message"}
+{"nick":"piscisaureus","message":"dwdd is recorded in amsterdam btw","date":"2011-08-19T13:46:41.179Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah? didn't know that","date":"2011-08-19T13:46:52.456Z","type":"message"}
+{"nick":"bnoordhuis","message":"so he probably just pops across the street","date":"2011-08-19T13:47:07.857Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: 'also it needs a cb' <- why?","date":"2011-08-19T13:47:31.031Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: where are you going to stash the write_cb then?","date":"2011-08-19T13:47:45.646Z","type":"message"}
+{"nick":"piscisaureus","message":"oh send_cb","date":"2011-08-19T13:47:51.140Z","type":"message"}
+{"nick":"bnoordhuis","message":"in my, er, private parts","date":"2011-08-19T13:47:58.662Z","type":"message"}
+{"nick":"piscisaureus","message":"I like to share my private parts with you in public","date":"2011-08-19T13:48:14.605Z","type":"message"}
+{"nick":"piscisaureus","message":"btw: uv_write_s definition:","date":"2011-08-19T13:49:04.288Z","type":"message"}
+{"nick":"piscisaureus","message":"/* uv_write_t is a subclass of uv_req_t */","date":"2011-08-19T13:49:04.448Z","type":"message"}
+{"nick":"piscisaureus","message":"struct uv_write_s {","date":"2011-08-19T13:49:04.448Z","type":"message"}
+{"nick":"piscisaureus","message":"  UV_REQ_FIELDS","date":"2011-08-19T13:49:04.449Z","type":"message"}
+{"nick":"piscisaureus","message":"  uv_write_cb cb;","date":"2011-08-19T13:49:04.449Z","type":"message"}
+{"nick":"piscisaureus","message":"  uv_stream_t* handle;","date":"2011-08-19T13:49:05.203Z","type":"message"}
+{"nick":"piscisaureus","message":"  UV_WRITE_PRIVATE_FIELDS","date":"2011-08-19T13:49:05.357Z","type":"message"}
+{"nick":"piscisaureus","message":"};","date":"2011-08-19T13:49:06.143Z","type":"message"}
+{"nick":"bnoordhuis","message":"why is that public? it's an implementation detail","date":"2011-08-19T13:49:22.541Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it is not public","date":"2011-08-19T13:49:32.972Z","type":"message"}
+{"nick":"piscisaureus","message":"it is just shared","date":"2011-08-19T13:49:35.528Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right","date":"2011-08-19T13:49:45.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... i'm not the sharing type","date":"2011-08-19T13:49:58.562Z","type":"message"}
+{"nick":"ryah","message":"morning","date":"2011-08-19T13:58:17.220Z","type":"message"}
+{"nick":"piscisaureus","message":"mornin'","date":"2011-08-19T13:58:28.901Z","type":"message"}
+{"nick":"piscisaureus","message":"man. ryah is up at 7am","date":"2011-08-19T13:59:58.672Z","type":"message"}
+{"nick":"piscisaureus","message":"last time I was up at 7 it was just before I went to bed","date":"2011-08-19T14:00:37.058Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-19T14:01:18.693Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what do we pass if recvfrom errs?","date":"2011-08-19T14:01:33.549Z","type":"message"}
+{"nick":"piscisaureus","message":"for the address","date":"2011-08-19T14:01:36.525Z","type":"message"}
+{"nick":"piscisaureus","message":"null?","date":"2011-08-19T14:01:37.754Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes","date":"2011-08-19T14:02:06.665Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: recv_cb doesn't even take a status or?","date":"2011-08-19T14:02:17.149Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes","date":"2011-08-19T14:02:31.113Z","type":"message"}
+{"nick":"piscisaureus","message":"oh nread","date":"2011-08-19T14:02:36.258Z","type":"message"}
+{"nick":"piscisaureus","action":"facepalm","date":"2011-08-19T14:02:43.598Z","type":"action"}
+{"nick":"bnoordhuis","message":"actually, i don't think recvfrom ever errors on unices unless you explicitly read out the error queue","date":"2011-08-19T14:02:59.637Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't know","date":"2011-08-19T14:03:15.457Z","type":"message"}
+{"nick":"piscisaureus","message":"gotta handle it just in case","date":"2011-08-19T14:03:21.045Z","type":"message"}
+{"nick":"piscisaureus","message":"because we need to return the buffer","date":"2011-08-19T14:03:31.704Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's what i do, handle it just in case","date":"2011-08-19T14:03:45.544Z","type":"message"}
+{"nick":"piscisaureus","message":"is it allowed to use the ? operator in c?","date":"2011-08-19T14:06:57.870Z","type":"message"}
+{"nick":"piscisaureus","message":"or is it bad style?","date":"2011-08-19T14:07:03.570Z","type":"message"}
+{"nick":"bnoordhuis","message":"the ternary operator?","date":"2011-08-19T14:07:20.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure","date":"2011-08-19T14:07:22.143Z","type":"message"}
+{"nick":"bnoordhuis","message":"just don't go crazy","date":"2011-08-19T14:07:32.961Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I don't like if, while, for etc","date":"2011-08-19T14:08:00.633Z","type":"message"}
+{"nick":"piscisaureus","message":"So I was thinking implementing this function using ?, setjmp / longjmp","date":"2011-08-19T14:08:31.063Z","type":"message"}
+{"nick":"bnoordhuis","message":"me neither, goto ftw","date":"2011-08-19T14:08:33.262Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: no I want to make it one big expression","date":"2011-08-19T14:08:59.307Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's even better, that's job security","date":"2011-08-19T14:09:10.927Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I guess nrc's httpd.conf looks like job security too :p","date":"2011-08-19T14:10:49.057Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you should see the varnish default.vcl","date":"2011-08-19T14:11:10.422Z","type":"message"}
+{"nick":"bnoordhuis","message":"i wrote most of it :)","date":"2011-08-19T14:11:25.017Z","type":"message"}
+{"nick":"ryah","message":"we used to have something like sys.merge?","date":"2011-08-19T14:22:37.325Z","type":"message"}
+{"nick":"ryah","message":"do you guys remember what it was called?","date":"2011-08-19T14:22:44.637Z","type":"message"}
+{"nick":"ryah","message":"merged two objects","date":"2011-08-19T14:22:51.639Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm not me","date":"2011-08-19T14:23:21.237Z","type":"message"}
+{"nick":"ryah","message":"mixin","date":"2011-08-19T14:23:23.563Z","type":"message"}
+{"nick":"piscisaureus","message":"I never actually use node","date":"2011-08-19T14:23:31.428Z","type":"message"}
+{"nick":"ryah","message":"me either","date":"2011-08-19T14:28:39.395Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what was the trunc flag called again?","date":"2011-08-19T14:32:01.050Z","type":"message"}
+{"nick":"piscisaureus","message":"UV_TRUNC?","date":"2011-08-19T14:32:02.673Z","type":"message"}
+{"nick":"piscisaureus","message":"UV_UDP_TRUNC?","date":"2011-08-19T14:32:05.739Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: UV_UDP_PARTIAL","date":"2011-08-19T14:32:19.087Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: hmm. My headers are outdated","date":"2011-08-19T14:32:42.567Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you know where to find them","date":"2011-08-19T14:33:07.734Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: sure","date":"2011-08-19T14:33:14.949Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp on localhost works a little too well","date":"2011-08-19T14:37:43.097Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you have a send_cb that sends off a new message","date":"2011-08-19T14:37:53.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"you create an infinite loop :(","date":"2011-08-19T14:37:58.709Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: why?","date":"2011-08-19T14:39:37.230Z","type":"message"}
+{"nick":"piscisaureus","message":"don't you defer the send_cb until the next tick?","date":"2011-08-19T14:39:47.925Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i do now","date":"2011-08-19T14:40:30.785Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i tried to squeeze out a little extra performance","date":"2011-08-19T14:40:43.257Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, it's complicated","date":"2011-08-19T14:40:47.417Z","type":"message"}
+{"nick":"bnoordhuis","message":"the bottom line is that sendmsg on localhost always succeeds, never returns EAGAIN","date":"2011-08-19T14:41:04.001Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I think I am going to report some udp send","date":"2011-08-19T14:50:39.769Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: in case the user closes the socket before the send queue is flushed","date":"2011-08-19T14:50:58.963Z","type":"message"}
+{"nick":"piscisaureus","message":"\"udp send\" += \"errors\"","date":"2011-08-19T14:51:22.632Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: no need, the callbacks should fire","date":"2011-08-19T14:51:54.196Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's apparently not fully implemented for tcp but it should","date":"2011-08-19T14:52:07.418Z","type":"message"}
+{"nick":"piscisaureus","message":"eh?","date":"2011-08-19T14:52:14.977Z","type":"message"}
+{"nick":"bnoordhuis","message":"i call the callback with status=-1 and error=UV_EINTR","date":"2011-08-19T14:52:23.221Z","type":"message"}
+{"nick":"piscisaureus","message":"ok yeah","date":"2011-08-19T14:52:30.983Z","type":"message"}
+{"nick":"piscisaureus","message":"that's implemented for tcp as well","date":"2011-08-19T14:52:38.490Z","type":"message"}
+{"nick":"bnoordhuis","message":"on windows? i don't think unix does it atm","date":"2011-08-19T14:52:50.045Z","type":"message"}
+{"nick":"piscisaureus","message":"windows always calls the write_cb for sockets","date":"2011-08-19T14:53:01.968Z","type":"message"}
+{"nick":"bnoordhuis","message":"needs a test!","date":"2011-08-19T14:53:35.554Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's tied deeply to how windows works. if you close a socket that has overlapped writes pending the kernel will notify you too. so we just pass the error on to the user","date":"2011-08-19T14:53:46.181Z","type":"message"}
+{"nick":"ryah","message":"more tests <3","date":"2011-08-19T14:55:59.581Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_1v1: 101632/s received, 101632/s sent","date":"2011-08-19T15:04:39.497Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_10v1: 102716/s received, 102716/s sent","date":"2011-08-19T15:04:39.663Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_100v1: 101864/s received, 101864/s sent","date":"2011-08-19T15:04:39.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_1000v1: 102136/s received, 102136/s sent","date":"2011-08-19T15:04:39.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_10v10: 172102/s received, 172104/s sent","date":"2011-08-19T15:04:39.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_100v10: 173084/s received, 173086/s sent","date":"2011-08-19T15:04:40.487Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_1000v10: 170744/s received, 170746/s sent","date":"2011-08-19T15:04:44.705Z","type":"message"}
+{"nick":"bnoordhuis","message":"udp_packet_storm_100v100: 174533/s received, 174553/s sent","date":"2011-08-19T15:04:46.554Z","type":"message"}
+{"nick":"bnoordhuis","message":"now to fix the 1000v1000 test :)","date":"2011-08-19T15:05:23.047Z","type":"message"}
+{"nick":"bnoordhuis","message":"EMFILE obviously...","date":"2011-08-19T15:06:34.997Z","type":"message"}
+{"nick":"piscisaureus","message":"wut?","date":"2011-08-19T15:07:41.630Z","type":"message"}
+{"nick":"piscisaureus","message":"100 000 / s","date":"2011-08-19T15:07:53.838Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis++","date":"2011-08-19T15:08:06.712Z","type":"message"}
+{"nick":"ryah","message":"udp = fast","date":"2011-08-19T15:08:26.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: give it a spin, it's in my repo","date":"2011-08-19T15:08:45.823Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I just finished my implementation. Now I need to rebase on top of your crap","date":"2011-08-19T15:13:18.422Z","type":"message"}
+{"nick":"piscisaureus","message":"\"crap\" well crappy commits in a way","date":"2011-08-19T15:13:40.724Z","type":"message"}
+{"nick":"piscisaureus","message":"\"WIP\"","date":"2011-08-19T15:13:52.360Z","type":"message"}
+{"nick":"ryah","message":"given some library what's the best way to determine it's arch programatically?","date":"2011-08-19T15:17:11.209Z","type":"message"}
+{"nick":"ryah","message":"on unix","date":"2011-08-19T15:17:28.416Z","type":"message"}
+{"nick":"bnoordhuis","message":"objdump?","date":"2011-08-19T15:17:33.480Z","type":"message"}
+{"nick":"ryah","message":"parsing the output of file?","date":"2011-08-19T15:17:35.840Z","type":"message"}
+{"nick":"ryah","message":"objdump isnt on osx","date":"2011-08-19T15:18:11.415Z","type":"message"}
+{"nick":"ryah","message":"i need to determine the arch of the system for the gyp build","date":"2011-08-19T15:18:57.918Z","type":"message"}
+{"nick":"ryah","message":"which is super annoying","date":"2011-08-19T15:19:01.098Z","type":"message"}
+{"nick":"ryah","message":"waf does it by parsing gcc -E -dM -xc /dev/null","date":"2011-08-19T15:19:15.388Z","type":"message"}
+{"nick":"bnoordhuis","message":"so why don't you use that?","date":"2011-08-19T15:19:35.160Z","type":"message"}
+{"nick":"ryah","message":"i thought we could do it by checking what arch the libssl.so is","date":"2011-08-19T15:19:59.894Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's kind of hacky","date":"2011-08-19T15:20:19.580Z","type":"message"}
+{"nick":"bnoordhuis","message":"won't work well on multi-arch systems either","date":"2011-08-19T15:20:27.732Z","type":"message"}
+{"nick":"bnoordhuis","message":"i have i386 and x64 libs installed, which one are you going to check?","date":"2011-08-19T15:20:44.332Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'd probably look at `uname -r` and go from there","date":"2011-08-19T15:21:02.609Z","type":"message"}
+{"nick":"bnoordhuis","message":"eh, `uname -m`","date":"2011-08-19T15:21:24.009Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: uname -a is standard","date":"2011-08-19T15:23:17.792Z","type":"message"}
+{"nick":"DrPizza","message":"checking that","date":"2011-08-19T15:23:23.039Z","type":"message"}
+{"nick":"DrPizza","message":"the v8 gyp uses uname's output","date":"2011-08-19T15:23:38.837Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-19T15:24:50.985Z","type":"join"}
+{"nick":"ryah","message":"DrPizza: that doesn't work for computers with 32bit kernels and 64bit userland","date":"2011-08-19T15:27:39.598Z","type":"message"}
+{"nick":"ryah","message":"(most macs)","date":"2011-08-19T15:27:51.974Z","type":"message"}
+{"nick":"DrPizza","message":"I think most macs are now 64/64 aren't they?","date":"2011-08-19T15:30:57.044Z","type":"message"}
+{"nick":"DrPizza","message":"all the new ones are (should be)","date":"2011-08-19T15:31:10.115Z","type":"message"}
+{"nick":"DrPizza","message":"I think even my 2008 MBP is.","date":"2011-08-19T15:31:13.421Z","type":"message"}
+{"nick":"ryah","message":"http://news.cnet.com/8301-13579_3-10320314-37.html?tag=rtcol;pop","date":"2011-08-19T15:31:18.320Z","type":"message"}
+{"nick":"DrPizza","message":"though it may be the oldest model that defaults to 64/64","date":"2011-08-19T15:31:23.762Z","type":"message"}
+{"nick":"ryah","message":"probably in lion they have a 64bit kernel","date":"2011-08-19T15:31:36.095Z","type":"message"}
+{"nick":"ryah","message":"anyway - that throws out the possibility of using uname :)","date":"2011-08-19T15:32:06.057Z","type":"message"}
+{"nick":"ryah","message":"super annoying","date":"2011-08-19T15:32:12.054Z","type":"message"}
+{"nick":"DrPizza","message":"I think that article is wrong, or at least, insufficiently nuanced","date":"2011-08-19T15:32:25.552Z","type":"message"}
+{"nick":"bnoordhuis","message":"god, journalists :)","date":"2011-08-19T15:32:39.833Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/node% file `which gcc`","date":"2011-08-19T15:33:03.956Z","type":"message"}
+{"nick":"ryah","message":"/Users/ryan/local/bin/gcc: Mach-O 64-bit executable x86_64","date":"2011-08-19T15:33:04.118Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/node% uname -a        ","date":"2011-08-19T15:33:04.118Z","type":"message"}
+{"nick":"ryah","message":"Darwin mac1234.local 10.6.0 Darwin Kernel Version 10.6.0: Wed Nov 10 18:13:17 PST 2010; root:xnu-1504.9.26~3/RELEASE_I386 i386","date":"2011-08-19T15:33:04.823Z","type":"message"}
+{"nick":"bnoordhuis","message":"file `/bin/sh`?","date":"2011-08-19T15:33:40.176Z","type":"message"}
+{"nick":"DrPizza","message":"man if my dozy MBP would fucking wake up, I would take a look","date":"2011-08-19T15:33:45.080Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/node% file /bin/sh","date":"2011-08-19T15:34:07.613Z","type":"message"}
+{"nick":"ryah","message":"/bin/sh: Mach-O universal binary with 2 architectures","date":"2011-08-19T15:34:07.770Z","type":"message"}
+{"nick":"ryah","message":"/bin/sh (for architecture x86_64):\tMach-O 64-bit executable x86_64","date":"2011-08-19T15:34:07.770Z","type":"message"}
+{"nick":"ryah","message":"/bin/sh (for architecture i386):\tMach-O executable i386","date":"2011-08-19T15:34:07.770Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/node% file /opt/local/lib/libssl.dylib ","date":"2011-08-19T15:34:07.770Z","type":"message"}
+{"nick":"ryah","message":"/opt/local/lib/libssl.dylib: Mach-O 64-bit dynamically linked shared library x86_64","date":"2011-08-19T15:34:10.113Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, that's sweet","date":"2011-08-19T15:34:23.066Z","type":"message"}
+{"nick":"DrPizza","message":"oh ffs","date":"2011-08-19T15:34:27.119Z","type":"message"}
+{"nick":"DrPizza","message":"I left a safari open looking at twitter","date":"2011-08-19T15:34:32.078Z","type":"message"}
+{"nick":"DrPizza","message":"twitter has now queued up 119714 messages","date":"2011-08-19T15:34:37.940Z","type":"message"}
+{"nick":"DrPizza","message":"and safari is very, very sad.","date":"2011-08-19T15:34:42.318Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2011-08-19T15:34:47.488Z","type":"message"}
+{"nick":"DrPizza","message":"what's the force quit shortcut","date":"2011-08-19T15:36:08.203Z","type":"message"}
+{"nick":"DrPizza","message":"I can never remember","date":"2011-08-19T15:36:10.336Z","type":"message"}
+{"nick":"bnoordhuis","message":"`pkill -9 safari.app`?","date":"2011-08-19T15:36:40.076Z","type":"message"}
+{"nick":"DrPizza","message":"bnoordhuis: yeah maybe if I could open a terminal...","date":"2011-08-19T15:37:22.662Z","type":"message"}
+{"nick":"bnoordhuis","message":"ssh into your machine :)","date":"2011-08-19T15:37:46.976Z","type":"message"}
+{"nick":"DrPizza","message":"Darwin macbookpro.local 11.0.0 Darwin Kernel Version 11.0.0: Sat Jun 18 12:56:35 PDT 2011; root:xnu-1699.22.73~1/RELEASE_X86_64 x86_64","date":"2011-08-19T15:41:18.783Z","type":"message"}
+{"nick":"DrPizza","message":"stupid mac os x","date":"2011-08-19T15:41:24.027Z","type":"message"}
+{"nick":"DrPizza","message":"it should not be macbookpro.local","date":"2011-08-19T15:41:28.855Z","type":"message"}
+{"nick":"DrPizza","message":"it surely should have picked up its domain name from DHCP","date":"2011-08-19T15:43:06.628Z","type":"message"}
+{"nick":"DrPizza","action":"scowls","date":"2011-08-19T15:43:08.208Z","type":"action"}
+{"nick":"ryah","message":"https://github.com/joyent/node/blob/4cf931db1736a73717f4e6b9f11c3450de8606c6/tools/gyp/pylib/gyp/generator/make.py#L759","date":"2011-08-19T15:45:45.907Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-08-19T15:45:48.909Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-19T15:46:10.619Z","type":"message"}
+{"nick":"bnoordhuis","message":"i like uv_buf_init, less typing","date":"2011-08-19T15:46:38.855Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it doesn't work yet but I have to go","date":"2011-08-19T15:50:20.868Z","type":"message"}
+{"nick":"piscisaureus","message":"I will put my branch up","date":"2011-08-19T15:50:24.737Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: right, say hi to your girlfriend from me","date":"2011-08-19T15:50:44.516Z","type":"message"}
+{"nick":"piscisaureus","message":"heh ok","date":"2011-08-19T15:50:58.345Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: https://github.com/piscisaureus/libuv/tree/udp","date":"2011-08-19T15:51:43.381Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: thanks, hf","date":"2011-08-19T15:51:57.975Z","type":"message"}
+{"nick":"piscisaureus","message":"thanks, yt","date":"2011-08-19T15:52:07.219Z","type":"message"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2011-08-19T15:52:23.352Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-08-19T15:54:52.718Z","type":"join"}
+{"nick":"ryah","message":"linking to ssl is such a pain in the ass","date":"2011-08-19T15:59:00.771Z","type":"message"}
+{"nick":"DrPizza","message":"pquerna will save us","date":"2011-08-19T16:02:29.578Z","type":"message"}
+{"nick":"piscisaureus","reason":"Ping timeout: 258 seconds","date":"2011-08-19T16:04:40.148Z","type":"quit"}
+{"nick":"ryah","message":"http://www.google.com/codesearch#OAMlx_jo-ck/src/third_party/openssl/openssl.gyp","date":"2011-08-19T16:16:11.763Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-19T16:16:13.475Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: doh","date":"2011-08-19T16:16:48.249Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: I never even thought of checking chromium","date":"2011-08-19T16:16:55.409Z","type":"message"}
+{"nick":"ryah","message":"cant find it in subversion - must be in some experimental branch","date":"2011-08-19T16:18:14.214Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: might be worth using those same patch sets too","date":"2011-08-19T16:18:16.367Z","type":"message"}
+{"nick":"ryah","message":"any idea how to download a tarball of http://src.chromium.org/viewvc/chrome/trunk/deps/third_party/openssl/ ?","date":"2011-08-19T16:23:40.627Z","type":"message"}
+{"nick":"ryah","action":"is afraid of tyring to checkout chromium ","date":"2011-08-19T16:23:50.743Z","type":"action"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-19T16:23:55.675Z","type":"message"}
+{"nick":"ryah","message":"http://src.chromium.org/svn/trunk/src/build/linux/system.gyp","date":"2011-08-19T16:25:18.002Z","type":"message"}
+{"nick":"ryah","message":"^-- interesting how they use pkg-config","date":"2011-08-19T16:25:22.796Z","type":"message"}
+{"nick":"ryah","action":"downloads it..","date":"2011-08-19T16:28:43.726Z","type":"action"}
+{"nick":"ryah","message":"1.1 gig","date":"2011-08-19T16:28:50.438Z","type":"message"}
+{"nick":"ryah","message":"\"The Chromium codebase consists of hundreds of thousands of files, which means that a checkout straight from the Subversion (SVN) repository can take a long time. To speed up the process, we have provided a tarball that you can use to bootstrap the download. \"","date":"2011-08-19T16:29:03.920Z","type":"message"}
+{"nick":"DrPizza","message":"oh yeah, you grab the tarball and then run their funky script whose name I dont' remember to make it up-to-date","date":"2011-08-19T16:29:42.459Z","type":"message"}
+{"nick":"bnoordhuis","message":"firefox > chrome still","date":"2011-08-19T16:31:52.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"code base-wise anyway","date":"2011-08-19T16:31:56.607Z","type":"message"}
+{"nick":"bnoordhuis","message":"slightly over 1.2 gb","date":"2011-08-19T16:32:02.715Z","type":"message"}
+{"nick":"ryah","message":"all this just to download openssl","date":"2011-08-19T16:33:02.918Z","type":"message"}
+{"nick":"ryah","message":"i hope its in this tarball","date":"2011-08-19T16:33:06.739Z","type":"message"}
+{"nick":"bnoordhuis","message":"download openssl? openssl.org?","date":"2011-08-19T16:36:43.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"or is that whoosh sound i'm hearing a joke that's going over my head?","date":"2011-08-19T16:36:53.464Z","type":"message"}
+{"nick":"DrPizza","message":"bnoordhuis: chrome's openssl has gyp building and some possibly interesting patches","date":"2011-08-19T16:38:35.610Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right, thanks - missed that part","date":"2011-08-19T16:39:01.373Z","type":"message"}
+{"nick":"rmustacc","date":"2011-08-19T16:40:29.864Z","type":"join"}
+{"nick":"bnoordhuis","message":"hey rmustacc, congrats","date":"2011-08-19T16:40:55.050Z","type":"message"}
+{"nick":"rmustacc","message":"Thanks bnoordhuis","date":"2011-08-19T16:45:21.481Z","type":"message"}
+{"nick":"bnoordhuis","message":"i know the kvm source a little, it must've been a right bastard to port","date":"2011-08-19T16:46:02.589Z","type":"message"}
+{"nick":"rmustacc","message":"Mm, their code is pretty clean. Just a trick to try and understand it all.","date":"2011-08-19T17:04:54.058Z","type":"message"}
+{"nick":"rmustacc","message":"Debugging is really the harder problem.","date":"2011-08-19T17:05:03.319Z","type":"message"}
+{"nick":"rmustacc","message":"Or maybe I only say it's clean because I've been living in it for the last six months.","date":"2011-08-19T17:05:17.078Z","type":"message"}
+{"nick":"graydon","date":"2011-08-19T17:10:51.271Z","type":"join"}
+{"nick":"brson","date":"2011-08-19T17:16:39.638Z","type":"join"}
+{"nick":"mraleph","date":"2011-08-19T17:53:19.811Z","type":"join"}
+{"nick":"igorzi","message":"ryah: piscisaureus: https://gist.github.com/1157497","date":"2011-08-19T17:57:23.476Z","type":"message"}
+{"nick":"igorzi","message":"the api for eio stuff in libuv","date":"2011-08-19T17:57:34.536Z","type":"message"}
+{"nick":"ryah","reason":"Ping timeout: 250 seconds","date":"2011-08-19T18:32:37.167Z","type":"quit"}
+{"nick":"mraleph","reason":"Ping timeout: 250 seconds","date":"2011-08-19T18:32:37.168Z","type":"quit"}
+{"nick":"slurp1","date":"2011-08-19T18:36:40.016Z","type":"join"}
+{"nick":"igorzi","message":"ryah_: https://gist.github.com/1157497","date":"2011-08-19T18:38:19.400Z","type":"message"}
+{"nick":"mraleph","reason":"*.net *.split","date":"2011-08-19T18:38:29.433Z","type":"quit"}
+{"nick":"slurp","reason":"*.net *.split","date":"2011-08-19T18:38:33.237Z","type":"quit"}
+{"nick":"ryah","reason":"*.net *.split","date":"2011-08-19T18:38:34.438Z","type":"quit"}
+{"nick":"mraleph","date":"2011-08-19T18:40:55.314Z","type":"join"}
+{"nick":"bnoordhuis","message":"call time?","date":"2011-08-19T18:56:23.979Z","type":"message"}
+{"nick":"ryah_","message":"hey","date":"2011-08-19T19:26:58.800Z","type":"message"}
+{"nick":"ryah_","message":"im very sorry","date":"2011-08-19T19:27:02.934Z","type":"message"}
+{"nick":"ryah_","message":"i had a meeting that ran late","date":"2011-08-19T19:27:16.385Z","type":"message"}
+{"nick":"ryah_","message":"can we do the call now?","date":"2011-08-19T19:27:30.479Z","type":"message"}
+{"nick":"ryah_","message":"well i'll just call you guys and see how it ges","date":"2011-08-19T19:28:02.818Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure","date":"2011-08-19T19:28:58.046Z","type":"message"}
+{"nick":"ryah_","message":"my computer is still untaring chrome","date":"2011-08-19T19:38:02.568Z","type":"message"}
+{"nick":"ryah_","message":"its been like 3 hours","date":"2011-08-19T19:38:08.321Z","type":"message"}
+{"nick":"ryah_","message":"both cpus at 100%","date":"2011-08-19T19:38:13.913Z","type":"message"}
+{"nick":"ryah_","reason":"Quit: leaving","date":"2011-08-19T20:04:02.197Z","type":"quit"}
+{"nick":"ryah","date":"2011-08-19T20:04:09.732Z","type":"join"}
+{"nick":"DrPizza","message":"ryah: lol","date":"2011-08-19T20:23:56.822Z","type":"message"}
+{"nick":"DrPizza","message":"can't svn do partial checkouts these days?","date":"2011-08-19T20:24:05.281Z","type":"message"}
+{"nick":"DrPizza","message":"if it can, I think that would have been quicker","date":"2011-08-19T20:24:10.327Z","type":"message"}
+{"nick":"ryah","message":"if dropping openssl.gyp into node just builds out of the box im going to be fucking shocked","date":"2011-08-19T20:26:08.172Z","type":"message"}
+{"nick":"ryah","message":"and will declare GYP the king of all build systems","date":"2011-08-19T20:26:19.628Z","type":"message"}
+{"nick":"ryah","message":"a problem that has broken great men for ages","date":"2011-08-19T20:26:30.068Z","type":"message"}
+{"nick":"ryah","message":"it seems to be working","date":"2011-08-19T20:26:50.620Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/node% make -f Makefile-gyp               ","date":"2011-08-19T20:26:52.559Z","type":"message"}
+{"nick":"ryah","message":"tools/gyp_node -f make","date":"2011-08-19T20:26:52.703Z","type":"message"}
+{"nick":"ryah","message":"['-f', 'make', '/Users/ryan/projects/node/node.gyp', '-I', '/Users/ryan/projects/node/common.gypi', '-I', '/Users/ryan/projects/node/options.gypi', '--depth=.', '--generator-output', '/Users/ryan/projects/node/out', '-Goutput_dir=/Users/ryan/projects/node/out', '-Dtarget_arch=ia32', '-Dcomponent=static_library', '-Dlibrary=static_library']","date":"2011-08-19T20:26:52.703Z","type":"message"}
+{"nick":"ryah","message":"make -C out BUILDTYPE=Release CC(target) /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/ssl/bio_ssl.o CC(target) /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/ssl/d1_both.o CC(target) /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/ssl/d1_clnt.o","date":"2011-08-19T20:26:57.621Z","type":"message"}
+{"nick":"ryah","message":" CC(target)/Users/ryan/projects/node/out/Reelease/obj.target/openssl/deps/chrome-openssl/openssl/ssl/d1_enc.o CC(target) /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/ssl/d1_lib.o","date":"2011-08-19T20:27:03.206Z","type":"message"}
+{"nick":"ryah","message":"one line change to node.gyp","date":"2011-08-19T20:27:09.204Z","type":"message"}
+{"nick":"DrPizza","message":":o","date":"2011-08-19T20:27:22.657Z","type":"message"}
+{"nick":"ryah","message":"there's no way this is going to work","date":"2011-08-19T20:27:42.853Z","type":"message"}
+{"nick":"ryah","action":"waits for the build fail","date":"2011-08-19T20:27:47.301Z","type":"action"}
+{"nick":"ryah","message":"doesn't openssl require perl or something to build?","date":"2011-08-19T20:28:03.745Z","type":"message"}
+{"nick":"DrPizza","message":"yup","date":"2011-08-19T20:28:08.712Z","type":"message"}
+{"nick":"ryah","message":"the gyp file doesn't ...","date":"2011-08-19T20:28:17.365Z","type":"message"}
+{"nick":"DrPizza","message":"it uses some perl script to generate recursive makefiles","date":"2011-08-19T20:28:21.285Z","type":"message"}
+{"nick":"ryah","message":"this can't be right","date":"2011-08-19T20:28:22.734Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: the openssl build process is stupid, AFAICT it doesn't actually do anything very clever","date":"2011-08-19T20:28:58.988Z","type":"message"}
+{"nick":"DrPizza","message":"it's perfectly feasible to me that someone could create build scripts that don't use perl","date":"2011-08-19T20:29:10.191Z","type":"message"}
+{"nick":"DrPizza","message":"I don't think it's doing anything as complex as, say, js2c","date":"2011-08-19T20:29:28.780Z","type":"message"}
+{"nick":"ryah","message":"i thought it was like doing strange random number insertions into the object code","date":"2011-08-19T20:29:48.471Z","type":"message"}
+{"nick":"ryah","message":"build failed","date":"2011-08-19T20:29:54.683Z","type":"message"}
+{"nick":"ryah","message":"  CC(target) /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/crypto/ui/ui_openssl.o","date":"2011-08-19T20:30:19.734Z","type":"message"}
+{"nick":"ryah","message":"../deps/chrome-openssl/openssl/crypto/ui/ui_openssl.c:227:21: warning: termio.h: No such file or directory","date":"2011-08-19T20:30:22.922Z","type":"message"}
+{"nick":"ryah","message":"i knew it was too good to be true","date":"2011-08-19T20:30:25.880Z","type":"message"}
+{"nick":"ryah","message":"libtool: file: /Users/ryan/projects/node/out/Release/obj.target/openssl/deps/chrome-openssl/openssl/ssl/kssl.o has ","date":"2011-08-19T20:35:05.293Z","type":"message"}
+{"nick":"ryah","message":"  LIBTOOL-STATIC /Users/ryan/projects/node/out/Release/obj.target/deps/chrome-openssl/libopenssl.a","date":"2011-08-19T20:35:13.866Z","type":"message"}
+{"nick":"ryah","message":":D","date":"2011-08-19T20:35:17.357Z","type":"message"}
+{"nick":"DrPizza","message":"is that good or bad?","date":"2011-08-19T20:36:38.052Z","type":"message"}
+{"nick":"ryah","message":"!!!","date":"2011-08-19T20:37:30.145Z","type":"message"}
+{"nick":"ryah","message":"% ./out/Release/node","date":"2011-08-19T20:37:31.686Z","type":"message"}
+{"nick":"ryah","message":"> process.versions","date":"2011-08-19T20:37:31.899Z","type":"message"}
+{"nick":"ryah","message":"{ node: '0.5.5-pre',","date":"2011-08-19T20:37:32.059Z","type":"message"}
+{"nick":"ryah","message":"  v8: '3.5.6',","date":"2011-08-19T20:37:32.059Z","type":"message"}
+{"nick":"ryah","message":"  ares: '1.7.4',","date":"2011-08-19T20:37:33.995Z","type":"message"}
+{"nick":"ryah","message":"  uv: '0.1',","date":"2011-08-19T20:37:36.656Z","type":"message"}
+{"nick":"ryah","message":"  openssl: '0.9.8o' }","date":"2011-08-19T20:37:39.005Z","type":"message"}
+{"nick":"ryah","message":"> process.features","date":"2011-08-19T20:37:41.604Z","type":"message"}
+{"nick":"DrPizza","message":"ooh","date":"2011-08-19T20:37:43.804Z","type":"message"}
+{"nick":"ryah","message":"{ uv: false,","date":"2011-08-19T20:37:44.096Z","type":"message"}
+{"nick":"ryah","message":"  http1: false,","date":"2011-08-19T20:37:46.509Z","type":"message"}
+{"nick":"ryah","message":"  ipv6: true,","date":"2011-08-19T20:37:49.136Z","type":"message"}
+{"nick":"ryah","message":"  tls_npn: true,","date":"2011-08-19T20:37:51.538Z","type":"message"}
+{"nick":"ryah","message":"  tls_sni: true,","date":"2011-08-19T20:37:54.029Z","type":"message"}
+{"nick":"ryah","message":"  tls: true }","date":"2011-08-19T20:37:56.591Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: so why 0.9.8 and not 1.whatever.it.is","date":"2011-08-19T20:37:57.424Z","type":"message"}
+{"nick":"ryah","message":"it fucking worked!","date":"2011-08-19T20:37:59.108Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-08-19T20:38:07.913Z","type":"message"}
+{"nick":"ryah","action":"uploads a branch","date":"2011-08-19T20:38:52.373Z","type":"action"}
+{"nick":"DrPizza","message":"ryah: I'll check it out, see what needs fixing (if anything!)","date":"2011-08-19T20:39:27.123Z","type":"message"}
+{"nick":"ryah","message":" 18Mopenssl","date":"2011-08-19T20:51:56.444Z","type":"message"}
+{"nick":"ryah","message":"er","date":"2011-08-19T20:51:57.960Z","type":"message"}
+{"nick":"ryah","message":"it's 18 MB","date":"2011-08-19T20:52:02.523Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-08-19T20:52:03.902Z","type":"message"}
+{"nick":"bentkus","message":"process.features?","date":"2011-08-19T20:54:52.056Z","type":"message"}
+{"nick":"bentkus","message":"why should process contain that info :/","date":"2011-08-19T20:55:12.165Z","type":"message"}
+{"nick":"bentkus","message":"more like node.features","date":"2011-08-19T20:55:59.582Z","type":"message"}
+{"nick":"ryah","message":"bentkus: don't get all religous here - we have actual problems","date":"2011-08-19T20:57:01.827Z","type":"message"}
+{"nick":"bentkus","message":":)","date":"2011-08-19T20:57:18.613Z","type":"message"}
+{"nick":"felixge","date":"2011-08-19T20:59:22.245Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2011-08-19T20:59:22.385Z","type":"quit"}
+{"nick":"felixge","date":"2011-08-19T20:59:22.386Z","type":"join"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307gyp-openssl\u000f * r\u000213b853e\u000f \u000310\u000f/ (1579 files in 122 dirs)\u0002:\u000f import openssl from chrome - http://bit.ly/r2wUtG","date":"2011-08-19T21:05:12.046Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: --^","date":"2011-08-19T21:05:14.301Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: cool","date":"2011-08-19T21:05:18.553Z","type":"message"}
+{"nick":"DrPizza","message":"I will look in a couple of hours","date":"2011-08-19T21:05:25.074Z","type":"message"}
+{"nick":"DrPizza","message":"when my working day is done","date":"2011-08-19T21:05:29.097Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: the biggest issue is that if we wanted to track chrome's upstream openssl then it would probably be a PITA","date":"2011-08-19T21:17:42.086Z","type":"message"}
+{"nick":"DrPizza","message":"I'm not saying we'd want to do that necessarily","date":"2011-08-19T21:17:46.408Z","type":"message"}
+{"nick":"DrPizza","message":"but if they're going to continue to maintain gyp files for openssl","date":"2011-08-19T21:17:56.607Z","type":"message"}
+{"nick":"DrPizza","message":"it would bemore convenient than having to maintain them ourselves","date":"2011-08-19T21:18:04.094Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-19T21:25:04.961Z","type":"message"}
+{"nick":"ryah","message":"i figured i can just ignore that for nwo","date":"2011-08-19T21:25:18.451Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: https://github.com/bnoordhuis/libuv/compare/udp <- if you're up for a code review","date":"2011-08-19T21:30:47.810Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: ok","date":"2011-08-19T21:31:24.244Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, forgot to add more doc comments to uv.h","date":"2011-08-19T21:33:02.320Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: start multiline comments with /*","date":"2011-08-19T21:33:48.361Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i gues that's the style we're going with","date":"2011-08-19T21:33:58.781Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: eh?","date":"2011-08-19T21:34:10.940Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mean /* comment 1 */\\n/* comment 2 */ ?","date":"2011-08-19T21:34:26.197Z","type":"message"}
+{"nick":"ryah","message":" /*\\n * blah blah\\n * blah blah\\n */","date":"2011-08-19T21:35:07.867Z","type":"message"}
+{"nick":"ryah","message":"instead of /* blah blah\\n * blah blah\\n */","date":"2011-08-19T21:35:21.459Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right","date":"2011-08-19T21:35:25.703Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-19T21:46:48.658Z","type":"quit"}
+{"nick":"bnoordhuis","message":"... what should happen if someone calls uv_udp_send with bufcnt==0?","date":"2011-08-19T22:09:02.429Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: *shrug*","date":"2011-08-19T22:10:15.184Z","type":"message"}
+{"nick":"ryah","message":"EINVAL","date":"2011-08-19T22:10:19.891Z","type":"message"}
+{"nick":"bnoordhuis","message":"cool","date":"2011-08-19T22:11:03.747Z","type":"message"}
+{"nick":"igorzi","message":"ryah: damn.. that patch to preallocate read buffers (instead of 0-size buffer) actually caused a pretty large regression with node (~20%)","date":"2011-08-19T22:16:16.651Z","type":"message"}
+{"nick":"ryah","message":"igorzi: oh no..","date":"2011-08-19T22:16:42.814Z","type":"message"}
+{"nick":"igorzi","message":"could that be because of node's slab allocator?","date":"2011-08-19T22:16:52.572Z","type":"message"}
+{"nick":"ryah","message":"how big were the buffers?","date":"2011-08-19T22:16:53.891Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-19T22:16:55.095Z","type":"message"}
+{"nick":"ryah","message":"64k?","date":"2011-08-19T22:17:04.808Z","type":"message"}
+{"nick":"igorzi","message":"yep","date":"2011-08-19T22:17:07.659Z","type":"message"}
+{"nick":"ryah","message":"with what concurrency? what bench?","date":"2011-08-19T22:17:20.691Z","type":"message"}
+{"nick":"igorzi","message":"http_simple, 64 connections","date":"2011-08-19T22:17:56.708Z","type":"message"}
+{"nick":"ryah","message":"igorzi: would be interesting to see a profile of that","date":"2011-08-19T22:18:19.889Z","type":"message"}
+{"nick":"ryah","message":"i think normally node gets away with reusing most of the slab","date":"2011-08-19T22:19:10.424Z","type":"message"}
+{"nick":"ryah","message":"but with the prealloced read buffers it can't do that anymore","date":"2011-08-19T22:19:24.707Z","type":"message"}
+{"nick":"ryah","message":"we're just allocating massive numbers of these slabs...","date":"2011-08-19T22:19:35.251Z","type":"message"}
+{"nick":"igorzi","message":"ryah: ok, i'll get the profile;  i was comparing all the perf improvements against node 0.5.4; and i noticed that we weren't actually that much better.  i tried backing out some changes.. and this one caused a pretty large regression","date":"2011-08-19T22:20:07.449Z","type":"message"}
+{"nick":"ryah","message":"igorzi: maybe we need to invent a better way of doing the buffer allocs...","date":"2011-08-19T22:20:51.029Z","type":"message"}
+{"nick":"bnoordhuis","message":"can't we peek at the # of bytes actually available with ioctl(FIONREAD)?","date":"2011-08-19T22:20:57.483Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: they need to give the kernel the buffer before data arrives","date":"2011-08-19T22:21:43.080Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, poor windows developers","date":"2011-08-19T22:21:53.493Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-19T22:21:56.750Z","type":"message"}
+{"nick":"ryah","message":"http://antirobotrobot.tumblr.com/post/5094720849/memory-is-the-price-you-pay-for-the-semantics-of","date":"2011-08-19T22:22:14.181Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2011-08-19T22:22:28.660Z","type":"message"}
+{"nick":"bnoordhuis","message":"is restricting the buffer size to the MTU size + a bit more an option?","date":"2011-08-19T22:23:06.259Z","type":"message"}
+{"nick":"rmustacc","message":"Which MTU size?","date":"2011-08-19T22:23:39.541Z","type":"message"}
+{"nick":"rmustacc","message":"Lots of places run with Jumbo frames for example.","date":"2011-08-19T22:23:55.552Z","type":"message"}
+{"nick":"igorzi","message":"well, we don't have to.. we were doing 0-reads before, but decided to preallocate if the number of active streams is below 50","date":"2011-08-19T22:23:58.177Z","type":"message"}
+{"nick":"ryah","message":"with large receive offloading limiting the buffer to the MTU is suboptimal","date":"2011-08-19T22:24:23.080Z","type":"message"}
+{"nick":"ryah","message":"even 64k is too small","date":"2011-08-19T22:24:42.984Z","type":"message"}
+{"nick":"ryah","message":"256kb is what modern ethernet controls can DMA","date":"2011-08-19T22:25:02.024Z","type":"message"}
+{"nick":"ryah","message":"(iirc)","date":"2011-08-19T22:25:56.734Z","type":"message"}
+{"nick":"ryah","message":"(my new hobby is reading datasheets for ethernet controllers)","date":"2011-08-19T22:27:04.361Z","type":"message"}
+{"nick":"jonaslund","reason":"Quit: ChatZilla 0.9.87-rdmsoft [XULRunner 1.9.2.13/20101203074205]","date":"2011-08-19T22:32:00.244Z","type":"quit"}
+{"nick":"bnoordhuis","message":"rmustacc: you'd ask the OS","date":"2011-08-19T22:34:46.297Z","type":"message"}
+{"nick":"bnoordhuis","message":"not sure if i follow ryah's argument","date":"2011-08-19T22:34:53.137Z","type":"message"}
+{"nick":"bnoordhuis","message":"but maybe i'm misunderstanding how those prealloc'd buffers work on windows","date":"2011-08-19T22:35:11.359Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: ","date":"2011-08-19T22:35:28.612Z","type":"message"}
+{"nick":"ryah","message":"[%   0|+  20|-   0]: udp_bind_twice_v4","date":"2011-08-19T22:35:29.235Z","type":"message"}
+{"nick":"ryah","message":"`udp_bind_twice_v4` failed: exit code 6","date":"2011-08-19T22:35:29.384Z","type":"message"}
+{"nick":"ryah","message":"Output from process `udp_bind_twice_v4`:","date":"2011-08-19T22:35:29.384Z","type":"message"}
+{"nick":"ryah","message":"Assertion failed in test/test-udp-bind-twice.c on line 68: r == 0","date":"2011-08-19T22:35:29.384Z","type":"message"}
+{"nick":"ryah","message":"=============================================================","date":"2011-08-19T22:35:31.636Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: expected?","date":"2011-08-19T22:36:12.423Z","type":"message"}
+{"nick":"bnoordhuis","message":"no","date":"2011-08-19T22:36:15.963Z","type":"message"}
+{"nick":"bnoordhuis","message":"can you strace `tests/run-tests udp_bind_twice_v4 udp_bind_twice_v4`?","date":"2011-08-19T22:36:19.922Z","type":"message"}
+{"nick":"bnoordhuis","message":"or dtruss","date":"2011-08-19T22:36:26.910Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: https://gist.github.com/cf6cb69a54d5c394cfd7","date":"2011-08-19T22:38:26.535Z","type":"message"}
+{"nick":"bnoordhuis","message":"thanks","date":"2011-08-19T22:38:40.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"what is errno 48 on darwin? EADDRINUSE?","date":"2011-08-19T22:39:38.631Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-19T22:40:19.785Z","type":"message"}
+{"nick":"igorzi","message":"ryah: i also noticed that i get this with that prealloc change","date":"2011-08-19T22:41:17.135Z","type":"message"}
+{"nick":"igorzi","message":"assert.js:104","date":"2011-08-19T22:41:18.409Z","type":"message"}
+{"nick":"igorzi","message":"  throw new assert.AssertionError({","date":"2011-08-19T22:41:25.247Z","type":"message"}
+{"nick":"igorzi","message":"<error: TypeError: Converting circular structure to JSON>","date":"2011-08-19T22:41:27.110Z","type":"message"}
+{"nick":"igorzi","message":"    at TCP.onread (net_uv.js:277:10)","date":"2011-08-19T22:41:30.440Z","type":"message"}
+{"nick":"igorzi","message":"(sometimes)","date":"2011-08-19T22:41:33.581Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: ^ that's broken for some time now","date":"2011-08-19T22:41:59.842Z","type":"message"}
+{"nick":"igorzi","message":"(and only with that buffer prealloc patch)","date":"2011-08-19T22:42:03.755Z","type":"message"}
+{"nick":"bnoordhuis","message":"i sometimes see it to on linux","date":"2011-08-19T22:42:21.639Z","type":"message"}
+{"nick":"ryah","message":"on what test?","date":"2011-08-19T22:42:26.757Z","type":"message"}
+{"nick":"igorzi","message":"i see it very often with http_simple when the prealloc buffer patch is applied","date":"2011-08-19T22:42:50.870Z","type":"message"}
+{"nick":"ryah","message":"  assert.equal(handle, self._handle);","date":"2011-08-19T22:42:54.532Z","type":"message"}
+{"nick":"igorzi","message":"and i haven't seen it at all without that patch","date":"2011-08-19T22:43:02.130Z","type":"message"}
+{"nick":"ryah","message":"hm...","date":"2011-08-19T22:43:38.016Z","type":"message"}
+{"nick":"ryah","message":"that seems like a real bug","date":"2011-08-19T22:47:39.920Z","type":"message"}
+{"nick":"ryah","message":"it would be good to root cause it","date":"2011-08-19T22:47:54.329Z","type":"message"}
+{"nick":"ryah","message":"but im taking off now.. bbl","date":"2011-08-19T22:48:00.038Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Maciej Małecki\u000f \u000307v0.4\u000f * r\u0002e150bc4\u000f \u000310\u000f/ doc/api/process.markdown \u0002:\u000f docs: process.memoryUsage returns memory usage measured in bytes - http://bit.ly/mZE3av","date":"2011-08-19T23:00:59.428Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Maciej Małecki\u000f \u000307master\u000f * r\u0002962a9e8\u000f \u000310\u000f/ doc/api/process.markdown \u0002:\u000f docs: process.memoryUsage returns memory usage measured in bytes - http://bit.ly/oA0Aql","date":"2011-08-19T23:01:00.799Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-19T23:10:36.688Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-08-19T23:13:56.021Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2011-08-19T23:17:39.857Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Ping timeout: 258 seconds","date":"2011-08-19T23:19:45.038Z","type":"quit"}
+{"nick":"graydon","reason":"Quit: Leaving.","date":"2011-08-19T23:54:43.799Z","type":"quit"}

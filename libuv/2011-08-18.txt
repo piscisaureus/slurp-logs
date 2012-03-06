@@ -1,0 +1,961 @@
+{"nick":"DrPizza","message":"ryah: have a forwarding function that retrieves the function object from the void* and calls that","date":"2011-08-18T00:00:06.580Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yes i think that's something we can do","date":"2011-08-18T00:00:23.781Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: but not now","date":"2011-08-18T00:00:27.826Z","type":"message"}
+{"nick":"ryah","message":"another stratagy is to split the header file into several","date":"2011-08-18T00:01:08.681Z","type":"message"}
+{"nick":"ryah","message":"and have uv-tcp.a libraries","date":"2011-08-18T00:01:14.672Z","type":"message"}
+{"nick":"ryah","message":"uv-pipe.a","date":"2011-08-18T00:01:19.564Z","type":"message"}
+{"nick":"ryah","message":"uv-cares.a","date":"2011-08-18T00:01:36.196Z","type":"message"}
+{"nick":"ryah","message":"etc","date":"2011-08-18T00:01:37.356Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: i think if we get to the uv_listen(..., share = true)","date":"2011-08-18T00:03:24.568Z","type":"message"}
+{"nick":"ryah","message":"its going to be pretty awesome","date":"2011-08-18T00:03:31.029Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: https://github.com/joyent/libuv/blob/master/src/win/req.c#L92-148","date":"2011-08-18T00:07:07.784Z","type":"message"}
+{"nick":"piscisaureus","message":"painful to split up without #defines --^","date":"2011-08-18T00:07:07.941Z","type":"message"}
+{"nick":"ryah","message":"we need more docs","date":"2011-08-18T00:08:12.769Z","type":"message"}
+{"nick":"ryah","message":"by which i mean comments in the header file","date":"2011-08-18T00:08:39.560Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder how the rust guys delt with that","date":"2011-08-18T00:09:24.041Z","type":"message"}
+{"nick":"piscisaureus","message":"I believe they have a release that uses uv now","date":"2011-08-18T00:09:32.084Z","type":"message"}
+{"nick":"piscisaureus","message":"\"release\" or whatever a build","date":"2011-08-18T00:09:43.421Z","type":"message"}
+{"nick":"ryah","message":"i just notified graydon today that we're starting the mulitiplicty effort over","date":"2011-08-18T00:10:07.350Z","type":"message"}
+{"nick":"piscisaureus","message":"what did he say?","date":"2011-08-18T00:11:16.139Z","type":"message"}
+{"nick":"ryah","message":"he said cool","date":"2011-08-18T00:11:25.542Z","type":"message"}
+{"nick":"piscisaureus","message":"I'd think rust's requirements are pretty specific","date":"2011-08-18T00:11:30.424Z","type":"message"}
+{"nick":"piscisaureus","message":"they'd be better off with the iocp model","date":"2011-08-18T00:11:40.176Z","type":"message"}
+{"nick":"piscisaureus","message":"https://github.com/graydon/rust/blob/master/src/rt/rust_uv.cpp#L295-301","date":"2011-08-18T00:14:46.570Z","type":"message"}
+{"nick":"piscisaureus","message":"platform!","date":"2011-08-18T00:14:53.745Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307zero_reads\u000f * r\u0002ff7d1ef\u000f \u000310\u000f/ src/win/tcp.c \u0002:\u000f Issue the read_cb with 0-bytes in case of read_stop - http://bit.ly/rbUuv4","date":"2011-08-18T00:15:14.114Z","type":"message"}
+{"nick":"igorzi","message":"iscisaureus: --^","date":"2011-08-18T00:15:22.874Z","type":"message"}
+{"nick":"piscisaureus","message":"hat's me :-)","date":"2011-08-18T00:15:36.192Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: whoa, if that's really necessary (the rust snippet) that is rather sad","date":"2011-08-18T00:15:51.829Z","type":"message"}
+{"nick":"DrPizza","message":"but they don't have to use direct initialization","date":"2011-08-18T00:15:57.481Z","type":"message"}
+{"nick":"piscisaureus","message":"no","date":"2011-08-18T00:16:02.716Z","type":"message"}
+{"nick":"graydon","action":"professes ignorance, didn't write that part","date":"2011-08-18T00:16:36.001Z","type":"action"}
+{"nick":"piscisaureus","message":"\\o/ he's alive","date":"2011-08-18T00:17:10.626Z","type":"message"}
+{"nick":"graydon","message":"piscisaureus: you think we should be .. bypassing uv entirely?","date":"2011-08-18T00:17:55.721Z","type":"message"}
+{"nick":"DrPizza","message":"so what is this rust thing","date":"2011-08-18T00:18:08.768Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: re comments in header file: i'll add them","date":"2011-08-18T00:18:30.635Z","type":"message"}
+{"nick":"piscisaureus","message":"graydon: bypassing uv for what? You mean, writing your own libuv?","date":"2011-08-18T00:18:35.252Z","type":"message"}
+{"nick":"graydon","message":"piscisaureus: \"they'd be better off with the iocp model\" <-- wondering what you mean by this","date":"2011-08-18T00:18:53.416Z","type":"message"}
+{"nick":"piscisaureus","message":"graydon: oh :-)","date":"2011-08-18T00:19:06.216Z","type":"message"}
+{"nick":"ryah","message":"graydon: we're debating how we're going to dispatch events in libuv when we have multiple threads","date":"2011-08-18T00:19:27.474Z","type":"message"}
+{"nick":"piscisaureus","message":"graydon: on libuv callbacks are bound to the thread that runs the loop atm","date":"2011-08-18T00:19:39.930Z","type":"message"}
+{"nick":"ryah","message":"graydon: if handles should be stuck to a single thread - or if they should get events on every thread (the iocp model)","date":"2011-08-18T00:19:45.056Z","type":"message"}
+{"nick":"ryah","message":"we need a constructor for uv_buf","date":"2011-08-18T00:20:19.927Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-18T00:20:26.397Z","type":"message"}
+{"nick":"ryah","message":"i'll add it","date":"2011-08-18T00:20:32.247Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: what are v8's threading requirements","date":"2011-08-18T00:20:44.112Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: you can only run a vm on one thread at a time","date":"2011-08-18T00:21:14.285Z","type":"message"}
+{"nick":"graydon","message":"piscisaureus: ah, ok, I over-read the statement. I don't know exactly which is best for us but either is better than \"all events hit one thread\", which I think is the current strategy :)","date":"2011-08-18T00:21:24.021Z","type":"message"}
+{"nick":"ryah","message":"what piscisaureus said","date":"2011-08-18T00:21:26.192Z","type":"message"}
+{"nick":"DrPizza","message":"so uv callbacks that in turn call node callbacks that in turn call javascript callbacks need to run on the \"right\" thread","date":"2011-08-18T00:21:41.592Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: yeah","date":"2011-08-18T00:21:53.353Z","type":"message"}
+{"nick":"DrPizza","message":"so how is there a decision to make?","date":"2011-08-18T00:22:02.698Z","type":"message"}
+{"nick":"DrPizza","message":"or is the question \"does uv find the right thread, or do you leave that up to the calling code\"?","date":"2011-08-18T00:22:17.589Z","type":"message"}
+{"nick":"ryah","message":"i think we're fairly agreed that we want to know where our events will happen","date":"2011-08-18T00:22:18.540Z","type":"message"}
+{"nick":"ryah","message":"that is that libuv takes care of it","date":"2011-08-18T00:22:39.465Z","type":"message"}
+{"nick":"piscisaureus","message":"yes - it's the only way to make it play nice with v8","date":"2011-08-18T00:22:39.644Z","type":"message"}
+{"nick":"ryah","message":"a handle is tied to a \"loop\"","date":"2011-08-18T00:22:53.723Z","type":"message"}
+{"nick":"piscisaureus","message":"a loop runs on 1 thread","date":"2011-08-18T00:23:08.281Z","type":"message"}
+{"nick":"DrPizza","message":"I'm sure you could do it in node","date":"2011-08-18T00:23:11.053Z","type":"message"}
+{"nick":"DrPizza","message":"but it seems much better to do it in uv","date":"2011-08-18T00:23:14.566Z","type":"message"}
+{"nick":"DrPizza","message":"make handles have loop affinity","date":"2011-08-18T00:23:21.608Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: although we could still add the ability to run a loop on multiple threads","date":"2011-08-18T00:23:41.434Z","type":"message"}
+{"nick":"piscisaureus","message":"if we're willing to deal with a lot of locking","date":"2011-08-18T00:23:48.959Z","type":"message"}
+{"nick":"DrPizza","message":"I mean, I could see a case for having an OPTION of marking a loop as thread-neutral","date":"2011-08-18T00:24:04.339Z","type":"message"}
+{"nick":"DrPizza","message":"er","date":"2011-08-18T00:24:05.636Z","type":"message"}
+{"nick":"DrPizza","message":"of marking a HANDLE","date":"2011-08-18T00:24:07.902Z","type":"message"}
+{"nick":"DrPizza","message":"not a loop","date":"2011-08-18T00:24:09.642Z","type":"message"}
+{"nick":"DrPizza","message":"of saying \"oh you can call these callbacks on any old thread\"","date":"2011-08-18T00:24:22.943Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yeah i think in libev we can simply call ev_run() in multiple threads","date":"2011-08-18T00:24:37.756Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I don't think so - libev doesn't protect it's structures","date":"2011-08-18T00:25:17.273Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yay or nay? (https://github.com/joyent/libuv/commit/ff7d1ef8905b79d44b5c64a58c3a3534bd991af3)","date":"2011-08-18T00:25:51.683Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: yes I was trying to dig through it :-)","date":"2011-08-18T00:26:19.253Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: you're right","date":"2011-08-18T00:26:32.013Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi:","date":"2011-08-18T00:28:15.644Z","type":"message"}
+{"nick":"piscisaureus","message":"+        /* Report 0-byte read to give the caller a chance to free the buffer. */","date":"2011-08-18T00:28:15.800Z","type":"message"}
+{"nick":"piscisaureus","message":"+        uv_set_sys_error(WSAEWOULDBLOCK);","date":"2011-08-18T00:28:15.800Z","type":"message"}
+{"nick":"piscisaureus","message":"+        handle->read_cb((uv_stream_t*)handle, 0, handle->read_buffer);","date":"2011-08-18T00:28:15.800Z","type":"message"}
+{"nick":"piscisaureus","message":"If we're here than something was read, right?","date":"2011-08-18T00:28:43.968Z","type":"message"}
+{"nick":"piscisaureus","message":"*then","date":"2011-08-18T00:28:49.240Z","type":"message"}
+{"nick":"piscisaureus","message":"why not just report what you've read","date":"2011-08-18T00:28:59.573Z","type":"message"}
+{"nick":"piscisaureus","message":"instead of lying that you read 0","date":"2011-08-18T00:29:17.750Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: ok.. that wouldn't go against  what read_stop was trying to do, right?","date":"2011-08-18T00:30:21.263Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: well, we decided that read_stop doesn't immediately block read_cb callbacks","date":"2011-08-18T00:30:44.832Z","type":"message"}
+{"nick":"piscisaureus","message":"it just stops reading as early as possible","date":"2011-08-18T00:30:53.780Z","type":"message"}
+{"nick":"piscisaureus","message":"also","date":"2011-08-18T00:30:57.975Z","type":"message"}
+{"nick":"piscisaureus","message":"otherwise, if you resume later you'll miss that piece of data","date":"2011-08-18T00:31:15.480Z","type":"message"}
+{"nick":"piscisaureus","message":"I think this branch could just go away","date":"2011-08-18T00:31:40.277Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: so it would be","date":"2011-08-18T00:32:26.861Z","type":"message"}
+{"nick":"piscisaureus","message":"if (!(handle->flags & UV_HANDLE_TCP_ZERO_READ)) {","date":"2011-08-18T00:32:27.020Z","type":"message"}
+{"nick":"piscisaureus","message":"  if (InternalHigh > 0) {","date":"2011-08-18T00:32:27.020Z","type":"message"}
+{"nick":"piscisaureus","message":"    // Read something","date":"2011-08-18T00:32:27.020Z","type":"message"}
+{"nick":"piscisaureus","message":"  } else {","date":"2011-08-18T00:32:27.020Z","type":"message"}
+{"nick":"piscisaureus","message":"    // EOF","date":"2011-08-18T00:32:27.193Z","type":"message"}
+{"nick":"piscisaureus","message":"  }","date":"2011-08-18T00:32:27.351Z","type":"message"}
+{"nick":"piscisaureus","message":"  goto done;","date":"2011-08-18T00:32:28.090Z","type":"message"}
+{"nick":"piscisaureus","message":"}","date":"2011-08-18T00:32:28.250Z","type":"message"}
+{"nick":"piscisaureus","message":"UINT should be unsigned int or just int -- it's not a value that we pass into the windows api","date":"2011-08-18T00:33:40.569Z","type":"message"}
+{"nick":"piscisaureus","message":"apart from that lgtm","date":"2011-08-18T00:33:45.671Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: ok, thanks","date":"2011-08-18T00:34:07.622Z","type":"message"}
+{"nick":"piscisaureus","action":"bully","date":"2011-08-18T00:36:51.786Z","type":"action"}
+{"nick":"piscisaureus","message":"slurp: reset","date":"2011-08-18T00:37:59.611Z","type":"message"}
+{"nick":"ryah","message":"review pleae https://gist.github.com/1153020","date":"2011-08-18T00:39:13.264Z","type":"message"}
+{"nick":"piscisaureus","message":"+1","date":"2011-08-18T00:39:57.775Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: btw, in your pseudo-code above, we don't always want to go to done if (!(handle->flags & UV_HANDLE_TCP_ZERO_READ)), right?  in case we did read something, we might need to keep reading in the while loop.","date":"2011-08-18T00:40:12.942Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: maybe","date":"2011-08-18T00:40:37.558Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: but we should do that only if the overlapped read call filled the buffer completely","date":"2011-08-18T00:41:15.038Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yes, exactly","date":"2011-08-18T00:41:24.981Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: lgtm but s/Construtor/Constructor/","date":"2011-08-18T00:41:57.533Z","type":"message"}
+{"nick":"ryah","message":"thanks","date":"2011-08-18T00:42:43.681Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: which editor do you use btw?","date":"2011-08-18T00:43:09.577Z","type":"message"}
+{"nick":"ryah","message":"(so i can judge you)","date":"2011-08-18T00:43:13.585Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: vim or eclipse","date":"2011-08-18T00:43:19.733Z","type":"message"}
+{"nick":"bnoordhuis","message":"or ed!","date":"2011-08-18T00:43:26.145Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002e5a938f\u000f \u000310\u000f/ (include/uv.h src/uv-common.c test/echo-server.c)\u0002:\u000f Add uv_buf_init() constructor - http://bit.ly/oeqNjg","date":"2011-08-18T00:43:29.618Z","type":"message"}
+{"nick":"ryah","message":"really?","date":"2011-08-18T00:43:30.055Z","type":"message"}
+{"nick":"ryah","message":"you can use ed?","date":"2011-08-18T00:43:35.392Z","type":"message"}
+{"nick":"bnoordhuis","message":"ed? no","date":"2011-08-18T00:43:35.956Z","type":"message"}
+{"nick":"bnoordhuis","message":"that is, can use it, don't like to","date":"2011-08-18T00:43:48.855Z","type":"message"}
+{"nick":"piscisaureus","message":"is that like edlin?","date":"2011-08-18T00:44:13.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"but ed and worked better than the vi that was installed on our solaris 9 system :)","date":"2011-08-18T00:44:22.943Z","type":"message"}
+{"nick":"ryah","message":"graydon, robarnold: http://bit.ly/oeqNjg use this instead of https://github.com/graydon/rust/blob/master/src/rt/rust_uv.cpp#L295-301","date":"2011-08-18T00:44:30.145Z","type":"message"}
+{"nick":"bnoordhuis","message":"what about you, ryah?","date":"2011-08-18T00:44:53.496Z","type":"message"}
+{"nick":"ryah","message":"vim","date":"2011-08-18T00:44:58.062Z","type":"message"}
+{"nick":"graydon","message":"cat","date":"2011-08-18T00:45:00.553Z","type":"message"}
+{"nick":"bnoordhuis","message":"dd /dev/sda","date":"2011-08-18T00:45:15.291Z","type":"message"}
+{"nick":"bnoordhuis","message":"i win","date":"2011-08-18T00:45:23.881Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: what do you use for auto-completion?","date":"2011-08-18T00:45:35.476Z","type":"message"}
+{"nick":"ryah","message":"^n","date":"2011-08-18T00:45:45.952Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, that's the thing","date":"2011-08-18T00:45:55.423Z","type":"message"}
+{"nick":"graydon","message":"$ ls -l `which dd` `which cat`","date":"2011-08-18T00:45:57.655Z","type":"message"}
+{"nick":"graydon","message":"-rwxr-xr-x 1 root root 60064 2010-09-21 11:32 /bin/cat","date":"2011-08-18T00:45:57.862Z","type":"message"}
+{"nick":"graydon","message":"-rwxr-xr-x 1 root root 60120 2010-09-21 11:32 /bin/dd","date":"2011-08-18T00:45:58.021Z","type":"message"}
+{"nick":"graydon","message":"I think the minimalism prize goes to cat, sir","date":"2011-08-18T00:46:03.650Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-18T00:46:04.474Z","type":"quit"}
+{"nick":"bnoordhuis","message":"i'd switch to vim completely if autocomplete in eclipse wasn't 10x better","date":"2011-08-18T00:46:19.893Z","type":"message"}
+{"nick":"graydon","message":"(60kb though? for shame)","date":"2011-08-18T00:46:30.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"graydon: only if you cat /dev/sda","date":"2011-08-18T00:46:35.975Z","type":"message"}
+{"nick":"ryah","message":"autocomplete - psh","date":"2011-08-18T00:46:36.249Z","type":"message"}
+{"nick":"piscisaureus","message":"cat is still an executable","date":"2011-08-18T00:46:44.027Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: ctrl+n is good enough","date":"2011-08-18T00:46:54.011Z","type":"message"}
+{"nick":"piscisaureus","message":"copy con is da shit","date":"2011-08-18T00:46:55.277Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: bwahaha","date":"2011-08-18T00:47:02.057Z","type":"message"}
+{"nick":"ryah","message":"although - maybe i just dont know the joys of a real ide :)","date":"2011-08-18T00:47:05.707Z","type":"message"}
+{"nick":"ryah","message":"ive only ever used vim","date":"2011-08-18T00:47:18.219Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u0002422c139\u000f \u000310\u000f/ (include/uv-win.h src/win/internal.h src/win/tcp.c)\u0002:\u000f Windows: Pre-allocate buffers for overlapped WSARecv if the number of active tcp streams is below 50. - http://bit.ly/o99CYw","date":"2011-08-18T00:47:19.503Z","type":"message"}
+{"nick":"robarnold","message":"ryah: thanks for the link. will add that to my todo list","date":"2011-08-18T00:47:26.949Z","type":"message"}
+{"nick":"ryah","message":"igorzi++","date":"2011-08-18T00:47:39.901Z","type":"message"}
+{"nick":"piscisaureus","message":"yes igorzi++","date":"2011-08-18T00:47:50.341Z","type":"message"}
+{"nick":"ryah","message":"igorzi: got any benchmark numbers?","date":"2011-08-18T00:47:52.339Z","type":"message"}
+{"nick":"igorzi","message":"ryah: i'll run uv bench right now on windows & linux (same machine)","date":"2011-08-18T00:48:53.318Z","type":"message"}
+{"nick":"ryah","message":"arlo is going to hook up libuv's benchmarks to http://arlolra.no.de/ soon","date":"2011-08-18T00:49:49.168Z","type":"message"}
+{"nick":"ryah","message":"which will be very helpful","date":"2011-08-18T00:49:54.319Z","type":"message"}
+{"nick":"bnoordhuis","message":"sweet","date":"2011-08-18T00:49:59.197Z","type":"message"}
+{"nick":"bnoordhuis","message":"helpful and painful both, i suspect","date":"2011-08-18T00:50:10.754Z","type":"message"}
+{"nick":"piscisaureus","message":"Oh nice","date":"2011-08-18T00:50:13.053Z","type":"message"}
+{"nick":"piscisaureus","message":"Does he hook the build bots for this?","date":"2011-08-18T00:50:29.836Z","type":"message"}
+{"nick":"piscisaureus","message":"s/bots/slaves/","date":"2011-08-18T00:50:39.605Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: or do you mean --use-uv benchmarks?","date":"2011-08-18T00:51:11.255Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: \"make bench\" in libuv","date":"2011-08-18T00:52:06.148Z","type":"message"}
+{"nick":"ryah","message":"getting funding, as always, for this stuff is like pulling teeth","date":"2011-08-18T00:52:26.486Z","type":"message"}
+{"nick":"piscisaureus","message":"your company is too poor","date":"2011-08-18T00:52:57.926Z","type":"message"}
+{"nick":"ryah","message":"stingy i think is the correct word :)","date":"2011-08-18T00:53:13.955Z","type":"message"}
+{"nick":"piscisaureus","message":"sad","date":"2011-08-18T00:53:42.255Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: but what do you need funding for?","date":"2011-08-18T00:54:20.366Z","type":"message"}
+{"nick":"ryah","message":"for arlo","date":"2011-08-18T00:54:25.630Z","type":"message"}
+{"nick":"piscisaureus","message":"oh heh","date":"2011-08-18T00:54:30.396Z","type":"message"}
+{"nick":"ryah","message":"im going to cut v0.4.11 unless there are any objections?","date":"2011-08-18T00:55:22.892Z","type":"message"}
+{"nick":"bnoordhuis","message":"why would there be?","date":"2011-08-18T00:55:32.323Z","type":"message"}
+{"nick":"piscisaureus","message":"0.4 is not my branch","date":"2011-08-18T00:55:40.101Z","type":"message"}
+{"nick":"piscisaureus","message":"not invented here","date":"2011-08-18T00:55:48.102Z","type":"message"}
+{"nick":"bnoordhuis","message":"dit is niet mijn branch, vriend!","date":"2011-08-18T00:56:00.481Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: muhahahaha","date":"2011-08-18T00:56:11.685Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ dutch meme","date":"2011-08-18T00:56:25.650Z","type":"message"}
+{"nick":"ryah","message":"vriend is how you spell friend?","date":"2011-08-18T00:56:26.987Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2011-08-18T00:56:30.041Z","type":"message"}
+{"nick":"ryah","action":"shakes his head","date":"2011-08-18T00:56:34.818Z","type":"action"}
+{"nick":"ryah","message":"you dutch people...","date":"2011-08-18T00:56:51.696Z","type":"message"}
+{"nick":"bnoordhuis","message":"go on","date":"2011-08-18T00:57:11.576Z","type":"message"}
+{"nick":"ryah","message":"immer mit ihren lustige gebaute worten","date":"2011-08-18T00:57:43.729Z","type":"message"}
+{"nick":"ryah","message":"deutsch ist normal und hoert sich guet aus - dutch ist kommish.","date":"2011-08-18T00:59:10.664Z","type":"message"}
+{"nick":"bnoordhuis","message":"hoert :)","date":"2011-08-18T00:59:45.193Z","type":"message"}
+{"nick":"ryah","message":"english is also normal sounding","date":"2011-08-18T00:59:49.439Z","type":"message"}
+{"nick":"ryah","message":"and naturally i cant speak germany","date":"2011-08-18T01:00:01.874Z","type":"message"}
+{"nick":"piscisaureus","message":"this accent-free german spelling looks really weird to me","date":"2011-08-18T01:00:55.556Z","type":"message"}
+{"nick":"bnoordhuis","message":"so how long did you live in germany, ryah?","date":"2011-08-18T01:01:54.904Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: 2.5 years","date":"2011-08-18T01:02:35.911Z","type":"message"}
+{"nick":"bnoordhuis","message":"how old are you anyway?","date":"2011-08-18T01:03:09.669Z","type":"message"}
+{"nick":"bnoordhuis","message":"and how did you end up in germany?","date":"2011-08-18T01:03:45.934Z","type":"message"}
+{"nick":"ryah","message":"30, gf","date":"2011-08-18T01:04:19.694Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah figures, that's how i ended up in the randstad here","date":"2011-08-18T01:04:51.700Z","type":"message"}
+{"nick":"piscisaureus","message":"good for you","date":"2011-08-18T01:05:12.979Z","type":"message"}
+{"nick":"piscisaureus","message":"you don't really want to die in eanske do you?","date":"2011-08-18T01:05:27.383Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2011-08-18T01:05:33.612Z","type":"message"}
+{"nick":"bnoordhuis","message":"enschede is quite alright for a place where there's nothing to do","date":"2011-08-18T01:05:46.719Z","type":"message"}
+{"nick":"bnoordhuis","message":"friendly people, low rents","date":"2011-08-18T01:05:55.765Z","type":"message"}
+{"nick":"bnoordhuis","message":"i had a 60m2 apartment for EUR 250/m","date":"2011-08-18T01:06:20.841Z","type":"message"}
+{"nick":"bnoordhuis","message":"you're not going to find that here","date":"2011-08-18T01:06:29.681Z","type":"message"}
+{"nick":"piscisaureus","message":"oh man","date":"2011-08-18T01:06:35.938Z","type":"message"}
+{"nick":"piscisaureus","message":"here it's like 3x that","date":"2011-08-18T01:06:53.085Z","type":"message"}
+{"nick":"ryah","message":"O_O","date":"2011-08-18T01:06:53.728Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis besides that 10 years ago","date":"2011-08-18T01:08:18.786Z","type":"message"}
+{"nick":"piscisaureus","message":"well ok 9","date":"2011-08-18T01:08:24.279Z","type":"message"}
+{"nick":"ryah","message":"sf sucks - i have a ~40m^2 place for $1300","date":"2011-08-18T01:08:29.157Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, damn","date":"2011-08-18T01:08:38.983Z","type":"message"}
+{"nick":"piscisaureus","message":"oh shit","date":"2011-08-18T01:08:41.064Z","type":"message"}
+{"nick":"ryah","message":"and its really the cheapest","date":"2011-08-18T01:08:46.382Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's why i never considered moving to silicon valley","date":"2011-08-18T01:08:57.321Z","type":"message"}
+{"nick":"piscisaureus","message":"$ 1300 x 0.68 = E 844","date":"2011-08-18T01:09:30.882Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, for 40m2","date":"2011-08-18T01:09:41.084Z","type":"message"}
+{"nick":"piscisaureus","message":"Normal price range here","date":"2011-08-18T01:09:44.612Z","type":"message"}
+{"nick":"piscisaureus","message":"but smal-ish yeah","date":"2011-08-18T01:09:49.758Z","type":"message"}
+{"nick":"bnoordhuis","message":"my mortgage is less than that","date":"2011-08-18T01:09:57.401Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-18T01:10:12.528Z","type":"message"}
+{"nick":"piscisaureus","message":"I should move to gouda then","date":"2011-08-18T01:10:17.841Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, gouda is okay","date":"2011-08-18T01:10:28.124Z","type":"message"}
+{"nick":"bnoordhuis","message":"relatively cheap","date":"2011-08-18T01:10:39.554Z","type":"message"}
+{"nick":"ryah","action":"should eat gouda...","date":"2011-08-18T01:10:41.843Z","type":"action"}
+{"nick":"piscisaureus","message":"sounds almost ubelievably cheap","date":"2011-08-18T01:10:42.196Z","type":"message"}
+{"nick":"bnoordhuis","message":"nice people, lots of water and green","date":"2011-08-18T01:10:46.422Z","type":"message"}
+{"nick":"bnoordhuis","message":"i did bleed the sellers dry","date":"2011-08-18T01:10:54.787Z","type":"message"}
+{"nick":"bnoordhuis","message":"they were in something of a bind","date":"2011-08-18T01:10:59.421Z","type":"message"}
+{"nick":"bnoordhuis","message":"paid less than 190K, go me","date":"2011-08-18T01:11:29.960Z","type":"message"}
+{"nick":"piscisaureus","message":"If you buy a house for 190k you get 40m2 these days","date":"2011-08-18T01:12:20.411Z","type":"message"}
+{"nick":"bnoordhuis","message":"in leiden?","date":"2011-08-18T01:12:41.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"eh, delft","date":"2011-08-18T01:12:43.162Z","type":"message"}
+{"nick":"piscisaureus","message":"well ok it may not be so bad","date":"2011-08-18T01:13:04.573Z","type":"message"}
+{"nick":"piscisaureus","message":"http://www.funda.nl/koop/delft/0-200000/","date":"2011-08-18T01:13:06.374Z","type":"message"}
+{"nick":"bnoordhuis","message":"fun fact: friends in enschede bought a house for 96K this year","date":"2011-08-18T01:13:57.972Z","type":"message"}
+{"nick":"bnoordhuis","message":"admittedly it needs some work","date":"2011-08-18T01:14:05.464Z","type":"message"}
+{"nick":"bnoordhuis","message":"but still","date":"2011-08-18T01:14:07.546Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's got a big-ass garden too","date":"2011-08-18T01:14:24.823Z","type":"message"}
+{"nick":"piscisaureus","message":"I want to move to Den Bosch","date":"2011-08-18T01:14:56.041Z","type":"message"}
+{"nick":"ryah","action":"needs to move back to eu","date":"2011-08-18T01:14:59.693Z","type":"action"}
+{"nick":"bnoordhuis","message":"heh","date":"2011-08-18T01:15:07.431Z","type":"message"}
+{"nick":"bnoordhuis","message":"den bosch? why?","date":"2011-08-18T01:15:14.390Z","type":"message"}
+{"nick":"piscisaureus","message":"I want to be able to reach amsterdam in a reasonable amount of time","date":"2011-08-18T01:15:33.845Z","type":"message"}
+{"nick":"piscisaureus","message":"my gf is going to work in Eindhoven","date":"2011-08-18T01:15:39.456Z","type":"message"}
+{"nick":"bnoordhuis","message":"the only good thing that comes out of brabant is the intercity","date":"2011-08-18T01:15:48.317Z","type":"message"}
+{"nick":"piscisaureus","message":"I like den bosch","date":"2011-08-18T01:15:59.143Z","type":"message"}
+{"nick":"piscisaureus","message":"not as good as groningen btw","date":"2011-08-18T01:16:03.835Z","type":"message"}
+{"nick":"bnoordhuis","message":"meh","date":"2011-08-18T01:16:07.801Z","type":"message"}
+{"nick":"bnoordhuis","message":"better than eindhoven, i'll give it that","date":"2011-08-18T01:16:15.279Z","type":"message"}
+{"nick":"piscisaureus","message":"sure","date":"2011-08-18T01:16:18.555Z","type":"message"}
+{"nick":"piscisaureus","message":"eindhoven is terrible","date":"2011-08-18T01:16:23.042Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's not much of a challenge","date":"2011-08-18T01:16:25.184Z","type":"message"}
+{"nick":"bnoordhuis","message":"what about maastricht?","date":"2011-08-18T01:16:50.187Z","type":"message"}
+{"nick":"piscisaureus","message":"too far from everything","date":"2011-08-18T01:16:59.206Z","type":"message"}
+{"nick":"piscisaureus","message":"I should find me a gf without a job","date":"2011-08-18T01:17:59.650Z","type":"message"}
+{"nick":"piscisaureus","message":"so I can live where I want","date":"2011-08-18T01:18:05.771Z","type":"message"}
+{"nick":"piscisaureus","message":"(like ben :-p)","date":"2011-08-18T01:18:12.969Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2011-08-18T01:18:33.839Z","type":"message"}
+{"nick":"DrPizza","message":"dutch makes my ears hurt","date":"2011-08-18T01:20:28.166Z","type":"message"}
+{"nick":"piscisaureus","message":"english dislocates my jaw","date":"2011-08-18T01:21:59.005Z","type":"message"}
+{"nick":"graydon","reason":"Quit: Leaving.","date":"2011-08-18T01:22:53.532Z","type":"quit"}
+{"nick":"DrPizza","message":"well...","date":"2011-08-18T01:22:58.560Z","type":"message"}
+{"nick":"DrPizza","message":"you are doing it wrong!","date":"2011-08-18T01:23:01.487Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't hate english","date":"2011-08-18T01:23:35.938Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's kinda a wussy language","date":"2011-08-18T01:23:46.581Z","type":"message"}
+{"nick":"bnoordhuis","message":"no hard vowels to speak of","date":"2011-08-18T01:23:50.868Z","type":"message"}
+{"nick":"bnoordhuis","message":"how can you cuss in that?","date":"2011-08-18T01:24:01.293Z","type":"message"}
+{"nick":"DrPizza","message":"wtf is  hard vowel","date":"2011-08-18T01:26:01.320Z","type":"message"}
+{"nick":"ryah","message":"http://nodejs.org/docs/v0.4.11/#download","date":"2011-08-18T01:26:02.037Z","type":"message"}
+{"nick":"ryah","message":"^-- can you test","date":"2011-08-18T01:26:05.249Z","type":"message"}
+{"nick":"DrPizza","message":"how can a vowel be hard","date":"2011-08-18T01:26:06.670Z","type":"message"}
+{"nick":"bnoordhuis","message":"DrPizza: http://translate.google.com/#nl|en|garage","date":"2011-08-18T01:27:07.349Z","type":"message"}
+{"nick":"DrPizza","message":"that sounds awful","date":"2011-08-18T01:27:46.272Z","type":"message"}
+{"nick":"bnoordhuis","message":"that google bot pronounces it rather sedately actually, colloquial dutch is much coarser","date":"2011-08-18T01:28:58.685Z","type":"message"}
+{"nick":"piscisaureus","message":"#download?","date":"2011-08-18T01:31:17.033Z","type":"message"}
+{"nick":"bnoordhuis","message":"looks okay to me, no dead links or anything","date":"2011-08-18T01:31:44.007Z","type":"message"}
+{"nick":"ryah","message":"test the build please :)","date":"2011-08-18T01:34:15.194Z","type":"message"}
+{"nick":"bnoordhuis","message":"aside, we should provide md5 / sha1 hashes of the tarballs","date":"2011-08-18T01:35:22.112Z","type":"message"}
+{"nick":"ryah","message":"yeah...","date":"2011-08-18T01:37:45.939Z","type":"message"}
+{"nick":"ryah","message":"we talked about it this week","date":"2011-08-18T01:37:53.299Z","type":"message"}
+{"nick":"ryah","message":"we might start signing them","date":"2011-08-18T01:37:57.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"as in `gpg --sign`?","date":"2011-08-18T01:39:59.654Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe overkill, i meant putting up a list of md5 hashes so you know your download isn't corrupted","date":"2011-08-18T01:40:47.872Z","type":"message"}
+{"nick":"bnoordhuis","message":"0.4.11 builds, running tests","date":"2011-08-18T01:41:52.550Z","type":"message"}
+{"nick":"bnoordhuis","message":"tests pass","date":"2011-08-18T01:42:43.346Z","type":"message"}
+{"nick":"ryah","message":"thanks","date":"2011-08-18T01:44:30.656Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307v0.4\u000f * r\u0002a745d19\u000f \u000310\u000f/ (5 files in 3 dirs)\u0002:\u000f Bump version to v0.4.11 - http://bit.ly/r0mHSq","date":"2011-08-18T01:47:00.575Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307v0.4\u000f * r\u0002dc57872\u000f \u000310\u000f/ src/node_version.h \u0002:\u000f Now working on v0.4.12 - http://bit.ly/riuiuF","date":"2011-08-18T01:47:00.916Z","type":"message"}
+{"nick":"ryah","message":"im force pushing v0.4","date":"2011-08-18T01:48:01.022Z","type":"message"}
+{"nick":"ryah","message":"over isaacs commit","date":"2011-08-18T01:48:04.537Z","type":"message"}
+{"nick":"ryah","message":"i fixed it up a little","date":"2011-08-18T01:48:08.722Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.4\u000f * r\u0002b4712bf\u000f \u000310\u000f/ doc/api/url.markdown \u0002:\u000f Close #1544 Document slashesDenoteHost flag in url.parse - http://bit.ly/nQvYWm","date":"2011-08-18T01:48:11.093Z","type":"message"}
+{"nick":"ryah","message":"s/fixed/fucked/","date":"2011-08-18T01:48:13.113Z","type":"message"}
+{"nick":"isaacs","message":"was just a doc patch.","date":"2011-08-18T01:48:33.317Z","type":"message"}
+{"nick":"isaacs","message":"no biggie","date":"2011-08-18T01:48:35.250Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307spawnext\u000f * r\u00028ed2ffb\u000f \u000310\u000f/ src/win/process.c \u0002:\u000f Windows: when searching path, look only for .com and .exe files - http://bit.ly/otwF5x","date":"2011-08-18T02:15:08.976Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- igorzi: can you review this?","date":"2011-08-18T02:15:14.372Z","type":"message"}
+{"nick":"ryah","message":"why do you want this?","date":"2011-08-18T02:16:03.946Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: can't you just leave the searching up to CreatePRocess?","date":"2011-08-18T02:16:21.994Z","type":"message"}
+{"nick":"ryah","message":"this search path stuff is so painful :/","date":"2011-08-18T02:16:23.440Z","type":"message"}
+{"nick":"DrPizza","message":"CreateProcess already has its own rules for searching","date":"2011-08-18T02:16:28.377Z","type":"message"}
+{"nick":"DrPizza","message":"does uv need to impose its own?","date":"2011-08-18T02:16:33.170Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: CreateProcess doesn't search at all","date":"2011-08-18T02:17:00.923Z","type":"message"}
+{"nick":"DrPizza","message":"yes it does","date":"2011-08-18T02:17:07.690Z","type":"message"}
+{"nick":"DrPizza","message":"just pass the whole lot as lpCommandLine, don't bother with lpApplicationName","date":"2011-08-18T02:17:55.825Z","type":"message"}
+{"nick":"DrPizza","message":"It will also attempt to append .exe ","date":"2011-08-18T02:18:13.899Z","type":"message"}
+{"nick":"DrPizza","message":"though .com must be set explicitly","date":"2011-08-18T02:18:19.346Z","type":"message"}
+{"nick":"DrPizza","message":"or are you wanting to use lpApplicationName and emulate the lpCommandLine rules?","date":"2011-08-18T02:19:13.138Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't care how we do it as long as it works right","date":"2011-08-18T02:20:09.318Z","type":"message"}
+{"nick":"piscisaureus","message":"why does it not try .com","date":"2011-08-18T02:20:30.063Z","type":"message"}
+{"nick":"DrPizza","message":"it just doesn't","date":"2011-08-18T02:20:37.198Z","type":"message"}
+{"nick":"piscisaureus","message":"seems like it almost got it right","date":"2011-08-18T02:20:38.265Z","type":"message"}
+{"nick":"DrPizza","message":"it will add the .exe if necessary","date":"2011-08-18T02:21:04.904Z","type":"message"}
+{"nick":"DrPizza","message":"but not .com","date":"2011-08-18T02:21:06.424Z","type":"message"}
+{"nick":"DrPizza","message":"(if you use lpCommandLine)","date":"2011-08-18T02:21:22.254Z","type":"message"}
+{"nick":"DrPizza","message":"if lpApplicationName is blank and you use lpCommandLine, it will both add the .exe, and also search the path, current directory, etc.","date":"2011-08-18T02:22:26.356Z","type":"message"}
+{"nick":"DrPizza","message":"s/blank/null/","date":"2011-08-18T02:22:42.242Z","type":"message"}
+{"nick":"piscisaureus","message":"we should consider that for simplicity sake","date":"2011-08-18T02:23:06.477Z","type":"message"}
+{"nick":"piscisaureus","message":"but people should be able to spawn \"format c:\" :-p","date":"2011-08-18T02:23:25.419Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: \"If lpApplicationName is NULL, the module name portion of lpCommandLine is limited to MAX_PATH characters.\"","date":"2011-08-18T02:28:34.681Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- also unfortunate","date":"2011-08-18T02:28:39.662Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-18T02:28:43.926Z","type":"quit"}
+{"nick":"piscisaureus","message":"oh wait that's just the file name","date":"2011-08-18T02:28:53.452Z","type":"message"}
+{"nick":"DrPizza","message":"true, but rarely disastrous","date":"2011-08-18T02:28:54.049Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-18T02:28:57.490Z","type":"message"}
+{"nick":"DrPizza","message":"so you're allowed MAX_PATH before the actual program arguments","date":"2011-08-18T02:29:11.630Z","type":"message"}
+{"nick":"piscisaureus","message":"Searching \"The directory from which the application loaded.\" at the very first doesn't make me happy","date":"2011-08-18T02:29:55.921Z","type":"message"}
+{"nick":"piscisaureus","message":"And not using .com","date":"2011-08-18T02:30:22.714Z","type":"message"}
+{"nick":"piscisaureus","message":"For the rest the search procedure seems reasoable","date":"2011-08-18T02:30:22.870Z","type":"message"}
+{"nick":"DrPizza","message":"perhaps, but it's what people are most likely to expect, I think","date":"2011-08-18T02:30:40.254Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: search the current directory first","date":"2011-08-18T02:30:58.216Z","type":"message"}
+{"nick":"piscisaureus","message":"that makes more sense","date":"2011-08-18T02:31:01.921Z","type":"message"}
+{"nick":"DrPizza","message":"well, it's done that way so that you can set CWD to be somewhere such as where your documents are stored","date":"2011-08-18T02:31:33.898Z","type":"message"}
+{"nick":"DrPizza","message":"but still have the program in program files","date":"2011-08-18T02:31:44.590Z","type":"message"}
+{"nick":"DrPizza","message":"so if the program tries to spawn its child processes","date":"2011-08-18T02:31:51.664Z","type":"message"}
+{"nick":"DrPizza","message":"it'll look in its own directory first","date":"2011-08-18T02:32:05.954Z","type":"message"}
+{"nick":"DrPizza","message":"rather than your document directory","date":"2011-08-18T02:32:10.756Z","type":"message"}
+{"nick":"DrPizza","message":"which makes sense","date":"2011-08-18T02:32:15.086Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2011-08-18T02:34:42.318Z","type":"quit"}
+{"nick":"piscisaureus","message":"DrPizza: I want to use rules that people are reasonable familiar with, hence the attempt to follow cmd semantics.","date":"2011-08-18T02:35:30.310Z","type":"message"}
+{"nick":"piscisaureus","message":"Also I'd rather not have that \"bla\" (=spawn in node) and \"cmd /c\" (=exec in node) start different programs.","date":"2011-08-18T02:35:30.472Z","type":"message"}
+{"nick":"DrPizza","message":"I don't think cmd's semantics are even defined anywhere","date":"2011-08-18T02:36:55.670Z","type":"message"}
+{"nick":"DrPizza","message":"cmd can do all sorts of weird stuff","date":"2011-08-18T02:37:09.298Z","type":"message"}
+{"nick":"DrPizza","message":"its logic is more akin to ShellExecute","date":"2011-08-18T02:37:19.523Z","type":"message"}
+{"nick":"piscisaureus","message":"generally it looks in cmd, then searches path","date":"2011-08-18T02:37:26.889Z","type":"message"}
+{"nick":"piscisaureus","message":"if it doesn't find a file it tries appending extensions from pathext","date":"2011-08-18T02:37:48.961Z","type":"message"}
+{"nick":"DrPizza","message":"which libuv can't do","date":"2011-08-18T02:38:17.832Z","type":"message"}
+{"nick":"DrPizza","message":"unless it wants to shellexecute","date":"2011-08-18T02:38:21.171Z","type":"message"}
+{"nick":"DrPizza","message":"because you can't createprocess anything other than .exe or .com","date":"2011-08-18T02:38:32.486Z","type":"message"}
+{"nick":"piscisaureus","message":"indeed","date":"2011-08-18T02:38:43.915Z","type":"message"}
+{"nick":"piscisaureus","message":"(unless you rename a .exe to .bat :-p)","date":"2011-08-18T02:39:05.486Z","type":"message"}
+{"nick":"bnoordhuis","message":"night, guys","date":"2011-08-18T02:39:44.586Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I propose to leave it in for a while","date":"2011-08-18T02:39:49.645Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: night.","date":"2011-08-18T02:39:57.661Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: we'll throw it out when we find more problems / it gets painful to maintain","date":"2011-08-18T02:40:18.370Z","type":"message"}
+{"nick":"DrPizza","message":"hrm","date":"2011-08-18T02:40:24.513Z","type":"message"}
+{"nick":"DrPizza","message":"I dunno, I don't really like it as is","date":"2011-08-18T02:40:33.137Z","type":"message"}
+{"nick":"DrPizza","message":"it's not createprocess semantics","date":"2011-08-18T02:40:34.281Z","type":"message"}
+{"nick":"DrPizza","message":"it's not cmd semantics","date":"2011-08-18T02:40:42.154Z","type":"message"}
+{"nick":"DrPizza","message":"it's just somewhere in between","date":"2011-08-18T02:40:46.789Z","type":"message"}
+{"nick":"DrPizza","message":"and not actually documented!","date":"2011-08-18T02:40:52.491Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-08-18T02:41:54.363Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe I prefer spawnvpe semantics then","date":"2011-08-18T02:42:06.008Z","type":"message"}
+{"nick":"DrPizza","message":"If anything","date":"2011-08-18T02:42:08.591Z","type":"message"}
+{"nick":"DrPizza","message":"you should take the command name","date":"2011-08-18T02:42:16.674Z","type":"message"}
+{"nick":"DrPizza","message":"pass it to SearchPath()","date":"2011-08-18T02:42:22.014Z","type":"message"}
+{"nick":"DrPizza","message":"and use that result for lpApplicationName","date":"2011-08-18T02:42:26.842Z","type":"message"}
+{"nick":"piscisaureus","message":"searchpath is even worse","date":"2011-08-18T02:42:37.461Z","type":"message"}
+{"nick":"piscisaureus","message":"iirc -) let me have a look again","date":"2011-08-18T02:42:55.488Z","type":"message"}
+{"nick":"DrPizza","message":"searchpath does CWD -> system path","date":"2011-08-18T02:42:57.968Z","type":"message"}
+{"nick":"DrPizza","message":"it's still not an exact match","date":"2011-08-18T02:43:40.635Z","type":"message"}
+{"nick":"DrPizza","message":"but it's not far off","date":"2011-08-18T02:43:45.601Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2011-08-18T02:44:11.396Z","type":"quit"}
+{"nick":"piscisaureus","message":"DrPizza: file:///C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/crt/src/spawnve.c","date":"2011-08-18T02:45:24.595Z","type":"message"}
+{"nick":"piscisaureus","message":"er","date":"2011-08-18T02:46:17.308Z","type":"message"}
+{"nick":"piscisaureus","message":"file:///C:/Program%20Files%20%28x86%29/Microsoft%20Visual%20Studio%2010.0/VC/crt/src/spawnvpe.c","date":"2011-08-18T02:46:17.467Z","type":"message"}
+{"nick":"DrPizza","message":"that if statement starting on line 89 is the most awful thing I have ever seen","date":"2011-08-18T02:47:25.434Z","type":"message"}
+{"nick":"piscisaureus","message":"no indentation also :-/","date":"2011-08-18T02:48:10.316Z","type":"message"}
+{"nick":"DrPizza","message":"man","date":"2011-08-18T02:53:15.298Z","type":"message"}
+{"nick":"DrPizza","message":"check out that lpReserved2 stuff it does in dospawn.c","date":"2011-08-18T02:53:22.634Z","type":"message"}
+{"nick":"DrPizza","message":"that's some crafty bullshit","date":"2011-08-18T02:53:32.025Z","type":"message"}
+{"nick":"DrPizza","message":"cbReserved2","date":"2011-08-18T02:53:39.495Z","type":"message"}
+{"nick":"DrPizza","message":"    Reserved for use by the C Run-time; must be zero.","date":"2011-08-18T02:53:39.654Z","type":"message"}
+{"nick":"DrPizza","message":"lpReserved2","date":"2011-08-18T02:53:39.654Z","type":"message"}
+{"nick":"DrPizza","message":"    Reserved for use by the C Run-time; must be NULL.","date":"2011-08-18T02:53:39.654Z","type":"message"}
+{"nick":"DrPizza","message":"but VC++ uses it!","date":"2011-08-18T02:53:45.771Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: you're looking at the c run-time source code","date":"2011-08-18T02:54:28.845Z","type":"message"}
+{"nick":"DrPizza","message":"sure","date":"2011-08-18T02:54:33.405Z","type":"message"}
+{"nick":"piscisaureus","message":"it is allowed to do that","date":"2011-08-18T02:54:35.505Z","type":"message"}
+{"nick":"DrPizza","message":"but","date":"2011-08-18T02:54:36.868Z","type":"message"}
+{"nick":"DrPizza","message":"no","date":"2011-08-18T02:54:38.602Z","type":"message"}
+{"nick":"DrPizza","message":"I'm looking at ~a~ C runtime source code","date":"2011-08-18T02:54:44.789Z","type":"message"}
+{"nick":"DrPizza","message":"~Windows~ doesn't ship with a C runtime","date":"2011-08-18T02:54:49.716Z","type":"message"}
+{"nick":"DrPizza","message":"you could be using borland","date":"2011-08-18T02:54:55.517Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: \u0003we could abuse it to pass additional handles \u0003to a child process","date":"2011-08-18T02:55:20.986Z","type":"message"}
+{"nick":"DrPizza","message":"VC++ is using undocumented techniques to pass handles to child processes","date":"2011-08-18T02:55:31.818Z","type":"message"}
+{"nick":"DrPizza","message":"that only the VC++ runtime understands","date":"2011-08-18T02:55:40.047Z","type":"message"}
+{"nick":"piscisaureus","message":"Yeah I know","date":"2011-08-18T02:55:48.516Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: it does this because exec() is supposed to replace the process image and keep file descriptors open","date":"2011-08-18T02:56:17.087Z","type":"message"}
+{"nick":"DrPizza","message":"sure","date":"2011-08-18T02:56:31.768Z","type":"message"}
+{"nick":"DrPizza","message":"I wonder if replicating it would be useful","date":"2011-08-18T02:56:44.129Z","type":"message"}
+{"nick":"DrPizza","message":"as a way of passing handles to children","date":"2011-08-18T02:56:51.200Z","type":"message"}
+{"nick":"piscisaureus","message":"it's awful","date":"2011-08-18T02:56:55.596Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-18T02:56:58.682Z","type":"message"}
+{"nick":"DrPizza","message":"I agree","date":"2011-08-18T02:57:01.003Z","type":"message"}
+{"nick":"piscisaureus","message":"but moreover - it's completely pointless","date":"2011-08-18T02:57:10.614Z","type":"message"}
+{"nick":"piscisaureus","message":"who uses that when you can't have fork() ?","date":"2011-08-18T02:57:19.966Z","type":"message"}
+{"nick":"DrPizza","message":"automatic handle sharing, you mean?","date":"2011-08-18T02:57:43.169Z","type":"message"}
+{"nick":"DrPizza","message":"passed through hokey magical methods","date":"2011-08-18T02:57:59.155Z","type":"message"}
+{"nick":"piscisaureus","message":"I mean: actually using the file descriptors that the \"parent\" process sent you","date":"2011-08-18T02:58:36.962Z","type":"message"}
+{"nick":"DrPizza","message":"it all looks very janky","date":"2011-08-18T03:00:03.838Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: https://github.com/joyent/libuv/issues/122#issuecomment-1833050","date":"2011-08-18T03:10:26.436Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: comment added","date":"2011-08-18T03:42:34.442Z","type":"message"}
+{"nick":"igorzi","message":"ryah: i just realized that when booting the machine into linux, /proc/cpuinfo only shows 2 processors (the machine has 2 cpus x 6 cores each)","date":"2011-08-18T03:58:58.010Z","type":"message"}
+{"nick":"igorzi","message":"how do i get it to recognize other cores?  (i see all the cores in the bios, and windows recognizes all of them)","date":"2011-08-18T04:00:23.442Z","type":"message"}
+{"nick":"CIA-95","date":"2011-08-18T04:32:36.259Z","type":"quit"}
+{"nick":"CIA-75","date":"2011-08-18T04:33:02.964Z","type":"join"}
+{"nick":"piscisaureus","reason":"Ping timeout: 258 seconds","date":"2011-08-18T05:22:01.252Z","type":"quit"}
+{"nick":"mraleph","date":"2011-08-18T07:07:23.806Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-18T07:59:05.494Z","type":"quit"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307pound-fixes\u000f * r\u0002dcf8770\u000f \u000310\u000f/ test/benchmark-pound.c \u0002:\u000f Fix pipe-pound and clean-up - http://bit.ly/oFboc3","date":"2011-08-18T08:10:25.771Z","type":"message"}
+{"nick":"igorzi","message":"ryah: this fixes pound bench for pipes, and also does some clean-up.  please review.","date":"2011-08-18T08:12:26.484Z","type":"message"}
+{"nick":"igorzi","message":"i tried running the pound benchmark on another windows machine (2-proc), and i see much more stable numbers with your change.  i think we should land it as soon as possible.","date":"2011-08-18T08:16:29.258Z","type":"message"}
+{"nick":"piscisaureus","date":"2011-08-18T12:36:59.388Z","type":"join"}
+{"nick":"bnoordhuis","date":"2011-08-18T13:07:22.020Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus: you can start on udp if you like","date":"2011-08-18T13:20:09.159Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: btw, https://github.com/joyent/node/issues/1553","date":"2011-08-18T13:22:12.772Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: so process.on('SIGINT') crashes. That is unexpected but maybe it's not bad for the time being.","date":"2011-08-18T13:33:24.579Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i wasn't sure if it's actually supposed to work on windows","date":"2011-08-18T13:33:59.549Z","type":"message"}
+{"nick":"piscisaureus","message":"It's not","date":"2011-08-18T13:34:07.839Z","type":"message"}
+{"nick":"piscisaureus","message":"It crashes because the signal watcher is disabled in windows btw","date":"2011-08-18T13:34:28.719Z","type":"message"}
+{"nick":"piscisaureus","message":"s/in/on","date":"2011-08-18T13:34:34.683Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: https://gist.github.com/cc11217bf271d8a897c7 <- udp api 1.0","date":"2011-08-18T13:38:46.668Z","type":"message"}
+{"nick":"bnoordhuis","message":"rfc please","date":"2011-08-18T13:39:04.028Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: \"The remainder has been truncated.\"","date":"2011-08-18T13:40:14.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes?","date":"2011-08-18T13:40:59.028Z","type":"message"}
+{"nick":"piscisaureus","message":"Shouldn't that be \"The remainder will be received in the next callback invocation?\"","date":"2011-08-18T13:40:59.083Z","type":"message"}
+{"nick":"piscisaureus","message":"I thought that was the idea","date":"2011-08-18T13:41:06.379Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis:","date":"2011-08-18T13:41:47.590Z","type":"message"}
+{"nick":"piscisaureus","message":"\"MSG_PARTIAL     This flag is for message-oriented sockets only. On output, this flag indicates that the data is a portion of the message transmitted by the sender. Remaining portions of the message will be transmitted in subsequent receive operations. A subsequent receive operation with MSG_PARTIAL flag cleared indicates the end of the sender's message.","date":"2011-08-18T13:41:47.749Z","type":"message"}
+{"nick":"piscisaureus","message":"As an input parameter, this flag indicates that the receive operation should complete even if only part of a message has been received by the service provider.\"","date":"2011-08-18T13:41:47.749Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... it's something i have to test still","date":"2011-08-18T13:41:55.291Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i think the unices only give you one shot to read a dgram","date":"2011-08-18T13:42:09.658Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: http://msdn.microsoft.com/en-us/library/ms683242%28v=vs.85%29.aspx","date":"2011-08-18T13:42:45.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"let's stick to udp for now, shall we? :)","date":"2011-08-18T13:43:16.188Z","type":"message"}
+{"nick":"piscisaureus","message":"To what unix signals would the CTRL_(C|BREAK|CLOSE|LOGOFF)_EVENT map?","date":"2011-08-18T13:43:23.088Z","type":"message"}
+{"nick":"bnoordhuis","message":"ctrl-c, ctrl-break -> sigint","date":"2011-08-18T13:44:04.650Z","type":"message"}
+{"nick":"bnoordhuis","message":"what's ctrl-close and ctrl-logoff?","date":"2011-08-18T13:44:16.953Z","type":"message"}
+{"nick":"bnoordhuis","message":"ctrl-close is sigterm","date":"2011-08-18T13:44:34.086Z","type":"message"}
+{"nick":"piscisaureus","message":"close if you close the console window","date":"2011-08-18T13:44:39.917Z","type":"message"}
+{"nick":"piscisaureus","message":"logoff and shutdown are not extremely important","date":"2011-08-18T13:44:55.116Z","type":"message"}
+{"nick":"bnoordhuis","message":"ctrl-logoff -> no equivalent","date":"2011-08-18T13:45:03.045Z","type":"message"}
+{"nick":"bnoordhuis","message":"ctrl-shutdown is usually a sigterm followed by a sigkill a little later","date":"2011-08-18T13:45:35.414Z","type":"message"}
+{"nick":"piscisaureus","message":"ok but sigkill is not received right?","date":"2011-08-18T13:45:49.550Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, never","date":"2011-08-18T13:45:55.788Z","type":"message"}
+{"nick":"bnoordhuis","message":"ctrl-shutdown -> just sigterm is okay","date":"2011-08-18T13:46:52.359Z","type":"message"}
+{"nick":"bnoordhuis","message":"you know, udp send should probably have a flags argument too","date":"2011-08-18T13:54:31.861Z","type":"message"}
+{"nick":"bnoordhuis","message":"or maybe... the only thing you'd use it for is UDP_CORK","date":"2011-08-18T13:55:01.477Z","type":"message"}
+{"nick":"bnoordhuis","message":"and when do you actually use that?","date":"2011-08-18T13:55:13.612Z","type":"message"}
+{"nick":"piscisaureus","message":"\u000301UDP_CORK\u0003\u000301?","date":"2011-08-18T13:57:59.447Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: instructs the kernel not to send data you write to the socket until you disable UDP_CORK again","date":"2011-08-18T14:00:14.918Z","type":"message"}
+{"nick":"bnoordhuis","message":"iow, folds multiple writes into a single dgram","date":"2011-08-18T14:00:35.501Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: let's rethink UV_UDP_PARTIAL, things work differently on unices","date":"2011-08-18T14:03:45.489Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can ioctl(FIONREAD) to find out how many bytes are pending","date":"2011-08-18T14:04:12.677Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, but the size argument to alloc_cb is called suggested_size of course","date":"2011-08-18T14:04:47.985Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: shouldn't windows wire up the ctrl-c handler into being SIGINT?","date":"2011-08-18T14:05:50.057Z","type":"message"}
+{"nick":"DrPizza","message":"I realize it's not th esame","date":"2011-08-18T14:05:57.080Z","type":"message"}
+{"nick":"DrPizza","message":"and that windows doesn't really have signals","date":"2011-08-18T14:06:01.034Z","type":"message"}
+{"nick":"DrPizza","message":"oh bnoordhuis already suggested that","date":"2011-08-18T14:06:58.431Z","type":"message"}
+{"nick":"DrPizza","message":"sorry","date":"2011-08-18T14:06:59.357Z","type":"message"}
+{"nick":"DrPizza","message":"I should read through my whole buffer before commenting","date":"2011-08-18T14:07:23.298Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: let's make it the responsibility of alloc_cb to provide a large enough buffer","date":"2011-08-18T14:08:41.581Z","type":"message"}
+{"nick":"bnoordhuis","message":"dgrams are small by their nature so it's not an unreasonable assumption","date":"2011-08-18T14:09:20.280Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what's wrong with UV_UDP_PARTIAL?","date":"2011-08-18T14:14:26.338Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: MSG_TRUNC on unices means 'incomplete read, remainder discarded'","date":"2011-08-18T14:15:23.016Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: okay","date":"2011-08-18T14:29:58.938Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but we still might want to report to the user that the receive was incomplete","date":"2011-08-18T14:30:23.706Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yeah","date":"2011-08-18T14:30:32.333Z","type":"message"}
+{"nick":"bnoordhuis","message":"how does that work on windows?","date":"2011-08-18T14:30:47.788Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe we can set status to -1 and set the error code to UV_ETRUNC?","date":"2011-08-18T14:30:49.240Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: well","date":"2011-08-18T14:31:22.847Z","type":"message"}
+{"nick":"piscisaureus","message":"on windows (I assume) it will discard the rest of the packet if I dont specify the MSG_PARTIAL flag","date":"2011-08-18T14:31:45.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"'maybe we can set status to -1 and set the error code to UV_ETRUNC?' <- that sucks, loses data","date":"2011-08-18T14:32:11.994Z","type":"message"}
+{"nick":"piscisaureus","message":"which data?","date":"2011-08-18T14:32:24.160Z","type":"message"}
+{"nick":"piscisaureus","message":"we can still return the buf can't we?","date":"2011-08-18T14:32:33.341Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes but the api consumer has to take special care","date":"2011-08-18T14:32:49.716Z","type":"message"}
+{"nick":"piscisaureus","message":"true","date":"2011-08-18T14:32:58.949Z","type":"message"}
+{"nick":"piscisaureus","message":"okay so maybe not","date":"2011-08-18T14:33:03.953Z","type":"message"}
+{"nick":"bnoordhuis","message":"if (error && error == UV_ETRUNC) { } else if (error) { }","date":"2011-08-18T14:33:07.390Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ sucks","date":"2011-08-18T14:33:10.990Z","type":"message"}
+{"nick":"piscisaureus","message":"well we have special care for UV_EOF too","date":"2011-08-18T14:33:29.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, that sucks as well","date":"2011-08-18T14:33:44.981Z","type":"message"}
+{"nick":"bnoordhuis","message":"should have been status == 0 and a zero read","date":"2011-08-18T14:34:08.066Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe we should expand the 'status\" arg a bit then :-)","date":"2011-08-18T14:34:09.236Z","type":"message"}
+{"nick":"bnoordhuis","message":"what do you propose?","date":"2011-08-18T14:34:31.651Z","type":"message"}
+{"nick":"piscisaureus","message":"if (status == 0) {","date":"2011-08-18T14:36:00.719Z","type":"message"}
+{"nick":"piscisaureus","message":"  // Yay! \\o/","date":"2011-08-18T14:36:00.885Z","type":"message"}
+{"nick":"piscisaureus","message":"} else if (status == UV_EOF) {","date":"2011-08-18T14:36:00.885Z","type":"message"}
+{"nick":"piscisaureus","message":" // Go home","date":"2011-08-18T14:36:00.885Z","type":"message"}
+{"nick":"piscisaureus","message":"  if (buf.base) free(buf.base);","date":"2011-08-18T14:36:00.885Z","type":"message"}
+{"nick":"piscisaureus","message":"} else {","date":"2011-08-18T14:36:01.680Z","type":"message"}
+{"nick":"piscisaureus","message":"  // Sadface :-(","date":"2011-08-18T14:36:01.836Z","type":"message"}
+{"nick":"piscisaureus","message":"\u0003  if (buf.base) free(buf.base);\u0003","date":"2011-08-18T14:36:02.683Z","type":"message"}
+{"nick":"piscisaureus","message":"}","date":"2011-08-18T14:36:02.843Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: my further thoughts are expressed at the end of this song: http://www.youtube.com/watch?v=hH7SRF8T3F8&feature=related#t=2m48s","date":"2011-08-18T14:39:36.371Z","type":"message"}
+{"nick":"bnoordhuis","message":"youtube zombie :)","date":"2011-08-18T14:39:49.211Z","type":"message"}
+{"nick":"bnoordhuis","message":"how do you get any work done?","date":"2011-08-18T14:40:00.818Z","type":"message"}
+{"nick":"bnoordhuis","message":"pquerna: ^","date":"2011-08-18T14:40:04.740Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't. Why?","date":"2011-08-18T14:40:07.591Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: btw it looks like i will have to use msg_partial after all","date":"2011-08-18T14:40:36.267Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, why?","date":"2011-08-18T14:40:42.330Z","type":"message"}
+{"nick":"piscisaureus","message":"since we want to do 0 reads","date":"2011-08-18T14:40:44.455Z","type":"message"}
+{"nick":"piscisaureus","message":"and truncating every package after the 0th byte seems somewhat unreasonable","date":"2011-08-18T14:41:08.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm not following","date":"2011-08-18T14:41:22.621Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh wait, are you talking about that windows optimization?","date":"2011-08-18T14:41:41.972Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: we don't poll()","date":"2011-08-18T14:41:45.405Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: no, the non-optimized case","date":"2011-08-18T14:41:57.149Z","type":"message"}
+{"nick":"piscisaureus","message":"where we read 0 bytes first to figure out that there is stuff in the kernel read buffer","date":"2011-08-18T14:42:16.374Z","type":"message"}
+{"nick":"piscisaureus","message":"then we use nonblocking reads to get the data out","date":"2011-08-18T14:42:22.560Z","type":"message"}
+{"nick":"bnoordhuis","message":"like ioctl(FIONREAD) on unices?","date":"2011-08-18T14:42:42.120Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: well we don't actually call fionread","date":"2011-08-18T14:42:55.400Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-18T14:42:57.755Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe it's not a bad idea to use that when reading datagrams btw","date":"2011-08-18T14:43:20.000Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-08-18T14:43:39.496Z","type":"message"}
+{"nick":"bnoordhuis","message":"the downside is that you do two syscalls","date":"2011-08-18T14:43:45.413Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-08-18T14:49:58.828Z","type":"message"}
+{"nick":"piscisaureus","message":"Yes that may be unfortunate","date":"2011-08-18T14:50:21.449Z","type":"message"}
+{"nick":"piscisaureus","message":"I think on windows fionread may actually not return the full length of the udp message if it's long","date":"2011-08-18T14:59:35.410Z","type":"message"}
+{"nick":"piscisaureus","message":"so that makes it less usable","date":"2011-08-18T14:59:39.022Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, that's no good","date":"2011-08-18T14:59:55.985Z","type":"message"}
+{"nick":"bnoordhuis","message":"out of curiosity: why doesn't it return the full length?","date":"2011-08-18T15:00:18.818Z","type":"message"}
+{"nick":"piscisaureus","message":"oh igorzi if only i could look at the windows source ♫","date":"2011-08-18T15:00:45.997Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: because it truncates to the socket read buffer","date":"2011-08-18T15:01:07.358Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right","date":"2011-08-18T15:01:23.858Z","type":"message"}
+{"nick":"piscisaureus","message":"but in the windows kernel socket read buffers are somewhat fluid","date":"2011-08-18T15:01:27.244Z","type":"message"}
+{"nick":"piscisaureus","message":"they might actually grow very big etc","date":"2011-08-18T15:01:40.984Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's another think we want to tune sometime","date":"2011-08-18T15:01:41.697Z","type":"message"}
+{"nick":"bnoordhuis","message":"*thing","date":"2011-08-18T15:01:44.109Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-18T15:01:47.812Z","type":"message"}
+{"nick":"piscisaureus","message":"well the socket read buffers on windows are quite ok","date":"2011-08-18T15:01:54.918Z","type":"message"}
+{"nick":"piscisaureus","message":"send buffers however are not well-managed","date":"2011-08-18T15:02:01.720Z","type":"message"}
+{"nick":"bnoordhuis","message":"on linux the defaults are alright","date":"2011-08-18T15:02:15.005Z","type":"message"}
+{"nick":"bnoordhuis","message":"but tuning send and receive buffers can help with throughput / latency","date":"2011-08-18T15:02:33.650Z","type":"message"}
+{"nick":"piscisaureus","message":"on windows boosting the send buffer size increases throughput","date":"2011-08-18T15:02:50.103Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's a flag i probably want to add in the future","date":"2011-08-18T15:02:54.128Z","type":"message"}
+{"nick":"piscisaureus","message":"(on fast networks)","date":"2011-08-18T15:02:57.406Z","type":"message"}
+{"nick":"bnoordhuis","message":"UV_OPTIMIZE_THROUGHPUT vs UV_OPTIMIZE_LATENCY","date":"2011-08-18T15:03:05.508Z","type":"message"}
+{"nick":"bnoordhuis","message":"for both tcp and udp","date":"2011-08-18T15:03:20.738Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: that's not really a tradeoff on windows I think","date":"2011-08-18T15:05:09.324Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's more ... throughput/latency vs high number of open sockets","date":"2011-08-18T15:05:32.702Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you don't have stuff like TCP_CORK vs TCP_NODELAY?","date":"2011-08-18T15:10:43.102Z","type":"message"}
+{"nick":"bnoordhuis","message":"one common optimization for high throughput apps is to increase the send buffer and set TCP_CORK","date":"2011-08-18T15:11:33.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"so multiple writes get buffered and sent as one big packet","date":"2011-08-18T15:11:44.717Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: there is TCP_NODELAY","date":"2011-08-18T15:19:28.328Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: node already has an api for that (socket.SetNoDelay)","date":"2011-08-18T15:19:54.765Z","type":"message"}
+{"nick":"piscisaureus","message":"there's no cork afaict","date":"2011-08-18T15:20:27.866Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: so what do we do with msg_trunc?","date":"2011-08-18T15:20:35.842Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i'm open to suggestions","date":"2011-08-18T15:21:22.861Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: ok so","date":"2011-08-18T15:22:12.620Z","type":"message"}
+{"nick":"piscisaureus","message":"we do truncate","date":"2011-08-18T15:22:15.855Z","type":"message"}
+{"nick":"piscisaureus","message":"the question is just how we are going to report a truncated message to the user","date":"2011-08-18T15:22:29.488Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't know - pick anything","date":"2011-08-18T15:22:41.924Z","type":"message"}
+{"nick":"bnoordhuis","message":"we can set UV_UDP_TRUNCATED or something","date":"2011-08-18T15:22:53.456Z","type":"message"}
+{"nick":"piscisaureus","message":"ok","date":"2011-08-18T15:22:59.214Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the behaviour needs to be consistent across operating systems","date":"2011-08-18T15:23:04.302Z","type":"message"}
+{"nick":"piscisaureus","message":"lets do that","date":"2011-08-18T15:23:05.640Z","type":"message"}
+{"nick":"piscisaureus","message":"have a test for that","date":"2011-08-18T15:23:16.879Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep, on it","date":"2011-08-18T15:25:44.770Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-18T15:27:24.705Z","type":"join"}
+{"nick":"piscisaureus","message":"bnoordhuis: can you land the API btw?","date":"2011-08-18T15:30:09.142Z","type":"message"}
+{"nick":"piscisaureus","message":"or what we have so far?","date":"2011-08-18T15:30:17.075Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose so","date":"2011-08-18T15:30:24.187Z","type":"message"}
+{"nick":"piscisaureus","message":"I will try to have a somewhat working implementation today","date":"2011-08-18T15:30:43.275Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you can pull from my repo's udp branch","date":"2011-08-18T15:30:58.616Z","type":"message"}
+{"nick":"piscisaureus","message":"ok","date":"2011-08-18T15:31:04.288Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307master\u000f * r\u00028ed2ffb\u000f \u000310\u000f/ src/win/process.c \u0002:\u000f Windows: when searching path, look only for .com and .exe files - http://bit.ly/otwF5x","date":"2011-08-18T15:32:04.874Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: ^-- I landed it, but the path scanning might still be dropped at some point","date":"2011-08-18T15:32:27.351Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I checked out the SearchPath solution. SearchPath is kinda neat, the only think is that it can only search for one extension","date":"2011-08-18T15:33:43.303Z","type":"message"}
+{"nick":"piscisaureus","message":"afaict","date":"2011-08-18T15:33:50.621Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I'm not completely happy with uv_dup_init6","date":"2011-08-18T15:45:00.240Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: speak up","date":"2011-08-18T15:45:12.102Z","type":"message"}
+{"nick":"piscisaureus","message":"it's going to make the upd_wrap ugly","date":"2011-08-18T15:45:32.016Z","type":"message"}
+{"nick":"piscisaureus","message":"*udp","date":"2011-08-18T15:45:37.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"you want to unify it?","date":"2011-08-18T15:45:56.178Z","type":"message"}
+{"nick":"piscisaureus","message":"Yes I think so","date":"2011-08-18T15:46:01.693Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis - or","date":"2011-08-18T15:46:08.344Z","type":"message"}
+{"nick":"piscisaureus","message":"we can do it later","date":"2011-08-18T15:46:11.256Z","type":"message"}
+{"nick":"piscisaureus","message":"the functions wil be the same anyway on windows","date":"2011-08-18T15:46:18.011Z","type":"message"}
+{"nick":"bnoordhuis","message":"the trouble is, what happens if you try to send a ipv6 dgram over a ipv4 socket?","date":"2011-08-18T15:46:32.126Z","type":"message"}
+{"nick":"piscisaureus","message":"(except for one handle->flags flag)","date":"2011-08-18T15:46:32.550Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: err","date":"2011-08-18T15:46:53.517Z","type":"message"}
+{"nick":"bnoordhuis","message":"separating the api lets you handle such corner cases cleanly","date":"2011-08-18T15:47:02.648Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's not perfect right now","date":"2011-08-18T15:47:44.753Z","type":"message"}
+{"nick":"bnoordhuis","message":"full separation would mean a distinct uv_udp6_t type","date":"2011-08-18T15:47:56.881Z","type":"message"}
+{"nick":"piscisaureus","message":"udp_init should not do anything, just init some stuff in the handle struct","date":"2011-08-18T15:47:59.510Z","type":"message"}
+{"nick":"piscisaureus","message":"we'll create sockets lazily anyway","date":"2011-08-18T15:48:14.215Z","type":"message"}
+{"nick":"piscisaureus","message":"so if people want ipv6 they can bind","date":"2011-08-18T15:48:22.671Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: uv_udp_init creates the socket on unix","date":"2011-08-18T15:48:27.208Z","type":"message"}
+{"nick":"piscisaureus","message":"eh ok... why?","date":"2011-08-18T15:48:34.797Z","type":"message"}
+{"nick":"bnoordhuis","message":"doing it lazy is troublesome","date":"2011-08-18T15:48:45.767Z","type":"message"}
+{"nick":"piscisaureus","message":"i think tcp sockets are lazily created","date":"2011-08-18T15:48:48.655Z","type":"message"}
+{"nick":"bnoordhuis","message":"especially with the create -> recv case","date":"2011-08-18T15:48:53.304Z","type":"message"}
+{"nick":"bnoordhuis","message":"you don't know what type of socket to create","date":"2011-08-18T15:49:10.250Z","type":"message"}
+{"nick":"bnoordhuis","message":"and defaulting to ipv4 kind of sucks, explicit is better","date":"2011-08-18T15:49:20.002Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: then have people call bind or (uv_udp_set_af) before or something?","date":"2011-08-18T15:49:43.447Z","type":"message"}
+{"nick":"bnoordhuis","message":"requiring people to bind is slightly silly","date":"2011-08-18T15:50:16.204Z","type":"message"}
+{"nick":"bnoordhuis","message":"for stuff like dns you just want to grab a socket and send the dgram","date":"2011-08-18T15:50:29.907Z","type":"message"}
+{"nick":"bnoordhuis","message":"you don't care what port it listens on","date":"2011-08-18T15:50:39.035Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: the bind does not need to actually do anything","date":"2011-08-18T15:50:44.101Z","type":"message"}
+{"nick":"piscisaureus","message":"if you call bind('::', 0) it can just do nothing just record it's ipv6","date":"2011-08-18T15:51:05.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose","date":"2011-08-18T15:51:31.333Z","type":"message"}
+{"nick":"bnoordhuis","message":"doing it in one library call leaves less room for mistake though","date":"2011-08-18T15:51:43.513Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: also, in the send case it's not a problem really","date":"2011-08-18T15:52:24.378Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, it's specifically for the recv case","date":"2011-08-18T15:52:39.175Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but in the recv case you'll generally want to bind anyway","date":"2011-08-18T15:52:56.785Z","type":"message"}
+{"nick":"piscisaureus","message":"because binding to a random port is really exotic","date":"2011-08-18T15:53:05.357Z","type":"message"}
+{"nick":"piscisaureus","message":"it's not so bad to let people explicitly bind port 0 in that case","date":"2011-08-18T15:53:19.655Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, not really","date":"2011-08-18T15:53:24.137Z","type":"message"}
+{"nick":"bnoordhuis","message":"imagine a p2p network","date":"2011-08-18T15:53:31.608Z","type":"message"}
+{"nick":"bnoordhuis","message":"you set up a receiver first on a random port","date":"2011-08-18T15:53:42.694Z","type":"message"}
+{"nick":"bnoordhuis","message":"and once you decide to get to work","date":"2011-08-18T15:53:51.432Z","type":"message"}
+{"nick":"bnoordhuis","message":"you start sending packets","date":"2011-08-18T15:53:54.884Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: okay so -","date":"2011-08-18T15:54:04.758Z","type":"message"}
+{"nick":"piscisaureus","message":"that is kind of exotic isn't it?","date":"2011-08-18T15:54:11.568Z","type":"message"}
+{"nick":"piscisaureus","message":"what's wrong with calling bind first then?","date":"2011-08-18T15:54:20.773Z","type":"message"}
+{"nick":"bnoordhuis","message":"we want botnets right?","date":"2011-08-18T15:54:21.290Z","type":"message"}
+{"nick":"bnoordhuis","message":"having to call bind with a specific port sucks","date":"2011-08-18T15:54:44.759Z","type":"message"}
+{"nick":"bnoordhuis","message":"having to call bind with 0 (ephemeral) sucks too","date":"2011-08-18T15:54:55.383Z","type":"message"}
+{"nick":"bnoordhuis","message":"the first because you need to decide on a port number","date":"2011-08-18T15:55:04.571Z","type":"message"}
+{"nick":"bnoordhuis","message":"the second because if you forget to do that, things will break","date":"2011-08-18T15:55:21.614Z","type":"message"}
+{"nick":"bnoordhuis","message":"iow i like RAII","date":"2011-08-18T15:55:28.731Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: https://github.com/joyent/node/blob/master/src/tcp_wrap.cc#L109-114","date":"2011-08-18T15:56:24.654Z","type":"message"}
+{"nick":"piscisaureus","message":"this is what i'm concerned about","date":"2011-08-18T15:56:31.748Z","type":"message"}
+{"nick":"bnoordhuis","message":"solvable","date":"2011-08-18T15:57:25.688Z","type":"message"}
+{"nick":"piscisaureus","message":"you're now forcing the wrap to do lazy uv_udp_initx because at wrap creation time you don't know the af","date":"2011-08-18T15:57:33.896Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... maybe","date":"2011-08-18T15:58:48.529Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's solvable for node because the handles are created lazily","date":"2011-08-18T15:59:07.576Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: btw on windows you need to bind anyway","date":"2011-08-18T15:59:23.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, why?","date":"2011-08-18T15:59:32.177Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's just a requirement for the WSASendTo / WSARecvFrom api","date":"2011-08-18T16:00:02.784Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's common","date":"2011-08-18T16:00:11.212Z","type":"message"}
+{"nick":"piscisaureus","message":"ConnectEx has that too","date":"2011-08-18T16:00:14.872Z","type":"message"}
+{"nick":"bnoordhuis","message":"god, windows sucks","date":"2011-08-18T16:00:17.714Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, deferred it is with the requirement to call bind","date":"2011-08-18T16:00:29.601Z","type":"message"}
+{"nick":"piscisaureus","message":"\\o/","date":"2011-08-18T16:00:42.216Z","type":"message"}
+{"nick":"piscisaureus","message":"being stubborn ftw!","date":"2011-08-18T16:00:49.057Z","type":"message"}
+{"nick":"bnoordhuis","message":"but you'll have to explain to me why the winsock api works like that","date":"2011-08-18T16:01:08.637Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: remember the youtube link ^^ ?","date":"2011-08-18T16:01:29.365Z","type":"message"}
+{"nick":"piscisaureus","message":"listen carefully","date":"2011-08-18T16:01:33.341Z","type":"message"}
+{"nick":"piscisaureus","message":"it's all there","date":"2011-08-18T16:01:35.313Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder if that's the what \"thinking\" sounds like for mraleph","date":"2011-08-18T16:02:39.198Z","type":"message"}
+{"nick":"bnoordhuis","message":"i didn't actually watch the video","date":"2011-08-18T16:04:10.230Z","type":"message"}
+{"nick":"bnoordhuis","message":"so this is all going over my head","date":"2011-08-18T16:04:14.649Z","type":"message"}
+{"nick":"piscisaureus","message":"yes ignorance is bliss isn't it bnoordhuis?","date":"2011-08-18T16:04:50.199Z","type":"message"}
+{"nick":"bnoordhuis","message":"one of the few things i learned from you piscisaureus","date":"2011-08-18T16:05:11.260Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: so we're going back to a single uv_udp_init(uv_udp_t *handle)?","date":"2011-08-18T16:06:07.473Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis yeah shure","date":"2011-08-18T16:06:20.039Z","type":"message"}
+{"nick":"piscisaureus","message":"*sure","date":"2011-08-18T16:06:22.825Z","type":"message"}
+{"nick":"piscisaureus","message":"wait","date":"2011-08-18T16:06:25.176Z","type":"message"}
+{"nick":"bnoordhuis","message":"what about socket flags? passed to uv_udp_init or uv_udp_bind?","date":"2011-08-18T16:06:35.054Z","type":"message"}
+{"nick":"piscisaureus","message":"I'm gonna call you","date":"2011-08-18T16:06:46.661Z","type":"message"}
+{"nick":"piscisaureus","message":"I want to go off irc","date":"2011-08-18T16:06:54.156Z","type":"message"}
+{"nick":"piscisaureus","message":"so distracting","date":"2011-08-18T16:06:57.749Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2011-08-18T16:07:18.725Z","type":"message"}
+{"nick":"bnoordhuis","message":"skype?","date":"2011-08-18T16:07:19.955Z","type":"message"}
+{"nick":"graydon","date":"2011-08-18T17:07:42.673Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus: https://github.com/bnoordhuis/libuv/compare/udp","date":"2011-08-18T17:09:39.042Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2011-08-18T17:09:42.640Z","type":"action"}
+{"nick":"igorzi","message":"bnoordhuis: yesterday i discovered that the machine that i've been dual-booting into windows and linux only recognizes 1 core per cpu on linux (/proc/cpuinfo only shows 2 processors, while the machine has 2 cpus x 6 cores each).. what can i try to get linux to recognize the other cores?","date":"2011-08-18T17:10:11.824Z","type":"message"}
+{"nick":"igorzi","message":"or anyone else?  ----^","date":"2011-08-18T17:10:48.983Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-18T17:18:50.309Z","type":"message"}
+{"nick":"piscisaureus","message":"I have no clue","date":"2011-08-18T17:19:00.220Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: what type of processors are in there?","date":"2011-08-18T17:22:28.699Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: also, what distribution are you running and what is your kernel version?","date":"2011-08-18T17:24:28.792Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: it's AMD Opteron 2431","date":"2011-08-18T17:25:06.446Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: it's Fedora distro, kernel version 2.6.35.6-45.fc14.x86_64","date":"2011-08-18T17:26:43.294Z","type":"message"}
+{"nick":"brson","date":"2011-08-18T17:30:40.422Z","type":"join"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002d77e979\u000f \u000310\u000f/ include/uv.h \u0002:\u000f Fix spelling - http://bit.ly/qa3u6x","date":"2011-08-18T17:35:57.396Z","type":"message"}
+{"nick":"igorzi","message":"ryah: piscisaureus: eio functions have this signature: eio_req* (..., eio_cb cb, void *data)","date":"2011-08-18T17:40:50.597Z","type":"message"}
+{"nick":"igorzi","message":"for moving them to libuv, i was thinking this: void (..., uv_some_new_req_t* req);","date":"2011-08-18T17:40:59.307Z","type":"message"}
+{"nick":"ryah","message":"igorzi: that's preferable","date":"2011-08-18T17:41:15.286Z","type":"message"}
+{"nick":"ryah","message":"igorzi: also a uv_loop_t arg","date":"2011-08-18T17:41:21.918Z","type":"message"}
+{"nick":"igorzi","message":"oh right","date":"2011-08-18T17:41:28.418Z","type":"message"}
+{"nick":"ryah","message":"oh wait we havne't landed that yet","date":"2011-08-18T17:41:29.450Z","type":"message"}
+{"nick":"ryah","message":"but we should land that soon","date":"2011-08-18T17:41:40.644Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: what's the status on multiplicity?","date":"2011-08-18T17:41:51.866Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: if you land that now I think you're gonna have problems with ben","date":"2011-08-18T17:41:54.679Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-18T17:42:00.260Z","type":"message"}
+{"nick":"piscisaureus","message":"an me btw","date":"2011-08-18T17:42:05.952Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: haven't started on multiplicity yet","date":"2011-08-18T17:42:14.985Z","type":"message"}
+{"nick":"ryah","message":"ben easily rebase it i think","date":"2011-08-18T17:42:15.148Z","type":"message"}
+{"nick":"ryah","message":"ok","date":"2011-08-18T17:42:23.667Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I'm doing udp right now","date":"2011-08-18T17:42:25.679Z","type":"message"}
+{"nick":"piscisaureus","message":"should be done tonight","date":"2011-08-18T17:42:31.570Z","type":"message"}
+{"nick":"igorzi","message":"ryah: btw, are you ok with this? https://github.com/joyent/libuv/commit/dcf87708194c2fbd8780a2b2b3e9aeb2bd0e33ea","date":"2011-08-18T17:43:34.719Z","type":"message"}
+{"nick":"igorzi","message":"can we land it?","date":"2011-08-18T17:43:37.307Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: I can't find much about this multicore problem.","date":"2011-08-18T17:43:40.821Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: you might try to upgrade your kernel to 2.6.35.14 but the changelogs don't mention this problem","date":"2011-08-18T17:44:15.434Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: is there a good place that tells you how to do that?","date":"2011-08-18T17:44:51.827Z","type":"message"}
+{"nick":"ryah","message":"igorzi: im seeing a problem on osx related to that patch - debugging now","date":"2011-08-18T17:47:46.968Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: how does SO_ERROR work actually? i thought it actually returned the error code","date":"2011-08-18T18:03:44.077Z","type":"message"}
+{"nick":"ryah","message":"but it seems it sets errno with the code?","date":"2011-08-18T18:03:49.901Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis:   /* We don't check for EINPROGRESS. Think about it: the socket","date":"2011-08-18T18:20:49.919Z","type":"message"}
+{"nick":"ryah","message":"   * is either there or not.","date":"2011-08-18T18:20:50.076Z","type":"message"}
+{"nick":"ryah","message":"   */","date":"2011-08-18T18:20:53.441Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-08-18T18:20:54.887Z","type":"message"}
+{"nick":"ryah","message":"it appears im getting that on osx","date":"2011-08-18T18:21:06.184Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: SO_ERROR should return the error in &error","date":"2011-08-18T18:44:50.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"or raise EBADF if sockfd is invalid","date":"2011-08-18T18:45:12.024Z","type":"message"}
+{"nick":"bnoordhuis","message":"EINPROGRESS on a unix socket?","date":"2011-08-18T18:45:24.714Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: no i was wrong - still figuring out what's happening","date":"2011-08-18T18:46:00.591Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: can you gist the output of /var/log/dmesg?","date":"2011-08-18T18:46:32.093Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: will do in about 20 min (booted back into windows now)","date":"2011-08-18T18:47:05.769Z","type":"message"}
+{"nick":"ryah","message":"call?","date":"2011-08-18T19:00:06.332Z","type":"message"}
+{"nick":"igorzi","message":"yep","date":"2011-08-18T19:00:27.682Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: I personally would be quite happy with only looking for .exe","date":"2011-08-18T19:03:31.425Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: spawnvpe doesn't look for .com, nor does CreateProcess, and I think .coms are rare enough that people can spell it out explicitly","date":"2011-08-18T19:04:09.654Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: https://gist.github.com/cc11217bf271d8a897c7","date":"2011-08-18T19:08:10.459Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ api","date":"2011-08-18T19:08:14.961Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: can uv_udp_recv_cb just pass sockaddr_in by value?","date":"2011-08-18T19:16:49.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: no because you don't know if it's a sockaddr_in or sockaddr_in6","date":"2011-08-18T19:17:20.505Z","type":"message"}
+{"nick":"ryah","message":"but this constraint of \"Valid for the duration *          of the callback.","date":"2011-08-18T19:17:35.930Z","type":"message"}
+{"nick":"ryah","message":"\"","date":"2011-08-18T19:17:36.957Z","type":"message"}
+{"nick":"ryah","message":"seems a bit annoying","date":"2011-08-18T19:17:40.656Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, the callee needs to make a copy","date":"2011-08-18T19:17:54.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"alternative is to have a uv_sockaddr struct that's the union of sockaddr_in and sockaddr_in6","date":"2011-08-18T19:18:21.722Z","type":"message"}
+{"nick":"bnoordhuis","message":"but well...","date":"2011-08-18T19:18:25.823Z","type":"message"}
+{"nick":"mraleph","date":"2011-08-18T19:18:27.808Z","type":"join"}
+{"nick":"ryah","message":"nah, it's okay","date":"2011-08-18T19:18:51.046Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm open to suggestion though","date":"2011-08-18T19:18:51.207Z","type":"message"}
+{"nick":"ryah","message":"my other question: do we really need scatter/gather stuff for uv_udp_send?","date":"2011-08-18T19:19:26.483Z","type":"message"}
+{"nick":"ryah","message":"can we not just send a single buf?","date":"2011-08-18T19:19:39.258Z","type":"message"}
+{"nick":"ryah","message":"well i guess it doesnt matter","date":"2011-08-18T19:20:02.178Z","type":"message"}
+{"nick":"ryah","message":"which syscall do you use?","date":"2011-08-18T19:20:28.785Z","type":"message"}
+{"nick":"ryah","message":"is there a sendv?","date":"2011-08-18T19:20:35.643Z","type":"message"}
+{"nick":"bnoordhuis","message":"recvmsg and sendmsg","date":"2011-08-18T19:20:42.271Z","type":"message"}
+{"nick":"bnoordhuis","message":"linux has sendmmsg btw","date":"2011-08-18T19:20:53.280Z","type":"message"}
+{"nick":"bnoordhuis","message":"but only since 2.6.37 i think","date":"2011-08-18T19:20:58.632Z","type":"message"}
+{"nick":"ryah","message":"struct msghdr <- has iovec ?","date":"2011-08-18T19:21:11.034Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-08-18T19:21:14.776Z","type":"message"}
+{"nick":"ryah","message":"k","date":"2011-08-18T19:21:17.879Z","type":"message"}
+{"nick":"ryah","message":"cool - looks good","date":"2011-08-18T19:21:33.023Z","type":"message"}
+{"nick":"bnoordhuis","message":"good :)","date":"2011-08-18T19:21:36.727Z","type":"message"}
+{"nick":"bnoordhuis","message":"re scatter/gather: i followed what uv_tcp_write accepts","date":"2011-08-18T19:22:18.634Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: spawnvpe looks for .com .exe .bat .cmd. (if it finds .bat or .cmd it prepends cmd /c)","date":"2011-08-18T19:23:08.053Z","type":"message"}
+{"nick":"DrPizza","message":"it does?","date":"2011-08-18T19:23:18.551Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: it calls spawnve. Look here: file:///C:/Program Files (x86)/Microsoft Visual Studio 10.0/VC/crt/src/spawnve.c","date":"2011-08-18T19:25:05.762Z","type":"message"}
+{"nick":"DrPizza","message":"oh kinda","date":"2011-08-18T19:26:28.793Z","type":"message"}
+{"nick":"DrPizza","message":"but it has a broken algorithm","date":"2011-08-18T19:26:41.433Z","type":"message"}
+{"nick":"DrPizza","message":"it gets faked out by ANY . in the path","date":"2011-08-18T19:26:49.123Z","type":"message"}
+{"nick":"DrPizza","action":"was trying for a directory with a . in its name","date":"2011-08-18T19:27:28.013Z","type":"action"}
+{"nick":"DrPizza","message":"unless I had a bug ","date":"2011-08-18T19:28:17.907Z","type":"message"}
+{"nick":"DrPizza","message":"oh maybe I was trying to call the wrong thing","date":"2011-08-18T19:28:35.899Z","type":"message"}
+{"nick":"DrPizza","message":"hm","date":"2011-08-18T19:28:36.619Z","type":"message"}
+{"nick":"DrPizza","message":"yes, never mind","date":"2011-08-18T19:29:10.916Z","type":"message"}
+{"nick":"DrPizza","message":"where does it do the cmd /c stuff?","date":"2011-08-18T19:29:57.100Z","type":"message"}
+{"nick":"DrPizza","message":"anyway","date":"2011-08-18T19:30:14.116Z","type":"message"}
+{"nick":"DrPizza","message":"that's stupid behaviour","date":"2011-08-18T19:30:17.094Z","type":"message"}
+{"nick":"DrPizza","message":"it should not try to add those extensions","date":"2011-08-18T19:30:20.856Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: hmm. I kinda like it","date":"2011-08-18T19:33:18.404Z","type":"message"}
+{"nick":"piscisaureus","message":"does the same as cmd then","date":"2011-08-18T19:33:28.690Z","type":"message"}
+{"nick":"DrPizza","message":"it's just so arbitrary","date":"2011-08-18T19:33:29.564Z","type":"message"}
+{"nick":"DrPizza","message":"they're not PATHEXT","date":"2011-08-18T19:33:33.395Z","type":"message"}
+{"nick":"piscisaureus","message":"in linux is it possible to spawn a shell script with exec()","date":"2011-08-18T19:33:47.691Z","type":"message"}
+{"nick":"piscisaureus","message":"or will it just do binaries?","date":"2011-08-18T19:33:56.554Z","type":"message"}
+{"nick":"piscisaureus","message":"I kinda like prepending cmd /c","date":"2011-08-18T19:35:21.219Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe we should do that too","date":"2011-08-18T19:35:28.134Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: execve() works for shell scripts","date":"2011-08-18T19:35:36.628Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yes","date":"2011-08-18T19:37:13.131Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2011-08-18T19:51:11.536Z","type":"quit"}
+{"nick":"brson","date":"2011-08-18T19:51:31.176Z","type":"join"}
+{"nick":"bnoordhuis","message":"guess we can nuke cmake support","date":"2011-08-18T19:53:27.553Z","type":"message"}
+{"nick":"bnoordhuis","message":"HP is killing off webos","date":"2011-08-18T19:53:32.784Z","type":"message"}
+{"nick":"ryah","message":"?","date":"2011-08-18T19:53:39.087Z","type":"message"}
+{"nick":"bnoordhuis","message":"http://techcrunch.com/2011/08/18/its-official-hp-kills-off-webos-phones-and-the-touchpad/","date":"2011-08-18T19:53:43.720Z","type":"message"}
+{"nick":"piscisaureus","message":"HP will continue to explore options to optimize the value of webOS software going forward.","date":"2011-08-18T19:54:13.448Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, marketing speech :)","date":"2011-08-18T19:54:22.293Z","type":"message"}
+{"nick":"ryah","message":"oh shit","date":"2011-08-18T19:54:29.214Z","type":"message"}
+{"nick":"piscisaureus","message":"time to get node in android then","date":"2011-08-18T19:56:20.844Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll start c2java","date":"2011-08-18T19:56:53.675Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: why?","date":"2011-08-18T19:57:13.845Z","type":"message"}
+{"nick":"bnoordhuis","message":"i kid, i know you can run c / c++ on android devices","date":"2011-08-18T19:57:39.155Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't understand HP tbh","date":"2011-08-18T19:59:12.653Z","type":"message"}
+{"nick":"bnoordhuis","message":"they buy palm in 2010 primarily because of webos","date":"2011-08-18T19:59:24.449Z","type":"message"}
+{"nick":"bnoordhuis","message":"and a year later they kill it","date":"2011-08-18T19:59:47.143Z","type":"message"}
+{"nick":"ryah","message":"patents","date":"2011-08-18T20:00:19.888Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's probably it","date":"2011-08-18T20:00:39.421Z","type":"message"}
+{"nick":"piscisaureus","message":"palm should have a good number of them","date":"2011-08-18T20:00:41.755Z","type":"message"}
+{"nick":"ryah","message":"at least thats what a senior engineer at palm told me when the acquisition happened","date":"2011-08-18T20:01:35.490Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: that patents are the problem?","date":"2011-08-18T20:01:50.884Z","type":"message"}
+{"nick":"ryah","message":"he left shortly after :)","date":"2011-08-18T20:01:52.115Z","type":"message"}
+{"nick":"ryah","message":"no that that's why they bought it","date":"2011-08-18T20:02:00.025Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe they plan on selling the patents to big G","date":"2011-08-18T20:02:20.792Z","type":"message"}
+{"nick":"piscisaureus","message":"I mean they bought palm for \"only\" $ 1.2b","date":"2011-08-18T20:03:24.438Z","type":"message"}
+{"nick":"ryah","message":"man.. if only i had a couple billion dollars","date":"2011-08-18T20:03:52.493Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah then what?","date":"2011-08-18T20:04:21.994Z","type":"message"}
+{"nick":"ryah","action":"forgets sorry","date":"2011-08-18T20:04:34.228Z","type":"action"}
+{"nick":"ryah","message":"i'd like buy some company","date":"2011-08-18T20:04:41.411Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-18T20:04:41.908Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-18T20:05:11.877Z","type":"quit"}
+{"nick":"piscisaureus","message":"ah","date":"2011-08-18T20:05:36.824Z","type":"message"}
+{"nick":"piscisaureus","message":"so is that why you have been saving on pants?","date":"2011-08-18T20:05:45.404Z","type":"message"}
+{"nick":"piscisaureus","message":"21:55:34     <ryah>     piscisaureus: yahoo, facebook, msft, palm don't count?","date":"2011-08-18T20:07:50.161Z","type":"message"}
+{"nick":"piscisaureus","message":"1 down!","date":"2011-08-18T20:07:59.748Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: http://www.businessinsider.com/fed-worried-about-european-banks-2011-8","date":"2011-08-18T20:10:12.241Z","type":"message"}
+{"nick":"piscisaureus","message":"time to run to the atm!","date":"2011-08-18T20:10:12.403Z","type":"message"}
+{"nick":"ryah","message":"gah","date":"2011-08-18T20:28:20.509Z","type":"message"}
+{"nick":"ryah","message":"this stupid unix pipe stuff","date":"2011-08-18T20:28:26.915Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-18T20:44:59.407Z","type":"join"}
+{"nick":"ryah","message":"bnoordhuis: https://github.com/joyent/libuv/blob/d77e9795d394ca8e4e9537ef5466a0901ddc869c/src/uv-unix.c#L1997","date":"2011-08-18T21:03:12.354Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: why EV_CUSTOM?","date":"2011-08-18T21:03:18.143Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: no particular reason","date":"2011-08-18T21:03:51.747Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: why does uv__write (when it's written everything) defer the write_cb to the next tick?","date":"2011-08-18T21:13:43.036Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: so that callbacks are always handled async","date":"2011-08-18T21:15:21.139Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: but uv__write itself already runs on a later tick right?","date":"2011-08-18T21:15:37.771Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2011-08-18T21:15:51.257Z","type":"quit"}
+{"nick":"bnoordhuis","message":"oh wait, no","date":"2011-08-18T21:16:06.068Z","type":"message"}
+{"nick":"ryah","message":"so we try to write immediately - if we do the next tick gets the write_cb","date":"2011-08-18T21:16:17.433Z","type":"message"}
+{"nick":"ryah","message":"otherwise we wait for the event loop to notify that fd is writable then do it","date":"2011-08-18T21:16:29.921Z","type":"message"}
+{"nick":"bnoordhuis","message":"i was looking at uv__stream_io","date":"2011-08-18T21:16:34.120Z","type":"message"}
+{"nick":"ryah","message":"the idea being you dont want to wait","date":"2011-08-18T21:16:35.633Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2011-08-18T21:16:42.029Z","type":"message"}
+{"nick":"ryah","message":"ive got this really strange bug...","date":"2011-08-18T21:17:11.570Z","type":"message"}
+{"nick":"bnoordhuis","message":"tell me","date":"2011-08-18T21:18:14.768Z","type":"message"}
+{"nick":"brson","date":"2011-08-18T21:20:30.568Z","type":"join"}
+{"nick":"brson","reason":"Client Quit","date":"2011-08-18T21:24:33.770Z","type":"quit"}
+{"nick":"brson","date":"2011-08-18T21:24:51.299Z","type":"join"}
+{"nick":"piscisaureus","message":"bugs are normal. it's strange if it works","date":"2011-08-18T21:33:27.416Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe with your code >:)","date":"2011-08-18T21:36:39.924Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis:","date":"2011-08-18T22:02:02.588Z","type":"message"}
+{"nick":"piscisaureus","message":"here?","date":"2011-08-18T22:02:08.133Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes","date":"2011-08-18T22:02:19.498Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: with tcp we're pretty picky about reporting errors","date":"2011-08-18T22:02:33.958Z","type":"message"}
+{"nick":"bnoordhuis","message":"go on","date":"2011-08-18T22:02:48.854Z","type":"message"}
+{"nick":"piscisaureus","message":"e.g. if bind() returns EADDRINUSE we don't actually report that but we wait for connect or listen","date":"2011-08-18T22:02:52.777Z","type":"message"}
+{"nick":"piscisaureus","message":"this the same for udp?","date":"2011-08-18T22:03:01.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, because there's no connect or listen","date":"2011-08-18T22:03:20.213Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: ok so but should I report the error from read_start / send then?","date":"2011-08-18T22:03:38.107Z","type":"message"}
+{"nick":"piscisaureus","message":"how does this work on ulix?","date":"2011-08-18T22:03:55.184Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: in libuv or in unix in general?","date":"2011-08-18T22:04:20.735Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what does unix do? report eaddrinuse from bind or only from the next socket operation after bind?","date":"2011-08-18T22:04:47.194Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's reported by bind()","date":"2011-08-18T22:05:11.290Z","type":"message"}
+{"nick":"piscisaureus","message":"then why is it not reported by bind for tcp sockets?","date":"2011-08-18T22:05:32.717Z","type":"message"}
+{"nick":"bnoordhuis","message":"tcp in libuv stores the error in a field and emits it later on","date":"2011-08-18T22:05:52.607Z","type":"message"}
+{"nick":"bnoordhuis","message":"deferring the error is a good thing probably","date":"2011-08-18T22:06:09.746Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-18T22:06:14.385Z","type":"message"}
+{"nick":"bnoordhuis","message":"if we don't, you get these annoying uncatchable exceptions in node","date":"2011-08-18T22:06:27.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"how does it work on windows btw?","date":"2011-08-18T22:06:58.605Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: on windows I *also* store the error and defer it until listen is called","date":"2011-08-18T22:07:22.950Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay","date":"2011-08-18T22:07:35.429Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: why did we decide to do this again?","date":"2011-08-18T22:07:42.104Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: bind deferred errors?","date":"2011-08-18T22:13:39.145Z","type":"message"}
+{"nick":"ryah","message":"it was to smooth the differences between windows and unix","date":"2011-08-18T22:13:48.145Z","type":"message"}
+{"nick":"ryah","message":"there are differences in the different unixes too irrc","date":"2011-08-18T22:14:29.103Z","type":"message"}
+{"nick":"ryah","message":"iirc","date":"2011-08-18T22:14:34.599Z","type":"message"}
+{"nick":"ryah","message":"      /* If we get a ECONNREFUSED wait until the next tick to report the","date":"2011-08-18T22:15:04.164Z","type":"message"}
+{"nick":"ryah","message":"       * error. Solaris wants to report immediately--other unixes want to","date":"2011-08-18T22:15:04.319Z","type":"message"}
+{"nick":"ryah","message":"       * wait.","date":"2011-08-18T22:15:04.319Z","type":"message"}
+{"nick":"ryah","message":"       */","date":"2011-08-18T22:15:05.294Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe we did it all because we were not sure that EADDRINUSE would be reported by bind","date":"2011-08-18T22:15:21.249Z","type":"message"}
+{"nick":"piscisaureus","message":"so in case it does, we wait for listen()","date":"2011-08-18T22:15:35.294Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: do we want this for udp too?","date":"2011-08-18T22:15:43.605Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah, what you say is true for ECONNREFUSED but not for EADDRINUSE i think","date":"2011-08-18T22:15:48.507Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: well...","date":"2011-08-18T22:15:58.510Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: perhaps","date":"2011-08-18T22:16:03.708Z","type":"message"}
+{"nick":"ryah","message":"i'd be happy to not defer it ","date":"2011-08-18T22:16:09.428Z","type":"message"}
+{"nick":"ryah","message":"if we can get every platform conforming","date":"2011-08-18T22:16:18.154Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: what about windows?","date":"2011-08-18T22:16:46.854Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a natural fit for unices","date":"2011-08-18T22:16:52.587Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: on windows EADDRINUSE is reported by bind","date":"2011-08-18T22:18:47.904Z","type":"message"}
+{"nick":"bnoordhuis","message":"let's go with reporting it directly then","date":"2011-08-18T22:19:10.117Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: ok... for now","date":"2011-08-18T22:19:21.541Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: after we finish this let's remove the error deferring code from tcp_bind","date":"2011-08-18T22:19:53.126Z","type":"message"}
+{"nick":"piscisaureus","message":"see if we can get consistent behavior","date":"2011-08-18T22:19:58.056Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yep","date":"2011-08-18T22:20:01.483Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: let's see if I can dig the discussion up","date":"2011-08-18T22:21:08.750Z","type":"message"}
+{"nick":"piscisaureus","message":"(too bad slurp wasn't there)","date":"2011-08-18T22:21:24.219Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: what discussion?","date":"2011-08-18T22:21:41.094Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u000256b09db\u000f \u000310\u000f/ src/win/tcp.c \u0002:\u000f windows: set accept socket to INVALID_SOCKET in case of accept failure - http://bit.ly/oJpUxi","date":"2011-08-18T22:21:49.690Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: when ryan an I decided on this. I remember it was a long night.","date":"2011-08-18T22:22:28.805Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002ac1ce29\u000f \u000310\u000f/ (test/benchmark-pound.c test/echo-server.c)\u0002:\u000f Improve pound benchmark by reconnecting in close_cb - http://bit.ly/qebnVs","date":"2011-08-18T22:31:18.015Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u0002f6c25a1\u000f \u000310\u000f/ test/benchmark-pound.c \u0002:\u000f Fix pipe-pound and clean-up - http://bit.ly/rnkL5e","date":"2011-08-18T22:31:19.295Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00021231193\u000f \u000310\u000f/ test/benchmark-pound.c \u0002:\u000f pound: only display connect errors on DEBUG - http://bit.ly/qVLh8w","date":"2011-08-18T22:31:57.842Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: hey","date":"2011-08-18T22:32:58.934Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: ho","date":"2011-08-18T22:33:06.829Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: je krijgt het niet kado","date":"2011-08-18T22:33:19.774Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but... it seems that we do this error deferring because linux reports eaddrinuse from listen() not bind()","date":"2011-08-18T22:33:54.733Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: aw... you may be right","date":"2011-08-18T22:34:30.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"both bind and listen can report eaddrinuse","date":"2011-08-18T22:34:37.815Z","type":"message"}
+{"nick":"bnoordhuis","message":"god, posix sucks","date":"2011-08-18T22:34:43.398Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's somewhere in here: https://gist.github.com/1155444","date":"2011-08-18T22:34:52.019Z","type":"message"}
+{"nick":"piscisaureus","message":":-)","date":"2011-08-18T22:34:53.146Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: what about windows?","date":"2011-08-18T22:35:36.294Z","type":"message"}
+{"nick":"piscisaureus","message":"it reports on bind proper","date":"2011-08-18T22:35:52.112Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus, bnoordhuis: you should add a note about this in linux","date":"2011-08-18T22:36:04.321Z","type":"message"}
+{"nick":"ryah","message":"sorry - add a comment about why we're deferring it","date":"2011-08-18T22:36:28.232Z","type":"message"}
+{"nick":"ryah","message":"so we don't have to do this again :)","date":"2011-08-18T22:36:32.712Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2011-08-18T22:36:35.617Z","type":"message"}
+{"nick":"bnoordhuis","message":"you know, linux doesn't actually report eaddrinuse from listen, only bind","date":"2011-08-18T22:39:01.638Z","type":"message"}
+{"nick":"bnoordhuis","message":"i checked the unix, ipv4 and ipv6 stacks","date":"2011-08-18T22:39:18.975Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I don't believe you","date":"2011-08-18T22:41:53.138Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: why not?","date":"2011-08-18T22:42:05.094Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: because I observed it doing that myself","date":"2011-08-18T22:42:12.407Z","type":"message"}
+{"nick":"bnoordhuis","message":"what kernel?","date":"2011-08-18T22:42:26.948Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-18T22:42:33.695Z","type":"message"}
+{"nick":"piscisaureus","message":"what kernel was I running on april 25th?","date":"2011-08-18T22:42:47.150Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't know","date":"2011-08-18T22:42:53.371Z","type":"message"}
+{"nick":"piscisaureus","message":"something that ships with ubuntu 10.10 or 11.04","date":"2011-08-18T22:43:05.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"how did you observe it? test case?","date":"2011-08-18T22:43:45.451Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: we used to have a test case that checks if bind returns EADDRINUSE","date":"2011-08-18T22:44:12.459Z","type":"message"}
+{"nick":"piscisaureus","message":"it failed me on linux","date":"2011-08-18T22:44:39.629Z","type":"message"}
+{"nick":"bnoordhuis","message":"do you know what commit you were at?","date":"2011-08-18T22:45:01.547Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: i can figure that out","date":"2011-08-18T22:45:17.096Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can too if it's the latest on 25/04 :)","date":"2011-08-18T22:45:39.220Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, it's all academic","date":"2011-08-18T22:47:29.349Z","type":"message"}
+{"nick":"ryah","message":"sigh. configure-gyp is so tedious","date":"2011-08-18T22:47:35.633Z","type":"message"}
+{"nick":"bnoordhuis","message":"freebsd does return EADDRINUSE from listen","date":"2011-08-18T22:47:37.748Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/joyent/node/commit/fcf9cfa1374bbbc0e77dd77908b55d45d7735450#commitcomment-539728 <- this guy","date":"2011-08-18T22:48:50.218Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: so what are we going to do?","date":"2011-08-18T22:50:38.770Z","type":"message"}
+{"nick":"bnoordhuis","message":"deferring the error to send / recv seems... dunno, ugly","date":"2011-08-18T22:50:55.795Z","type":"message"}
+{"nick":"bnoordhuis","message":"and confusing","date":"2011-08-18T22:51:19.502Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: does freebsd return EADDRINUSE from sendto / recvfrom?","date":"2011-08-18T22:51:19.990Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i should hope not","date":"2011-08-18T22:51:34.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: was that a serious question?","date":"2011-08-18T22:52:38.113Z","type":"message"}
+{"nick":"piscisaureus","message":"bniirdhuis: ok we're not going to defer errors","date":"2011-08-18T22:53:05.170Z","type":"message"}
+{"nick":"bnoordhuis","message":"you don't use tab completion, do you? :)","date":"2011-08-18T22:53:29.064Z","type":"message"}
+{"nick":"piscisaureus","message":"bniirdhuis: no","date":"2011-08-18T22:53:45.805Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2011-08-18T22:53:49.588Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: try https://github.com/joyent/libuv/commit/0a7c19e19ecd8ecb623c1eca34d2ecfaeb7307bf","date":"2011-08-18T22:56:21.451Z","type":"message"}
+{"nick":"piscisaureus","message":"but remove the oio_listen call from the bind_error_addrinuse call","date":"2011-08-18T22:56:21.613Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, i'll give it a spin","date":"2011-08-18T22:56:45.200Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: re this guy","date":"2011-08-18T23:04:24.858Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah?","date":"2011-08-18T23:04:33.389Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: why is that more cutting edge js?","date":"2011-08-18T23:04:33.552Z","type":"message"}
+{"nick":"bnoordhuis","message":"i have no idea :)","date":"2011-08-18T23:04:41.710Z","type":"message"}
+{"nick":"bnoordhuis","message":"seems he's worried about the use of a local","date":"2011-08-18T23:04:57.189Z","type":"message"}
+{"nick":"bnoordhuis","message":"i agree it's bad abusing locals - but only in the real world, not in computer programs","date":"2011-08-18T23:05:37.558Z","type":"message"}
+{"nick":"piscisaureus","message":"also I fail to see what's the problem with the --use-uv snippet","date":"2011-08-18T23:06:10.689Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: it's just one of those guys, you know","date":"2011-08-18T23:17:59.788Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: they're rare. I feel like trolling him.","date":"2011-08-18T23:18:23.670Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-18T23:22:11.803Z","type":"quit"}
+{"nick":"ryah","message":"bnoordhuis: what's the deal with 421b6e89aa58d1cdc3344d6fadb878f7b37eee1c","date":"2011-08-18T23:22:20.764Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: crypto: fix incorrect ssl shutdown check?","date":"2011-08-18T23:23:19.194Z","type":"message"}
+{"nick":"ryah","message":"it seems correct to me","date":"2011-08-18T23:23:39.560Z","type":"message"}
+{"nick":"ryah","message":"mjr is asking about it","date":"2011-08-18T23:23:43.231Z","type":"message"}
+{"nick":"bnoordhuis","message":"look closely :)","date":"2011-08-18T23:23:51.134Z","type":"message"}
+{"nick":"ryah","message":"i mean the fix seems correct","date":"2011-08-18T23:24:02.712Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, it is","date":"2011-08-18T23:24:08.860Z","type":"message"}
+{"nick":"bnoordhuis","message":"Connection::ReceivedShutdown was always returning true before","date":"2011-08-18T23:24:21.219Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-18T23:24:34.423Z","type":"message"}
+{"nick":"ryah","message":"that's pretty big actually :)","date":"2011-08-18T23:24:39.758Z","type":"message"}
+{"nick":"ryah","message":"maybe it has exposed another bug for mjr","date":"2011-08-18T23:25:13.991Z","type":"message"}
+{"nick":"bnoordhuis","message":"that seems likely","date":"2011-08-18T23:25:34.505Z","type":"message"}
+{"nick":"ryah","message":"which is good","date":"2011-08-18T23:25:42.853Z","type":"message"}
+{"nick":"ryah","message":"i asked him to join - hopefully we'll get some good news","date":"2011-08-18T23:29:37.102Z","type":"message"}
+{"nick":"piscisaureus","message":"you mean, a bug == good news?","date":"2011-08-18T23:33:59.741Z","type":"message"}
+{"nick":"bnoordhuis","message":"a known bug is","date":"2011-08-18T23:34:10.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"an unknown bug isn't","date":"2011-08-18T23:34:14.210Z","type":"message"}
+{"nick":"bnoordhuis","message":"can't fix unknown bugs!","date":"2011-08-18T23:34:30.044Z","type":"message"}
+{"nick":"ryah","message":"there are very very tricky unknown bugs in tls","date":"2011-08-18T23:34:53.883Z","type":"message"}
+{"nick":"ryah","message":"i had to give up on them","date":"2011-08-18T23:35:03.068Z","type":"message"}
+{"nick":"ryah","message":"but many we'll get a better examination","date":"2011-08-18T23:35:17.709Z","type":"message"}
+{"nick":"ryah","message":"s/many/maybe","date":"2011-08-18T23:35:23.972Z","type":"message"}
+{"nick":"DrPizza","message":"maybe pquerna can solve all your tls woes","date":"2011-08-18T23:35:35.786Z","type":"message"}
+{"nick":"ryah","message":"he probably could if he had the time :)","date":"2011-08-18T23:35:53.523Z","type":"message"}
+{"nick":"ryah","message":"https://groups.google.com/forum/#!topic/nodejs/cwYaZ0H7xAk","date":"2011-08-18T23:51:29.826Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm. works for me","date":"2011-08-18T23:56:15.964Z","type":"message"}
+{"nick":"piscisaureus","message":"Should I ask him about his windows version etc?","date":"2011-08-18T23:58:26.492Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes","date":"2011-08-18T23:59:17.238Z","type":"message"}

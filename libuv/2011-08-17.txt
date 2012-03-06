@@ -1,0 +1,896 @@
+{"nick":"piscisaureus","message":"igorzi: yeah fair enough","date":"2011-08-17T00:00:05.193Z","type":"message"}
+{"nick":"DrPizza","message":"is there no way to statically bind go ConnectEx, AcceptEx, etc.","date":"2011-08-17T00:00:21.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: sunos too","date":"2011-08-17T00:00:29.887Z","type":"message"}
+{"nick":"DrPizza","message":"are thy simply not exported, so that you MUST look them up by GUID?","date":"2011-08-17T00:00:30.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: so it seems windows is the outlier","date":"2011-08-17T00:00:43.631Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yeah, i remember this, and i also remember henry claiming that it wasn't the same..","date":"2011-08-17T00:00:51.913Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: in theory it could be different, we should check on an xp machine w/ ipv6 support installed","date":"2011-08-17T00:01:32.564Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: in theory machines could have a different lsp/driver for ipv6 but I have yet to encounter the first machine that doesn't use msafd for tcp","date":"2011-08-17T00:02:32.196Z","type":"message"}
+{"nick":"igorzi","message":"(if we do need both) we should still probably stash pAcceptEx or pAcceptEx6 into a static or something (to avoid the branch every time)","date":"2011-08-17T00:02:32.869Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: in a static? like in a socket field?","date":"2011-08-17T00:03:21.936Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: I don't think it would have much benefit. It would just move the branch point.","date":"2011-08-17T00:04:02.926Z","type":"message"}
+{"nick":"igorzi","message":"make \"LPFN_ACCEPTEX pAcceptExFamily\" global, and just have one branch during uv_winsock_startup()","date":"2011-08-17T00:05:30.651Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: eh how would that work?","date":"2011-08-17T00:06:10.038Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: we still need to choose either pAcceptEx or pAcceptEx on a per-socket basis or?","date":"2011-08-17T00:06:58.041Z","type":"message"}
+{"nick":"piscisaureus","message":"* \u0003\u000301pAcceptEx or pAcceptEx\u0003\u0003016","date":"2011-08-17T00:07:08.876Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: never mind.. for some reason i thought that UV_HANDLE_IPV6 is a global flag.. need to go get some food","date":"2011-08-17T00:07:41.724Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: so unbound sockets: ipv4 or dual stack?","date":"2011-08-17T00:08:32.141Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-17T00:08:45.586Z","type":"message"}
+{"nick":"piscisaureus","message":"use ipv4 for the moment","date":"2011-08-17T00:08:52.076Z","type":"message"}
+{"nick":"bnoordhuis","message":"ipv4 is easier yes","date":"2011-08-17T00:08:56.590Z","type":"message"}
+{"nick":"piscisaureus","message":"we'll deal with dualstack later","date":"2011-08-17T00:09:06.916Z","type":"message"}
+{"nick":"bnoordhuis","message":"one more thing","date":"2011-08-17T00:09:15.069Z","type":"message"}
+{"nick":"bnoordhuis","message":"what if you call uv_udp_send on a ipv6 socket?","date":"2011-08-17T00:09:26.614Z","type":"message"}
+{"nick":"bnoordhuis","message":"or vice versa, uv_udp_send6 on a ipv4 socket?","date":"2011-08-17T00:09:36.374Z","type":"message"}
+{"nick":"bnoordhuis","message":"UV_EINVAL?","date":"2011-08-17T00:09:39.158Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: sorry, i was having a brain fart.. does the rest of the change look fine?","date":"2011-08-17T00:09:39.389Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: uv_eafnosupport?","date":"2011-08-17T00:09:57.141Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay","date":"2011-08-17T00:10:07.174Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: heh. yes the rest looks good to me","date":"2011-08-17T00:10:13.048Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: we'll deal with dualstack later, in the selene era\u0003","date":"2011-08-17T00:11:25.098Z","type":"message"}
+{"nick":"piscisaureus","message":"or the http.sys era","date":"2011-08-17T00:11:36.636Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-17T00:11:41.691Z","type":"message"}
+{"nick":"piscisaureus","message":"why does no.de run 0.4.1?","date":"2011-08-17T00:12:47.287Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: like this then? https://gist.github.com/cc11217bf271d8a897c7","date":"2011-08-17T00:17:04.319Z","type":"message"}
+{"nick":"bnoordhuis","message":"the uv_af_t enum somehow doesn't sit right with me","date":"2011-08-17T00:17:18.632Z","type":"message"}
+{"nick":"bnoordhuis","message":"otoh passing in sizeof(struct sockaddr*) sucks too","date":"2011-08-17T00:17:37.808Z","type":"message"}
+{"nick":"DrPizza","message":"a type is much better than a size","date":"2011-08-17T00:18:13.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"that was my thinking too","date":"2011-08-17T00:18:27.194Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe UNIX should be PIPE btw","date":"2011-08-17T00:18:33.004Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i'll probably remove it anyway","date":"2011-08-17T00:18:47.365Z","type":"message"}
+{"nick":"piscisaureus","message":"why do we still have udp_bind?","date":"2011-08-17T00:19:32.046Z","type":"message"}
+{"nick":"DrPizza","message":"whoa, pre3 is launched and only £299?","date":"2011-08-17T00:19:35.152Z","type":"message"}
+{"nick":"DrPizza","message":"I am almost tempted to buy one just to check it out","date":"2011-08-17T00:19:41.931Z","type":"message"}
+{"nick":"piscisaureus","message":"oh that's because of the type","date":"2011-08-17T00:19:51.053Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yeah, uv_stream_t vs uv_udp_t","date":"2011-08-17T00:20:02.522Z","type":"message"}
+{"nick":"bnoordhuis","message":"you'd have to merge uv_tcp_bind and uv_pipe_bind too","date":"2011-08-17T00:20:48.873Z","type":"message"}
+{"nick":"bnoordhuis","message":"but uv_pipe_bind has a different prototype","date":"2011-08-17T00:20:56.536Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: we're saying that the struct sockaddr* is valid until the callback ends?","date":"2011-08-17T00:21:10.734Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: what function?","date":"2011-08-17T00:21:27.050Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_udp_recv_cb","date":"2011-08-17T00:21:36.020Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2011-08-17T00:21:42.119Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah - fine","date":"2011-08-17T00:22:01.783Z","type":"message"}
+{"nick":"piscisaureus","message":"looks good","date":"2011-08-17T00:22:07.044Z","type":"message"}
+{"nick":"piscisaureus","message":"let ryan have a look too","date":"2011-08-17T00:22:16.777Z","type":"message"}
+{"nick":"DrPizza","message":"doesn't a sockaddr_in know its own type?","date":"2011-08-17T00:22:21.332Z","type":"message"}
+{"nick":"DrPizza","message":"can't you just query sin_family?","date":"2011-08-17T00:22:28.429Z","type":"message"}
+{"nick":"piscisaureus","message":"I was saying that too but bnoordhuis says it can't be done","date":"2011-08-17T00:22:44.951Z","type":"message"}
+{"nick":"DrPizza","message":"huh really?","date":"2011-08-17T00:22:51.676Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... the offset of sin_family may be different in sockaddr_in and sockaddr_in6","date":"2011-08-17T00:23:27.080Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's not the case on linux and probably not on the bsds either","date":"2011-08-17T00:23:53.028Z","type":"message"}
+{"nick":"bnoordhuis","message":"but still...","date":"2011-08-17T00:23:57.262Z","type":"message"}
+{"nick":"DrPizza","message":"it isn't in windows either","date":"2011-08-17T00:24:00.918Z","type":"message"}
+{"nick":"piscisaureus","message":"I thought the whole purpose of struct sockaddr* was to have a base class for sockaddr_* types","date":"2011-08-17T00:24:11.564Z","type":"message"}
+{"nick":"DrPizza","message":"you would have to be a vindictive bastard to do that IMO","date":"2011-08-17T00:24:20.586Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: yes me too","date":"2011-08-17T00:24:36.477Z","type":"message"}
+{"nick":"DrPizza","message":"just sa_family and then opaque data","date":"2011-08-17T00:24:41.597Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-17T00:24:48.089Z","type":"message"}
+{"nick":"DrPizza","message":"and then you can cast the pointer to sockaddr_in or sockaddr_in6","date":"2011-08-17T00:24:50.443Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose i can live with that","date":"2011-08-17T00:24:59.389Z","type":"message"}
+{"nick":"piscisaureus","message":"on windows it's the same offset as well","date":"2011-08-17T00:25:11.641Z","type":"message"}
+{"nick":"bnoordhuis","message":"first field in the struct?","date":"2011-08-17T00:25:19.161Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-17T00:25:21.863Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-17T00:25:23.288Z","type":"message"}
+{"nick":"bnoordhuis","message":"count of hands? all in favour raise your hand?","date":"2011-08-17T00:25:42.757Z","type":"message"}
+{"nick":"piscisaureus","message":"it may even be in the berekely sockets specification","date":"2011-08-17T00:25:42.960Z","type":"message"}
+{"nick":"piscisaureus","message":"+1 for sa_family","date":"2011-08-17T00:25:51.434Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, there's a rfc that specifies it","date":"2011-08-17T00:25:53.717Z","type":"message"}
+{"nick":"DrPizza","message":"+1 for sa_family","date":"2011-08-17T00:25:55.711Z","type":"message"}
+{"nick":"bnoordhuis","message":"+1 too","date":"2011-08-17T00:25:58.692Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-08-17T00:26:01.918Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, let me rework it","date":"2011-08-17T00:26:15.963Z","type":"message"}
+{"nick":"piscisaureus","message":"so I assume the others disagree","date":"2011-08-17T00:26:28.399Z","type":"message"}
+{"nick":"piscisaureus","message":"that makes -10 (not counting the bots)","date":"2011-08-17T00:26:53.645Z","type":"message"}
+{"nick":"DrPizza","message":"I think more likely they're just not paying attention","date":"2011-08-17T00:27:11.814Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u0002e67b9a3\u000f \u000310\u000f/ (4 files)\u0002:\u000f Skip IOCP for tcp operations that complete synchronously - http://bit.ly/nD82FW","date":"2011-08-17T00:27:38.143Z","type":"message"}
+{"nick":"ryah","message":"igorzi++","date":"2011-08-17T00:28:11.028Z","type":"message"}
+{"nick":"ryah","message":"igorzi:  does that break the win2k3 build?","date":"2011-08-17T00:28:42.371Z","type":"message"}
+{"nick":"piscisaureus","message":"it shouldn't","date":"2011-08-17T00:29:07.996Z","type":"message"}
+{"nick":"igorzi","message":"igorzi: no, it shouldn't","date":"2011-08-17T00:29:09.621Z","type":"message"}
+{"nick":"igorzi","message":"ryah: it souldn't","date":"2011-08-17T00:29:16.714Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: get some food :-)","date":"2011-08-17T00:29:28.032Z","type":"message"}
+{"nick":"igorzi","message":"yeah, that's about time :)","date":"2011-08-17T00:29:38.164Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: maybe merge uv_udp_send and uv_udp_send6 too?","date":"2011-08-17T00:30:10.816Z","type":"message"}
+{"nick":"bnoordhuis","message":"if we're going to use sa_family...","date":"2011-08-17T00:30:18.276Z","type":"message"}
+{"nick":"bnoordhuis","message":"no wait, the convention is to pass by value, not reference","date":"2011-08-17T00:30:42.534Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: yeah why not. you'd have to switch to passing by reference then btw","date":"2011-08-17T00:30:47.106Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, but that flies in the face of tcp","date":"2011-08-17T00:31:05.610Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: why?","date":"2011-08-17T00:31:18.178Z","type":"message"}
+{"nick":"piscisaureus","message":"you mean, consistency-wise?","date":"2011-08-17T00:31:35.411Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: yes","date":"2011-08-17T00:31:39.480Z","type":"message"}
+{"nick":"bnoordhuis","message":"and it's slightly annoying you can't use uv_ipv4_addr anymore","date":"2011-08-17T00:32:02.386Z","type":"message"}
+{"nick":"bnoordhuis","message":"not directly anyway","date":"2011-08-17T00:32:07.257Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: maybe we should invent struct uv_address that accommodates either ipv6 or ipv4","date":"2011-08-17T00:32:16.337Z","type":"message"}
+{"nick":"bnoordhuis","message":"that thought crossed my mind","date":"2011-08-17T00:32:44.638Z","type":"message"}
+{"nick":"DrPizza","message":"char[max(sizeof(struct sockaddr_in), sizeof(struct sockaddr_in6] ;_;","date":"2011-08-17T00:32:50.481Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's layering things on top","date":"2011-08-17T00:32:51.904Z","type":"message"}
+{"nick":"bnoordhuis","message":"plus you'd probably be copying stuff in and out all the time","date":"2011-08-17T00:33:09.966Z","type":"message"}
+{"nick":"DrPizza","message":"or just cast a pointer","date":"2011-08-17T00:33:28.319Z","type":"message"}
+{"nick":"DrPizza","message":"unions too","date":"2011-08-17T00:33:38.640Z","type":"message"}
+{"nick":"DrPizza","message":"I don't know which is more illegal","date":"2011-08-17T00:33:49.369Z","type":"message"}
+{"nick":"DrPizza","message":"accessing the \"wrong\" union member","date":"2011-08-17T00:33:54.808Z","type":"message"}
+{"nick":"DrPizza","message":"or casting a char[]","date":"2011-08-17T00:33:58.746Z","type":"message"}
+{"nick":"bnoordhuis","message":"strict aliasing rules you mean?","date":"2011-08-17T00:34:09.116Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can always cast to char","date":"2011-08-17T00:34:16.912Z","type":"message"}
+{"nick":"DrPizza","message":"yes true","date":"2011-08-17T00:34:21.031Z","type":"message"}
+{"nick":"bnoordhuis","message":"er, alias to char","date":"2011-08-17T00:34:22.497Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-17T00:34:25.308Z","type":"message"}
+{"nick":"DrPizza","message":" maybe accessing  the wrong union if the declarations overlap is allowed anyway","date":"2011-08-17T00:35:16.311Z","type":"message"}
+{"nick":"DrPizza","message":"it's certainly safe","date":"2011-08-17T00:35:20.276Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, it's technically a violation but all compilers allow it","date":"2011-08-17T00:36:21.844Z","type":"message"}
+{"nick":"piscisaureus","message":"we could just have","date":"2011-08-17T00:36:31.941Z","type":"message"}
+{"nick":"piscisaureus","message":"struct uv_address {","date":"2011-08-17T00:36:32.101Z","type":"message"}
+{"nick":"piscisaureus","message":"  enum uv_family family;","date":"2011-08-17T00:36:32.102Z","type":"message"}
+{"nick":"piscisaureus","message":"  union {","date":"2011-08-17T00:36:32.102Z","type":"message"}
+{"nick":"piscisaureus","message":"    struct sockaddr_in in;","date":"2011-08-17T00:36:32.102Z","type":"message"}
+{"nick":"piscisaureus","message":"    \u0003struct sockaddr_in6 in6;\u0003","date":"2011-08-17T00:36:32.102Z","type":"message"}
+{"nick":"piscisaureus","message":"  }","date":"2011-08-17T00:36:32.261Z","type":"message"}
+{"nick":"piscisaureus","message":"}","date":"2011-08-17T00:36:33.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: rather: union uv_address { struct sockaddr_in in; struct sockaddr_in6 in6; }","date":"2011-08-17T00:37:19.465Z","type":"message"}
+{"nick":"DrPizza","message":"union uv_address { u_short family; struct sockaddr_in in; struct sockaddr_in6 in6; }","date":"2011-08-17T00:38:08.932Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: #define UV_FAMILY(addr) (addr).in.sin_family","date":"2011-08-17T00:38:17.165Z","type":"message"}
+{"nick":"DrPizza","message":"addr.family","date":"2011-08-17T00:38:29.487Z","type":"message"}
+{"nick":"bnoordhuis","message":"like that","date":"2011-08-17T00:38:44.437Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza is probably right","date":"2011-08-17T00:38:44.639Z","type":"message"}
+{"nick":"bnoordhuis","message":"i wonder if you'll run into alignment issues","date":"2011-08-17T00:39:01.229Z","type":"message"}
+{"nick":"bnoordhuis","message":"no","date":"2011-08-17T00:39:17.402Z","type":"message"}
+{"nick":"DrPizza","message":"shold be a u_short for all 3 union members, so one would hope it has the right alignment for a u_short","date":"2011-08-17T00:39:45.338Z","type":"message"}
+{"nick":"bnoordhuis","message":"but let's go with uv_udp_send and uv_udp_send6 for now","date":"2011-08-17T00:40:22.065Z","type":"message"}
+{"nick":"bnoordhuis","message":"rewriting everything to use uv_address is a pretty big change in itself","date":"2011-08-17T00:40:39.533Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_address uv_inet_pton(const char* s) <- parses either ipv4 and ipv6","date":"2011-08-17T00:41:01.760Z","type":"message"}
+{"nick":"piscisaureus","message":"int uv_inet_ntop(uv_address address, char* buf, size_t len)","date":"2011-08-17T00:41:01.922Z","type":"message"}
+{"nick":"bnoordhuis","message":"and i want to get this stuff done before thursday night","date":"2011-08-17T00:41:01.922Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: https://gist.github.com/cc11217bf271d8a897c7","date":"2011-08-17T00:42:16.384Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: one more issue btw","date":"2011-08-17T00:43:42.275Z","type":"message"}
+{"nick":"bnoordhuis","message":"the send methods may need to save state","date":"2011-08-17T00:43:52.853Z","type":"message"}
+{"nick":"bnoordhuis","message":"and that should be alloc'ed by the libuv consumer","date":"2011-08-17T00:44:05.971Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-17T00:44:13.859Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_send_t?","date":"2011-08-17T00:44:19.837Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_sendto_t?","date":"2011-08-17T00:44:26.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, probably","date":"2011-08-17T00:44:47.320Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think ryah wanted it to be a subclass of uv_req_t","date":"2011-08-17T00:45:01.302Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I think it should be recvfrom_start and recvfrom_stop","date":"2011-08-17T00:45:06.981Z","type":"message"}
+{"nick":"piscisaureus","message":"I agree","date":"2011-08-17T00:45:09.329Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: explain","date":"2011-08-17T00:45:40.168Z","type":"message"}
+{"nick":"piscisaureus","message":"oh hmm maybe not stop()","date":"2011-08-17T00:46:11.517Z","type":"message"}
+{"nick":"piscisaureus","message":"in doubt again","date":"2011-08-17T00:46:39.831Z","type":"message"}
+{"nick":"piscisaureus","message":"we have read_start and read_stop","date":"2011-08-17T00:46:45.695Z","type":"message"}
+{"nick":"piscisaureus","message":"but we don't have listen_stop - it never stops listening, but just accepts until the server is closed","date":"2011-08-17T00:47:19.798Z","type":"message"}
+{"nick":"piscisaureus","message":"so yeah recv is okay","date":"2011-08-17T00:47:25.377Z","type":"message"}
+{"nick":"bnoordhuis","message":"well... it's a fair point","date":"2011-08-17T00:47:43.381Z","type":"message"}
+{"nick":"bnoordhuis","message":"ponder, ponder","date":"2011-08-17T00:47:47.772Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: one more question","date":"2011-08-17T00:47:52.709Z","type":"message"}
+{"nick":"piscisaureus","message":"how does the user know it has got the *complete* message?","date":"2011-08-17T00:48:03.303Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you don't","date":"2011-08-17T00:48:12.754Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's up to the user to implement some kind of message protocol","date":"2011-08-17T00:48:41.317Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: so it is the user's responsibility to supply a sufficiently big buffer when alloc_cb is called?","date":"2011-08-17T00:49:14.971Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: doesn't matter, we can recvmsg() until the kernel signals EAGAIN","date":"2011-08-17T00:49:52.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"besides, dgrams can't be larger than the MTU","date":"2011-08-17T00:50:06.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"so the buffer is never very large","date":"2011-08-17T00:50:21.921Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but - so how will the user know where the boundary between messages is?","date":"2011-08-17T00:50:28.005Z","type":"message"}
+{"nick":"piscisaureus","message":"or it doesn't?","date":"2011-08-17T00:50:33.917Z","type":"message"}
+{"nick":"bnoordhuis","message":"it doesn't :)","date":"2011-08-17T00:50:37.995Z","type":"message"}
+{"nick":"piscisaureus","message":"oh ok","date":"2011-08-17T00:50:49.843Z","type":"message"}
+{"nick":"DrPizza","message":"will I be able to do some kind of uv_udp_recv(..., malloc(my_fixed_message_length), my_fixed_message_length, my_callback), and only have my callback called whne the buffer is filled?","date":"2011-08-17T00:50:58.950Z","type":"message"}
+{"nick":"bnoordhuis","message":"DrPizza: no","date":"2011-08-17T00:51:07.842Z","type":"message"}
+{"nick":"piscisaureus","message":"no","date":"2011-08-17T00:51:23.268Z","type":"message"}
+{"nick":"DrPizza","message":"boo.","date":"2011-08-17T00:51:28.494Z","type":"message"}
+{"nick":"bnoordhuis","message":"use tcp :)","date":"2011-08-17T00:51:33.792Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: but it's sufficiently easy to implement though","date":"2011-08-17T00:51:43.757Z","type":"message"}
+{"nick":"piscisaureus","message":"the alloc cb should keep some state","date":"2011-08-17T00:52:14.472Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: oh I mean I know I can manage the buffers myself to make sure they're the right size before trying to process them","date":"2011-08-17T00:52:15.789Z","type":"message"}
+{"nick":"DrPizza","message":"it's just nice to not have to","date":"2011-08-17T00:52:20.785Z","type":"message"}
+{"nick":"DrPizza","message":"or rather, it's nice to have that fairly common task standardized","date":"2011-08-17T00:52:33.769Z","type":"message"}
+{"nick":"bnoordhuis","message":"DrPizza: you'd almost never use udp in that case","date":"2011-08-17T00:52:51.829Z","type":"message"}
+{"nick":"DrPizza","message":"true","date":"2011-08-17T00:53:04.003Z","type":"message"}
+{"nick":"DrPizza","message":"though it'd be nice for tcp too!","date":"2011-08-17T00:53:07.481Z","type":"message"}
+{"nick":"bnoordhuis","message":"ask ryah :)","date":"2011-08-17T00:53:13.133Z","type":"message"}
+{"nick":"bnoordhuis","action":"is getting better and better in delegating","date":"2011-08-17T00:53:26.209Z","type":"action"}
+{"nick":"DrPizza","message":"haha","date":"2011-08-17T00:53:29.643Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: you should have come to nodecamp in june.","date":"2011-08-17T00:54:01.312Z","type":"message"}
+{"nick":"piscisaureus","message":"This was set in stone there muhahaha","date":"2011-08-17T00:54:09.054Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: why","date":"2011-08-17T00:54:09.761Z","type":"message"}
+{"nick":"DrPizza","message":"oh","date":"2011-08-17T00:54:13.467Z","type":"message"}
+{"nick":"DrPizza","message":":(","date":"2011-08-17T00:54:14.223Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: but again - writing an alloc_cb that does this is not hard","date":"2011-08-17T00:54:38.880Z","type":"message"}
+{"nick":"DrPizza","message":"hmm","date":"2011-08-17T00:54:51.219Z","type":"message"}
+{"nick":"DrPizza","message":"do alloc_cbs have anywhere useful to stash state?","date":"2011-08-17T00:55:02.479Z","type":"message"}
+{"nick":"piscisaureus","message":"alloc_cbs get the uv_handle as an argument","date":"2011-08-17T00:55:18.892Z","type":"message"}
+{"nick":"DrPizza","message":"oh so they can stuff it in the void*","date":"2011-08-17T00:55:30.174Z","type":"message"}
+{"nick":"piscisaureus","message":"so you can use void* uv_handle.data to stash whatever data you want","date":"2011-08-17T00:55:42.560Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-17T00:55:47.293Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: we selected this interface so the user has maximum flexibility to layer it's own memory management on top","date":"2011-08-17T00:56:32.181Z","type":"message"}
+{"nick":"piscisaureus","message":"for node we do a slab allocator","date":"2011-08-17T00:56:41.574Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: uv_recv_start and uv_recv_stop maybe isn't an altogether bad idea","date":"2011-08-17T00:57:29.461Z","type":"message"}
+{"nick":"bnoordhuis","message":"with uv_udp_recv you can start a listener for incoming data","date":"2011-08-17T00:57:50.388Z","type":"message"}
+{"nick":"bnoordhuis","message":"but you can't stop it until you uv_close the handle","date":"2011-08-17T00:58:00.626Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: which is also true for uv_listen btw","date":"2011-08-17T00:58:30.317Z","type":"message"}
+{"nick":"piscisaureus","message":"the question: is recv more like read or more like listen :-)","date":"2011-08-17T00:58:40.314Z","type":"message"}
+{"nick":"bnoordhuis","message":"then again, what use is a socket where you don't accept incoming data?","date":"2011-08-17T00:58:41.493Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: send data","date":"2011-08-17T00:58:49.711Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, right","date":"2011-08-17T00:59:13.957Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose we should have start and stop functions then","date":"2011-08-17T00:59:26.828Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder why create a socket to send dgrams in the first place","date":"2011-08-17T00:59:31.452Z","type":"message"}
+{"nick":"piscisaureus","message":"but that also is a theoretical question","date":"2011-08-17T00:59:41.364Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's kind of silly, isn't it?","date":"2011-08-17T00:59:52.261Z","type":"message"}
+{"nick":"piscisaureus","message":"yes it's stupid","date":"2011-08-17T00:59:57.475Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but yay, +1 on recv_start/stop","date":"2011-08-17T01:00:17.984Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, let's go with that","date":"2011-08-17T01:00:29.702Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll update the gist","date":"2011-08-17T01:00:42.510Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: MSG_PARTIAL?","date":"2011-08-17T01:01:41.474Z","type":"message"}
+{"nick":"piscisaureus","message":"or is that not for upd?","date":"2011-08-17T01:01:47.460Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, it's for udp","date":"2011-08-17T01:01:54.161Z","type":"message"}
+{"nick":"bnoordhuis","message":"eh wait, i'm thinking of MSG_TRUNC","date":"2011-08-17T01:02:11.540Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe that's a windows-only thing","date":"2011-08-17T01:02:46.553Z","type":"message"}
+{"nick":"piscisaureus","message":"it's for detecting message boundaries","date":"2011-08-17T01:02:55.588Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: maybe it's the same","date":"2011-08-17T01:03:16.577Z","type":"message"}
+{"nick":"bnoordhuis","message":"MSG_TRUNC returns the real size of the incoming packet","date":"2011-08-17T01:03:27.487Z","type":"message"}
+{"nick":"piscisaureus","message":"oh","date":"2011-08-17T01:03:33.424Z","type":"message"}
+{"nick":"bnoordhuis","message":"which might be smaller or larger than the buffer you passed to the kernel","date":"2011-08-17T01:03:40.319Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: windows sets a MSG_PARTIAL flag if there's more to retrieve in a subsequent read operation","date":"2011-08-17T01:04:43.433Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right","date":"2011-08-17T01:04:53.669Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's MSG_TRUNC too - but in the returned flags field","date":"2011-08-17T01:05:09.866Z","type":"message"}
+{"nick":"graydon","reason":"Quit: Leaving.","date":"2011-08-17T01:05:17.196Z","type":"quit"}
+{"nick":"piscisaureus","message":"I wonder if we could pass that to the user somehow","date":"2011-08-17T01:05:24.971Z","type":"message"}
+{"nick":"piscisaureus","message":"so it knows the boundaries","date":"2011-08-17T01:05:34.247Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm, that cookie thing","date":"2011-08-17T01:05:58.927Z","type":"message"}
+{"nick":"bnoordhuis","message":"if (uv_udp_truncated(cookie)) { }","date":"2011-08-17T01:06:12.881Z","type":"message"}
+{"nick":"bnoordhuis","message":"or pass a flags field / struct field to the recv callback","date":"2011-08-17T01:06:46.783Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: why not use uv_udp_truncated(handle) then?","date":"2011-08-17T01:06:46.989Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, that's just as easy","date":"2011-08-17T01:07:08.054Z","type":"message"}
+{"nick":"piscisaureus","message":"a flags field will suffice","date":"2011-08-17T01:07:12.138Z","type":"message"}
+{"nick":"bnoordhuis","message":"UV_UDP_PARTIAL?","date":"2011-08-17T01:07:27.060Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah why not?","date":"2011-08-17T01:07:40.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"for parity's sake i want a UV_UDP_IMPARTIAL flag too","date":"2011-08-17T01:07:54.426Z","type":"message"}
+{"nick":"DrPizza","message":"hah","date":"2011-08-17T01:08:03.690Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-08-17T01:08:04.039Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus: what does read_start do when there's already a read callback registered?","date":"2011-08-17T01:09:30.900Z","type":"message"}
+{"nick":"bnoordhuis","message":"disarm the old one, continue with the new one?","date":"2011-08-17T01:09:37.216Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: no, this: http://www.youtube.com/watch?v=R7fFCJ5ek6A&feature=related","date":"2011-08-17T01:11:53.780Z","type":"message"}
+{"nick":"piscisaureus","message":"piscisaureus: it returns UV_EALREADY I think","date":"2011-08-17T01:12:23.141Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: \u0003\u000301it returns UV_EALREADY I think\u0003, like listen() and read_start()","date":"2011-08-17T01:12:37.992Z","type":"message"}
+{"nick":"piscisaureus","message":"at least that's what happens on windows","date":"2011-08-17T01:12:50.818Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, that's different from unix right now","date":"2011-08-17T01:13:26.549Z","type":"message"}
+{"nick":"bnoordhuis","message":"uv-unix just updates the read_cb and alloc_cb fields","date":"2011-08-17T01:14:16.762Z","type":"message"}
+{"nick":"bnoordhuis","message":"(potential memory leak that)","date":"2011-08-17T01:14:31.526Z","type":"message"}
+{"nick":"ryah","message":"http://jobs.nodejs.org/a/jbb/job-details/544636 <-- justin.tv looking for node.js people","date":"2011-08-17T01:14:44.715Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: can we split up uv-unix.c ?","date":"2011-08-17T01:14:55.675Z","type":"message"}
+{"nick":"piscisaureus","message":"oh, i'll apply","date":"2011-08-17T01:14:55.870Z","type":"message"}
+{"nick":"piscisaureus","message":"by all","date":"2011-08-17T01:14:56.954Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm applying!","date":"2011-08-17T01:14:58.743Z","type":"message"}
+{"nick":"piscisaureus","message":"*bye","date":"2011-08-17T01:14:59.983Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: yes please :)","date":"2011-08-17T01:15:04.055Z","type":"message"}
+{"nick":"ryah","message":"is it going to fuck it up if i do that now?","date":"2011-08-17T01:15:25.091Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-08-17T01:15:29.191Z","type":"message"}
+{"nick":"ryah","message":"er","date":"2011-08-17T01:15:30.091Z","type":"message"}
+{"nick":"ryah","message":"fuck you up","date":"2011-08-17T01:15:33.379Z","type":"message"}
+{"nick":"ryah","message":"okay","date":"2011-08-17T01:15:35.850Z","type":"message"}
+{"nick":"ryah","message":"let's do it after the udp","date":"2011-08-17T01:15:40.714Z","type":"message"}
+{"nick":"bnoordhuis","message":"let's","date":"2011-08-17T01:15:49.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"is justin.tv special?","date":"2011-08-17T01:16:06.405Z","type":"message"}
+{"nick":"piscisaureus","message":"finally some sanity at the unix front","date":"2011-08-17T01:16:11.324Z","type":"message"}
+{"nick":"ryah","message":"kind of big","date":"2011-08-17T01:16:14.146Z","type":"message"}
+{"nick":"bnoordhuis","message":"linkedin's bigger i think?","date":"2011-08-17T01:16:58.792Z","type":"message"}
+{"nick":"bnoordhuis","message":"more mainstream anyway","date":"2011-08-17T01:17:19.155Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/libuv/issues/147","date":"2011-08-17T01:17:26.168Z","type":"message"}
+{"nick":"bnoordhuis","message":"and let's not forget github!","date":"2011-08-17T01:17:26.604Z","type":"message"}
+{"nick":"ryah","message":"crazy fog just surrounded my building","date":"2011-08-17T01:18:10.814Z","type":"message"}
+{"nick":"ryah","message":"now its gone","date":"2011-08-17T01:18:19.109Z","type":"message"}
+{"nick":"bnoordhuis","message":"you should write a book, ryah","date":"2011-08-17T01:18:31.615Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: so you really had an earthquake in the morning?","date":"2011-08-17T01:18:34.556Z","type":"message"}
+{"nick":"bnoordhuis","message":"you're a born story teller","date":"2011-08-17T01:18:37.031Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-17T01:18:39.853Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: not sure - the whole building was shaking","date":"2011-08-17T01:18:48.750Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: if its not an earthquake you should leave the building","date":"2011-08-17T01:19:14.437Z","type":"message"}
+{"nick":"ryah","message":"nothing on the map","date":"2011-08-17T01:19:18.906Z","type":"message"}
+{"nick":"ryah","message":"i guess not","date":"2011-08-17T01:19:25.420Z","type":"message"}
+{"nick":"ryah","message":"when there's an earthquake you can feel the building swing a bit","date":"2011-08-17T01:19:44.323Z","type":"message"}
+{"nick":"piscisaureus","message":"I would not stay if my apartment flat did that","date":"2011-08-17T01:20:35.648Z","type":"message"}
+{"nick":"piscisaureus","message":"well, not if it was heavily shaking without a reasonable explanation anyway","date":"2011-08-17T01:21:10.309Z","type":"message"}
+{"nick":"bnoordhuis","message":"what's a reasonable explanation for heavy shaking in a building besides an earthquake?","date":"2011-08-17T01:21:49.911Z","type":"message"}
+{"nick":"DrPizza","message":"a REALLY big truck passing outside.","date":"2011-08-17T01:22:06.401Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2011-08-17T01:22:13.641Z","type":"message"}
+{"nick":"DrPizza","message":"or a huge Anonymous BART protest","date":"2011-08-17T01:22:32.473Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-17T01:22:49.318Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: typedef void (*uv_udp_recv_cb)(uv_udp_t* handle, ssize_t nread, uv_buf_t buf, struct sockaddr* addr, int flags);","date":"2011-08-17T01:28:30.786Z","type":"message"}
+{"nick":"bnoordhuis","message":"should that become a request struct as well? it's rather unwieldy this way","date":"2011-08-17T01:28:43.545Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: ^","date":"2011-08-17T01:29:16.954Z","type":"message"}
+{"nick":"ryah","message":"no","date":"2011-08-17T01:30:42.633Z","type":"message"}
+{"nick":"bnoordhuis","message":"explain","date":"2011-08-17T01:31:03.012Z","type":"message"}
+{"nick":"ryah","message":"the req is somehow about i/o that will happen","date":"2011-08-17T01:31:03.617Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, not that has happened","date":"2011-08-17T01:31:19.121Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-17T01:32:14.117Z","type":"message"}
+{"nick":"ryah","message":"each message can have flags?","date":"2011-08-17T01:32:22.901Z","type":"message"}
+{"nick":"ryah","message":"what sort of flags?","date":"2011-08-17T01:32:40.183Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: PARTIAL for example","date":"2011-08-17T01:33:24.999Z","type":"message"}
+{"nick":"ryah","message":"http://dtrace.org/blogs/rm/2011/08/16/visualizing-kvm/ ","date":"2011-08-17T01:33:26.039Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's MSG_TRUNC on unices","date":"2011-08-17T01:33:31.141Z","type":"message"}
+{"nick":"ryah","message":"^-- rmustacc","date":"2011-08-17T01:33:33.501Z","type":"message"}
+{"nick":"bnoordhuis","message":"that looks sweet","date":"2011-08-17T01:33:52.138Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm beginning to cave in","date":"2011-08-17T01:34:06.837Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: read and listen doesn't use a req. recv shouldn't either","date":"2011-08-17T01:34:11.528Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah piscisaureus: battle it out","date":"2011-08-17T01:34:27.917Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh wait, recv","date":"2011-08-17T01:34:39.899Z","type":"message"}
+{"nick":"bnoordhuis","message":"no okay","date":"2011-08-17T01:34:41.290Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: also - multiple send's can be queued up but not recv's","date":"2011-08-17T01:34:58.143Z","type":"message"}
+{"nick":"piscisaureus","message":"there's only one recv at a time","date":"2011-08-17T01:35:03.474Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2011-08-17T01:35:14.861Z","type":"message"}
+{"nick":"bnoordhuis","message":"might still be worthwhile to wrap the arguments in a struct","date":"2011-08-17T01:35:25.688Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I don't think it's necessary. But if you do, just pass the struct as an argument","date":"2011-08-17T01:36:28.756Z","type":"message"}
+{"nick":"piscisaureus","message":"or pointer","date":"2011-08-17T01:36:34.195Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, as a pointer","date":"2011-08-17T01:36:40.581Z","type":"message"}
+{"nick":"bnoordhuis","message":"the reason i mention a struct","date":"2011-08-17T01:36:49.104Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that on unices we'll probably want to pass aux data","date":"2011-08-17T01:37:02.242Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: https://gist.github.com/cc11217bf271d8a897c7","date":"2011-08-17T01:43:20.317Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: nice","date":"2011-08-17T01:54:48.336Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: final nit","date":"2011-08-17T01:54:55.757Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what type do we use for a flags field?","date":"2011-08-17T01:55:05.190Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you have something in mind?","date":"2011-08-17T01:55:23.897Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's an int now btw","date":"2011-08-17T01:55:40.309Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: u....... int?","date":"2011-08-17T01:55:48.046Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: ?","date":"2011-08-17T01:56:01.053Z","type":"message"}
+{"nick":"piscisaureus","message":"ok","date":"2011-08-17T01:56:07.489Z","type":"message"}
+{"nick":"piscisaureus","message":"make it unsigned","date":"2011-08-17T01:56:10.448Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure - but why?","date":"2011-08-17T01:56:23.399Z","type":"message"}
+{"nick":"piscisaureus","message":"well ok","date":"2011-08-17T01:57:13.492Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe it doesn't matter","date":"2011-08-17T01:57:18.401Z","type":"message"}
+{"nick":"DrPizza","message":"because signed types are generally annoying","date":"2011-08-17T01:57:24.839Z","type":"message"}
+{"nick":"piscisaureus","message":"bitwise arithmetic and signed numbers are not good style","date":"2011-08-17T01:57:50.012Z","type":"message"}
+{"nick":"bnoordhuis","message":"bit shifting no","date":"2011-08-17T01:57:59.110Z","type":"message"}
+{"nick":"bnoordhuis","message":"bit or doesn't matter","date":"2011-08-17T01:58:07.414Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't mind making it unsigned though","date":"2011-08-17T01:58:17.081Z","type":"message"}
+{"nick":"DrPizza","message":"I think it's pretty bad style to use signed types for flags","date":"2011-08-17T01:58:23.568Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah? why?","date":"2011-08-17T01:58:42.562Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't see the problem as long as you don't bit shift","date":"2011-08-17T01:59:03.714Z","type":"message"}
+{"nick":"DrPizza","message":"because it means you can't bitshift","date":"2011-08-17T01:59:20.534Z","type":"message"}
+{"nick":"bnoordhuis","message":"some people see that as a feature","date":"2011-08-17T02:00:06.635Z","type":"message"}
+{"nick":"piscisaureus","message":"ok. let's do something relaxing for 15 minutes","date":"2011-08-17T02:20:09.912Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 246 seconds","date":"2011-08-17T02:35:49.552Z","type":"quit"}
+{"nick":"piscisaureus","message":"does somebody already support gzip-ing http responses in node?","date":"2011-08-17T02:48:25.722Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2011-08-17T03:01:41.390Z","type":"quit"}
+{"nick":"ryah","message":"piscisaureus: we want gzip support in core","date":"2011-08-17T03:40:14.533Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I know, I was just wondering how people dealt with this so far","date":"2011-08-17T03:41:15.378Z","type":"message"}
+{"nick":"piscisaureus","message":"I mean, gzip-ing web pages is pretty common and useful too","date":"2011-08-17T03:41:32.902Z","type":"message"}
+{"nick":"piscisaureus","message":"anyway, im gone","date":"2011-08-17T03:49:01.249Z","type":"message"}
+{"nick":"ryah","message":"later","date":"2011-08-17T03:49:05.948Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-17T05:50:30.278Z","type":"join"}
+{"nick":"isaacs","reason":"Client Quit","date":"2011-08-17T05:52:11.991Z","type":"quit"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002ed11883\u0002 \u000f/ include/uv.h \u0002:\u000f Improve docs - http://bit.ly/oygeNE","date":"2011-08-17T09:44:00.000Z","type":"message"}
+{"nick":"ryah","message":"im 70% throughuv_loop_t patch","date":"2011-08-17T12:48:00.000Z","type":"message"}
+{"nick":"ryah","message":"no sharing of handles","date":"2011-08-17T12:48:00.000Z","type":"message"}
+{"nick":"ryah","message":"just namespacing","date":"2011-08-17T12:48:00.000Z","type":"message"}
+{"nick":"ryah","message":"unix only","date":"2011-08-17T12:48:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Jeroen Janssen\u000f \u000307master\u000f * r\u00020883b3d\u0002 \u000f/ src/win/pipe.c \u0002:\u0002 remove unused variables - http://bit.ly/qcpG0X","date":"2011-08-17T14:00:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Jeroen Janssen\u000f \u000307master\u000f * r\u0002507c4cc\u0002 \u000f/ (3 files in 2 dirs)\u0002:\u0002 fixes for unsigned/signed comparison - http://bit.ly/o9JBGm","date":"2011-08-17T14:00:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Jeroen Janssen\u000f \u000307master\u000f * r\u0002a51f376\u0002 \u000f/ src/win/internal.h \u0002:\u0002 added missing prototype for uv_process_pipe_shutdown_req - http://bit.ly/n3S1Il","date":"2011-08-17T14:00:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Jeroen Janssen\u000f \u000307master\u000f * r\u00026b27bf9\u0002 \u000f/ src/win/req.c \u0002:\u0002 uv_process_pipe_shutdown_req call should match prototype - http://bit.ly/nGKrXJ","date":"2011-08-17T14:00:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Bert Belder\u000f \u000307master\u000f * r\u0002f71acf1\u0002\u000f/ AUTHORS \u0002:\u0002 Update AUTHORS - http://bit.ly/pU0bA0","date":"2011-08-17T14:42:00.000Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u0002 \u000303Bert Belder\u000f \u000307master\u000f * r\u0002cc5aa51\u0002\u000f/ AUTHORS \u0002:\u0002 Small correction to AUTHORS - http://bit.ly/rjbGc6\u0003","date":"2011-08-17T15:00:00.000Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: thanks for doing the authors","date":"2011-08-17T17:00:32.913Z","type":"message"}
+{"nick":"piscisaureus","message":"np","date":"2011-08-17T17:02:29.864Z","type":"message"}
+{"nick":"piscisaureus","message":"node's ATHORS needs some love as well I think","date":"2011-08-17T17:03:17.094Z","type":"message"}
+{"nick":"piscisaureus","message":"`git log --date-order --reverse --pretty=format:\"%an <%ae>\" --branches=v0.2,v0.4,master | uniq`","date":"2011-08-17T17:06:25.525Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-17T17:06:41.095Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: tools/updateAuthors.awk","date":"2011-08-17T17:06:48.968Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: im doing multiplicity","date":"2011-08-17T17:07:40.099Z","type":"message"}
+{"nick":"piscisaureus","message":"oh, nice","date":"2011-08-17T17:07:47.681Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: what's the interface?","date":"2011-08-17T17:08:00.886Z","type":"message"}
+{"nick":"ryah","message":"https://gist.github.com/fb8fafb1c3684e7d04a7","date":"2011-08-17T17:08:06.711Z","type":"message"}
+{"nick":"ryah","message":"maybe it's better to see a diff","date":"2011-08-17T17:08:38.586Z","type":"message"}
+{"nick":"piscisaureus","message":"eh, yeah :-)","date":"2011-08-17T17:08:56.588Z","type":"message"}
+{"nick":"ryah","message":"https://gist.github.com/3e59c81f98f21ccd72a7","date":"2011-08-17T17:09:11.642Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: will multiplicitly be optional or always on?","date":"2011-08-17T17:10:21.468Z","type":"message"}
+{"nick":"ryah","message":"always on","date":"2011-08-17T17:10:32.597Z","type":"message"}
+{"nick":"ryah","message":"do you think that's bad?","date":"2011-08-17T17:14:19.577Z","type":"message"}
+{"nick":"piscisaureus","message":"I dont know","date":"2011-08-17T17:17:42.984Z","type":"message"}
+{"nick":"piscisaureus","message":"Why does Marc Lehman think it's bad?","date":"2011-08-17T17:17:56.245Z","type":"message"}
+{"nick":"piscisaureus","message":"Maybe we should have a uv_idle benchmark","date":"2011-08-17T17:18:35.904Z","type":"message"}
+{"nick":"piscisaureus","message":"How many loop iterations can we process per second?","date":"2011-08-17T17:19:01.792Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: because he's insane","date":"2011-08-17T17:25:10.806Z","type":"message"}
+{"nick":"ryah","message":"the overhead as far as i can tell is 1 byte to each stack frame","date":"2011-08-17T17:25:30.892Z","type":"message"}
+{"nick":"ryah","message":"possibly some extra pointer derefs","date":"2011-08-17T17:25:53.316Z","type":"message"}
+{"nick":"ryah","message":"EV_MULTIPLICITY is crazy talk","date":"2011-08-17T17:26:10.269Z","type":"message"}
+{"nick":"ryah","message":"my main problem is how to get eio results back into the correct thread","date":"2011-08-17T17:30:47.356Z","type":"message"}
+{"nick":"ryah","message":"it doesn't seem possible","date":"2011-08-17T17:31:31.202Z","type":"message"}
+{"nick":"ryah","message":"this might be the end of the road for eio","date":"2011-08-17T17:31:37.249Z","type":"message"}
+{"nick":"DrPizza","message":"does the unix side have any analogue to the req queue? can the eio worker threads post a req on the req queue so that it will be picked up by the correct thread?","date":"2011-08-17T17:32:42.179Z","type":"message"}
+{"nick":"ryah","message":"they can all post thread pool jobs","date":"2011-08-17T17:33:11.065Z","type":"message"}
+{"nick":"ryah","message":"the problem is getting the back","date":"2011-08-17T17:33:16.130Z","type":"message"}
+{"nick":"ryah","message":"the eio_req isn't associated with any particular","date":"2011-08-17T17:33:26.607Z","type":"message"}
+{"nick":"ryah","message":"thread","date":"2011-08-17T17:33:28.359Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: so do you need some kind of uv_post_req(uv_loop_t*, uv_req_t) that can be safely called cross-thread, so that the workers can communicate their results back to the main thread and have it run callbacks etc. correctly?","date":"2011-08-17T17:35:24.083Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: yeah","date":"2011-08-17T17:35:41.645Z","type":"message"}
+{"nick":"ryah","message":"the response queues need to be per thread","date":"2011-08-17T17:35:57.702Z","type":"message"}
+{"nick":"DrPizza","message":"pre thread or per loop?","date":"2011-08-17T17:36:20.134Z","type":"message"}
+{"nick":"rmustacc","date":"2011-08-17T17:36:52.861Z","type":"part"}
+{"nick":"igorzi","message":"ryah: speaking of eio, what do we want to do with eio_custom?  just create an equivalent API in libuv for now?","date":"2011-08-17T17:37:01.783Z","type":"message"}
+{"nick":"ryah","message":"igorzi: yes, please","date":"2011-08-17T17:41:10.986Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: we should definitely measure it - but im going to be surprised if it makes a diff","date":"2011-08-17T17:44:36.484Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307multiplicity2\u000f * r\u00023461acc\u000f \u000310\u000f/ (35 files in 3 dirs)\u0002:\u000f multiplicity unix attempt 2 - http://bit.ly/oCRKv7","date":"2011-08-17T18:09:23.373Z","type":"message"}
+{"nick":"ryah","message":"^-- piscisaureus what do you think","date":"2011-08-17T18:10:21.692Z","type":"message"}
+{"nick":"ryah","message":"and everyone else","date":"2011-08-17T18:11:24.824Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: looks good","date":"2011-08-17T18:20:42.331Z","type":"message"}
+{"nick":"piscisaureus","message":"(honestly, I hate it but I know we have no choice)","date":"2011-08-17T18:20:54.035Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: only I'm not sure about uv_default_loop()","date":"2011-08-17T18:21:13.589Z","type":"message"}
+{"nick":"piscisaureus","message":"Since users will need that often we should avoid letting them make a call every time","date":"2011-08-17T18:21:50.791Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe have `extern uv_loop_t* uv_default_loop` in uv.h?","date":"2011-08-17T18:22:34.410Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: also - do we let people call uv_init() once before everything else. I'd like that.","date":"2011-08-17T18:23:46.098Z","type":"message"}
+{"nick":"piscisaureus","message":"we could make it safe to call it more than once","date":"2011-08-17T18:24:48.409Z","type":"message"}
+{"nick":"piscisaureus","message":"http://jobs.nodejs.org/a/jbb/job-details/545251","date":"2011-08-17T18:27:48.950Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- look at the minimum requirements. omg these people exist?","date":"2011-08-17T18:28:13.853Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: what I'm after are the job specs demanding \"5 years experience with node.js\"","date":"2011-08-17T18:32:31.567Z","type":"message"}
+{"nick":"piscisaureus","message":"they're not saying that","date":"2011-08-17T18:36:43.663Z","type":"message"}
+{"nick":"piscisaureus","message":"But:","date":"2011-08-17T18:37:18.587Z","type":"message"}
+{"nick":"piscisaureus","message":"Strong kernel dev experience","date":"2011-08-17T18:37:18.747Z","type":"message"}
+{"nick":"piscisaureus","message":"Strong network server dev experience","date":"2011-08-17T18:37:18.748Z","type":"message"}
+{"nick":"piscisaureus","message":"Experience with VM design, hotspot optimization, JIT and method JIT, AOT, etc.","date":"2011-08-17T18:37:18.748Z","type":"message"}
+{"nick":"piscisaureus","message":"Experience with Node.js and server side JavaScript.","date":"2011-08-17T18:37:18.748Z","type":"message"}
+{"nick":"piscisaureus","message":"^ -- pretty unreasonable","date":"2011-08-17T18:37:19.104Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002d72c694\u000f \u000310\u000f/ benchmark/http_simple.js \u0002:\u000f bench: make http_simple send chunked encoding if requested - http://bit.ly/rs9zvR","date":"2011-08-17T18:39:56.409Z","type":"message"}
+{"nick":"ryah","message":"* Experience with VM design, hotspot optimization, JIT and method JIT, AOT, etc.","date":"2011-08-17T18:51:56.151Z","type":"message"}
+{"nick":"ryah","message":"hah","date":"2011-08-17T18:51:58.346Z","type":"message"}
+{"nick":"ryah","message":"those people actually do not exist","date":"2011-08-17T18:52:13.769Z","type":"message"}
+{"nick":"ryah","message":"there are like 100 of them","date":"2011-08-17T18:52:31.758Z","type":"message"}
+{"nick":"bnoordhuis","message":"but they're leaving oracle en masse now","date":"2011-08-17T18:52:44.329Z","type":"message"}
+{"nick":"bnoordhuis","message":"so who knows, maybe yahoo will scoop them up","date":"2011-08-17T18:53:01.021Z","type":"message"}
+{"nick":"ryah","message":"there are crazy good programmers out there","date":"2011-08-17T18:53:08.511Z","type":"message"}
+{"nick":"ryah","message":"but pretty few and far between :)","date":"2011-08-17T18:53:20.454Z","type":"message"}
+{"nick":"ryah","message":"e.g. my boss is pretty insanely good","date":"2011-08-17T18:53:33.703Z","type":"message"}
+{"nick":"bnoordhuis","message":"your boss is mark m?","date":"2011-08-17T18:53:44.447Z","type":"message"}
+{"nick":"ryah","message":"bryan cantrill","date":"2011-08-17T18:53:52.444Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right","date":"2011-08-17T18:54:05.213Z","type":"message"}
+{"nick":"bnoordhuis","message":"there aren't many of those","date":"2011-08-17T18:54:16.649Z","type":"message"}
+{"nick":"ryah","message":"so piscisaureus - default loop needs to be initialized","date":"2011-08-17T18:55:38.185Z","type":"message"}
+{"nick":"ryah","message":"on libev","date":"2011-08-17T18:55:45.090Z","type":"message"}
+{"nick":"ryah","message":"we should probably add a const to the return value","date":"2011-08-17T18:56:08.057Z","type":"message"}
+{"nick":"ryah","message":"hopefully the compiler can inline","date":"2011-08-17T18:56:17.801Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/joyent/node/issues/1546 <- easy win, 15% speed up on http_simple","date":"2011-08-17T18:56:28.641Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: your compiler doesn't inline across objects by default","date":"2011-08-17T18:56:42.521Z","type":"message"}
+{"nick":"piscisaureus","message":"can't you just init the default loop on uv_init?","date":"2011-08-17T18:56:58.584Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: sounds good","date":"2011-08-17T18:57:05.470Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: can you post numbers in that thread","date":"2011-08-17T18:57:24.461Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: yep, will do","date":"2011-08-17T18:57:40.326Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: do we need a uv_init() ?","date":"2011-08-17T18:57:54.372Z","type":"message"}
+{"nick":"ryah","message":"i think we should just init loops","date":"2011-08-17T18:57:59.246Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: well -","date":"2011-08-17T18:58:08.788Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I nee to pickup pointers to kernel functions and winsock extensions etc","date":"2011-08-17T18:58:20.676Z","type":"message"}
+{"nick":"piscisaureus","message":"just once, not once for every loop","date":"2011-08-17T18:58:29.054Z","type":"message"}
+{"nick":"ryah","message":"you can do that lazily","date":"2011-08-17T18:58:50.562Z","type":"message"}
+{"nick":"bnoordhuis","message":"call time?","date":"2011-08-17T18:59:12.554Z","type":"message"}
+{"nick":"piscisaureus","message":"yes but it requires mutexes etc because ppl might initialize a loop from another thread?","date":"2011-08-17T18:59:19.331Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: use mutexes then","date":"2011-08-17T18:59:40.723Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: read up on rcu","date":"2011-08-17T18:59:51.032Z","type":"message"}
+{"nick":"bnoordhuis","message":"but only if it's a potential bottleneck, else don't bother","date":"2011-08-17T19:00:13.400Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: i think static volatile bool uv_has_been_inited;","date":"2011-08-17T19:00:35.967Z","type":"message"}
+{"nick":"ryah","message":"would work","date":"2011-08-17T19:00:39.625Z","type":"message"}
+{"nick":"ryah","message":"nm - you need mutex","date":"2011-08-17T19:00:51.383Z","type":"message"}
+{"nick":"ryah","message":"but it's fine","date":"2011-08-17T19:01:18.894Z","type":"message"}
+{"nick":"DrPizza","message":"rcu is patented","date":"2011-08-17T19:01:39.217Z","type":"message"}
+{"nick":"ryah","message":"there's nothing wrong with mutex locks when used properly - this is a fine use","date":"2011-08-17T19:02:31.341Z","type":"message"}
+{"nick":"ryah","message":"my question is: do we add a thread api to libuv?","date":"2011-08-17T19:03:24.586Z","type":"message"}
+{"nick":"ryah","message":"i think we're going to have to","date":"2011-08-17T19:03:30.484Z","type":"message"}
+{"nick":"DrPizza","message":"no","date":"2011-08-17T19:03:31.824Z","type":"message"}
+{"nick":"DrPizza","message":"ugh","date":"2011-08-17T19:03:33.938Z","type":"message"}
+{"nick":"ryah","message":"how can we test multiplicity without starting threads?","date":"2011-08-17T19:03:49.946Z","type":"message"}
+{"nick":"ryah","message":"and how can we start threads without an API?","date":"2011-08-17T19:04:07.785Z","type":"message"}
+{"nick":"DrPizza","message":"doesn't the test harness already have a thread API, or is that ust the win32 test harness","date":"2011-08-17T19:04:50.207Z","type":"message"}
+{"nick":"DrPizza","message":"https://github.com/joyent/libuv/blob/master/test/runner-win.c#L300","date":"2011-08-17T19:04:57.864Z","type":"message"}
+{"nick":"bnoordhuis","message":"DrPizza: it's very common in the linux kernel","date":"2011-08-17T19:04:59.965Z","type":"message"}
+{"nick":"bnoordhuis","message":"so i suspect patents aren't an issue","date":"2011-08-17T19:05:10.405Z","type":"message"}
+{"nick":"DrPizza","message":"bnoordhuis: IBM has given them a patent grant","date":"2011-08-17T19:05:10.663Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, is that it","date":"2011-08-17T19:05:15.496Z","type":"message"}
+{"nick":"bnoordhuis","message":"damn yanks and their patent system","date":"2011-08-17T19:05:30.680Z","type":"message"}
+{"nick":"DrPizza","message":"at least, that's my understanding","date":"2011-08-17T19:06:10.531Z","type":"message"}
+{"nick":"piscisaureus","message":"Are we going to have the call?","date":"2011-08-17T19:09:45.773Z","type":"message"}
+{"nick":"ryah","message":"gah sorry","date":"2011-08-17T19:09:50.576Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-17T19:09:51.704Z","type":"message"}
+{"nick":"piscisaureus","message":"I'd like to have dinner","date":"2011-08-17T19:09:52.014Z","type":"message"}
+{"nick":"piscisaureus","message":"we can also wait 30 minutes if that's preferrable","date":"2011-08-17T19:10:01.329Z","type":"message"}
+{"nick":"ryah","message":"let's jsut do it real quick im sorry","date":"2011-08-17T19:10:12.840Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: skype","date":"2011-08-17T19:11:05.269Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: call","date":"2011-08-17T19:11:27.659Z","type":"message"}
+{"nick":"ryah","message":"fuck","date":"2011-08-17T19:11:43.205Z","type":"message"}
+{"nick":"piscisaureus","message":"wrong","date":"2011-08-17T19:11:45.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm there guys, where are you?","date":"2011-08-17T19:11:45.556Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: can you link me to the lock api?","date":"2011-08-17T19:21:14.133Z","type":"message"}
+{"nick":"ryah","message":"or just the name","date":"2011-08-17T19:21:21.395Z","type":"message"}
+{"nick":"ryah","message":"http://msdn.microsoft.com/en-us/library/ms682530(v=vs.85).aspx ?","date":"2011-08-17T19:21:43.412Z","type":"message"}
+{"nick":"ryah","message":"CRITICAL_SECTION","date":"2011-08-17T19:21:48.918Z","type":"message"}
+{"nick":"DrPizza","message":"that's the closest equivalent to a standard (non-shared) pthread mutex, if that's what you're after","date":"2011-08-17T19:22:11.570Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah:","date":"2011-08-17T19:24:25.062Z","type":"message"}
+{"nick":"piscisaureus","message":"critical_section - http://msdn.microsoft.com/en-us/library/ms682530%28v=vs.85%29.aspx -> mutex that must be freed by the aquiring thread.","date":"2011-08-17T19:24:25.225Z","type":"message"}
+{"nick":"piscisaureus","message":"mutex - http://msdn.microsoft.com/en-us/library/ms684266%28v=vs.85%29.aspx -> more flexible mutex, can be used with wait functions etc","date":"2011-08-17T19:24:25.225Z","type":"message"}
+{"nick":"ryah","message":"yeah maybe we do need a uv_init...","date":"2011-08-17T19:29:53.054Z","type":"message"}
+{"nick":"ryah","message":"annoying","date":"2011-08-17T19:29:56.383Z","type":"message"}
+{"nick":"graydon","date":"2011-08-17T19:30:51.122Z","type":"join"}
+{"nick":"piscisaureus","message":"ryah: Maybe we could use Interlocked functions to achieve the same","date":"2011-08-17T19:32:57.975Z","type":"message"}
+{"nick":"ryah","message":"we need to change uv_getaddrinfo_t* handle into a uv_req_t","date":"2011-08-17T19:38:40.782Z","type":"message"}
+{"nick":"ryah","message":"https://twitter.com/#!/ben_howes/status/103913485334884352","date":"2011-08-17T19:41:04.917Z","type":"message"}
+{"nick":"ryah","message":"drupal inspired?","date":"2011-08-17T19:41:11.746Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't like drupal","date":"2011-08-17T19:42:14.282Z","type":"message"}
+{"nick":"ryah","message":"i have never used it but people tell me its awesome","date":"2011-08-17T19:42:38.120Z","type":"message"}
+{"nick":"piscisaureus","message":"I have made many websites with drupal","date":"2011-08-17T19:42:51.878Z","type":"message"}
+{"nick":"piscisaureus","message":"It is probably the least bad ph-based cms","date":"2011-08-17T19:43:30.904Z","type":"message"}
+{"nick":"piscisaureus","message":"*php","date":"2011-08-17T19:43:34.265Z","type":"message"}
+{"nick":"piscisaureus","message":"the recommended way of using drupal is applying ugly hacks","date":"2011-08-17T19:44:43.552Z","type":"message"}
+{"nick":"ryah","message":"\"Have you been the type to declare that those who don't use Android are cylons who are under mind control from Cupertino? Or are you Peter Bright, turning up your nose at all of us while you wax on about the unappreciated genius of the Windows 7 Phone?\"","date":"2011-08-17T19:48:35.117Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-17T19:48:39.606Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: you work at ars technica?","date":"2011-08-17T19:53:22.572Z","type":"message"}
+{"nick":"bentkus","message":"interesting that the most interesting nodejs dev talk happens in the libuv channel","date":"2011-08-17T19:54:16.360Z","type":"message"}
+{"nick":"piscisaureus","message":"Yes this channel is much less noisy","date":"2011-08-17T19:55:24.679Z","type":"message"}
+{"nick":"piscisaureus","message":"But I used to kind of follow what is going on in #node, but no more","date":"2011-08-17T19:55:58.987Z","type":"message"}
+{"nick":"bentkus","message":"too much hype","date":"2011-08-17T19:57:06.394Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: have you ever heard of the \"kinds of code\" conference?","date":"2011-08-17T19:58:06.380Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: no","date":"2011-08-17T19:58:16.369Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i can't measure a difference by removing that debug() call","date":"2011-08-17T20:04:52.361Z","type":"message"}
+{"nick":"ryah","message":"were you testing v0.4 or master?","date":"2011-08-17T20:05:24.968Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: you need to use /bytes/256/chunked and this patch:","date":"2011-08-17T20:05:43.054Z","type":"message"}
+{"nick":"bnoordhuis","message":"--- a/benchmark/http_simple.js","date":"2011-08-17T20:05:43.920Z","type":"message"}
+{"nick":"bnoordhuis","message":"+++ b/benchmark/http_simple.js","date":"2011-08-17T20:05:44.086Z","type":"message"}
+{"nick":"bnoordhuis","message":"@@ -92,7 +92,8 @@ var server = http.createServer(function (req, res) {","date":"2011-08-17T20:05:44.248Z","type":"message"}
+{"nick":"bnoordhuis","message":"                             \"Content-Length\": content_length });","date":"2011-08-17T20:05:44.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"   }","date":"2011-08-17T20:05:44.249Z","type":"message"}
+{"nick":"bnoordhuis","message":" ","date":"2011-08-17T20:05:47.508Z","type":"message"}
+{"nick":"bnoordhuis","message":"-  res.end(body);","date":"2011-08-17T20:05:49.423Z","type":"message"}
+{"nick":"bnoordhuis","message":"+  res.write(body);","date":"2011-08-17T20:05:51.552Z","type":"message"}
+{"nick":"bnoordhuis","message":"+  res.end();","date":"2011-08-17T20:05:53.487Z","type":"message"}
+{"nick":"bnoordhuis","message":"res.end(body) triggers the hot path","date":"2011-08-17T20:05:55.476Z","type":"message"}
+{"nick":"bnoordhuis","message":"on master btw","date":"2011-08-17T20:06:05.783Z","type":"message"}
+{"nick":"ryah","message":"ah","date":"2011-08-17T20:06:20.551Z","type":"message"}
+{"nick":"ryah","message":"great thanks.","date":"2011-08-17T20:06:24.879Z","type":"message"}
+{"nick":"ryah","message":"diff is minimal on v0.4","date":"2011-08-17T20:14:20.946Z","type":"message"}
+{"nick":"piscisaureus","message":"https://gist.github.com/1152491","date":"2011-08-17T20:15:32.692Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah bnoordhuis igorzi:  ^-- comments?","date":"2011-08-17T20:15:32.851Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: is there any chance uv_init() gets called more than once or from more than one thread?","date":"2011-08-17T20:17:04.752Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: the idea of this is that it can be called many times but uv__init is run exactly once. And uv_init blocks until uv__init is done, even if another thread calls it.","date":"2011-08-17T20:18:10.696Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: volatile doesn't work the way you think it does","date":"2011-08-17T20:18:44.214Z","type":"message"}
+{"nick":"piscisaureus","message":"how do I think it works?","date":"2011-08-17T20:18:53.046Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: https://github.com/joyent/node/issues/1546#issuecomment-1830159","date":"2011-08-17T20:18:56.282Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: i tried it with different concurrency levels and response body sizes","date":"2011-08-17T20:19:46.432Z","type":"message"}
+{"nick":"bnoordhuis","message":"always at least a 10% speed up","date":"2011-08-17T20:19:56.936Z","type":"message"}
+{"nick":"bnoordhuis","message":"but never higher than 15%","date":"2011-08-17T20:20:26.457Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you think that a write to a volatile is atomic and immediately visible to other threads or cpu's","date":"2011-08-17T20:20:54.061Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: no","date":"2011-08-17T20:21:07.504Z","type":"message"}
+{"nick":"piscisaureus","message":"or - I secretly updated the gist","date":"2011-08-17T20:21:16.231Z","type":"message"}
+{"nick":"piscisaureus","message":"now I don't rely on this","date":"2011-08-17T20:21:20.131Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307v0.4\u000f * r\u00029cd5108\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Fixes #1546. Remove expensive debug call. - http://bit.ly/nlxZfz","date":"2011-08-17T20:21:37.501Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but - I *do* assume that cmpxchg is immedately visible to other threads/cpus, but that is true right?","date":"2011-08-17T20:21:53.488Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: bnoordhuis: it looks fine to me.. InterlockedCompareExchangePointer generates a full mem fence..","date":"2011-08-17T20:22:17.302Z","type":"message"}
+{"nick":"piscisaureus","message":"I am only concerned about mingw's support for InterlockedCompareExchangePointer","date":"2011-08-17T20:22:49.500Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: im merging v0.4 into master","date":"2011-08-17T20:22:56.480Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: go for it","date":"2011-08-17T20:23:11.165Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: cmpxchg is not, lock cmpxchg is","date":"2011-08-17T20:23:23.816Z","type":"message"}
+{"nick":"piscisaureus","message":"yes, that's what i mean","date":"2011-08-17T20:23:45.636Z","type":"message"}
+{"nick":"piscisaureus","message":"(although - doesn't cmpxchg add lock implicitly?)","date":"2011-08-17T20:24:03.069Z","type":"message"}
+{"nick":"bnoordhuis","message":"no","date":"2011-08-17T20:24:10.231Z","type":"message"}
+{"nick":"bnoordhuis","message":"uv_initialized still isn't used right","date":"2011-08-17T20:24:25.553Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: it's not a problem","date":"2011-08-17T20:24:45.143Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: looks like InterlockedCompareExchangePointer is there in mingw winbase.h","date":"2011-08-17T20:25:14.111Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: if a thread sees an updated uv_initialized (so it sees 0) it will hit the WaitForSingleObject branch","date":"2011-08-17T20:25:15.220Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: does InterlockedCompareExchangePointer only swap when uv_init_event is NULL?","date":"2011-08-17T20:25:35.039Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-17T20:25:39.125Z","type":"message"}
+{"nick":"piscisaureus","message":"and it returns the old value","date":"2011-08-17T20:25:48.573Z","type":"message"}
+{"nick":"piscisaureus","message":"(or just the value if uv_init_event != NULL)","date":"2011-08-17T20:26:09.262Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, then it's safe","date":"2011-08-17T20:26:16.037Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: igorzi: thanks for your critical review :-)","date":"2011-08-17T20:28:15.255Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00029cd5108\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Fixes #1546. Remove expensive debug call. - http://bit.ly/nlxZfz","date":"2011-08-17T20:28:58.588Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00028320af7\u000f \u000310\u000f/ (4 files in 2 dirs)\u0002:\u000f ","date":"2011-08-17T20:28:59.239Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f Merge remote branch 'origin/v0.4'","date":"2011-08-17T20:28:59.402Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f Conflicts:","date":"2011-08-17T20:28:59.402Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f  doc/api/tls.markdown - http://bit.ly/re9WEV","date":"2011-08-17T20:28:59.402Z","type":"message"}
+{"nick":"piscisaureus","message":"... this kind of stuff is always a minefield","date":"2011-08-17T20:29:09.984Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: we can just add a uv_init()","date":"2011-08-17T20:30:17.324Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: if this is too hairy","date":"2011-08-17T20:30:22.635Z","type":"message"}
+{"nick":"ryah","message":"and just say that it's not thread safe","date":"2011-08-17T20:30:37.162Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: https://github.com/joyent/node/issues/1536","date":"2011-08-17T20:30:44.312Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: well... I kind of figured it out","date":"2011-08-17T20:30:52.335Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: but still I don't like making an actual call all the time when calling uv_default_loop()","date":"2011-08-17T20:31:21.518Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe we can check if this gets optimized out","date":"2011-08-17T20:31:32.302Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-17T20:31:47.044Z","type":"join"}
+{"nick":"ryah","message":"bnoordhuis: i think we're removing --vars","date":"2011-08-17T20:32:14.503Z","type":"message"}
+{"nick":"ryah","message":"doesn't make sense x-platform","date":"2011-08-17T20:32:27.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: it's sometimes useful when people report bugs","date":"2011-08-17T20:32:38.267Z","type":"message"}
+{"nick":"ryah","message":"yes i want to know what he's doing with it ","date":"2011-08-17T20:32:57.118Z","type":"message"}
+{"nick":"piscisaureus","message":"what does node --vars do?","date":"2011-08-17T20:33:43.600Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: prints the build flags node was compiled with","date":"2011-08-17T20:33:57.970Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: what's the deal with that 'kinds of code' conference?","date":"2011-08-17T20:34:14.992Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: oh it's 'kings of code'","date":"2011-08-17T20:35:05.332Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: they want me to do a talk on node","date":"2011-08-17T20:36:01.838Z","type":"message"}
+{"nick":"piscisaureus","message":"I guess ryah is too expensive","date":"2011-08-17T20:36:19.749Z","type":"message"}
+{"nick":"bnoordhuis","message":"kings of code i've heard of","date":"2011-08-17T20:37:08.011Z","type":"message"}
+{"nick":"bnoordhuis","message":"amsterdam right?","date":"2011-08-17T20:37:10.758Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-08-17T20:38:53.190Z","type":"message"}
+{"nick":"piscisaureus","message":"is that a fine conference or a bullshit one?","date":"2011-08-17T20:39:08.897Z","type":"message"}
+{"nick":"bnoordhuis","message":"iirc a colleague of mine attended in 2009 and it was alright","date":"2011-08-17T20:41:09.737Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: https://github.com/bnoordhuis/node/commit/b816fea <- worthwhile addition to http_simple?","date":"2011-08-17T20:43:20.032Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002711a356\u000f \u000310\u000f/ doc/api/url.markdown \u0002:\u000f Close #1544 Document slashesDenoteHost flag in url.parse - http://bit.ly/o9OuLF","date":"2011-08-17T20:43:34.176Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.4\u000f * r\u0002307a95f\u000f \u000310\u000f/ doc/api/url.markdown \u0002:\u000f Close #1544 Document slashesDenoteHost flag in url.parse - http://bit.ly/r8PZ7i","date":"2011-08-17T20:46:12.582Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: yes, I write for Ars Technica","date":"2011-08-17T20:47:34.856Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00028e8f36f\u000f \u000310\u000f/ lib/http2.js \u0002:\u000f Fix #1546 some more. Remove expensive debug call. - http://bit.ly/nn4e1E","date":"2011-08-17T20:54:05.769Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: suggestions on udp things you want tested?","date":"2011-08-17T20:54:58.068Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: everything","date":"2011-08-17T20:55:47.207Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307zero_reads\u000f * r\u00024898d40\u000f \u000310\u000f/ (include/uv-win.h src/win/internal.h src/win/tcp.c)\u0002:\u000f Windows: Pre-allocate buffers for overlapped WSARecv if the number of active tcp streams is below 50. - http://bit.ly/r1EKQp","date":"2011-08-17T20:56:03.313Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: enumerate","date":"2011-08-17T20:56:11.521Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: please review ----^","date":"2011-08-17T20:56:25.169Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: send, receive packets. MSG_TRUC support. send with/without bind. Check sender address/port.","date":"2011-08-17T20:56:56.913Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: send never returns error","date":"2011-08-17T20:57:37.677Z","type":"message"}
+{"nick":"piscisaureus","message":"what else?","date":"2011-08-17T20:57:44.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: double bind","date":"2011-08-17T20:57:52.565Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-08-17T20:58:00.278Z","type":"message"}
+{"nick":"piscisaureus","message":"recv_stop","date":"2011-08-17T20:58:08.754Z","type":"message"}
+{"nick":"piscisaureus","message":"double recv_start","date":"2011-08-17T20:58:13.488Z","type":"message"}
+{"nick":"bnoordhuis","message":"send of packet > mtu (but maybe that's what you meant with MSG_TRUNC)","date":"2011-08-17T20:58:21.231Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: no that's not what I mean","date":"2011-08-17T20:58:39.723Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: oh lol, I just saw your quote about me. Where did you getthat?!","date":"2011-08-17T20:58:57.990Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I mean, send a 10kb packet but have alloc_cb return a 5k buffer.","date":"2011-08-17T20:59:11.272Z","type":"message"}
+{"nick":"DrPizza","message":"omg","date":"2011-08-17T20:59:35.434Z","type":"message"}
+{"nick":"DrPizza","message":"it was written on my own site","date":"2011-08-17T20:59:37.982Z","type":"message"}
+{"nick":"DrPizza","message":";_;","date":"2011-08-17T20:59:38.750Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you can't send 10 kb packets :) but i get what you mean","date":"2011-08-17T20:59:39.175Z","type":"message"}
+{"nick":"DrPizza","message":"trolled by jacqui","date":"2011-08-17T20:59:41.972Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-08-17T20:59:42.667Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: put the \"50\" in a constant","date":"2011-08-17T21:01:36.068Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: ok, will do","date":"2011-08-17T21:01:55.469Z","type":"message"}
+{"nick":"piscisaureus","message":"the comment  /* Post another 0-read if still reading and not closing. */ is no longer accurate","date":"2011-08-17T21:04:05.159Z","type":"message"}
+{"nick":"igorzi","message":"oh right","date":"2011-08-17T21:04:42.450Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: also - if read_stop is called while a non-0 read is in flight uv_process_tcp_read_req hits the nonblocking path again","date":"2011-08-17T21:05:24.875Z","type":"message"}
+{"nick":"piscisaureus","message":"it won't harm thouh","date":"2011-08-17T21:05:51.756Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-17T21:06:56.342Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: won't it skip the while loop?","date":"2011-08-17T21:07:56.221Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah probably","date":"2011-08-17T21:08:02.261Z","type":"message"}
+{"nick":"piscisaureus","message":"but what if the user calls read_start again after that","date":"2011-08-17T21:08:09.838Z","type":"message"}
+{"nick":"piscisaureus","message":"do we correctly report that buffer to the user after that?","date":"2011-08-17T21:08:19.392Z","type":"message"}
+{"nick":"piscisaureus","message":"also","date":"2011-08-17T21:08:23.192Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: suppose","date":"2011-08-17T21:09:43.451Z","type":"message"}
+{"nick":"piscisaureus","message":"- the user calls read_start, libuv does a non-0 read","date":"2011-08-17T21:09:43.605Z","type":"message"}
+{"nick":"piscisaureus","message":"- the user calls read_stop,","date":"2011-08-17T21:09:43.605Z","type":"message"}
+{"nick":"piscisaureus","message":"- the read completes, libuv doesn't call read_cb but hangs on to the buffer","date":"2011-08-17T21:09:43.605Z","type":"message"}
+{"nick":"piscisaureus","message":"- the user calls uv_close","date":"2011-08-17T21:09:43.605Z","type":"message"}
+{"nick":"piscisaureus","message":"where are we giving the user the buffer back so it can free it?","date":"2011-08-17T21:09:44.168Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: this is also a question for you","date":"2011-08-17T21:09:58.553Z","type":"message"}
+{"nick":"DrPizza","message":"maybe make it so that read_stop prevents the issuance of new reads, but can still allow outstanding reads to complete","date":"2011-08-17T21:10:17.308Z","type":"message"}
+{"nick":"DrPizza","message":"(and so call their callback)","date":"2011-08-17T21:10:24.533Z","type":"message"}
+{"nick":"piscisaureus","message":"yes I think that would be best","date":"2011-08-17T21:10:30.595Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: do you agree?","date":"2011-08-17T21:10:33.998Z","type":"message"}
+{"nick":"piscisaureus","message":"it may be unfortunate for node users that depend on the non-behaviour that pause() immediately stops all data events","date":"2011-08-17T21:11:51.360Z","type":"message"}
+{"nick":"piscisaureus","message":"api design is hard","date":"2011-08-17T21:12:32.656Z","type":"message"}
+{"nick":"igorzi","message":"hmm.. i'd assume that the caller will know that since because it never got read_cb it'll need to free the buffer when it does uv_close","date":"2011-08-17T21:13:20.440Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: that is so painful","date":"2011-08-17T21:13:45.209Z","type":"message"}
+{"nick":"DrPizza","message":"that sounds like a displeasing API","date":"2011-08-17T21:14:07.532Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: right now in the unlikely event that we end up with an unused buffer we call read_cb with nread=0","date":"2011-08-17T21:14:12.713Z","type":"message"}
+{"nick":"piscisaureus","message":"but read_stop - right now - blocks further read_cbs so we can't use that","date":"2011-08-17T21:14:50.723Z","type":"message"}
+{"nick":"igorzi","message":"the problem with the current api is that read_cb is also used as an indicator to free the buffer.. something has to give.. either we're allowed to do read_cb after read_stop, or we need some other way to notify caller that the buffer needs to be freed","date":"2011-08-17T21:16:00.850Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: regarding chunked addition - sure. it doesn't affect the existing tests, right?","date":"2011-08-17T21:16:01.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: nope","date":"2011-08-17T21:16:21.752Z","type":"message"}
+{"nick":"igorzi","message":"(or the caller needs to track it, which i agree is painful)","date":"2011-08-17T21:16:38.300Z","type":"message"}
+{"nick":"piscisaureus","message":"we better solve this problem right because we will have the same problem with file streams (incl. linux)","date":"2011-08-17T21:17:33.560Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: read_stop does should not mean that uv_read_cb isn't called","date":"2011-08-17T21:17:52.629Z","type":"message"}
+{"nick":"piscisaureus","message":"because that also requires preallocated buffers.","date":"2011-08-17T21:17:53.876Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: igorzi: DrPizza: we all agree with ryah?","date":"2011-08-17T21:18:32.999Z","type":"message"}
+{"nick":"piscisaureus","message":"I do","date":"2011-08-17T21:18:35.526Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-17T21:18:41.677Z","type":"message"}
+{"nick":"igorzi","message":"yes","date":"2011-08-17T21:18:54.341Z","type":"message"}
+{"nick":"DrPizza","message":"read_stop just means no new read attempts are made, it shouldn't influence outstanding ones","date":"2011-08-17T21:18:55.064Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right, yes","date":"2011-08-17T21:19:03.667Z","type":"message"}
+{"nick":"igorzi","message":"ok great - we have a solution then","date":"2011-08-17T21:19:07.219Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: ok, can you make it so it works that way?","date":"2011-08-17T21:19:23.449Z","type":"message"}
+{"nick":"ryah","message":"i still do not love our alloc_cb and read_cb API","date":"2011-08-17T21:19:26.610Z","type":"message"}
+{"nick":"ryah","message":"but i cannot think of anything better","date":"2011-08-17T21:19:31.266Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: yep - i'll make that work","date":"2011-08-17T21:19:51.878Z","type":"message"}
+{"nick":"igorzi","message":"bbl","date":"2011-08-17T21:19:56.440Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/blob/c05936ca13681059c7aeecfe3a608e4e1afa800a/src/stream_wrap.cc#L188-190","date":"2011-08-17T21:20:59.030Z","type":"message"}
+{"nick":"ryah","message":"^-- this scares me","date":"2011-08-17T21:21:02.531Z","type":"message"}
+{"nick":"ryah","message":"it works most of the time but we have the possibility for exploding memory","date":"2011-08-17T21:21:22.134Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/blob/c05936ca13681059c7aeecfe3a608e4e1afa800a/src/stream_wrap.cc#L143-168","date":"2011-08-17T21:21:52.542Z","type":"message"}
+{"nick":"CIA-95","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000263607a0\u000f \u000310\u000f/ benchmark/http_simple.js \u0002:\u000f bench: make number of response body chunks configurable in http_simple - http://bit.ly/nLX7kh","date":"2011-08-17T21:27:25.085Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: doesn't the node 0.4 slab allocator have the same properties?","date":"2011-08-17T21:44:26.348Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yeah - i guess","date":"2011-08-17T21:52:28.377Z","type":"message"}
+{"nick":"piscisaureus","message":"although I think that pre-allocating reads is going to make this problem worse","date":"2011-08-17T21:54:27.869Z","type":"message"}
+{"nick":"piscisaureus","message":"because it will make (handle_that_last_alloced == handle) almost never true","date":"2011-08-17T21:55:08.695Z","type":"message"}
+{"nick":"piscisaureus","message":"it would be so awesome if v8 could just give us some space on its heap","date":"2011-08-17T21:56:54.453Z","type":"message"}
+{"nick":"piscisaureus","message":"and then resize it heh","date":"2011-08-17T21:57:02.277Z","type":"message"}
+{"nick":"ryah","message":"yes :)","date":"2011-08-17T22:00:00.114Z","type":"message"}
+{"nick":"piscisaureus","message":"The Buffer.slice api was a bad idea","date":"2011-08-17T22:06:04.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"why?","date":"2011-08-17T22:09:35.557Z","type":"message"}
+{"nick":"piscisaureus","message":"It makes it much more difficult to improve this situation in the future. You can have 2 objects that are guaranteed to reference the same memory. I don't think we can ever achieve the same with typedarrays or something.","date":"2011-08-17T22:11:37.641Z","type":"message"}
+{"nick":"piscisaureus","message":"Although the major showstopper for referencing the v8 heap is the inability to lock objects into position","date":"2011-08-17T22:13:25.794Z","type":"message"}
+{"nick":"ryah","message":"typedarrays have a similiar slice thing","date":"2011-08-17T22:18:02.940Z","type":"message"}
+{"nick":"piscisaureus","message":"can typedarrays be locked into memory?","date":"2011-08-17T22:18:47.388Z","type":"message"}
+{"nick":"DrPizza","message":"Does v8 not expose its allocator?","date":"2011-08-17T22:19:28.792Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yes","date":"2011-08-17T22:22:39.060Z","type":"message"}
+{"nick":"ryah","message":"but they're not in v8","date":"2011-08-17T22:22:45.083Z","type":"message"}
+{"nick":"ryah","message":"they're outside the heap","date":"2011-08-17T22:22:54.010Z","type":"message"}
+{"nick":"ryah","message":"we have typed arrays now btw","date":"2011-08-17T22:22:59.717Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-17T22:23:01.982Z","type":"message"}
+{"nick":"piscisaureus","message":"so this typed array implementation is not going to give us much","date":"2011-08-17T22:23:42.368Z","type":"message"}
+{"nick":"ryah","message":"> t = new Int8Array(5); t[0] = 0xff","date":"2011-08-17T22:23:53.535Z","type":"message"}
+{"nick":"ryah","message":"255","date":"2011-08-17T22:23:54.109Z","type":"message"}
+{"nick":"ryah","message":"more or less the same as buffers","date":"2011-08-17T22:24:15.792Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-08-17T22:24:23.077Z","type":"message"}
+{"nick":"ryah","message":"but we're going to slowly replace the buffer API with them","date":"2011-08-17T22:24:27.240Z","type":"message"}
+{"nick":"DrPizza","message":"so typed arrays are chunks of C++/slab allocator memory, and the v8 GC just tracks the object references, not the memory itself?","date":"2011-08-17T22:25:00.627Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: udp: do we *want* to be able to steal already bound ports?","date":"2011-08-17T22:25:08.513Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: yes","date":"2011-08-17T22:25:12.280Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: *shrug* no","date":"2011-08-17T22:25:20.794Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: good","date":"2011-08-17T22:25:43.022Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but it would be nice if we could steal ports that are 'occupied' by a TIME_WAIT socket","date":"2011-08-17T22:25:55.406Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: you don't have TIME_WAIT with udp","date":"2011-08-17T22:26:17.766Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: https://github.com/joyent/node/blob/66f77963a368f8696c26db7b42e510fc0b2aebbf/deps/v8/include/v8.h#L1634-1658","date":"2011-08-17T22:26:22.424Z","type":"message"}
+{"nick":"piscisaureus","message":"how does \u0003String::AsciiValue \u0003lock it's target into memory?","date":"2011-08-17T22:26:27.148Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: this is how they are interfaced into V8","date":"2011-08-17T22:26:34.839Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/blob/66f77963a368f8696c26db7b42e510fc0b2aebbf/deps/v8/include/v8.h#L1634-1648","date":"2011-08-17T22:27:00.772Z","type":"message"}
+{"nick":"DrPizza","message":"so v8 has a kind of built-in concept of objects that own arrays that are kept external to it","date":"2011-08-17T22:28:04.016Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-17T22:28:16.125Z","type":"message"}
+{"nick":"ryah","message":"it's just a bit of magic to allow you to define square bracket operator","date":"2011-08-17T22:28:33.235Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-17T22:28:36.779Z","type":"message"}
+{"nick":"DrPizza","message":"does it still have a notion of the memory usage incurred by the object?","date":"2011-08-17T22:28:49.645Z","type":"message"}
+{"nick":"piscisaureus","message":"no","date":"2011-08-17T22:29:09.020Z","type":"message"}
+{"nick":"piscisaureus","message":"well it tracks amountOfExternallyAllocatedMemory or something","date":"2011-08-17T22:29:32.196Z","type":"message"}
+{"nick":"DrPizza","message":"yeah","date":"2011-08-17T22:29:41.064Z","type":"message"}
+{"nick":"piscisaureus","message":"but I don't think it understands the memory that a particular object takes","date":"2011-08-17T22:29:48.811Z","type":"message"}
+{"nick":"DrPizza","message":"to allow external objects to fake memory pressure","date":"2011-08-17T22:29:48.968Z","type":"message"}
+{"nick":"ryah","message":"there are some interesting new callbacks in here...","date":"2011-08-17T22:30:09.975Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/blob/66f77963a368f8696c26db7b42e510fc0b2aebbf/deps/v8/include/v8.h#L2996-3008","date":"2011-08-17T22:30:18.854Z","type":"message"}
+{"nick":"ryah","message":"havent seen this before","date":"2011-08-17T22:30:22.352Z","type":"message"}
+{"nick":"ryah","message":"that would be a nice place for a dtrace probe","date":"2011-08-17T22:31:10.620Z","type":"message"}
+{"nick":"bnoordhuis","message":"this one will make pquerna happy: https://github.com/joyent/node/blob/66f77963a368f8696c26db7b42e510fc0b2aebbf/deps/v8/include/v8.h#L3045","date":"2011-08-17T22:31:36.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: i think i want a uv_udp_init6 function","date":"2011-08-17T22:33:06.228Z","type":"message"}
+{"nick":"bnoordhuis","message":"one that takes a flag UV_UDP_IPV6ONLY or something","date":"2011-08-17T22:33:17.498Z","type":"message"}
+{"nick":"bnoordhuis","message":"added benefit: you can create the socket in the uv_udp_init* function itself, no need to defer","date":"2011-08-17T22:33:51.528Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm ok.","date":"2011-08-17T22:34:23.132Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't like it very much","date":"2011-08-17T22:34:33.650Z","type":"message"}
+{"nick":"piscisaureus","message":"but since I say this all the time maybe I'll shut up","date":"2011-08-17T22:34:50.956Z","type":"message"}
+{"nick":"piscisaureus","message":"So","date":"2011-08-17T22:34:52.848Z","type":"message"}
+{"nick":"piscisaureus","message":"every time you call String::Utf8Value v8 just mallocs that memory and copies the string there","date":"2011-08-17T22:35:45.421Z","type":"message"}
+{"nick":"piscisaureus","message":"i never realized that","date":"2011-08-17T22:36:36.428Z","type":"message"}
+{"nick":"ryah","message":"really?","date":"2011-08-17T22:36:52.205Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-17T22:36:56.571Z","type":"message"}
+{"nick":"ryah","message":"literally mallocs?","date":"2011-08-17T22:36:59.554Z","type":"message"}
+{"nick":"piscisaureus","message":"well it calls new char[len + 1]","date":"2011-08-17T22:37:12.716Z","type":"message"}
+{"nick":"ryah","message":"or allocs in its heap","date":"2011-08-17T22:37:14.448Z","type":"message"}
+{"nick":"piscisaureus","message":"no it calls new","date":"2011-08-17T22:37:19.006Z","type":"message"}
+{"nick":"ryah","message":"oh","date":"2011-08-17T22:37:22.305Z","type":"message"}
+{"nick":"ryah","message":"man...","date":"2011-08-17T22:37:25.449Z","type":"message"}
+{"nick":"ryah","message":"i didnt realize that either - i thought it was in the heap","date":"2011-08-17T22:37:42.825Z","type":"message"}
+{"nick":"DrPizza","message":"It still could be.","date":"2011-08-17T22:37:53.072Z","type":"message"}
+{"nick":"piscisaureus","message":"the object \"wrapper\" is in the heap","date":"2011-08-17T22:37:55.620Z","type":"message"}
+{"nick":"DrPizza","message":"They might have a global operator new overload.","date":"2011-08-17T22:38:01.068Z","type":"message"}
+{"nick":"piscisaureus","message":"so it gets garbage collected","date":"2011-08-17T22:38:04.408Z","type":"message"}
+{"nick":"piscisaureus","message":"they don't","date":"2011-08-17T22:38:06.389Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-17T22:38:10.636Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: i dont think so","date":"2011-08-17T22:38:11.810Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: https://github.com/joyent/node/blob/5b58473b4060094b07b4cbd1a7e77ea2338773d5/deps/v8/src/api.cc#L5104-5122","date":"2011-08-17T22:40:22.027Z","type":"message"}
+{"nick":"piscisaureus","message":"and https://github.com/joyent/node/blob/5b58473b4060094b07b4cbd1a7e77ea2338773d5/deps/v8/src/allocation.h#L83-94","date":"2011-08-17T22:40:22.183Z","type":"message"}
+{"nick":"bnoordhuis","message":"old news is old!","date":"2011-08-17T22:40:53.273Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: ?","date":"2011-08-17T22:41:07.988Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: that string::utf8value mallocs memory","date":"2011-08-17T22:41:26.796Z","type":"message"}
+{"nick":"piscisaureus","message":"well... I knew that it maks a copy, but I didn't know that it mallocs","date":"2011-08-17T22:41:53.958Z","type":"message"}
+{"nick":"bnoordhuis","message":"where else would it get the memory from?","date":"2011-08-17T22:42:15.690Z","type":"message"}
+{"nick":"bnoordhuis","message":"not the v8 heap","date":"2011-08-17T22:42:22.589Z","type":"message"}
+{"nick":"piscisaureus","message":"from it's own heap","date":"2011-08-17T22:42:23.809Z","type":"message"}
+{"nick":"piscisaureus","message":"why not?","date":"2011-08-17T22:42:28.366Z","type":"message"}
+{"nick":"bnoordhuis","message":"not 100% sure","date":"2011-08-17T22:43:18.708Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i suspect that it's not always safe or easy to manipulate the v8 heap","date":"2011-08-17T22:43:40.018Z","type":"message"}
+{"nick":"DrPizza","message":"maybe there's no point for objects whose lifetimes are totally irrelevant to the GC","date":"2011-08-17T22:43:59.515Z","type":"message"}
+{"nick":"piscisaureus","message":"it *is* relevant to the gc","date":"2011-08-17T22:44:16.984Z","type":"message"}
+{"nick":"DrPizza","message":"maybe it's actually bad to do so, since it means it can't then compact those objects","date":"2011-08-17T22:44:19.243Z","type":"message"}
+{"nick":"DrPizza","message":"is it?","date":"2011-08-17T22:44:23.916Z","type":"message"}
+{"nick":"DrPizza","message":"how can it be, if it lives outside it?","date":"2011-08-17T22:44:30.226Z","type":"message"}
+{"nick":"piscisaureus","message":"my theory is that v8 wants to move its objects around but doing so would break the pointer you get from Utf8Value::Operator*","date":"2011-08-17T22:44:55.899Z","type":"message"}
+{"nick":"DrPizza","message":"I assume v8 is a compacting gc","date":"2011-08-17T22:45:06.867Z","type":"message"}
+{"nick":"DrPizza","message":"but that means it can't let raw pointers leak out","date":"2011-08-17T22:45:19.636Z","type":"message"}
+{"nick":"DrPizza","message":"and perhaps they found it useful to have raw pointers leak out for strings","date":"2011-08-17T22:45:31.098Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: good point","date":"2011-08-17T22:45:39.631Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: that was why i was checking it in the first place :-) I wanted to find out how v8 was able to lock stuff to its place in memory, but as it turns out, it doesn't.","date":"2011-08-17T22:46:34.874Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-17T22:46:43.944Z","type":"message"}
+{"nick":"mraleph","date":"2011-08-17T22:55:44.807Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus: what would be a good last_error.code for when we dispatch read_cb with -1? (to indicate free buffer)","date":"2011-08-17T23:22:31.272Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: we already do under some circumstances","date":"2011-08-17T23:22:57.297Z","type":"message"}
+{"nick":"piscisaureus","message":"I think it's uv_eagain","date":"2011-08-17T23:23:03.856Z","type":"message"}
+{"nick":"piscisaureus","message":"I'm going to check","date":"2011-08-17T23:23:09.309Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-17T23:23:49.665Z","type":"message"}
+{"nick":"ryah","message":"1sec - let me link to some code","date":"2011-08-17T23:24:15.697Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi:","date":"2011-08-17T23:24:18.427Z","type":"message"}
+{"nick":"piscisaureus","message":"https://github.com/joyent/libuv/blob/master/src/win/tcp.c#L816-818","date":"2011-08-17T23:24:18.583Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: that maps to UV_EAGAIN","date":"2011-08-17T23:24:26.296Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus: ok, thanks","date":"2011-08-17T23:24:45.211Z","type":"message"}
+{"nick":"piscisaureus","message":"this uv_set_sys_error(WSAEWOULDBLOCK); is pretty backwards btw - we should be able to set err.code directly and still provide some usefull description of the error","date":"2011-08-17T23:25:21.081Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus, igorzi: https://github.com/joyent/libuv/blob/cc5aa51fdf115bd15eb422a3e483d8bc84823626/test/echo-server.c#L87","date":"2011-08-17T23:25:38.809Z","type":"message"}
+{"nick":"ryah","message":"^-- EAGAIN","date":"2011-08-17T23:25:54.863Z","type":"message"}
+{"nick":"igorzi","message":"yep, looks like WSAEWOULDBLOCK gets translated into UV_EAGAIN","date":"2011-08-17T23:27:27.272Z","type":"message"}
+{"nick":"ryah","message":"read_cb with nread == 0 is possible","date":"2011-08-17T23:28:35.659Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: btw I'm afraid that we will have more loc than Boost:ASIO at some point","date":"2011-08-17T23:29:12.973Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-08-17T23:29:28.306Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yeah perhaps :)","date":"2011-08-17T23:29:30.204Z","type":"message"}
+{"nick":"ryah","message":"i thought that too","date":"2011-08-17T23:29:39.280Z","type":"message"}
+{"nick":"DrPizza","message":"I find that hard to believe","date":"2011-08-17T23:29:45.779Z","type":"message"}
+{"nick":"DrPizza","message":"boost::ASIO is pretty damn big","date":"2011-08-17T23:29:50.384Z","type":"message"}
+{"nick":"piscisaureus","message":"Boost ASIO – works correctly but is unacceptably massive (300 files","date":"2011-08-17T23:30:00.407Z","type":"message"}
+{"nick":"piscisaureus","message":"and 12000 semicolons). Doesn’t support regular files.","date":"2011-08-17T23:30:00.530Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-17T23:30:09.009Z","type":"message"}
+{"nick":"piscisaureus","message":"OK 300 files is still far out","date":"2011-08-17T23:30:13.762Z","type":"message"}
+{"nick":"piscisaureus","message":"12000 semicolons is not so much though","date":"2011-08-17T23:30:24.081Z","type":"message"}
+{"nick":"DrPizza","message":"no regular files in ASIO? sad.","date":"2011-08-17T23:30:35.143Z","type":"message"}
+{"nick":"DrPizza","message":"I have a treat in store for the weekend","date":"2011-08-17T23:30:53.451Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: I don't think it provides an abstraction of any kind btw","date":"2011-08-17T23:30:56.071Z","type":"message"}
+{"nick":"DrPizza","message":"the new libdispatch code","date":"2011-08-17T23:30:58.968Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: it just wants you to decide between ReadFile and read() etc","date":"2011-08-17T23:31:21.403Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: no? just C++ wrappers around various OS-specific functionality? I thought it was more abstract than that","date":"2011-08-17T23:31:24.659Z","type":"message"}
+{"nick":"piscisaureus","message":"not really an x-platform layer","date":"2011-08-17T23:31:27.105Z","type":"message"}
+{"nick":"DrPizza","message":"huh","date":"2011-08-17T23:31:29.497Z","type":"message"}
+{"nick":"DrPizza","message":"that seems pointless if true","date":"2011-08-17T23:31:33.268Z","type":"message"}
+{"nick":"ryah","message":"~/projects/libuv% find . | grep -v .git | wc -l 3685","date":"2011-08-17T23:31:34.481Z","type":"message"}
+{"nick":"ryah","message":"3685","date":"2011-08-17T23:31:41.974Z","type":"message"}
+{"nick":"piscisaureus","message":"wc -l?","date":"2011-08-17T23:32:24.236Z","type":"message"}
+{"nick":"ryah","message":"count lines","date":"2011-08-17T23:32:34.851Z","type":"message"}
+{"nick":"piscisaureus","message":"300 files and 12000 semicolons -> 40 semicolons / file\u0003","date":"2011-08-17T23:32:48.152Z","type":"message"}
+{"nick":"piscisaureus","message":"must me small files","date":"2011-08-17T23:32:51.061Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: lots of angle brackets, no doubt","date":"2011-08-17T23:33:02.708Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe they have just #define SEMICOLON ;","date":"2011-08-17T23:33:24.338Z","type":"message"}
+{"nick":"piscisaureus","message":"then printf(\"hello\") SEMICOLON","date":"2011-08-17T23:33:38.676Z","type":"message"}
+{"nick":"piscisaureus","message":"that sounds like reasonable in a C++ world","date":"2011-08-17T23:33:50.179Z","type":"message"}
+{"nick":"ryah","message":"okay libuv has currently 444 files","date":"2011-08-17T23:33:56.864Z","type":"message"}
+{"nick":"DrPizza","message":";_;","date":"2011-08-17T23:33:57.141Z","type":"message"}
+{"nick":"ryah","message":"approximately","date":"2011-08-17T23:34:02.234Z","type":"message"}
+{"nick":"DrPizza","message":"444 O_O","date":"2011-08-17T23:34:03.669Z","type":"message"}
+{"nick":"DrPizza","message":"that seems a lot","date":"2011-08-17T23:34:06.596Z","type":"message"}
+{"nick":"ryah","message":"mostly due to pthread-win32","date":"2011-08-17T23:34:09.243Z","type":"message"}
+{"nick":"DrPizza","message":"oh","date":"2011-08-17T23:34:12.517Z","type":"message"}
+{"nick":"DrPizza","message":"well","date":"2011-08-17T23:34:14.269Z","type":"message"}
+{"nick":"DrPizza","message":"pthread-win32 has one file per function","date":"2011-08-17T23:34:19.802Z","type":"message"}
+{"nick":"DrPizza","message":"it's crazy.","date":"2011-08-17T23:34:21.461Z","type":"message"}
+{"nick":"DrPizza","message":"it's weird, it does some few complex things","date":"2011-08-17T23:34:39.190Z","type":"message"}
+{"nick":"DrPizza","message":"but seems to have been developed by someone who doesn't really understand how modern C compilers work","date":"2011-08-17T23:34:56.433Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm, I may be wrong about asio not abstracting stuff","date":"2011-08-17T23:36:17.677Z","type":"message"}
+{"nick":"piscisaureus","message":"it at least does for sockets","date":"2011-08-17T23:36:23.051Z","type":"message"}
+{"nick":"DrPizza","message":"I thought it did","date":"2011-08-17T23:36:35.465Z","type":"message"}
+{"nick":"piscisaureus","message":"http://www.boost.org/doc/libs/1_47_0/doc/html/boost_asio/reference.html","date":"2011-08-17T23:37:07.677Z","type":"message"}
+{"nick":"DrPizza","message":"hm","date":"2011-08-17T23:39:22.594Z","type":"message"}
+{"nick":"DrPizza","message":"select, Solaris /dev/poll, epoll, kqueue, and IOCP","date":"2011-08-17T23:39:48.439Z","type":"message"}
+{"nick":"piscisaureus","message":"all you ever need","date":"2011-08-17T23:40:06.108Z","type":"message"}
+{"nick":"ryah","message":"ryan@mac1234:~/projects/libuv% find src | grep -v \".git\" | wc -l  177","date":"2011-08-17T23:40:41.003Z","type":"message"}
+{"nick":"ryah","message":"we have a lot of crap with ares and ev autoconf files","date":"2011-08-17T23:41:03.295Z","type":"message"}
+{"nick":"ryah","message":"but 177 files in src/","date":"2011-08-17T23:41:09.142Z","type":"message"}
+{"nick":"DrPizza","message":"my files are slightly out of date","date":"2011-08-17T23:42:37.540Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: http://www.boost.org/doc/libs/1_47_0/doc/html/boost_asio/reference/io_service/run/overload1.html","date":"2011-08-17T23:42:37.695Z","type":"message"}
+{"nick":"DrPizza","message":"but 28 files for core libuv","date":"2011-08-17T23:42:42.992Z","type":"message"}
+{"nick":"piscisaureus","message":"\"Multiple threads may call the run() function to set up a pool of threads from which the io_service may execute handlers. All threads that are waiting in the pool are equivalent and the io_service may choose any one of them to invoke a handler. \"","date":"2011-08-17T23:42:49.053Z","type":"message"}
+{"nick":"DrPizza","message":"136 files for ares + eio + ev","date":"2011-08-17T23:43:00.885Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: so they must use a single iocp","date":"2011-08-17T23:45:37.196Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-17T23:45:42.417Z","type":"message"}
+{"nick":"ryah","message":"so should we :)","date":"2011-08-17T23:45:58.998Z","type":"message"}
+{"nick":"piscisaureus","message":"asio supports tcp/udp/raw sockets, timers, ssl, serial ports","date":"2011-08-17T23:47:09.388Z","type":"message"}
+{"nick":"piscisaureus","message":"we can do better than that","date":"2011-08-17T23:47:15.934Z","type":"message"}
+{"nick":"DrPizza","message":"ssl in uv?","date":"2011-08-17T23:47:28.999Z","type":"message"}
+{"nick":"piscisaureus","message":"-1","date":"2011-08-17T23:47:34.869Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-08-17T23:47:38.526Z","type":"message"}
+{"nick":"piscisaureus","message":"serial ports -10","date":"2011-08-17T23:47:39.537Z","type":"message"}
+{"nick":"ryah","message":"do they do dns?","date":"2011-08-17T23:50:35.867Z","type":"message"}
+{"nick":"piscisaureus","message":"I think so but I can't find documentation so far","date":"2011-08-17T23:50:47.875Z","type":"message"}
+{"nick":"piscisaureus","message":"i think its somewhere inside tcp::protocol::resolver","date":"2011-08-17T23:51:04.666Z","type":"message"}
+{"nick":"ryah","message":"god i can't stand boost","date":"2011-08-17T23:51:33.393Z","type":"message"}
+{"nick":"piscisaureus","message":"why?","date":"2011-08-17T23:51:41.388Z","type":"message"}
+{"nick":"ryah","message":"the docs are really annoying","date":"2011-08-17T23:51:41.857Z","type":"message"}
+{"nick":"ryah","message":"it's too OO","date":"2011-08-17T23:51:52.427Z","type":"message"}
+{"nick":"DrPizza","message":"the docs are enormously inconsistent in style and presentation","date":"2011-08-17T23:51:52.715Z","type":"message"}
+{"nick":"ryah","message":"template<","date":"2011-08-17T23:52:11.527Z","type":"message"}
+{"nick":"ryah","message":"    typename InternetProtocol,","date":"2011-08-17T23:52:11.687Z","type":"message"}
+{"nick":"ryah","message":"    typename ResolverService = resolver_service<InternetProtocol>>","date":"2011-08-17T23:52:11.687Z","type":"message"}
+{"nick":"ryah","message":"class basic_resolver :","date":"2011-08-17T23:52:11.688Z","type":"message"}
+{"nick":"ryah","message":"  public basic_io_object< ResolverService >","date":"2011-08-17T23:52:12.341Z","type":"message"}
+{"nick":"ryah","message":"groan...","date":"2011-08-17T23:52:18.734Z","type":"message"}
+{"nick":"piscisaureus","message":"http://www.boost.org/doc/libs/1_47_0/doc/html/boost_asio/reference/ip__basic_resolver/async_resolve.html","date":"2011-08-17T23:52:35.408Z","type":"message"}
+{"nick":"DrPizza","message":"meh, I don't care about that stuff, as long as I never have to type it","date":"2011-08-17T23:52:36.809Z","type":"message"}
+{"nick":"DrPizza","message":"it's a legitimate implementation strategy IMO","date":"2011-08-17T23:52:44.524Z","type":"message"}
+{"nick":"DrPizza","message":"wreaks havoc on compile times","date":"2011-08-17T23:53:07.259Z","type":"message"}
+{"nick":"DrPizza","message":"but hey, no runtime penalty","date":"2011-08-17T23:53:13.870Z","type":"message"}
+{"nick":"ryah","message":"i'm not against templates if used in moderation","date":"2011-08-17T23:53:41.141Z","type":"message"}
+{"nick":"piscisaureus","message":"http://stackoverflow.com/questions/6701435/scalable-server-framework-in-c","date":"2011-08-17T23:55:12.017Z","type":"message"}
+{"nick":"ryah","message":"\"have been unable to find someone yet who can do it within my budget (2 or 300 US dollars)\"","date":"2011-08-17T23:56:19.509Z","type":"message"}
+{"nick":"ryah","message":"yeah...","date":"2011-08-17T23:56:22.897Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: I would love a libuv++ wrapper, that did just enough wrapping to let me use c++ lambdas instead of function pointers","date":"2011-08-17T23:58:17.888Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder if we should add a way for people to leave out parts of libuv","date":"2011-08-17T23:59:24.428Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: don't c++ lambda have a different type than function pointers?","date":"2011-08-17T23:59:39.169Z","type":"message"}
+{"nick":"ryah","message":"you wouldn't be able to sue the directly","date":"2011-08-17T23:59:44.653Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: yeah, you'd have to stash them in the void*","date":"2011-08-17T23:59:52.192Z","type":"message"}
+{"nick":"piscisaureus","message":"e.g. if you're not interested in console io then #define UV_NOCONSOLE","date":"2011-08-17T23:59:53.187Z","type":"message"}

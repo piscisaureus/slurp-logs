@@ -1,0 +1,924 @@
+{"nick":"mraleph","message":"isaacs: it might be related to the fact that JS source can be passed as utf-8 string. (e.g. see comment number #4 on issue 761)","date":"2012-02-21T00:00:34.050Z","type":"message"}
+{"nick":"isaacs","message":"yes, i don't quite understand comment #4.  http://code.google.com/p/v8/issues/detail?id=761#c4","date":"2012-02-21T00:00:55.359Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't understand comment 5:","date":"2012-02-21T00:01:53.811Z","type":"message"}
+{"nick":"piscisaureus_","message":"V8 \u0002won't not \u0002support characters outside the Basic Multilingual Plane.","date":"2012-02-21T00:02:13.620Z","type":"message"}
+{"nick":"piscisaureus_","message":"emphasis mine :-p","date":"2012-02-21T00:02:17.976Z","type":"message"}
+{"nick":"isaacs","message":"also, this: \" The pre-parser stores indices into the string for later use, so the number of codepoints in the two representations MUST be the same.\"","date":"2012-02-21T00:02:49.058Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, that's what he means :-)","date":"2012-02-21T00:03:20.673Z","type":"message"}
+{"nick":"isaacs","message":"this seems like an unnecessary constraint.  can't the pre-parser's index be updated?","date":"2012-02-21T00:03:25.081Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: whether that so is not actually a non sequitur I don't know","date":"2012-02-21T00:03:34.172Z","type":"message"}
+{"nick":"isaacs","message":"right, but it seems like v8 is deciding to not support the most relevant character encoding in the world, because of an implementation detail.  maybe i'm missing something.","date":"2012-02-21T00:04:17.212Z","type":"message"}
+{"nick":"mraleph","message":"\"A conforming implementation of this International standard shall interpret characters in conformance with the Unicode Standard, Version 3.0 or later and ISO/IEC 10646-1 with either UCS-2 or UTF-16 as the adopted encoding form, implementation level 3. If the adopted ISO/IEC 10646-1 subset is not otherwise specified, it is presumed to be the BMP subset, collection 300.\"","date":"2012-02-21T00:06:42.958Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: we're not talking about the API that v8 presents to javascript programs, though, we're talking about Utf8Value and Utf8Write, which are not part of the JS api anyway.","date":"2012-02-21T00:09:14.480Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: my complaint is about the API that v8 is presenting to C++ programs, not to JS programs.","date":"2012-02-21T00:09:29.915Z","type":"message"}
+{"nick":"isaacs","message":"i don't think that the ES5 spec really covers that.","date":"2012-02-21T00:10:45.005Z","type":"message"}
+{"nick":"DrPizza","message":"o wow","date":"2012-02-21T00:10:51.723Z","type":"message"}
+{"nick":"DrPizza","message":"soit really is UCS2","date":"2012-02-21T00:10:57.014Z","type":"message"}
+{"nick":"DrPizza","message":"that sucks","date":"2012-02-21T00:11:01.926Z","type":"message"}
+{"nick":"mraleph","message":"as for C++ API (which is not part of standard): I suppose it could encode/decode utf8 outside of BMP <-> surrogate pairs correctly. but it would put additional complexity that can be kept outside of V8. ","date":"2012-02-21T00:11:31.303Z","type":"message"}
+{"nick":"mraleph","message":"for example WebKit handles it in the bindings layer (through external string resource).","date":"2012-02-21T00:12:12.176Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-02-21T00:12:17.207Z","type":"message"}
+{"nick":"DrPizza","message":"oh wow","date":"2012-02-21T00:12:54.506Z","type":"message"}
+{"nick":"DrPizza","message":"so _JavaScript_ sucks?","date":"2012-02-21T00:12:59.678Z","type":"message"}
+{"nick":"DrPizza","message":"so you can't like","date":"2012-02-21T00:13:02.625Z","type":"message"}
+{"nick":"isaacs","message":"it's looking like we might have to do that.  but when chrome and node are both implementing string encoding/decoding because the v8 api is not delivering what they need, then isn't that an indicator that the v8 api itself is kind of broken there?","date":"2012-02-21T00:13:06.292Z","type":"message"}
+{"nick":"DrPizza","message":"use JS to safely manipulate a non-BMP page?","date":"2012-02-21T00:13:10.729Z","type":"message"}
+{"nick":"isaacs","message":"i mean, why not just not have utf8 methods *at all* in v8, then?","date":"2012-02-21T00:13:20.610Z","type":"message"}
+{"nick":"DrPizza","message":"it seems kind of strange for each application to have to have its own utf-16 <-> utf-8 encoder","date":"2012-02-21T00:14:27.219Z","type":"message"}
+{"nick":"mraleph","message":"my guess would be that utf-8 -> ucs-2 convertion that replaces stuff outside of BMP with surogate pairs is specified somewhere as standard way to handle this stuff.","date":"2012-02-21T00:14:45.193Z","type":"message"}
+{"nick":"mraleph","message":"but I know little about this.","date":"2012-02-21T00:14:55.314Z","type":"message"}
+{"nick":"mraleph","message":"I will ask Lasse about it tomorrow.","date":"2012-02-21T00:15:04.571Z","type":"message"}
+{"nick":"DrPizza","message":"utf-8 -> ucs2 is a non-safe conversion","date":"2012-02-21T00:15:18.610Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: ucs2 is a fixed-string encoding that does not support characters outside the BMP","date":"2012-02-21T00:15:44.972Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2012-02-21T00:15:50.210Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: er, fixed-length","date":"2012-02-21T00:15:51.022Z","type":"message"}
+{"nick":"DrPizza","message":"which is why you can't convert utf-8 to ucs-2","date":"2012-02-21T00:15:56.386Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: well, the defacto \"standard\" here is to present the JS program with 2 ucs2 chars representing the surrogate-pair values.","date":"2012-02-21T00:15:56.640Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: so, the unicode-tiger UTF-8 would show in your JS program as the string \"\\uD83D\\uDC05\", length=2","date":"2012-02-21T00:16:21.394Z","type":"message"}
+{"nick":"DrPizza","message":"isaacs: and just trust that nothing will ever cause the surrogate pair to be cleaved in two?","date":"2012-02-21T00:16:22.144Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: no, don't trust.  be VERY VERY CAREFUL","date":"2012-02-21T00:16:32.432Z","type":"message"}
+{"nick":"DrPizza","message":"ugh","date":"2012-02-21T00:16:34.300Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: we can't assume that.","date":"2012-02-21T00:16:36.329Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: yeah.","date":"2012-02-21T00:16:36.558Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: but it is as good as it gets","date":"2012-02-21T00:16:43.464Z","type":"message"}
+{"nick":"DrPizza","message":"it's a common problem","date":"2012-02-21T00:17:00.152Z","type":"message"}
+{"nick":"DrPizza","message":"but it's horrible every time","date":"2012-02-21T00:17:02.949Z","type":"message"}
+{"nick":"isaacs","message":"if v8 could give us that 2-char string from the 4 utf8 bytes, then that'd be fine.","date":"2012-02-21T00:17:11.689Z","type":"message"}
+{"nick":"DrPizza","message":"length in codepoints != length in \"characters\"","date":"2012-02-21T00:17:14.553Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: there's a discussion in es-discuss right now about this issue.","date":"2012-02-21T00:17:29.169Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: you should be aware that the other alternatives from an implementation perspective are to use 3 bytes per character (ugh) or to use variable-length strings (slow for many operations, e.g. indexing)","date":"2012-02-21T00:17:40.025Z","type":"message"}
+{"nick":"DrPizza","message":"utf-32 as your internal representation","date":"2012-02-21T00:17:59.492Z","type":"message"}
+{"nick":"isaacs","message":"actually, i don't care very much about indexing.","date":"2012-02-21T00:18:00.054Z","type":"message"}
+{"nick":"DrPizza","message":"fixed-length, randomly accessible","date":"2012-02-21T00:18:06.735Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: 4 bytes per character, even more ugh","date":"2012-02-21T00:18:14.392Z","type":"message"}
+{"nick":"isaacs","message":"and, *any* fixed-length encoding is going to hit problems *eventually*","date":"2012-02-21T00:18:17.815Z","type":"message"}
+{"nick":"isaacs","message":"length=2, whatever.  just don't cleave it.","date":"2012-02-21T00:18:27.825Z","type":"message"}
+{"nick":"DrPizza","message":"isaacs: no, unicode has promised to never use more than ca. 21 bit","date":"2012-02-21T00:18:31.555Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: really?  even when the aliens come?","date":"2012-02-21T00:18:40.910Z","type":"message"}
+{"nick":"DrPizza","message":"yup","date":"2012-02-21T00:18:44.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yep","date":"2012-02-21T00:18:46.050Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: whoa.  i thought it was future-looking.","date":"2012-02-21T00:18:53.758Z","type":"message"}
+{"nick":"piscisaureus_","message":"although, iirc that was only per unicode 4","date":"2012-02-21T00:18:58.308Z","type":"message"}
+{"nick":"mraleph","message":"aliens will not come as long as we have javascript","date":"2012-02-21T00:19:03.574Z","type":"message"}
+{"nick":"isaacs","message":"that's going to suck for the people in 10 thousand years.","date":"2012-02-21T00:19:10.686Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: 3-byte is more compact, but processors hate it","date":"2012-02-21T00:19:13.125Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the reason for limiting to 21 bit actually was UTF16","date":"2012-02-21T00:19:14.575Z","type":"message"}
+{"nick":"DrPizza","message":"right, UTF-16 gives you approx 21 usable bits","date":"2012-02-21T00:19:35.964Z","type":"message"}
+{"nick":"DrPizza","message":"(not exactly)","date":"2012-02-21T00:19:39.332Z","type":"message"}
+{"nick":"mraleph","message":"in any case… I'll try to figure out why api does what it does.","date":"2012-02-21T00:20:09.064Z","type":"message"}
+{"nick":"mraleph","message":"see you","date":"2012-02-21T00:20:19.281Z","type":"message"}
+{"nick":"piscisaureus_","message":"When UTF16 conceived they decided that they would never define any code point that UTF16 can't encode","date":"2012-02-21T00:20:27.697Z","type":"message"}
+{"nick":"piscisaureus_","message":"mraleph: see ya","date":"2012-02-21T00:20:32.392Z","type":"message"}
+{"nick":"isaacs","message":"but anyway... what we really need is a way to take a bunch of utf8 bytes, turn it into a js string (ucs, surrogates, whatever), then back into the same utf8 bytes.","date":"2012-02-21T00:20:38.039Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: thanks for listening","date":"2012-02-21T00:20:43.256Z","type":"message"}
+{"nick":"DrPizza","message":"utf8 <-> utf16 isn't too hard","date":"2012-02-21T00:21:09.785Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's easy even","date":"2012-02-21T00:21:15.928Z","type":"message"}
+{"nick":"DrPizza","message":"utf-16 is really a hokey encoding","date":"2012-02-21T00:21:19.614Z","type":"message"}
+{"nick":"isaacs","message":"utf8 is the correct encoding.","date":"2012-02-21T00:21:38.765Z","type":"message"}
+{"nick":"isaacs","message":"i think we know this now.","date":"2012-02-21T00:21:41.551Z","type":"message"}
+{"nick":"DrPizza","message":"utf8 is pretty horrible too","date":"2012-02-21T00:21:47.817Z","type":"message"}
+{"nick":"DrPizza","message":"utf32 is the best encoding","date":"2012-02-21T00:21:50.799Z","type":"message"}
+{"nick":"piscisaureus_","message":"utf8++","date":"2012-02-21T00:21:54.364Z","type":"message"}
+{"nick":"kohai","message":"utf8 has 1 beer","date":"2012-02-21T00:21:54.854Z","type":"message"}
+{"nick":"DrPizza","message":"utf8 is a unix atrocity","date":"2012-02-21T00:21:59.930Z","type":"message"}
+{"nick":"isaacs","message":"we need to deal with ucs2 in js, because of historical accidents that can't be fixed easily.","date":"2012-02-21T00:22:03.270Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-02-21T00:22:08.650Z","type":"quit"}
+{"nick":"isaacs","message":"utf8++","date":"2012-02-21T00:22:20.117Z","type":"message"}
+{"nick":"kohai","message":"utf8 has 2 beers","date":"2012-02-21T00:22:21.153Z","type":"message"}
+{"nick":"DrPizza","message":"so using utf-16 and pretending it's ucs2 is the only real option","date":"2012-02-21T00:22:29.823Z","type":"message"}
+{"nick":"DrPizza","message":"and then just hope that v8 won't cleave surrogate pairs","date":"2012-02-21T00:22:46.083Z","type":"message"}
+{"nick":"DrPizza","message":"so that you can always roundtrip","date":"2012-02-21T00:22:51.459Z","type":"message"}
+{"nick":"txdv","reason":"Ping timeout: 248 seconds","date":"2012-02-21T00:23:08.372Z","type":"quit"}
+{"nick":"isaacs","message":"DrPizza: that's what people have been doing on the browser forever, yes.","date":"2012-02-21T00:23:29.831Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: it is up to the user to not cleave surrogate pairs","date":"2012-02-21T00:23:33.464Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: as far as v8 is concerned, it are 2 characters","date":"2012-02-21T00:23:46.937Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: in practice, it's not quite as terrible as it sounds.","date":"2012-02-21T00:23:50.750Z","type":"message"}
+{"nick":"DrPizza","message":"isaacs: how does that work with e.g. regexps?","date":"2012-02-21T00:23:53.775Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: hahahaha","date":"2012-02-21T00:23:57.911Z","type":"message"}
+{"nick":"isaacs","message":"no","date":"2012-02-21T00:23:59.601Z","type":"message"}
+{"nick":"DrPizza","message":"does it have appropriate ranges etc.?","date":"2012-02-21T00:24:01.275Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2012-02-21T00:24:02.743Z","type":"message"}
+{"nick":"isaacs","message":"i mean, it does.","date":"2012-02-21T00:24:06.163Z","type":"message"}
+{"nick":"isaacs","message":"but you have to deal with them as 2 chars.","date":"2012-02-21T00:24:11.729Z","type":"message"}
+{"nick":"DrPizza","message":"or character classes; :alnunm: or :digit: or whatever","date":"2012-02-21T00:24:24.461Z","type":"message"}
+{"nick":"isaacs","message":"i'm assured by brendan eich that TC-39 will fight over this the next time the get together to fight.","date":"2012-02-21T00:24:34.339Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2012-02-21T00:24:38.864Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: it won't work with character classes","date":"2012-02-21T00:24:39.803Z","type":"message"}
+{"nick":"DrPizza","message":"do you know which way they're leaning?","date":"2012-02-21T00:24:43.479Z","type":"message"}
+{"nick":"DrPizza","message":"seems crazy in this day and age to not demand that javascript have proper unicode support","date":"2012-02-21T00:25:04.610Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: brendan's latest to the mailing list suggested a Big Red Switch (ie, VM-level cli flag, <meta> tag in html, etc.)","date":"2012-02-21T00:25:15.456Z","type":"message"}
+{"nick":"piscisaureus_","message":"In TC39 there is never a \"they\" leaning anywhere.","date":"2012-02-21T00:25:16.729Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: yes, it does seem crazy.  that's why we're demanding it.","date":"2012-02-21T00:25:29.639Z","type":"message"}
+{"nick":"piscisaureus_","message":"We will get further behing node native and luvit :-(","date":"2012-02-21T00:25:53.096Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: it's particularly problematic when you have a string in a \"unicode-proper\" context, that gets shared with a unicode-backward context.","date":"2012-02-21T00:25:53.655Z","type":"message"}
+{"nick":"DrPizza","message":"node.native looks pretty funky","date":"2012-02-21T00:26:15.745Z","type":"message"}
+{"nick":"DrPizza","message":"but heh","date":"2012-02-21T00:26:17.996Z","type":"message"}
+{"nick":"DrPizza","message":"writing utf-8/16/32 codecvts is pretty easy","date":"2012-02-21T00:26:25.972Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: let's just throw a JSON.parse/stringify benchmark that uses non-BMP chars.","date":"2012-02-21T00:26:26.921Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: then we'll win (i mean, not today, since we'll fail the test immediately due to this issue)","date":"2012-02-21T00:26:39.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you seen felixes benchmark?","date":"2012-02-21T00:26:42.736Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: VM guys are only human and they deal with the same computer crap as us","date":"2012-02-21T00:27:10.764Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, wasn't it showing that it hurts just to treat it as a string?","date":"2012-02-21T00:27:18.701Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it showed that whenever an utf8 character appears encoding/decoding slows down by 500%","date":"2012-02-21T00:27:49.400Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: buffer->string decoding, that is","date":"2012-02-21T00:28:08.912Z","type":"message"}
+{"nick":"pfox___","reason":"Ping timeout: 245 seconds","date":"2012-02-21T00:28:45.545Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: it's the pain you feel when you have to deal with non-fixed-length strings","date":"2012-02-21T00:28:48.543Z","type":"message"}
+{"nick":"DrPizza","message":"this is why we have utf-32 :p","date":"2012-02-21T00:29:09.930Z","type":"message"}
+{"nick":"DrPizza","message":"memory is cheap anyway!","date":"2012-02-21T00:29:13.155Z","type":"message"}
+{"nick":"isaacs","message":"yikes","date":"2012-02-21T00:29:20.581Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't think 3-byte encoding is that bad actually, at least not on x86","date":"2012-02-21T00:30:07.328Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's difficult on architectures that allow only aligned memory access","date":"2012-02-21T00:30:20.807Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: yeah","date":"2012-02-21T00:30:32.742Z","type":"message"}
+{"nick":"isaacs","message":"this whole issue is just so freaking painful.","date":"2012-02-21T00:30:39.451Z","type":"message"}
+{"nick":"isaacs","message":"man.","date":"2012-02-21T00:30:45.999Z","type":"message"}
+{"nick":"DrPizza","message":"isaacs: yup, it blows","date":"2012-02-21T00:31:08.266Z","type":"message"}
+{"nick":"DrPizza","message":"it's kind of annoying","date":"2012-02-21T00:31:12.542Z","type":"message"}
+{"nick":"DrPizza","message":"java, win32, javascript all tried to be forwardlooking","date":"2012-02-21T00:31:20.551Z","type":"message"}
+{"nick":"DrPizza","message":"by using UCS2","date":"2012-02-21T00:31:22.191Z","type":"message"}
+{"nick":"DrPizza","message":"and then they got trolled by unicode","date":"2012-02-21T00:31:30.003Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-02-21T00:31:34.609Z","type":"message"}
+{"nick":"piscisaureus_","message":"hehe, yes exactly","date":"2012-02-21T00:31:39.223Z","type":"message"}
+{"nick":"DrPizza","message":"deciding \"oh gosh, there is a country called china, ucs2 won't be enough after all. who knew?\"","date":"2012-02-21T00:31:44.907Z","type":"message"}
+{"nick":"isaacs","message":"in a way, lua's approach is kind of reasonable.","date":"2012-02-21T00:31:46.029Z","type":"message"}
+{"nick":"isaacs","message":"\"string?  you mean char*?\"","date":"2012-02-21T00:31:52.416Z","type":"message"}
+{"nick":"isaacs","message":"at least it's not as bad as erlang.","date":"2012-02-21T00:32:20.079Z","type":"message"}
+{"nick":"DrPizza","message":"isaacs: yeah that's great if you want people to ruin your codepoints","date":"2012-02-21T00:32:20.241Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that's the same as saying that php's way is reasonable","date":"2012-02-21T00:32:26.216Z","type":"message"}
+{"nick":"isaacs","message":"ISO-8859-1 or nuthin!","date":"2012-02-21T00:32:26.889Z","type":"message"}
+{"nick":"DrPizza","message":"what does erlang do?","date":"2012-02-21T00:32:28.620Z","type":"message"}
+{"nick":"DrPizza","message":"hahaha","date":"2012-02-21T00:32:30.561Z","type":"message"}
+{"nick":"DrPizza","message":"srsly?","date":"2012-02-21T00:32:32.465Z","type":"message"}
+{"nick":"isaacs","message":"DrPizza: yes.","date":"2012-02-21T00:32:35.297Z","type":"message"}
+{"nick":"DrPizza","message":"wow","date":"2012-02-21T00:32:41.051Z","type":"message"}
+{"nick":"isaacs","message":"you can have an ISO-8859-1, or you can have byte arrays.","date":"2012-02-21T00:32:47.664Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but let me tell you, in php it's way more painful than it is in js","date":"2012-02-21T00:32:52.646Z","type":"message"}
+{"nick":"isaacs","message":"there is no unicode support.","date":"2012-02-21T00:32:52.824Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: oh, that's not true.","date":"2012-02-21T00:32:59.795Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: you just use the mb_* functions for everything, or turn on multibyte support in compilation so that they're the default anyway","date":"2012-02-21T00:33:18.263Z","type":"message"}
+{"nick":"DrPizza","message":"what does php do?","date":"2012-02-21T00:33:23.834Z","type":"message"}
+{"nick":"isaacs","message":"i mean, in php, you've already given up speed anyway.","date":"2012-02-21T00:33:30.468Z","type":"message"}
+{"nick":"piscisaureus_","message":"hehe","date":"2012-02-21T00:33:35.374Z","type":"message"}
+{"nick":"isaacs","message":"no, seriously.  100 requests per second is acceptable in that world.","date":"2012-02-21T00:33:50.302Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah the mb_ cruft is probably not as bad.","date":"2012-02-21T00:33:51.042Z","type":"message"}
+{"nick":"isaacs","message":"you just throw more machines at it.","date":"2012-02-21T00:33:54.173Z","type":"message"}
+{"nick":"mmalecki","message":"or compile to native code like fb does","date":"2012-02-21T00:34:15.815Z","type":"message"}
+{"nick":"DrPizza","message":"no, you rewrite PHP to produce C++","date":"2012-02-21T00:34:15.979Z","type":"message"}
+{"nick":"isaacs","action":"has done async IO in PHP using AsyncMultiCurl to localhost:8080","date":"2012-02-21T00:34:18.317Z","type":"action"}
+{"nick":"DrPizza","message":"^","date":"2012-02-21T00:34:19.685Z","type":"message"}
+{"nick":"mmalecki","message":"haha","date":"2012-02-21T00:34:22.679Z","type":"message"}
+{"nick":"isaacs","message":"i quit the php game before hiphop existed.","date":"2012-02-21T00:34:32.483Z","type":"message"}
+{"nick":"piscisaureus_","message":"me too","date":"2012-02-21T00:34:39.278Z","type":"message"}
+{"nick":"isaacs","message":"but yeah, writing native modules is how you do everything speed-intensive","date":"2012-02-21T00:34:42.996Z","type":"message"}
+{"nick":"isaacs","message":"it's a real testament ot js and v8 that in node, you first bind to an external lib, then rewrite in JS when you get annoyed with it.","date":"2012-02-21T00:35:08.141Z","type":"message"}
+{"nick":"isaacs","message":"in php, you first write in php, then rewrite in C++ all the parts that are too unbearablly slow","date":"2012-02-21T00:35:27.604Z","type":"message"}
+{"nick":"mmalecki","message":"which can end up in rewriting everything","date":"2012-02-21T00:36:01.457Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is amazing considering how awful the php api is","date":"2012-02-21T00:36:28.396Z","type":"message"}
+{"nick":"piscisaureus_","message":"TSRMLS_CC, anyone?","date":"2012-02-21T00:36:31.681Z","type":"message"}
+{"nick":"isaacs","message":"T_PAAMAYIM_NEKUDOTAYIM ","date":"2012-02-21T00:36:51.680Z","type":"message"}
+{"nick":"benvie","message":"yeah didn't facebook end up completely redoing php or something to that effect?","date":"2012-02-21T00:37:02.913Z","type":"message"}
+{"nick":"DrPizza","message":"benvie: facebook's setup is insane","date":"2012-02-21T00:37:12.274Z","type":"message"}
+{"nick":"piscisaureus_","message":"missing semicolon","date":"2012-02-21T00:37:12.859Z","type":"message"}
+{"nick":"mmalecki","message":"benvie: yeah, they did. hiphop php or something","date":"2012-02-21T00:37:16.397Z","type":"message"}
+{"nick":"mmalecki","message":"but I was quite impressed by it, actually","date":"2012-02-21T00:37:37.513Z","type":"message"}
+{"nick":"mmalecki","message":"like, deploying > 1 G binary to cluster of machines using bittorrent? that's pimpin'","date":"2012-02-21T00:37:59.475Z","type":"message"}
+{"nick":"benvie","message":"because they had invested in this whole set of people who were most comfortable developing in php. Can't really just fire a few hundred devs","date":"2012-02-21T00:38:02.571Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: @felixge: Benchmarking some parsing stuff. Receiving data: ~600 MB / sec. Casting to ASCII: 300 MB / sec. Utf8: 60 MB / sec. #nodejs #v8","date":"2012-02-21T00:38:49.005Z","type":"message"}
+{"nick":"mmalecki","message":"benvie: yeah, but they do a lot of python and (so I've heard) node.js as well","date":"2012-02-21T00:38:50.322Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: https://t.co/3Tf2VqZ9","date":"2012-02-21T00:38:58.419Z","type":"message"}
+{"nick":"mmalecki","message":"benvie: at least I got an e-mail because of python contributions","date":"2012-02-21T00:39:13.026Z","type":"message"}
+{"nick":"isaacs","message":"a, right","date":"2012-02-21T00:39:17.616Z","type":"message"}
+{"nick":"benvie","message":"well yeah in the long term they can migrate. And especially nowadays with continuous integration and changing out things bit by bit","date":"2012-02-21T00:39:23.977Z","type":"message"}
+{"nick":"benvie","message":"ha","date":"2012-02-21T00:39:30.196Z","type":"message"}
+{"nick":"benvie","message":"I know they had some node stuff going on, was it them that had something with chat using node?","date":"2012-02-21T00:39:52.759Z","type":"message"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-02-21T00:40:48.910Z","type":"quit"}
+{"nick":"mmalecki","message":"benvie: yeah, I think I've heard about chat as well","date":"2012-02-21T00:40:50.309Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T00:41:37.005Z","type":"quit"}
+{"nick":"mikeal","date":"2012-02-21T00:43:44.894Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: I'm outta here. Catch up with you tomorrow about this charset issue.","date":"2012-02-21T00:46:51.667Z","type":"message"}
+{"nick":"piscisaureus_","message":"Bye all","date":"2012-02-21T00:46:54.061Z","type":"message"}
+{"nick":"isaacs","message":"g'nite","date":"2012-02-21T00:46:58.938Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: don't forget the call tomorrow :-)","date":"2012-02-21T00:47:15.932Z","type":"message"}
+{"nick":"isaacs","message":"yes!","date":"2012-02-21T00:47:26.147Z","type":"message"}
+{"nick":"isaacs","message":"thanks for the reminder","date":"2012-02-21T00:47:28.822Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-02-21T00:47:44.883Z","type":"quit"}
+{"nick":"benvie","date":"2012-02-21T00:54:36.798Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-02-21T00:58:41.390Z","type":"quit"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-02-21T00:59:14.336Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-02-21T01:00:26.751Z","type":"join"}
+{"nick":"hij1nx","reason":"Client Quit","date":"2012-02-21T01:00:29.112Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-02-21T01:04:17.309Z","type":"join"}
+{"nick":"pfox___","date":"2012-02-21T01:20:46.734Z","type":"join"}
+{"nick":"Aria","date":"2012-02-21T01:25:33.870Z","type":"join"}
+{"nick":"pfox___","reason":"Ping timeout: 252 seconds","date":"2012-02-21T01:34:12.693Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-02-21T01:34:48.884Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-02-21T01:41:26.492Z","type":"join"}
+{"nick":"pfox___","date":"2012-02-21T01:46:05.974Z","type":"join"}
+{"nick":"orlandovftw","reason":"Ping timeout: 255 seconds","date":"2012-02-21T01:50:11.100Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T02:00:23.927Z","type":"quit"}
+{"nick":"pfox___","reason":"Ping timeout: 256 seconds","date":"2012-02-21T02:18:59.694Z","type":"quit"}
+{"nick":"mraleph","date":"2012-02-21T02:32:01.553Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-02-21T02:38:22.945Z","type":"quit"}
+{"nick":"sh1mmer_","date":"2012-02-21T02:48:33.490Z","type":"join"}
+{"nick":"sh1mmer","reason":"Ping timeout: 240 seconds","date":"2012-02-21T02:50:25.822Z","type":"quit"}
+{"nick":"sh1mmer_","new_nick":"sh1mmer","date":"2012-02-21T02:50:25.984Z","type":"nick"}
+{"nick":"xaq","date":"2012-02-21T03:03:17.537Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-02-21T03:09:19.202Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T03:30:44.360Z","type":"quit"}
+{"nick":"mmalecki","new_nick":"mmalecki[zzz]","date":"2012-02-21T03:31:19.631Z","type":"nick"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-02-21T03:34:26.142Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-02-21T03:39:34.443Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T03:43:41.687Z","type":"join"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-02-21T03:46:45.864Z","type":"quit"}
+{"nick":"mjr_","date":"2012-02-21T03:55:00.812Z","type":"join"}
+{"nick":"isaacs","date":"2012-02-21T03:57:31.621Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T04:02:44.801Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-02-21T04:02:59.663Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-02-21T04:07:47.108Z","type":"join"}
+{"nick":"hij1nx","reason":"Read error: Connection reset by peer","date":"2012-02-21T04:14:38.192Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T04:21:40.455Z","type":"quit"}
+{"nick":"xaq","date":"2012-02-21T04:24:57.705Z","type":"join"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-02-21T04:30:47.490Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-02-21T04:40:18.037Z","type":"quit"}
+{"nick":"mikeal","date":"2012-02-21T04:44:05.731Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T05:04:13.844Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-02-21T05:07:37.219Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T05:19:27.281Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-02-21T05:28:19.523Z","type":"join"}
+{"nick":"isaacs","date":"2012-02-21T05:47:11.780Z","type":"join"}
+{"nick":"isaacs","reason":"Ping timeout: 245 seconds","date":"2012-02-21T05:51:46.661Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-02-21T05:55:08.379Z","type":"quit"}
+{"nick":"indutny_iz_slpng","new_nick":"indutny","date":"2012-02-21T06:01:50.389Z","type":"nick"}
+{"nick":"indutny","message":"morning","date":"2012-02-21T06:01:54.193Z","type":"message"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-02-21T06:02:34.589Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T06:25:52.233Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-02-21T06:30:59.478Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-02-21T06:31:42.574Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T06:32:03.355Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-02-21T06:36:55.084Z","type":"quit"}
+{"nick":"mikeal","date":"2012-02-21T06:39:05.479Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-02-21T06:39:45.081Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-02-21T06:46:12.069Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Leaving...","date":"2012-02-21T07:03:46.583Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-02-21T07:18:11.088Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-02-21T07:29:23.763Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T07:30:08.683Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-02-21T07:39:29.729Z","type":"join"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2012-02-21T07:40:17.905Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-02-21T07:54:35.670Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T08:00:53.145Z","type":"quit"}
+{"nick":"mraleph","date":"2012-02-21T08:04:39.945Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-02-21T08:05:24.243Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T08:18:47.762Z","type":"quit"}
+{"nick":"xaq","date":"2012-02-21T08:39:04.226Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-02-21T08:39:12.068Z","type":"quit"}
+{"nick":"paddybyers_","date":"2012-02-21T09:04:16.717Z","type":"join"}
+{"nick":"paddybyers","reason":"Ping timeout: 240 seconds","date":"2012-02-21T09:07:17.640Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2012-02-21T09:07:18.026Z","type":"nick"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T09:09:58.003Z","type":"quit"}
+{"nick":"saghul","reason":"Quit: saghul","date":"2012-02-21T09:14:53.702Z","type":"quit"}
+{"nick":"saghul","date":"2012-02-21T09:15:39.854Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T09:19:35.605Z","type":"join"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-02-21T10:08:03.896Z","type":"quit"}
+{"nick":"benvie","date":"2012-02-21T10:14:47.352Z","type":"join"}
+{"nick":"orlandovftw","reason":"Ping timeout: 240 seconds","date":"2012-02-21T10:16:03.770Z","type":"quit"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-02-21T10:44:19.137Z","type":"quit"}
+{"nick":"mmalecki[zzz]","new_nick":"mmalecki","date":"2012-02-21T11:18:37.593Z","type":"nick"}
+{"nick":"txdv","date":"2012-02-21T11:27:42.676Z","type":"join"}
+{"nick":"paddybyers","date":"2012-02-21T11:35:54.915Z","type":"join"}
+{"nick":"bnoordhuis","date":"2012-02-21T11:44:04.550Z","type":"join"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002e504719\u000f \u000310\u000f/ src/unix/linux.c \u0002:\u000f ","date":"2012-02-21T12:33:30.719Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f linux: fix signedness issue in uv_exepath()","date":"2012-02-21T12:33:30.883Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f readlink() returns -1 on error. The <= 0 check failed to catch that because the","date":"2012-02-21T12:33:30.883Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f return value was implicitly cast to size_t, which is unsigned. - http://git.io/D2Q6Sg","date":"2012-02-21T12:33:30.883Z","type":"message"}
+{"nick":"bnoordhuis","message":"ircretary: tell piscisaureus_ https://github.com/bnoordhuis/node/commit/04387ae <- review","date":"2012-02-21T13:03:53.211Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Tomasz Buchert\u000f \u000307master\u000f * r\u0002c6a04ce\u000f \u000310\u000f/ (5 files in 4 dirs)\u0002:\u000f ","date":"2012-02-21T13:13:58.733Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f crypto: add function getDiffieHellman()","date":"2012-02-21T13:13:58.898Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Returns a well known, predefined RFC group. - http://git.io/Mp6RqQ","date":"2012-02-21T13:13:58.898Z","type":"message"}
+{"nick":"pfox___","date":"2012-02-21T13:14:23.069Z","type":"join"}
+{"nick":"pfox___","reason":"Remote host closed the connection","date":"2012-02-21T13:19:26.389Z","type":"quit"}
+{"nick":"pfox___","date":"2012-02-21T13:36:24.020Z","type":"join"}
+{"nick":"bnoordhuis","message":"pfox___: how's the libuv port coming along?","date":"2012-02-21T13:37:11.700Z","type":"message"}
+{"nick":"pfox___","message":"bnoordhuis: good, thanks for asking","date":"2012-02-21T13:40:51.249Z","type":"message"}
+{"nick":"pfox___","message":"just solved a malloc/free bug that'd been dogging me","date":"2012-02-21T13:40:59.795Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox___: in libuv or your bindings?","date":"2012-02-21T13:41:18.918Z","type":"message"}
+{"nick":"pfox___","message":"going to wrap up async and timer support as a bare minimum, then do a pull request in the next hour or so","date":"2012-02-21T13:41:19.324Z","type":"message"}
+{"nick":"pfox___","message":"just to get the design out there and talk about integration. the core patterns are in place.","date":"2012-02-21T13:41:30.534Z","type":"message"}
+{"nick":"pfox___","message":"bnoordhuis: the latter","date":"2012-02-21T13:41:36.725Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfew. a bug in our code, inconceivable!","date":"2012-02-21T13:41:52.839Z","type":"message"}
+{"nick":"bnoordhuis","message":"i saw a thread on the rust ML about parsing libuv structs","date":"2012-02-21T13:42:26.276Z","type":"message"}
+{"nick":"bnoordhuis","message":"anything we can do to help with that?","date":"2012-02-21T13:42:31.374Z","type":"message"}
+{"nick":"pfox___","message":"well, it's an interesting issue","date":"2012-02-21T13:42:43.526Z","type":"message"}
+{"nick":"pfox___","message":"rust gives us decent tools to work with C, beyond the FFI obv","date":"2012-02-21T13:42:57.300Z","type":"message"}
+{"nick":"pfox___","message":"the ability to map rust records that match c structs is powerful, as brson's c->rust email illlustrated","date":"2012-02-21T13:43:14.198Z","type":"message"}
+{"nick":"pfox___","message":"my implementation actually hews towards doing more stuff in the c/c++ layer","date":"2012-02-21T13:43:35.321Z","type":"message"}
+{"nick":"bnoordhuis","message":"what if you had functions that returned a malloc'd pointer?","date":"2012-02-21T13:44:25.663Z","type":"message"}
+{"nick":"bnoordhuis","message":"e.g. uv_tcp_t *uv_tcp_new()","date":"2012-02-21T13:44:39.992Z","type":"message"}
+{"nick":"pfox___","message":"you could return an unsafe pointer to it","date":"2012-02-21T13:44:47.549Z","type":"message"}
+{"nick":"bnoordhuis","message":"but would it help with writing bindings?","date":"2012-02-21T13:45:27.848Z","type":"message"}
+{"nick":"bnoordhuis","message":"you won't have to match the exact layout of the libuv struct anymore","date":"2012-02-21T13:45:55.418Z","type":"message"}
+{"nick":"pfox___","message":"how's that?","date":"2012-02-21T13:46:10.491Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, i'm assuming that the big hurdle is matching how a uv_tcp_t or uv_pipe_t is laid out in memory","date":"2012-02-21T13:46:54.330Z","type":"message"}
+{"nick":"bnoordhuis","message":"and if the layout ever changes, your bindings will subtly break","date":"2012-02-21T13:47:09.202Z","type":"message"}
+{"nick":"pfox___","message":"yeah. my personal greivance is mapping UV_HANDLE_PRIVATE_FIELDS","date":"2012-02-21T13:47:27.988Z","type":"message"}
+{"nick":"pfox___","message":"i was the person on the list who brought that up","date":"2012-02-21T13:47:34.860Z","type":"message"}
+{"nick":"bnoordhuis","message":"exactly","date":"2012-02-21T13:47:39.147Z","type":"message"}
+{"nick":"pfox___","message":"but, honestly, we take a direct dep on your API.. so we'll probably end up biting the bullet","date":"2012-02-21T13:47:49.114Z","type":"message"}
+{"nick":"pfox___","message":"im not a core team member, and if one of them wants that sort approach, im fine with it, really","date":"2012-02-21T13:48:00.983Z","type":"message"}
+{"nick":"pfox___","message":"working c/c++ brings its own share of hassles.","date":"2012-02-21T13:48:08.535Z","type":"message"}
+{"nick":"pfox___","message":"anyways. the work ive done so far hasn't (at all) gone down that road. but it'll probably be refactored very shortly to take that approach.","date":"2012-02-21T13:49:18.210Z","type":"message"}
+{"nick":"pfox___","message":"it'll be one less layer of callbacks, at least","date":"2012-02-21T13:49:34.520Z","type":"message"}
+{"nick":"pfox___","message":"and hopefully do away with some explicit opportunities for footgunning on rust malloc/free stuff in c/c++","date":"2012-02-21T13:50:19.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"good","date":"2012-02-21T13:50:30.692Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hey man","date":"2012-02-21T13:54:30.031Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ho man","date":"2012-02-21T13:54:36.176Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: one guy is proposing using fsevents in libuv","date":"2012-02-21T13:54:47.530Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: instead of kqueue","date":"2012-02-21T13:54:51.906Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: on osx","date":"2012-02-21T13:54:57.952Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yes?","date":"2012-02-21T13:55:09.088Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: what do you think? https://github.com/ariko/NodeJS-FSEvents/blob/master/nodefsevents.cc","date":"2012-02-21T13:55:15.128Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: i think it's a private repo...","date":"2012-02-21T13:55:40.552Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I think I'm dubm","date":"2012-02-21T13:56:07.050Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://github.com/arikon/NodeJS-FSEvents/blob/master/nodefsevents.cc","date":"2012-02-21T13:56:09.154Z","type":"message"}
+{"nick":"indutny","message":"s/dubm/dumb","date":"2012-02-21T13:56:12.025Z","type":"message"}
+{"nick":"bnoordhuis","message":"that link works :)","date":"2012-02-21T13:56:30.313Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yeah","date":"2012-02-21T13:56:37.569Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose my main beef with fsevents is that it won't let you watch individual files, only whole directories","date":"2012-02-21T13:57:23.627Z","type":"message"}
+{"nick":"pfox___","message":"quick q: i don't need to do a uv_close() on handle if uv_run() has already returned, do I?","date":"2012-02-21T13:57:36.446Z","type":"message"}
+{"nick":"bnoordhuis","message":"and that it won't work on old versions of os x but that's less important","date":"2012-02-21T13:57:39.419Z","type":"message"}
+{"nick":"pfox___","message":"for example, if i did uv_unref() so that the handle wasn't counted","date":"2012-02-21T13:57:46.523Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox___: well... yes and no","date":"2012-02-21T13:57:56.834Z","type":"message"}
+{"nick":"pfox___","message":"ok, bigger q: is uv_close() safe after uv_run() returns?","date":"2012-02-21T13:58:13.668Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you don't uv_close(), you might leak file descriptors or memory","date":"2012-02-21T13:58:16.003Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, it is","date":"2012-02-21T13:58:20.539Z","type":"message"}
+{"nick":"pfox___","message":"ok. cool.","date":"2012-02-21T13:58:24.243Z","type":"message"}
+{"nick":"bnoordhuis","message":"however, your callback may not run","date":"2012-02-21T13:58:29.544Z","type":"message"}
+{"nick":"pfox___","message":"granted.","date":"2012-02-21T13:59:04.541Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yeah, but we're watching dirs  in node","date":"2012-02-21T13:59:54.657Z","type":"message"}
+{"nick":"pfox___","message":"well its an async handler that i use to buffer requests from rust into libuv","date":"2012-02-21T14:00:02.583Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: not exclusively","date":"2012-02-21T14:00:05.371Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: so some sort of polyfilling may work","date":"2012-02-21T14:00:09.813Z","type":"message"}
+{"nick":"pfox___","message":"so im cleaning up after uv_run() returns..","date":"2012-02-21T14:00:10.628Z","type":"message"}
+{"nick":"pfox___","message":"and this includes wrapping up the handle.. so im going to uv_close() it with a stub callback that does nothing","date":"2012-02-21T14:00:30.766Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: what if we'll use fsevents for dirs and kqueue for files","date":"2012-02-21T14:00:43.958Z","type":"message"}
+{"nick":"pfox___","message":"and free() it immediately. dangerous?","date":"2012-02-21T14:00:45.011Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: that should be simple to check","date":"2012-02-21T14:01:05.242Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox___: free it after uv_close() returns? technically, that's dangerous yes","date":"2012-02-21T14:01:15.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox___: maybe we should fix it so that the close callback is guaranteed to run, even if the event loop is not running","date":"2012-02-21T14:01:42.750Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: think 'race conditions'","date":"2012-02-21T14:01:55.365Z","type":"message"}
+{"nick":"pfox___","message":"bnoordhuis: cool, thanks","date":"2012-02-21T14:02:16.813Z","type":"message"}
+{"nick":"pfox___","message":"do you need a ticket for that?","date":"2012-02-21T14:02:24.477Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ohoh","date":"2012-02-21T14:05:48.120Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: BSD style exlocks then :D","date":"2012-02-21T14:05:56.315Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: heh, got it","date":"2012-02-21T14:06:00.196Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox___: yes please","date":"2012-02-21T14:06:15.016Z","type":"message"}
+{"nick":"pfox___","message":"hm. yeah. i just verified that a uv_close() cb registered, post-uv_run(), doesn't get processed","date":"2012-02-21T14:12:06.915Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-02-21T14:14:00.138Z","type":"join"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Andreas Madsen\u000f \u000307master\u000f * r\u0002feff9bb\u000f \u000310\u000f/ doc/api/net.markdown \u0002:\u000f ","date":"2012-02-21T14:19:09.677Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f docs: remove setSecure() from net module docs","date":"2012-02-21T14:19:09.836Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f socket.setSecure() was removed in v0.3 and there are no deprecated warning in","date":"2012-02-21T14:19:09.836Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f code it should be removed from the documentation in 0.7 - http://git.io/TWb1eQ","date":"2012-02-21T14:19:09.836Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: https://github.com/joyent/node/issues/2784 <- what are your thoughts on that?","date":"2012-02-21T14:20:00.441Z","type":"message"}
+{"nick":"pfox___","message":"piscisaureus_: i don't know if i want to re-run uv_run() just to process a close callback","date":"2012-02-21T14:20:17.980Z","type":"message"}
+{"nick":"pfox___","message":"that seems kind of.. i don't know. no.","date":"2012-02-21T14:20:50.776Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: well, it is *probably* safe to free that memory just like that, if you are not going to run the loop again.","date":"2012-02-21T14:21:27.695Z","type":"message"}
+{"nick":"pfox___","message":"yeah, we talked about it in here a bit.","date":"2012-02-21T14:21:42.924Z","type":"message"}
+{"nick":"pfox___","message":"just before you showed up","date":"2012-02-21T14:22:05.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: but I don't know how hot that code path is going to be, but uv_run is pretty cheap","date":"2012-02-21T14:22:12.625Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: basically it just dispatches callbacks :-)","date":"2012-02-21T14:22:34.731Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: the alternative is that we check in uv_run() if the loop is alive","date":"2012-02-21T14:28:50.540Z","type":"message"}
+{"nick":"bnoordhuis","message":"if not, run the close callback immediately","date":"2012-02-21T14:28:59.938Z","type":"message"}
+{"nick":"bnoordhuis","message":"ps, check your notes","date":"2012-02-21T14:29:14.314Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ps check your own notes","date":"2012-02-21T14:29:24.809Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't have any","date":"2012-02-21T14:29:31.834Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, now i do","date":"2012-02-21T14:29:47.290Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so if we could immediately call the close callback then the close callback wouldn't be necessary","date":"2012-02-21T14:29:55.713Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: that's the problem - on windows at least we may need to process some events first before freeing that memory is safe.","date":"2012-02-21T14:30:22.746Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so the only thing we could do is make uv_close call uv_run implicitly :-)","date":"2012-02-21T14:30:38.612Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ah okay... hmm","date":"2012-02-21T14:30:46.235Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: re url-safe base64 decoding - yes, someone reported an issue (that he subsequently solved himself)","date":"2012-02-21T14:31:40.348Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's trivial to add so why not?","date":"2012-02-21T14:31:52.061Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah ok","date":"2012-02-21T14:32:00.198Z","type":"message"}
+{"nick":"bnoordhuis","message":"someone else asked for url-safe base64 *encoding* but i shot that down for now","date":"2012-02-21T14:32:08.261Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: pfox___: after the refcount refactor uv_close *itself* will ref the loop so after the loop exits you should just uv_close all the handles left.","date":"2012-02-21T14:32:48.880Z","type":"message"}
+{"nick":"piscisaureus_","message":"and then call uv_run()","date":"2012-02-21T14:32:57.720Z","type":"message"}
+{"nick":"bnoordhuis","message":"we should finish that sometime...","date":"2012-02-21T14:34:06.446Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T14:34:13.515Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#468 (master - feff9bb : Andreas Madsen): The build is still failing.","date":"2012-02-21T14:34:13.696Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/c6a04ce...feff9bb","date":"2012-02-21T14:34:13.856Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/714084","date":"2012-02-21T14:34:13.856Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T14:34:13.857Z","type":"part"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002b9127eb\u000f \u000310\u000f/ (src/node_buffer.cc test/simple/test-buffer.js)\u0002:\u000f buffer: support decoding of URL-safe base64 - http://git.io/THHsdA","date":"2012-02-21T14:34:19.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"we could even uv_loop_cleanup that implicitly closes all handles with an noop callback. Actually I think I suggested this a couple of times","date":"2012-02-21T14:34:58.883Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I don't think we really need serial ports in libuv, right.","date":"2012-02-21T14:36:02.824Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: although it would be nice if people could write an \"extension\" for that/","date":"2012-02-21T14:36:14.988Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i already closed that issue :)","date":"2012-02-21T14:36:17.511Z","type":"message"}
+{"nick":"bnoordhuis","message":"that reminds me","date":"2012-02-21T14:36:47.407Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/joyent/libuv/pull/316","date":"2012-02-21T14:36:49.432Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hm...","date":"2012-02-21T14:36:54.335Z","type":"message"}
+{"nick":"bnoordhuis","message":"and you should probably merge this -> https://github.com/joyent/libuv/issues/307","date":"2012-02-21T14:37:30.001Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: 307 was merged 2 weeks ago I think","date":"2012-02-21T14:38:03.865Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: lets remove doc :D","date":"2012-02-21T14:38:14.300Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I'll do that for you","date":"2012-02-21T14:38:46.536Z","type":"message"}
+{"nick":"einaros","reason":"Ping timeout: 260 seconds","date":"2012-02-21T14:38:53.771Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: then https://github.com/joyent/libuv/issues/305 can be closed?","date":"2012-02-21T14:39:07.738Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yup, just did","date":"2012-02-21T14:39:16.944Z","type":"message"}
+{"nick":"bnoordhuis","message":"cool","date":"2012-02-21T14:39:19.905Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I forgot about that one","date":"2012-02-21T14:39:22.562Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: what docs?","date":"2012-02-21T14:39:25.378Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: would uv_close_all(loop) make you happy?","date":"2012-02-21T14:40:36.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: oh wait, i know what you mean","date":"2012-02-21T14:41:23.780Z","type":"message"}
+{"nick":"pfox___","message":"im pretty happy, as is","date":"2012-02-21T14:41:39.112Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yeah","date":"2012-02-21T14:41:53.827Z","type":"message"}
+{"nick":"pfox___","message":"i filed the ticket after talking with bnoordhuis . checking to see if your hack/fix in the ticket works","date":"2012-02-21T14:41:54.221Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: one minute","date":"2012-02-21T14:42:06.732Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: right. good.","date":"2012-02-21T14:42:10.447Z","type":"message"}
+{"nick":"pfox___","message":"something cleaner would probably be a good idea, though.","date":"2012-02-21T14:43:25.141Z","type":"message"}
+{"nick":"pfox___","message":"but, hey. it's your library/API. i'm just living in it.","date":"2012-02-21T14:43:33.443Z","type":"message"}
+{"nick":"pfox___","message":"and libuv barfs all over itself when i do as the ticket suggested","date":"2012-02-21T14:44:13.702Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: really?","date":"2012-02-21T14:48:15.689Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: what happens?","date":"2012-02-21T14:48:19.105Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://github.com/indutny/node/commit/75e0e68219e87514eec8163b97cc48645eff8be7","date":"2012-02-21T14:48:26.311Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T14:49:03.307Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#469 (master - b9127eb : Ben Noordhuis): The build is still failing.","date":"2012-02-21T14:49:03.466Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/feff9bb...b9127eb","date":"2012-02-21T14:49:03.466Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/714127","date":"2012-02-21T14:49:03.466Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T14:49:03.466Z","type":"part"}
+{"nick":"indutny","message":"bnoordhuis: s/once/when","date":"2012-02-21T14:50:16.297Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yup, lgtm","date":"2012-02-21T14:51:06.906Z","type":"message"}
+{"nick":"indutny","message":"pushing","date":"2012-02-21T14:51:26.282Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: should it land in 0.6.0 too?","date":"2012-02-21T14:51:32.691Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Fedor Indutny\u000f \u000307master\u000f * r\u0002080ffb8\u000f \u000310\u000f/ doc/api/net.markdown \u0002:\u000f ","date":"2012-02-21T14:51:33.011Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f docs: remove server.pause","date":"2012-02-21T14:51:33.227Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f This functionality was removed when libuv landed in node. It is useless","date":"2012-02-21T14:51:33.390Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f and can be easily implemented in user-land. - http://git.io/g0tL8A","date":"2012-02-21T14:51:33.390Z","type":"message"}
+{"nick":"pfox___","message":"piscisaureus_: https://gist.github.com/1876920","date":"2012-02-21T14:51:42.469Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yes","date":"2012-02-21T14:52:02.092Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://gist.github.com/1876920 -> I am pretty sure that that works on windows, and it should work on unix too. Why does this happen?","date":"2012-02-21T14:52:53.363Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Fedor Indutny\u000f \u000307v0.6\u000f * r\u0002c6019b8\u000f \u000310\u000f/ doc/api/net.markdown \u0002:\u000f ","date":"2012-02-21T14:53:15.132Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f docs: remove server.pause","date":"2012-02-21T14:53:15.292Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f This functionality was removed when libuv landed in node. It is useless","date":"2012-02-21T14:53:15.292Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f and can be easily implemented in user-land. - http://git.io/T4jixA","date":"2012-02-21T14:53:15.292Z","type":"message"}
+{"nick":"pfox___","message":"this is on linux","date":"2012-02-21T14:53:16.964Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: cherry-picked","date":"2012-02-21T14:53:31.900Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: how can that be implemented in userland?","date":"2012-02-21T14:53:45.964Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-02-21T14:53:47.243Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: by hacking :D","date":"2012-02-21T14:54:07.121Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: haha","date":"2012-02-21T14:54:10.139Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: I think adding libuv functionality for that in the long run would be beneficial","date":"2012-02-21T14:54:28.153Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: probably","date":"2012-02-21T14:54:36.825Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: for now, this is fine, since nobody seems to care","date":"2012-02-21T14:54:38.591Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I talked to that guy again","date":"2012-02-21T14:55:01.466Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: reading about FSEvents now. but basically his idea was to listen via kqueue and fsevents at the same time","date":"2012-02-21T14:55:28.283Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: fs.watch is emitting `undefined` for directory changes on osx","date":"2012-02-21T14:55:48.577Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: on other platform it's emitting filename","date":"2012-02-21T14:55:57.320Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://gist.github.com/1876920 <- should work in theory...","date":"2012-02-21T14:56:07.326Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well, pfox___ says it doesnt","date":"2012-02-21T14:56:26.439Z","type":"message"}
+{"nick":"pfox___","message":"yes. there is much spew.","date":"2012-02-21T14:57:37.341Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: could be a bug either in libuv or rust","date":"2012-02-21T14:57:37.625Z","type":"message"}
+{"nick":"bnoordhuis","message":"gdb still gets confused easily when you're trying to debug multiple processes with multiple threads each...","date":"2012-02-21T15:03:46.077Z","type":"message"}
+{"nick":"AndreasMadsen","message":"indutny: care to put thought intro this: https://github.com/joyent/node/pull/2772#issuecomment-4076276","date":"2012-02-21T15:03:51.904Z","type":"message"}
+{"nick":"indutny","message":"AndreasMadsen: done","date":"2012-02-21T15:07:34.068Z","type":"message"}
+{"nick":"mmalecki","message":"wat https://github.com/joyent/node/wiki","date":"2012-02-21T15:08:47.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm","date":"2012-02-21T15:10:18.401Z","type":"message"}
+{"nick":"indutny","message":"great","date":"2012-02-21T15:11:25.861Z","type":"message"}
+{"nick":"mmalecki","message":"oh, it can be reverted.","date":"2012-02-21T15:12:05.207Z","type":"message"}
+{"nick":"bnoordhuis","message":"why isn't there a revert button?","date":"2012-02-21T15:12:05.498Z","type":"message"}
+{"nick":"mmalecki","message":"I'll do that","date":"2012-02-21T15:12:08.720Z","type":"message"}
+{"nick":"mmalecki","message":"fixed","date":"2012-02-21T15:12:33.769Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: there is, https://github.com/joyent/node/wiki/Home/_compare/38374b9%5E...38374b9","date":"2012-02-21T15:12:38.191Z","type":"message"}
+{"nick":"mmalecki","message":"but don't click it now :)","date":"2012-02-21T15:12:56.307Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: are this going to be in v0.7 -> https://github.com/joyent/node/pull/2695","date":"2012-02-21T15:20:49.565Z","type":"message"}
+{"nick":"xaq","date":"2012-02-21T15:31:22.735Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 252 seconds","date":"2012-02-21T15:36:24.118Z","type":"quit"}
+{"nick":"isaacs","date":"2012-02-21T15:37:15.905Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-02-21T15:47:25.457Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Read error: Connection reset by peer","date":"2012-02-21T15:47:35.849Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-02-21T15:48:08.540Z","type":"join"}
+{"nick":"AvianFlu","date":"2012-02-21T15:55:27.477Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: http://groups.google.com/group/nodejs/browse_thread/thread/290d73e6510fc532","date":"2012-02-21T15:59:16.687Z","type":"message"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: hm, i don't really want to move that back into c++ land","date":"2012-02-21T16:00:08.410Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, I remember the commit that changed the default to ia32","date":"2012-02-21T16:00:10.046Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, it was a mistake to release 0.6 binaries as 64bit, since there was no way to run them on 32bit archs","date":"2012-02-21T16:01:13.771Z","type":"message"}
+{"nick":"isaacs","message":"really, i think we need to just build fat binaries","date":"2012-02-21T16:01:33.259Z","type":"message"}
+{"nick":"tjfontaine","message":"I've been considering working up a scriptable way to lipo into a universal, but I think the effort is better spent on getting universal into gyp","date":"2012-02-21T16:01:50.882Z","type":"message"}
+{"nick":"bnoordhuis","message":"how hard can it be?","date":"2012-02-21T16:02:12.048Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: then what about just having getErrnoCode and getErrnoMessage in c++ land and move errnoException to require(util)","date":"2012-02-21T16:02:18.659Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: if you want to make it yourself it's as simple as building twice, and merging with lipo","date":"2012-02-21T16:02:38.443Z","type":"message"}
+{"nick":"mmalecki","message":"there's a pull request for second part of ^, iirc","date":"2012-02-21T16:02:41.721Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: should be easy to set up","date":"2012-02-21T16:03:11.961Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Read error: Connection reset by peer","date":"2012-02-21T16:03:14.805Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-02-21T16:03:37.604Z","type":"join"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: error reporting is due for rework anyway","date":"2012-02-21T16:04:13.586Z","type":"message"}
+{"nick":"bnoordhuis","message":"in libuv that is","date":"2012-02-21T16:04:33.058Z","type":"message"}
+{"nick":"piscisaureus_","message":"libuv has a big backlog","date":"2012-02-21T16:05:46.070Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: oh yes you talked about that. But there was something about that would be a too big change for node v0.7. ","date":"2012-02-21T16:06:18.869Z","type":"message"}
+{"nick":"bnoordhuis","message":"AndreasMadsen: it's too big for v0.6 but it'd be okay for v0.7, that's what bleeding edges are for","date":"2012-02-21T16:06:56.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"damn, there are over 100 open pull requests...","date":"2012-02-21T16:09:31.430Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis: did you first see that now :o - some of them are really old from v0.4.2 I believe.","date":"2012-02-21T16:10:38.698Z","type":"message"}
+{"nick":"AndreasMadsen","message":"oh found it: bnoordhuis says \"Agreed. We could (and probably should) copy the Linux kernel convention here: return >=0 on succes, -ERRNUM on error.\"","date":"2012-02-21T16:11:29.076Z","type":"message"}
+{"nick":"AndreasMadsen","message":"sure we can have functions to return an errno but there person how made this -> https://github.com/joyent/node/blob/master/lib/net.js#L386 was crazy","date":"2012-02-21T16:12:44.848Z","type":"message"}
+{"nick":"AndreasMadsen","message":"s/there/the","date":"2012-02-21T16:13:15.065Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's true, that guy was right crazy","date":"2012-02-21T16:15:46.867Z","type":"message"}
+{"nick":"AndreasMadsen","message":"issacs: did you get time to review that cluster patch -> https://github.com/joyent/node/pull/2740","date":"2012-02-21T16:22:43.298Z","type":"message"}
+{"nick":"AndreasMadsen","message":"I'm just trying to get my pull requests closed, one way or another.","date":"2012-02-21T16:23:20.852Z","type":"message"}
+{"nick":"indutny","message":"yeah, finally parser and scope analyzer are working :D","date":"2012-02-21T16:25:46.659Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs, piscisaureus_: do we take patches for the assert module?","date":"2012-02-21T16:25:53.675Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: not really. Which one is it?","date":"2012-02-21T16:26:07.583Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/joyent/node/pull/2097","date":"2012-02-21T16:26:14.155Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the assert module implements the commonjs spec.","date":"2012-02-21T16:26:15.718Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that PR changes deepEqual() errors into something more readable","date":"2012-02-21T16:26:53.708Z","type":"message"}
+{"nick":"bnoordhuis","message":"a good thing in itself but i half-think that assert should be frozen now","date":"2012-02-21T16:27:12.804Z","type":"message"}
+{"nick":"bnoordhuis","message":"any change will probably break something somewhere","date":"2012-02-21T16:27:20.683Z","type":"message"}
+{"nick":"AndreasMadsen","message":"another assert PR just so you know: https://github.com/joyent/node/pull/2444","date":"2012-02-21T16:27:33.245Z","type":"message"}
+{"nick":"mmalecki","message":"my assert module PR got accepted recently","date":"2012-02-21T16:27:52.627Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: because it allowed me to type less :)","date":"2012-02-21T16:28:27.374Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I like 2444 more","date":"2012-02-21T16:28:41.989Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: hah :). but my second assert module PR got accepted as well!","date":"2012-02-21T16:28:48.539Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i could live with #2444","date":"2012-02-21T16:29:13.284Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the only thing is, shouldn't 2444 just use console.trace()","date":"2012-02-21T16:29:53.648Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-02-21T16:29:54.329Z","type":"message"}
+{"nick":"AndreasMadsen","message":"bnoordhuis++ for closing all this pull requests ","date":"2012-02-21T16:29:55.564Z","type":"message"}
+{"nick":"kohai","message":"bnoordhuis has 9 beers","date":"2012-02-21T16:29:56.404Z","type":"message"}
+{"nick":"AndreasMadsen","message":"s/this/these/","date":"2012-02-21T16:30:26.839Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: where/when?","date":"2012-02-21T16:31:30.878Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm, #2444 won't work with -e","date":"2012-02-21T16:31:45.142Z","type":"message"}
+{"nick":"isaacs","message":"assert = frozen.","date":"2012-02-21T16:38:39.203Z","type":"message"}
+{"nick":"isaacs","message":"closed 2740 and 2444","date":"2012-02-21T16:38:57.181Z","type":"message"}
+{"nick":"isaacs","message":"they are both nice ideas, but not worth touching that code.","date":"2012-02-21T16:39:08.541Z","type":"message"}
+{"nick":"isaacs","message":"it's a bit like util.inspect.  what we have is good enough.  any changes are just distractions.","date":"2012-02-21T16:40:10.846Z","type":"message"}
+{"nick":"mmalecki","message":"5 arguments is not good enough :)","date":"2012-02-21T16:41:15.279Z","type":"message"}
+{"nick":"mmalecki","message":"util.inspect need options argument instead","date":"2012-02-21T16:41:41.457Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T16:41:54.774Z","type":"quit"}
+{"nick":"mikeal","date":"2012-02-21T16:42:45.256Z","type":"join"}
+{"nick":"isaacs","message":"for the time being, there are other things that need work.","date":"2012-02-21T16:44:12.508Z","type":"message"}
+{"nick":"isaacs","message":"making asserts prettier is < making http cleaner, making tests pass, etc.","date":"2012-02-21T16:44:34.485Z","type":"message"}
+{"nick":"creationix","date":"2012-02-21T16:45:16.689Z","type":"join"}
+{"nick":"stephank","date":"2012-02-21T16:46:09.132Z","type":"join"}
+{"nick":"joclek","new_nick":"jce","date":"2012-02-21T16:47:02.522Z","type":"nick"}
+{"nick":"isaacs","reason":"Ping timeout: 245 seconds","date":"2012-02-21T16:48:51.689Z","type":"quit"}
+{"nick":"isaacs","date":"2012-02-21T16:49:17.067Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T16:49:50.864Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T16:51:17.952Z","type":"quit"}
+{"nick":"AvianFlu","message":"piscisaureus_, what happens to a child process' stdio streams if I set these flags?  Will they stay open? https://github.com/AvianFlu/libuv/commit/a00d5100e5ad9f355a605cbe088143b0e9274b79","date":"2012-02-21T16:52:01.297Z","type":"message"}
+{"nick":"AvianFlu","message":"it sort of looks like they get closed... but it's been a really long time since I did windows code-reading","date":"2012-02-21T16:52:32.734Z","type":"message"}
+{"nick":"AvianFlu","message":"and I don't actually have a windows build environment atm","date":"2012-02-21T16:52:47.781Z","type":"message"}
+{"nick":"sh1mmer","date":"2012-02-21T16:54:04.786Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Read error: Connection reset by peer","date":"2012-02-21T17:02:21.125Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 245 seconds","date":"2012-02-21T17:02:57.018Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-02-21T17:03:04.584Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-02-21T17:03:05.409Z","type":"join"}
+{"nick":"brson","date":"2012-02-21T17:04:03.556Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: https://github.com/joyent/node/issues/2795#issuecomment-4078908 <- i merged a patch this afternoon :)","date":"2012-02-21T17:06:04.306Z","type":"message"}
+{"nick":"isaacs","message":"haha, nice :)","date":"2012-02-21T17:07:15.777Z","type":"message"}
+{"nick":"isaacs","message":"oh, lol, i pulled but haven't rebuilt","date":"2012-02-21T17:07:37.668Z","type":"message"}
+{"nick":"isaacs","message":"i was like, \"the code seems like it should work, but it doesn't work...?\"","date":"2012-02-21T17:07:49.957Z","type":"message"}
+{"nick":"mikeal","date":"2012-02-21T17:08:04.304Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2012-02-21T17:09:14.556Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: thanks","date":"2012-02-21T17:09:56.643Z","type":"message"}
+{"nick":"creationix","reason":"Ping timeout: 245 seconds","date":"2012-02-21T17:10:00.562Z","type":"quit"}
+{"nick":"creationix","date":"2012-02-21T17:15:22.286Z","type":"join"}
+{"nick":"bnoordhuis","message":"my pleasure","date":"2012-02-21T17:16:36.544Z","type":"message"}
+{"nick":"xaq","date":"2012-02-21T17:19:13.426Z","type":"join"}
+{"nick":"brson","date":"2012-02-21T17:20:40.557Z","type":"join"}
+{"nick":"mmalecki","message":"would it be possible to perform linting *after* actual tests?","date":"2012-02-21T17:27:24.242Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-02-21T17:27:58.161Z","type":"join"}
+{"nick":"indutny","message":"http://stackoverflow.com/questions/7568471/pass-nothing-from-javascript-to-vbscript-in-ie9","date":"2012-02-21T17:31:23.153Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: ^ that's just beautiful","date":"2012-02-21T17:31:29.685Z","type":"message"}
+{"nick":"indutny","message":"I think I'll write vbuvit","date":"2012-02-21T17:31:42.565Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: haha, yeah, definitely!","date":"2012-02-21T17:31:59.413Z","type":"message"}
+{"nick":"mmalecki","message":"put some enterprise in libuv!","date":"2012-02-21T17:32:09.187Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-02-21T17:32:49.396Z","type":"quit"}
+{"nick":"piscisaureus_","message":"rofl","date":"2012-02-21T17:33:02.245Z","type":"message"}
+{"nick":"piscisaureus_","message":"did you see the update? Update","date":"2012-02-21T17:33:12.858Z","type":"message"}
+{"nick":"piscisaureus_","message":"Quitted job. Found a better one.","date":"2012-02-21T17:33:13.019Z","type":"message"}
+{"nick":"mmalecki","message":"pretty sure I'd do the same","date":"2012-02-21T17:34:01.030Z","type":"message"}
+{"nick":"dap","date":"2012-02-21T17:37:57.585Z","type":"join"}
+{"nick":"orlandov1tw","date":"2012-02-21T17:43:42.738Z","type":"join"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-02-21T17:46:27.034Z","type":"quit"}
+{"nick":"isaacs","message":"yep.  that's how i got out of the vb game","date":"2012-02-21T17:57:33.589Z","type":"message"}
+{"nick":"indutny","message":"I always was curious on ACM contests, how do people implement any solution on VB","date":"2012-02-21T17:58:24.711Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: so, can we run linting after test suite?","date":"2012-02-21T17:58:37.797Z","type":"message"}
+{"nick":"indutny","message":"then I seen that they just do nothing","date":"2012-02-21T17:58:39.197Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: howcome?","date":"2012-02-21T17:58:44.485Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: just move these 2 lines around","date":"2012-02-21T17:59:01.784Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: yes, i understand the request.  but what's the justification for it?","date":"2012-02-21T17:59:13.546Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: first run the test suite, then the linter","date":"2012-02-21T17:59:14.987Z","type":"message"}
+{"nick":"isaacs","message":"why?","date":"2012-02-21T17:59:18.523Z","type":"message"}
+{"nick":"indutny","message":"to save time","date":"2012-02-21T17:59:36.194Z","type":"message"}
+{"nick":"indutny","message":"and stdout","date":"2012-02-21T17:59:40.995Z","type":"message"}
+{"nick":"indutny","message":":D","date":"2012-02-21T17:59:41.703Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: when I prototype something I don't really care about linter, but if that's the requirement, I'll be happy to run it before pushing","date":"2012-02-21T17:59:42.595Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: tools/test.py then","date":"2012-02-21T18:00:03.144Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: that's what I do","date":"2012-02-21T18:00:06.177Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: then just run the few tests you care about explicitly","date":"2012-02-21T18:00:16.384Z","type":"message"}
+{"nick":"isaacs","message":"make && ./node test/simple/test-my-thing.js","date":"2012-02-21T18:00:23.459Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: it's never that simple, I managed to break tls test by doing changes in http :)","date":"2012-02-21T18:00:59.095Z","type":"message"}
+{"nick":"isaacs","message":"i don't really have a problem switching the two lines.","date":"2012-02-21T18:01:17.055Z","type":"message"}
+{"nick":"mmalecki","message":"but yeah, well, tools/test.py is probably a good point","date":"2012-02-21T18:01:21.256Z","type":"message"}
+{"nick":"isaacs","message":"the thing is, `make test` has to pass to accept the pull req anyhow","date":"2012-02-21T18:01:41.873Z","type":"message"}
+{"nick":"isaacs","message":"the best way to prevent divergence in js code style is to make lint a requirement for a test passing.","date":"2012-02-21T18:02:07.188Z","type":"message"}
+{"nick":"mmalecki","message":"it'll be a requirement, just executed later. it's only about usability ;)","date":"2012-02-21T18:02:35.901Z","type":"message"}
+{"nick":"mmalecki","message":"oh man, cli usability","date":"2012-02-21T18:02:51.722Z","type":"message"}
+{"nick":"isaacs","message":"it'd maybe be reasonable to have something like `make test-no-lint` and then have `make test` depend on that, and then lint src/ and lib/","date":"2012-02-21T18:03:00.929Z","type":"message"}
+{"nick":"mmalecki","message":"I'm totally writing an article about that","date":"2012-02-21T18:03:01.089Z","type":"message"}
+{"nick":"isaacs","message":"yeah, i get it.","date":"2012-02-21T18:03:06.637Z","type":"message"}
+{"nick":"isaacs","message":"you wanna sling some crappy code around poking around at approaches and stuff.","date":"2012-02-21T18:03:18.468Z","type":"message"}
+{"nick":"mmalecki","message":"sounds good!","date":"2012-02-21T18:03:18.629Z","type":"message"}
+{"nick":"mmalecki","message":"yeah :)","date":"2012-02-21T18:03:24.657Z","type":"message"}
+{"nick":"isaacs","message":"actually, scratch that.","date":"2012-02-21T18:03:25.884Z","type":"message"}
+{"nick":"igorzi","date":"2012-02-21T18:03:27.005Z","type":"join"}
+{"nick":"isaacs","message":"do it simpler, just flip the order.","date":"2012-02-21T18:03:30.329Z","type":"message"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-02-21T18:05:19.182Z","type":"quit"}
+{"nick":"einaros-","date":"2012-02-21T18:06:55.330Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2012-02-21T18:07:44.564Z","type":"quit"}
+{"nick":"einaros-","message":"has anyone else noticed anything weird with the prebuilt osx version of 0.6.11? the native extensions of ws fails with shared library errors, but when node is built from source everything runs just fine","date":"2012-02-21T18:10:14.233Z","type":"message"}
+{"nick":"einaros-","reason":"Quit: Leaving.","date":"2012-02-21T18:12:39.087Z","type":"quit"}
+{"nick":"einaros-","date":"2012-02-21T18:13:02.152Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus_: yt?","date":"2012-02-21T18:26:41.566Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yes","date":"2012-02-21T18:26:48.763Z","type":"message"}
+{"nick":"igorzi","message":"http://groups.google.com/group/nodejs/browse_thread/thread/ffd00d5213175428","date":"2012-02-21T18:26:54.994Z","type":"message"}
+{"nick":"igorzi","message":"--^ non-ifs lsps","date":"2012-02-21T18:27:00.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: it seems that this dude on the mailing list has some funky LSPs yes","date":"2012-02-21T18:27:01.431Z","type":"message"}
+{"nick":"igorzi","message":"yep","date":"2012-02-21T18:27:06.825Z","type":"message"}
+{"nick":"igorzi","message":"i'm going to send him node.exe with my patch, and ask him to try it","date":"2012-02-21T18:27:24.054Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: how do you know that these are non-LSP","date":"2012-02-21T18:27:38.077Z","type":"message"}
+{"nick":"igorzi","message":"Service Flags:                      0x66 ","date":"2012-02-21T18:27:53.263Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: what is the LSP bit?","date":"2012-02-21T18:28:08.054Z","type":"message"}
+{"nick":"igorzi","message":"XP1_IFS_HANDLES flag (0x20000)","date":"2012-02-21T18:28:35.158Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: did you get a chance to review the patch?","date":"2012-02-21T18:29:02.927Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: oh  IDM_LAYERED_MSAFD is not lsp either","date":"2012-02-21T18:29:25.296Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yes, but I find this approach rather blunt :-)","date":"2012-02-21T18:29:36.092Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i'm following what MSDN for SetFileCompletionNotificationModes recommends http://msdn.microsoft.com/en-us/library/windows/desktop/aa365538(v=vs.85).aspx","date":"2012-02-21T18:30:11.454Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: basically you enum all protocols and if you find one non-ifs lsp in there you kill it","date":"2012-02-21T18:30:13.435Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: yes","date":"2012-02-21T18:30:26.227Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-02-21T18:30:52.799Z","type":"join"}
+{"nick":"piscisaureus_","message":"igorzi: it would be better to just create an ip4 socket, and then look up the service flag for the lsp","date":"2012-02-21T18:31:13.850Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: because people may have weird drivers that aren't used for tcp","date":"2012-02-21T18:31:27.757Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-02-21T18:31:36.775Z","type":"quit"}
+{"nick":"igorzi","message":"piscisaureus_: gtg.. let's discuss on the call","date":"2012-02-21T18:31:58.001Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: sure","date":"2012-02-21T18:32:17.839Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T18:37:42.471Z","type":"quit"}
+{"nick":"isaacs","date":"2012-02-21T18:43:31.550Z","type":"join"}
+{"nick":"isaacs","message":"mmalecki, bnoordhuis: Yeah, i'm going to add a `test-nolint` target.  gjslint is too slow.","date":"2012-02-21T18:52:27.404Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: ++","date":"2012-02-21T18:52:45.442Z","type":"message"}
+{"nick":"kohai","message":"isaacs has 7 beers","date":"2012-02-21T18:52:45.632Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: would that address https://github.com/joyent/node/commit/96338432e2b76ee294b7e9e8ee56164288a56a08#commitcomment-985435?","date":"2012-02-21T18:52:52.914Z","type":"message"}
+{"nick":"mmalecki","message":"there's some potential in this linter","date":"2012-02-21T18:58:20.899Z","type":"message"}
+{"nick":"mmalecki","message":"http://code.google.com/p/closure-linter/source/browse/trunk/closure_linter/checker.py?r=2#79","date":"2012-02-21T18:58:25.512Z","type":"message"}
+{"nick":"mmalecki","message":"you could fork here, I guess","date":"2012-02-21T18:58:46.706Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: i don't get why we'd want to do that.","date":"2012-02-21T18:59:28.333Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: I don't either, just random musings about making it faster :)","date":"2012-02-21T19:00:01.781Z","type":"message"}
+{"nick":"isaacs","message":"oh","date":"2012-02-21T19:00:09.526Z","type":"message"}
+{"nick":"igorzi_","date":"2012-02-21T19:02:35.908Z","type":"join"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-02-21T19:03:18.930Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: call?","date":"2012-02-21T19:03:21.665Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: call!","date":"2012-02-21T19:03:47.217Z","type":"message"}
+{"nick":"mikeal","date":"2012-02-21T19:08:30.694Z","type":"join"}
+{"nick":"travis-ci","date":"2012-02-21T19:12:35.762Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#472 (v0.6 - c6019b8 : Fedor Indutny): The build passed.","date":"2012-02-21T19:12:35.925Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/96a137a...c6019b8","date":"2012-02-21T19:12:35.926Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/716018","date":"2012-02-21T19:12:35.926Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T19:12:35.926Z","type":"part"}
+{"nick":"`3rdEden","date":"2012-02-21T19:13:15.703Z","type":"join"}
+{"nick":"travis-ci","date":"2012-02-21T19:13:42.363Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#470 (master - 080ffb8 : Fedor Indutny): The build is still failing.","date":"2012-02-21T19:13:42.525Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/b9127eb...080ffb8","date":"2012-02-21T19:13:42.525Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/715578","date":"2012-02-21T19:13:42.525Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T19:13:42.525Z","type":"part"}
+{"nick":"travis-ci","date":"2012-02-21T19:13:57.369Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#471 (master - c6a04ce : Tomasz Buchert): The build is still failing.","date":"2012-02-21T19:13:57.525Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/19133ca...c6a04ce","date":"2012-02-21T19:13:57.525Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/715593","date":"2012-02-21T19:13:57.525Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T19:13:57.525Z","type":"part"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T19:20:55.595Z","type":"quit"}
+{"nick":"mjr_","date":"2012-02-21T19:22:22.580Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T19:26:31.654Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-02-21T19:32:36.052Z","type":"join"}
+{"nick":"orlandov1tw","reason":"Read error: Connection reset by peer","date":"2012-02-21T19:33:03.888Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-02-21T19:34:44.470Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-02-21T19:39:18.248Z","type":"quit"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-02-21T19:42:41.100Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-02-21T19:48:40.317Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-02-21T19:48:47.798Z","type":"join"}
+{"nick":"einaros-","reason":"Quit: Leaving.","date":"2012-02-21T19:58:16.238Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-02-21T20:03:57.920Z","type":"quit"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002bae4018\u000f \u000310\u000f/ Makefile \u0002:\u000f Run jslint after tests, not before - http://git.io/xdW2mA","date":"2012-02-21T20:04:17.148Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u00023817b12\u000f \u000310\u000f/ AUTHORS \u0002:\u000f Add Håvard Stranden to AUTHORS file - http://git.io/oudPHQ","date":"2012-02-21T20:04:17.313Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002186960f\u000f \u000310\u000f/ AUTHORS \u0002:\u000f Add Håvard Stranden to AUTHORS file - http://git.io/VLoK7Q","date":"2012-02-21T20:04:45.702Z","type":"message"}
+{"nick":"txdv","reason":"Ping timeout: 260 seconds","date":"2012-02-21T20:05:33.779Z","type":"quit"}
+{"nick":"travis-ci","date":"2012-02-21T20:13:46.286Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#474 (v0.6 - 186960f : isaacs): The build was broken.","date":"2012-02-21T20:13:46.446Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/c6019b8...186960f","date":"2012-02-21T20:13:46.446Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/716535","date":"2012-02-21T20:13:46.447Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T20:13:46.447Z","type":"part"}
+{"nick":"mraleph","date":"2012-02-21T20:17:39.714Z","type":"join"}
+{"nick":"travis-ci","date":"2012-02-21T20:21:57.694Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#473 (master - 3817b12 : isaacs): The build is still failing.","date":"2012-02-21T20:21:57.857Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/080ffb8...3817b12","date":"2012-02-21T20:21:57.857Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/716529","date":"2012-02-21T20:21:57.857Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T20:21:57.857Z","type":"part"}
+{"nick":"einaros-","date":"2012-02-21T20:29:24.431Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-02-21T20:32:55.233Z","type":"join"}
+{"nick":"orlandovftw","reason":"Client Quit","date":"2012-02-21T20:33:14.330Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-02-21T20:33:28.669Z","type":"join"}
+{"nick":"einaros-","message":"isaacs: did you precompile 0.6.11 for osx as x86?","date":"2012-02-21T20:46:20.950Z","type":"message"}
+{"nick":"tjfontaine","message":"ia32, yes","date":"2012-02-21T20:47:23.470Z","type":"message"}
+{"nick":"einaros-","message":"no modules with native extensions appear to be working with the prebuilt 0.6.11","date":"2012-02-21T20:48:47.536Z","type":"message"}
+{"nick":"einaros-","message":"works just fine with 0.6.10","date":"2012-02-21T20:48:50.791Z","type":"message"}
+{"nick":"einaros-","message":"compiling said extensions for i386/x86 .. works","date":"2012-02-21T20:49:20.163Z","type":"message"}
+{"nick":"tjfontaine","message":"yes, because node isn't currently a universal binary","date":"2012-02-21T20:49:32.265Z","type":"message"}
+{"nick":"einaros-","message":"was the arch changed from 0.6.10 to 0.6.11?","date":"2012-02-21T20:50:49.781Z","type":"message"}
+{"nick":"tjfontaine","message":"the arch was defined from .10 to .11","date":"2012-02-21T20:52:28.013Z","type":"message"}
+{"nick":"tjfontaine","message":"previously it was determined based on environment of the person making the release","date":"2012-02-21T20:52:52.888Z","type":"message"}
+{"nick":"einaros-","message":"wouldn't have hurt to put that in the changelog, I suppose","date":"2012-02-21T20:56:27.380Z","type":"message"}
+{"nick":"brson","date":"2012-02-21T20:57:29.694Z","type":"join"}
+{"nick":"tjfontaine","message":"einaros-: commit in question https://github.com/joyent/node/commit/4672872ddde70e079670d2a12079cb303ef41dbb","date":"2012-02-21T20:57:55.156Z","type":"message"}
+{"nick":"einaros-","message":"yeah, thanks, saw that now","date":"2012-02-21T20:58:26.555Z","type":"message"}
+{"nick":"einaros-","message":"I suppose I can update the build scripts shipped with my native stuff to detect the node binary arch","date":"2012-02-21T21:00:40.270Z","type":"message"}
+{"nick":"tjfontaine","message":"there was conversation today about doing a manual universal binary, but I haven't seen a follow up discussion as yet","date":"2012-02-21T21:01:13.816Z","type":"message"}
+{"nick":"einaros-","message":"I'd be surprised if not more modules see a rush of issue reports based on this","date":"2012-02-21T21:01:47.819Z","type":"message"}
+{"nick":"einaros-","message":"e.g. node-canvas","date":"2012-02-21T21:02:04.972Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-02-21T21:30:23.062Z","type":"quit"}
+{"nick":"isaacs","message":"einaros-: it's actually somewhat surprising that we didn't get more alarms about it becoming x64 in the first place.","date":"2012-02-21T21:31:15.016Z","type":"message"}
+{"nick":"paddybyers","reason":"Ping timeout: 260 seconds","date":"2012-02-21T21:37:10.227Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 272 seconds","date":"2012-02-21T21:44:14.609Z","type":"quit"}
+{"nick":"einaros-","message":"isaacs: wild guess: x64 is the most common","date":"2012-02-21T21:44:21.199Z","type":"message"}
+{"nick":"isaacs","message":"yeah, probably","date":"2012-02-21T21:44:29.394Z","type":"message"}
+{"nick":"indutny","new_nick":"indutny_sleeping","date":"2012-02-21T21:44:37.976Z","type":"nick"}
+{"nick":"isaacs","message":"we should probably just revert that commit and go back to pushing a x64 pkg","date":"2012-02-21T21:44:53.651Z","type":"message"}
+{"nick":"brson","date":"2012-02-21T21:44:59.555Z","type":"join"}
+{"nick":"isaacs","message":"or better yet, a universal binary","date":"2012-02-21T21:44:59.719Z","type":"message"}
+{"nick":"einaros-","message":"https://github.com/einaros/ws/commit/81ea80a1382cfada27f63c7eadd2c3bfadbf40a3#L3R19","date":"2012-02-21T21:45:09.747Z","type":"message"}
+{"nick":"einaros-","message":"well that dirty hack fixes ws, presumably","date":"2012-02-21T21:45:18.285Z","type":"message"}
+{"nick":"einaros-","message":"good grief","date":"2012-02-21T21:45:44.489Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-02-21T21:45:44.846Z","type":"message"}
+{"nick":"isaacs","message":"yeah, good grief indeed.","date":"2012-02-21T21:45:49.970Z","type":"message"}
+{"nick":"TooTallNate","message":"einaros-: but now that'll only work on Apple :p","date":"2012-02-21T21:47:23.147Z","type":"message"}
+{"nick":"TooTallNate","message":"-arch is an apple-ism","date":"2012-02-21T21:47:28.096Z","type":"message"}
+{"nick":"einaros-","message":"travis reminded me of the very same :p","date":"2012-02-21T21:48:06.830Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2012-02-21T21:48:13.895Z","type":"message"}
+{"nick":"TooTallNate","message":"einaros-: any why don't you have a bindings.gyp file yet :p","date":"2012-02-21T21:48:25.846Z","type":"message"}
+{"nick":"TooTallNate","message":"s/any/and","date":"2012-02-21T21:48:32.277Z","type":"message"}
+{"nick":"einaros-","message":"I was holding all updates until after websocket extensions was fully implemented ","date":"2012-02-21T21:49:36.390Z","type":"message"}
+{"nick":"einaros-","message":"and that's a major piece of work","date":"2012-02-21T21:49:43.828Z","type":"message"}
+{"nick":"einaros-","message":"but now this thing comes along, and I have to jimmy-rig something","date":"2012-02-21T21:49:57.218Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Brian White\u000f \u000307master\u000f * r\u00025e3ca98\u000f \u000310\u000f/ lib/querystring.js \u0002:\u000f Make QueryString.parse() even faster - http://git.io/rYt4Fg","date":"2012-02-21T21:53:36.246Z","type":"message"}
+{"nick":"paddybyers","date":"2012-02-21T22:02:51.381Z","type":"join"}
+{"nick":"DrPizza","message":"wow, ecmascript's unicode rules are even stupider than previously imagined","date":"2012-02-21T22:03:15.303Z","type":"message"}
+{"nick":"DrPizza","message":"http://mathiasbynens.be/notes/javascript-identifiers","date":"2012-02-21T22:03:15.854Z","type":"message"}
+{"nick":"einaros-","reason":"Quit: Leaving.","date":"2012-02-21T22:05:53.820Z","type":"quit"}
+{"nick":"travis-ci","date":"2012-02-21T22:08:16.757Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#475 (master - 5e3ca98 : Brian White): The build is still failing.","date":"2012-02-21T22:08:16.924Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/3817b12...5e3ca98","date":"2012-02-21T22:08:16.924Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/717172","date":"2012-02-21T22:08:16.924Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T22:08:16.924Z","type":"part"}
+{"nick":"mraleph","message":"isaacs: I talked to Lasse about utf8 decoding into surrogate pairs. There are no real show stoppers for doing it inside V8. There is a concern that it would complicate direct parsing from utf8 string (positions mismatch) and there are some questions about semantics of identifiers composed of characters from outside BMP. (currently they are just rejected).","date":"2012-02-21T22:17:04.331Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: that's pretty awesome news.","date":"2012-02-21T22:17:33.222Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: piscisaureus_ is looking into doing some of this stuff for node's use, somewhat like how webkit approaches it.","date":"2012-02-21T22:19:20.644Z","type":"message"}
+{"nick":"isaacs","message":"s/webkit/chrome/","date":"2012-02-21T22:19:28.851Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: I think tl;dr version is that we probably can accept a patch doing that but I don't think it's nowhere on our plate of things to do in foreseeable future. ","date":"2012-02-21T22:20:14.232Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: it might be a good thing to discuss if we will have another call.","date":"2012-02-21T22:20:43.231Z","type":"message"}
+{"nick":"piscisaureus_","message":"mraleph: well, rejecting non-bmp characters in identifiers, who cares?","date":"2012-02-21T22:21:04.805Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: (though I would prefer we use something better than phone-freaking-conference this time… e.g. Hangouts ;-) )","date":"2012-02-21T22:21:17.185Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: i don't think it's unreasonable for us (node) to send a patch for this.  it's good to know that it wouldn't be rejected outright for some architectural decision.","date":"2012-02-21T22:21:30.682Z","type":"message"}
+{"nick":"isaacs","message":"also, we really only care about it for strings, not necessarily identifiers.","date":"2012-02-21T22:21:54.226Z","type":"message"}
+{"nick":"mraleph","message":"piscisaureus_: I think standard cares, somehow. ","date":"2012-02-21T22:21:59.261Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: once you create a string you can eval it… and here it begins :-)","date":"2012-02-21T22:22:23.159Z","type":"message"}
+{"nick":"piscisaureus_","message":"Although \"var ✇ = 42\" is kinda awesome","date":"2012-02-21T22:22:40.894Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: i mean, var foo = \"<unicode>\" has to work.  var f<unicode>o = \"string\" doesn't have to.","date":"2012-02-21T22:22:50.214Z","type":"message"}
+{"nick":"piscisaureus_","message":"what isaacs said","date":"2012-02-21T22:22:58.978Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: becasue you have to be able to take utf8 off a socket, write to a file, then read from that file later, and get the right js string.","date":"2012-02-21T22:23:23.508Z","type":"message"}
+{"nick":"isaacs","message":"(among other things)","date":"2012-02-21T22:23:37.333Z","type":"message"}
+{"nick":"pfox___","reason":"Ping timeout: 245 seconds","date":"2012-02-21T22:23:51.708Z","type":"quit"}
+{"nick":"isaacs","message":"the \"right js string\" can be multiple \\u#### chars, and the length can refer to uint16s rather than \"characters\", of course.","date":"2012-02-21T22:24:06.017Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: yeah, if I groked correctly what Lasse was saying to me (he spend in parser and encodings more time than I ever did) that how it already works when V8 is inside webkit.","date":"2012-02-21T22:24:14.237Z","type":"message"}
+{"nick":"isaacs","message":"as long as it gets utf8-encoded properly on the way back out.","date":"2012-02-21T22:24:16.073Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: i thought that webkit just owns all the en/decoding of strings, and always speaks to v8 in ucs2?","date":"2012-02-21T22:24:54.599Z","type":"message"}
+{"nick":"isaacs","message":"which would probably make sense, since they have to support *everything* to be able to show web pages anyhow.","date":"2012-02-21T22:25:14.535Z","type":"message"}
+{"nick":"mraleph","message":"isaacs: length will always be in 2byte ucs-2 characters (surogate pair counts as two); we can't change that part.","date":"2012-02-21T22:25:17.396Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-02-21T22:25:23.201Z","type":"message"}
+{"nick":"isaacs","message":"that's for tc-39 to figure out :)","date":"2012-02-21T22:25:30.964Z","type":"message"}
+{"nick":"mraleph","message":"yes it always speaks in ucs2","date":"2012-02-21T22:25:39.937Z","type":"message"}
+{"nick":"isaacs","message":"but while they're planning the future, we live in the present.","date":"2012-02-21T22:25:42.970Z","type":"message"}
+{"nick":"mraleph","message":"what I meant is that inside string literals we accept surogate pairs just fine, but if surogate pair is inside identifier name it will be rejected even if it forms a valid identifier character","date":"2012-02-21T22:26:23.676Z","type":"message"}
+{"nick":"mraleph","message":"if transcoded to utf8","date":"2012-02-21T22:26:30.461Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: yeah, i don't care about that.","date":"2012-02-21T22:26:34.599Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: js never should have allowed non-ascii in var names.","date":"2012-02-21T22:26:42.957Z","type":"message"}
+{"nick":"DrPizza","message":"don't agree","date":"2012-02-21T22:26:58.220Z","type":"message"}
+{"nick":"isaacs","action":"chauvinist","date":"2012-02-21T22:27:09.248Z","type":"action"}
+{"nick":"DrPizza","message":"dotless I, in particular, is a real boon for developers","date":"2012-02-21T22:27:24.768Z","type":"message"}
+{"nick":"DrPizza","message":"because Il1 aren't ambiguous enough","date":"2012-02-21T22:27:36.309Z","type":"message"}
+{"nick":"DrPizza","message":"upper case dotless I (thanks Turkey!) adds a whole extra dimension of being a dick","date":"2012-02-21T22:27:54.257Z","type":"message"}
+{"nick":"isaacs","message":"var � = \"TOTALLY BADASS TIGER\"","date":"2012-02-21T22:28:26.812Z","type":"message"}
+{"nick":"isaacs","message":"that can throw, i don't care.","date":"2012-02-21T22:28:49.171Z","type":"message"}
+{"nick":"DrPizza","message":"fascist. :(","date":"2012-02-21T22:28:58.464Z","type":"message"}
+{"nick":"isaacs","message":"but global[\"�\"] = \"TOTALLY BADASS TIGER\" should work","date":"2012-02-21T22:29:07.908Z","type":"message"}
+{"nick":"piscisaureus_","message":"mraleph: OT, in node parseInt(\"08\") === 0","date":"2012-02-21T22:29:22.321Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that's correct.","date":"2012-02-21T22:29:35.286Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: spec-dictated.","date":"2012-02-21T22:29:41.172Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: huh no","date":"2012-02-21T22:29:44.940Z","type":"message"}
+{"nick":"DrPizza","message":"JS does octal?","date":"2012-02-21T22:29:54.297Z","type":"message"}
+{"nick":"DrPizza","message":"ugh","date":"2012-02-21T22:29:55.183Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh wait","date":"2012-02-21T22:30:03.342Z","type":"message"}
+{"nick":"isaacs","message":"it starts with a 0, therefor it's an octal.  8 is not a valid octal digit, so it takes the first string of octal digits = \"0\"","date":"2012-02-21T22:30:04.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-02-21T22:30:04.922Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ah","date":"2012-02-21T22:30:11.599Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: your double-negative is confusing me \"but I don't think it's nowhere on our plate of things to do in foreseeable future.\"","date":"2012-02-21T22:30:16.800Z","type":"message"}
+{"nick":"piscisaureus_","message":"sorry I'm an idiot","date":"2012-02-21T22:30:18.978Z","type":"message"}
+{"nick":"mraleph","message":"so I would put this stuff on our agenda and discuss it during call (if we have one). I think it should be fine if e.g. Bert does a patch like that. But I would like to hear what Erik&Daniel think about it, cause this is not one of V8 parts that I feel like passing ultimate judgement about ;-)","date":"2012-02-21T22:30:24.500Z","type":"message"}
+{"nick":"isaacs","message":"mraleph: that means \"it is possibly on our plate\" or \"it is not on our plate\"","date":"2012-02-21T22:30:31.757Z","type":"message"}
+{"nick":"isaacs","message":"?","date":"2012-02-21T22:30:34.629Z","type":"message"}
+{"nick":"mraleph","message":"s/nowhere/anywhere/","date":"2012-02-21T22:30:40.810Z","type":"message"}
+{"nick":"mraleph","message":"russian habits","date":"2012-02-21T22:30:49.623Z","type":"message"}
+{"nick":"isaacs","message":"gotcha, thanks.  that's how i read it the first time :)","date":"2012-02-21T22:30:51.210Z","type":"message"}
+{"nick":"mraleph","message":"thats how I typed it","date":"2012-02-21T22:30:59.282Z","type":"message"}
+{"nick":"mraleph","message":"I think IRC replaced it with wrong word :-)","date":"2012-02-21T22:31:11.925Z","type":"message"}
+{"nick":"isaacs","message":"hahah","date":"2012-02-21T22:31:21.133Z","type":"message"}
+{"nick":"isaacs","message":"whoever does this patch, i'm guessing that matt ranney will send them a bottle of scotch.","date":"2012-02-21T22:32:06.553Z","type":"message"}
+{"nick":"isaacs","message":"mjr_: ^","date":"2012-02-21T22:32:21.377Z","type":"message"}
+{"nick":"mraleph","action":"opens emacs ","date":"2012-02-21T22:35:56.239Z","type":"action"}
+{"nick":"isaacs","message":"if mjr_ doesn't, I will","date":"2012-02-21T22:42:32.502Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 276 seconds","date":"2012-02-21T22:46:35.564Z","type":"quit"}
+{"nick":"brson","reason":"Read error: Connection reset by peer","date":"2012-02-21T22:49:59.308Z","type":"quit"}
+{"nick":"brson","date":"2012-02-21T22:50:05.872Z","type":"join"}
+{"nick":"pfox___","date":"2012-02-21T22:56:24.456Z","type":"join"}
+{"nick":"mikeal","date":"2012-02-21T23:07:25.132Z","type":"join"}
+{"nick":"mmalecki","message":"did I hear \"bottle of scotch for a patch\"?","date":"2012-02-21T23:08:25.488Z","type":"message"}
+{"nick":"mmalecki","message":"link to the ticket?","date":"2012-02-21T23:08:33.606Z","type":"message"}
+{"nick":"piscisaureus_","message":"does that include shipping overseas?","date":"2012-02-21T23:09:39.313Z","type":"message"}
+{"nick":"mmalecki","message":"well, they promised, so it should!","date":"2012-02-21T23:10:08.155Z","type":"message"}
+{"nick":"indexzero","date":"2012-02-21T23:15:32.139Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: hey","date":"2012-02-21T23:18:58.540Z","type":"message"}
+{"nick":"isaacs","message":"$ ./node -e process.stdin","date":"2012-02-21T23:19:00.075Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: why does that block forever?  does it need to?","date":"2012-02-21T23:19:07.869Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it seems that we don't pause stdin in the process.stdin getter.","date":"2012-02-21T23:19:17.626Z","type":"message"}
+{"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-02-21T23:19:32.873Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: this means that any program that touches it, even if they don't stdin.resume() or process.openStdin(), will hang.","date":"2012-02-21T23:19:49.491Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: no the issue us that we don't unref()","date":"2012-02-21T23:20:02.442Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: we unref on pause()","date":"2012-02-21T23:20:13.863Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yes - but in libuv everything starts paused","date":"2012-02-21T23:20:41.934Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: ok.","date":"2012-02-21T23:20:52.255Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so we don't pause it, we just never start it in the first place","date":"2012-02-21T23:21:04.401Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: which means it doesn't get unref()ed","date":"2012-02-21T23:21:12.138Z","type":"message"}
+{"nick":"isaacs","message":"i see.","date":"2012-02-21T23:21:21.086Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you can fix it if you care","date":"2012-02-21T23:21:22.126Z","type":"message"}
+{"nick":"isaacs","message":"yeah, it's breaking some random stuff.  the fix seems easy, but i wanted to sanity check it first.","date":"2012-02-21T23:21:42.451Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: in libuv-0.8 the reference counting mechanism is going to be overhauled and this will all be a lot easier and cleaner","date":"2012-02-21T23:22:04.682Z","type":"message"}
+{"nick":"isaacs","message":"\\o/","date":"2012-02-21T23:22:12.675Z","type":"message"}
+{"nick":"tjfontaine","action":"excited","date":"2012-02-21T23:22:18.285Z","type":"action"}
+{"nick":"isaacs","message":"in the meantime: https://gist.github.com/1879756 ","date":"2012-02-21T23:22:23.579Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ben and I know exactly what we are going to do but we didn't get started","date":"2012-02-21T23:22:37.594Z","type":"message"}
+{"nick":"isaacs","message":"i guess i ought to make that comment more accurate.","date":"2012-02-21T23:22:45.154Z","type":"message"}
+{"nick":"isaacs","message":"awesome.","date":"2012-02-21T23:22:59.571Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that's probably fine. Does it work?","date":"2012-02-21T23:23:01.850Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-02-21T23:23:05.211Z","type":"message"}
+{"nick":"isaacs","message":"seems to.","date":"2012-02-21T23:23:07.726Z","type":"message"}
+{"nick":"isaacs","message":"doesn't break any tests.  i'm going to add one to verify that simply doing `process.stdin` doesn't timeout.","date":"2012-02-21T23:23:22.498Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-02-21T23:23:31.259Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: apparently the non-ifs patch didn't help the guy","date":"2012-02-21T23:23:46.262Z","type":"message"}
+{"nick":"piscisaureus_","message":"which does not mean we shouldn't land the patch","date":"2012-02-21T23:24:11.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"https://fbcdn-sphotos-a.akamaihd.net/hphotos-ak-snc7/431433_10150671184306368_636986367_11568777_480910422_n.jpg","date":"2012-02-21T23:25:44.538Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: https://github.com/isaacs/node/commit/27d8b059fa214c56de6dc359ebdb8c05ad6b9f99 <-- review, plz?","date":"2012-02-21T23:29:47.026Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: lgtm. Also good for 0.6.","date":"2012-02-21T23:30:37.969Z","type":"message"}
+{"nick":"isaacs","message":"yes, agreed.","date":"2012-02-21T23:30:42.744Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u000227d8b05\u000f \u000310\u000f/ (src/node.js test/simple/test-stdin-hang.js)\u0002:\u000f ","date":"2012-02-21T23:31:38.099Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Pause process.stdin in stdin getter","date":"2012-02-21T23:31:38.264Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Otherwise, it'll be ref'ed, and keep the process hanging. - http://git.io/2QQUqQ","date":"2012-02-21T23:31:38.264Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002634b4de\u000f \u000310\u000f/ (src/node.js test/simple/test-stdin-hang.js)\u0002:\u000f ","date":"2012-02-21T23:32:26.526Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Pause process.stdin in stdin getter","date":"2012-02-21T23:32:26.685Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Otherwise, it'll be ref'ed, and keep the process hanging. - http://git.io/_1e6OQ","date":"2012-02-21T23:32:26.685Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-02-21T23:34:45.379Z","type":"quit"}
+{"nick":"mjr_","message":"To fix the unicode thing, I will commit to one bottle of scotch or liquor of your choice that costs no more than $200.","date":"2012-02-21T23:39:47.573Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T23:40:35.724Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#477 (v0.6 - 634b4de : isaacs): The build was fixed.","date":"2012-02-21T23:40:35.886Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/186960f...634b4de","date":"2012-02-21T23:40:35.886Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/717773","date":"2012-02-21T23:40:35.886Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T23:40:35.886Z","type":"part"}
+{"nick":"isaacs","action":"wondering how high up we can push this bounty...","date":"2012-02-21T23:41:19.080Z","type":"action"}
+{"nick":"isaacs","message":"mjr_: you've got investors, right?","date":"2012-02-21T23:41:26.043Z","type":"message"}
+{"nick":"isaacs","message":";)","date":"2012-02-21T23:41:30.986Z","type":"message"}
+{"nick":"mjr_","message":"I'd pay for it with my own money, just for the community goodwill.","date":"2012-02-21T23:41:43.202Z","type":"message"}
+{"nick":"isaacs","action":"should start a kickstarter","date":"2012-02-21T23:41:45.488Z","type":"action"}
+{"nick":"mjr_","message":"And hope to share a glass with the committer.","date":"2012-02-21T23:42:02.555Z","type":"message"}
+{"nick":"isaacs","message":"if JSTeam could raise that much money to help feed people, *imagine* how much we could raise to be able to put totally badass tigers in our js programs.","date":"2012-02-21T23:42:32.607Z","type":"message"}
+{"nick":"piscisaureus_","action":"starts up emacs","date":"2012-02-21T23:43:44.253Z","type":"action"}
+{"nick":"mmalecki","action":"starts up vim","date":"2012-02-21T23:44:54.523Z","type":"action"}
+{"nick":"mjr_","message":"I may have to go to Denmark to have a drink with mraleph if he fixes it.","date":"2012-02-21T23:44:57.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"mraleph is totally going to loose :-)","date":"2012-02-21T23:45:13.860Z","type":"message"}
+{"nick":"piscisaureus_","message":"have you ever been to amsterdam, mjr_?","date":"2012-02-21T23:45:27.172Z","type":"message"}
+{"nick":"mjr_","message":"nope, but it sounds like I might do so soon.","date":"2012-02-21T23:45:40.581Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T23:47:18.331Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#476 (master - 27d8b05 : isaacs): The build is still failing.","date":"2012-02-21T23:47:18.495Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/5e3ca98...27d8b05","date":"2012-02-21T23:47:18.495Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/717766","date":"2012-02-21T23:47:18.495Z","type":"message"}
+{"nick":"travis-ci","date":"2012-02-21T23:47:18.495Z","type":"part"}
+{"nick":"mraleph","message":"wait a sec my emacs finishes loading any moment now","date":"2012-02-21T23:48:09.225Z","type":"message"}
+{"nick":"mmalecki","message":"mraleph: that can take some time tho. did it boot the X Server already?","date":"2012-02-21T23:49:53.556Z","type":"message"}
+{"nick":"mraleph","message":"http://www.geekherocomic.com/comics-highres/2009-02-02-emacs-vs-vim.png","date":"2012-02-21T23:50:09.863Z","type":"message"}
+{"nick":"mmalecki","message":"hah, I love this comic. too bad it's discontinued :(","date":"2012-02-21T23:50:38.519Z","type":"message"}
+{"nick":"mraleph","message":"yeah","date":"2012-02-21T23:51:09.018Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: anything outstanding you want to see in 0.7.5?","date":"2012-02-21T23:53:03.316Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: nope","date":"2012-02-21T23:53:10.752Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I am generally willing to go the extra mile to get a bugfix in a stable branch","date":"2012-02-21T23:53:48.556Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but for 7.x not so much atm","date":"2012-02-21T23:53:55.944Z","type":"message"}
+{"nick":"isaacs","message":"kewl.  it looks like bnoordhuis already merged or closed most of the issues i cared about.  just need to review andreasmadsen's latest cluster updates.","date":"2012-02-21T23:54:12.150Z","type":"message"}

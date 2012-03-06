@@ -1,0 +1,820 @@
+{"nick":"rmustacc","message":"bnoordhuis: I'll have to polk around and figure out a better way to get the memory.","date":"2011-10-12T00:06:02.099Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: i suppose we could read it from /proc/<pid>/psinfo - that's how node does it","date":"2011-10-12T00:08:07.385Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i don't know, feels unclean","date":"2011-10-12T00:08:17.602Z","type":"message"}
+{"nick":"rmustacc","message":"Well, you're trying to figure out the total system memory, not the processes, right?","date":"2011-10-12T00:08:59.786Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2011-10-12T00:12:14.174Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think we stripped that code from node altogether","date":"2011-10-12T00:12:21.578Z","type":"message"}
+{"nick":"rmustacc","message":"Well, there's nothing in an individual processes /proc entry to determine that.","date":"2011-10-12T00:14:56.992Z","type":"message"}
+{"nick":"rmustacc","message":"At least not that I remember.","date":"2011-10-12T00:15:06.877Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, i was mistaken about that","date":"2011-10-12T00:16:46.019Z","type":"message"}
+{"nick":"creationix|work","date":"2011-10-12T00:17:57.773Z","type":"part"}
+{"nick":"rmustacc","message":"bnoordhuis: I don't have time to play around with it right now, but it may be simpler (and more correct i.e. container aware) to do sysconf(_SC_AVPHYS_PAGES)...","date":"2011-10-12T00:20:36.009Z","type":"message"}
+{"nick":"rmustacc","message":"Not really sure in practive, only in theory from a man page.","date":"2011-10-12T00:20:46.078Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: Looking at the impl it appears to be more container aware if there's a cap on the zone.","date":"2011-10-12T00:22:35.453Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, let's go with that","date":"2011-10-12T00:25:31.704Z","type":"message"}
+{"nick":"rmustacc","message":"Okay, cool.","date":"2011-10-12T00:26:32.322Z","type":"message"}
+{"nick":"rmustacc","message":"You want me to play around and get a patch for that?","date":"2011-10-12T00:26:38.932Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002e0a4e72\u000f \u000310\u000f/ (src/unix/sunos.c test/test-get-memory.c)\u0002:\u000f sunos: look up free memory with sysconf(_SC_AVPHYS_PAGES) - http://git.io/gWY_Yg","date":"2011-10-12T00:27:54.248Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: ^ :)","date":"2011-10-12T00:28:06.556Z","type":"message"}
+{"nick":"rmustacc","message":"Looks much nicer now! Now all I can do is go on my rant about double return values.","date":"2011-10-12T00:37:00.355Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i'm not too happy with that either","date":"2011-10-12T00:43:14.854Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i'll safe that for another day","date":"2011-10-12T00:43:33.011Z","type":"message"}
+{"nick":"rmustacc","message":"I'd spend some cycles to help you out with that one.","date":"2011-10-12T00:48:29.846Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure - probably all that's needed is to replace the doubles with uint64_t","date":"2011-10-12T00:51:23.987Z","type":"message"}
+{"nick":"piscisaureus","date":"2011-10-12T00:54:46.383Z","type":"join"}
+{"nick":"piscisaureus","message":"ryah: just saw your email","date":"2011-10-12T01:03:31.415Z","type":"message"}
+{"nick":"piscisaureus","message":"afternoon is not going to work :-)","date":"2011-10-12T01:03:41.251Z","type":"message"}
+{"nick":"piscisaureus","message":"let's have it tomorrow night (morning in your case)","date":"2011-10-12T01:03:51.614Z","type":"message"}
+{"nick":"piscisaureus","message":"right now it doesn;t work because I am too drunk","date":"2011-10-12T01:04:01.776Z","type":"message"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2011-10-12T01:11:49.793Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2011-10-12T01:14:46.093Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-10-12T01:16:51.866Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u000272fb469\u000f \u000310\u000f/ src/win/fs.c \u0002:\u000f windows: check for fd==-1 in uv_fs functions - http://git.io/8yaXug","date":"2011-10-12T01:22:55.796Z","type":"message"}
+{"nick":"bnoordhuis","message":"weirdest bug on sunos... ","date":"2011-10-12T01:26:49.966Z","type":"message"}
+{"nick":"bnoordhuis","message":"this -> r = uv_fs_write(loop, &req, file, test_buf, sizeof(test_buf), -1, NULL);","date":"2011-10-12T01:26:55.379Z","type":"message"}
+{"nick":"bnoordhuis","message":"looks like this in gdb -> uv_fs_write (loop=0x80f4460, req=0x8047590, file=10, buf=0x80afca0, length=13, offset=4294967295, cb=0x8069296 <run_test_fs_symlink+94>)","date":"2011-10-12T01:27:05.037Z","type":"message"}
+{"nick":"bnoordhuis","message":"cb != NULL...","date":"2011-10-12T01:27:24.177Z","type":"message"}
+{"nick":"ryah","message":"igorzi_: thanks","date":"2011-10-12T01:28:17.298Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u0002f164704\u000f \u000310\u000f/ doc/api/fs.markdown \u0002:\u000f fs.watch documentation - http://git.io/LFy42g","date":"2011-10-12T01:28:39.288Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: big offset?","date":"2011-10-12T01:34:54.446Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2011-10-12T01:35:04.795Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 244 seconds","date":"2011-10-12T01:35:06.251Z","type":"quit"}
+{"nick":"bnoordhuis","message":"'-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' <- was missing for run-tests","date":"2011-10-12T01:35:28.276Z","type":"message"}
+{"nick":"ryah","message":"ah - yeah","date":"2011-10-12T01:40:58.502Z","type":"message"}
+{"nick":"ryah","message":"that's a bitch","date":"2011-10-12T01:41:05.277Z","type":"message"}
+{"nick":"ryah","message":"reminds me how much i hate computers","date":"2011-10-12T01:41:26.108Z","type":"message"}
+{"nick":"bnoordhuis","message":"heh","date":"2011-10-12T01:41:30.207Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002014394d\u000f \u000310\u000f/ uv.gyp \u0002:\u000f build: compile all targets with large file support - http://git.io/M2rfpw","date":"2011-10-12T01:42:36.278Z","type":"message"}
+{"nick":"bnoordhuis","message":"[% 100|+  74|-   7]: Done. <- sunos","date":"2011-10-12T01:45:22.453Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis++","date":"2011-10-12T01:45:44.035Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002721ad8c\u000f \u000310\u000f/ (4 files in 2 dirs)\u0002:\u000f sunos: implement uv_fs_futime() - http://git.io/-bpsiQ","date":"2011-10-12T02:08:53.682Z","type":"message"}
+{"nick":"bnoordhuis","message":"and with that i'm off to bed","date":"2011-10-12T02:10:22.913Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Quit: Leaving","date":"2011-10-12T02:10:36.432Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2011-10-12T02:42:23.962Z","type":"quit"}
+{"nick":"sh1mmer","date":"2011-10-12T02:44:17.326Z","type":"join"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2011-10-12T02:53:26.763Z","type":"quit"}
+{"nick":"bradleymeck","date":"2011-10-12T03:03:28.113Z","type":"join"}
+{"nick":"bradleymeck","reason":"Ping timeout: 258 seconds","date":"2011-10-12T04:41:15.069Z","type":"quit"}
+{"nick":"bradleymeck","date":"2011-10-12T04:41:50.676Z","type":"join"}
+{"nick":"bradleymeck","reason":"Ping timeout: 248 seconds","date":"2011-10-12T05:12:47.675Z","type":"quit"}
+{"nick":"isaacs","date":"2011-10-12T05:23:31.232Z","type":"join"}
+{"nick":"mjr_","date":"2011-10-12T05:28:46.428Z","type":"join"}
+{"nick":"igorzi_","message":"ryah: https://github.com/igorzi/node/commit/f808270ccde98920728b08b209598461a21256f2","date":"2011-10-12T05:39:16.082Z","type":"message"}
+{"nick":"igorzi_","message":"^-------- fixes simple/test-fs-utimes.js on windows","date":"2011-10-12T05:39:31.975Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u00022b46959\u000f \u000310\u000f/ (benchmark/throughput-child.js benchmark/throughput.js)\u0002:\u000f Add throughput benchmark - http://git.io/JjD_1A","date":"2011-10-12T05:40:28.238Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-10-12T05:47:22.562Z","type":"quit"}
+{"nick":"ryah","message":"igorzi_: thanks","date":"2011-10-12T05:50:01.658Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u000299757cb\u000f \u000310\u000f/ test/simple/test-fs-utimes.js \u0002:\u000f fix simple/test-fs-utimes.js on windows - http://git.io/d4v44g","date":"2011-10-12T05:51:48.537Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T06:01:56.590Z","type":"join"}
+{"nick":"creationix","date":"2011-10-12T06:02:04.114Z","type":"join"}
+{"nick":"creationix","message":"evening","date":"2011-10-12T06:02:08.177Z","type":"message"}
+{"nick":"creationix","message":"I'm wrapping uv_spawn and I have a question about the stdin/stdout/stderr fields in the options struct","date":"2011-10-12T06:02:35.793Z","type":"message"}
+{"nick":"creationix","message":"what fd am I supposed to use to initialize the \"initialized uv_pipe_t structs\"","date":"2011-10-12T06:03:45.995Z","type":"message"}
+{"nick":"creationix","message":"?","date":"2011-10-12T06:03:54.857Z","type":"message"}
+{"nick":"ryah","message":"creationix: none - just do uv_pipe_init ","date":"2011-10-12T06:04:51.008Z","type":"message"}
+{"nick":"ryah","message":"on some uv_pipe_t","date":"2011-10-12T06:04:58.648Z","type":"message"}
+{"nick":"ryah","message":"it will come back with the fd filled in","date":"2011-10-12T06:05:03.531Z","type":"message"}
+{"nick":"ryah","message":"(please feel free to contribute documentation patches!)","date":"2011-10-12T06:05:14.283Z","type":"message"}
+{"nick":"creationix","message":"so null or no arg at all?","date":"2011-10-12T06:05:20.159Z","type":"message"}
+{"nick":"ryah","message":"int uv_pipe_init(uv_loop_t*, uv_pipe_t* handle, int ipc);","date":"2011-10-12T06:05:47.827Z","type":"message"}
+{"nick":"creationix","message":"oh nevermind, I had it confused with tty","date":"2011-10-12T06:06:01.473Z","type":"message"}
+{"nick":"creationix","message":"pipe's arg is the ipc flag not a fd","date":"2011-10-12T06:06:09.881Z","type":"message"}
+{"nick":"creationix","message":":/","date":"2011-10-12T06:06:14.825Z","type":"message"}
+{"nick":"ryah","message":"nope. just set that to 0 for now","date":"2011-10-12T06:08:22.525Z","type":"message"}
+{"nick":"creationix","message":"can windows_verbatim_arguments just be NULL","date":"2011-10-12T06:15:52.039Z","type":"message"}
+{"nick":"creationix","message":"I don't even build on windows yet","date":"2011-10-12T06:15:58.149Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-10-12T06:19:07.342Z","type":"message"}
+{"nick":"creationix","message":"ryah, do you know of a good code example for building the char** array needed for args (and I assume cwd)","date":"2011-10-12T06:19:33.799Z","type":"message"}
+{"nick":"creationix","message":"I have the lua table and API to iterate over it and get char* for each item","date":"2011-10-12T06:19:49.541Z","type":"message"}
+{"nick":"creationix","message":"I guess I could look at node's C++, it can't be that different","date":"2011-10-12T06:20:13.342Z","type":"message"}
+{"nick":"ryah","message":"creationix: checkout src/process_wrap.cc in node","date":"2011-10-12T06:21:29.668Z","type":"message"}
+{"nick":"creationix","message":"heh, I doubt `new char*[argc + 1];` works in plain C","date":"2011-10-12T06:22:35.824Z","type":"message"}
+{"nick":"ryah","message":"char** x = malloc(argc + 1)","date":"2011-10-12T06:24:51.975Z","type":"message"}
+{"nick":"mraleph","date":"2011-10-12T06:27:38.057Z","type":"join"}
+{"nick":"creationix","message":"no way to stack allocate it?","date":"2011-10-12T06:29:01.899Z","type":"message"}
+{"nick":"ryah","message":" no","date":"2011-10-12T06:31:33.142Z","type":"message"}
+{"nick":"creationix","message":"hmm, seems I can stack allocate, but other stuff isn't working","date":"2011-10-12T07:05:10.826Z","type":"message"}
+{"nick":"creationix","message":"thanks for the help","date":"2011-10-12T07:05:15.052Z","type":"message"}
+{"nick":"ryah","message":"people advocate against dynamic stack allocations","date":"2011-10-12T07:05:47.611Z","type":"message"}
+{"nick":"creationix","message":"isn't malloc really slow","date":"2011-10-12T07:06:06.147Z","type":"message"}
+{"nick":"creationix","message":"(but I guess compared to spawning a process it's not that bad)","date":"2011-10-12T07:06:22.292Z","type":"message"}
+{"nick":"ryah","message":"yeah - i wouldn't worry about it too much until it shows up in a profile","date":"2011-10-12T07:06:48.177Z","type":"message"}
+{"nick":"creationix","message":"I malloc all over the place and it doesn't seem to hurt much","date":"2011-10-12T07:07:26.539Z","type":"message"}
+{"nick":"creationix","message":"the thing that's really slow in luajit is string concat","date":"2011-10-12T07:07:33.912Z","type":"message"}
+{"nick":"creationix","message":"like when building a larger string piecemeal","date":"2011-10-12T07:07:46.985Z","type":"message"}
+{"nick":"creationix","message":"v8 keeps it as a list internally, but lua seems to re-allocate the entire string every time it's changed","date":"2011-10-12T07:08:07.808Z","type":"message"}
+{"nick":"ryah","message":"mraleph: lua doesn't have constrings?","date":"2011-10-12T07:09:07.434Z","type":"message"}
+{"nick":"creationix","message":"ryah: sweet, I've got processes executing","date":"2011-10-12T07:10:44.104Z","type":"message"}
+{"nick":"creationix","message":"but my streams aren't emitting any events","date":"2011-10-12T07:10:47.639Z","type":"message"}
+{"nick":"creationix","message":"I don't need to call bind or open or anything on the pipes do I?","date":"2011-10-12T07:10:57.047Z","type":"message"}
+{"nick":"creationix","message":"I just pass in three initialized pipes in the options struct and then listen for data on them","date":"2011-10-12T07:11:20.760Z","type":"message"}
+{"nick":"ryah","message":"creationix: you have to call read_start","date":"2011-10-12T07:11:22.718Z","type":"message"}
+{"nick":"creationix","message":"ahh","date":"2011-10-12T07:11:29.513Z","type":"message"}
+{"nick":"creationix","message":"and do I need to call close on stdin","date":"2011-10-12T07:11:41.528Z","type":"message"}
+{"nick":"creationix","message":"or is that up to the user of spawn","date":"2011-10-12T07:11:50.432Z","type":"message"}
+{"nick":"ryah","message":"yeah - after the process dies close those pipes","date":"2011-10-12T07:12:09.968Z","type":"message"}
+{"nick":"creationix","message":"that worked, thanks","date":"2011-10-12T07:12:51.760Z","type":"message"}
+{"nick":"creationix","message":"hmm, I'm getting stdout's end after the main process emits exit","date":"2011-10-12T07:15:02.912Z","type":"message"}
+{"nick":"creationix","message":"if I close in exit, I never get end on stdout","date":"2011-10-12T07:15:12.874Z","type":"message"}
+{"nick":"creationix","message":"s/main process/child process/","date":"2011-10-12T07:15:29.879Z","type":"message"}
+{"nick":"mraleph","message":"ryah: no","date":"2011-10-12T07:15:46.391Z","type":"message"}
+{"nick":"mraleph","message":"ryah: all lua strings are interned and are real strings.","date":"2011-10-12T07:16:27.292Z","type":"message"}
+{"nick":"creationix","message":"mraleph: think I should make a buffer type for luvit?","date":"2011-10-12T07:16:52.536Z","type":"message"}
+{"nick":"mraleph","message":"creationix: also concat operator aborts the trace last time I checked.","date":"2011-10-12T07:17:07.196Z","type":"message"}
+{"nick":"creationix","message":"for things like building a binary protocol a byte at a time","date":"2011-10-12T07:17:07.839Z","type":"message"}
+{"nick":"creationix","message":"mraleph: luajit or lua5.1?","date":"2011-10-12T07:17:21.680Z","type":"message"}
+{"nick":"mraleph","message":"both have the same strings inside; but trace thingy obviously applied only to the jit","date":"2011-10-12T07:18:06.176Z","type":"message"}
+{"nick":"mraleph","message":"luajit uses more effecient string hash though I think","date":"2011-10-12T07:18:26.791Z","type":"message"}
+{"nick":"mraleph","message":"compared to lua one","date":"2011-10-12T07:18:33.708Z","type":"message"}
+{"nick":"creationix","message":"I see","date":"2011-10-12T07:18:37.694Z","type":"message"}
+{"nick":"creationix","message":"mraleph: did we ever get anywhere with adding 8-bit strings to v8","date":"2011-10-12T07:18:56.945Z","type":"message"}
+{"nick":"creationix","message":"where they hold opaque binary data and have no encoding","date":"2011-10-12T07:19:48.345Z","type":"message"}
+{"nick":"creationix","message":"just treat their contents like 8-bit ascii","date":"2011-10-12T07:19:55.034Z","type":"message"}
+{"nick":"mraleph","message":" javascript strings are ucs-2. you can't go around that.  internally we have ascii strings to optimize for space and effeciency.","date":"2011-10-12T07:20:16.726Z","type":"message"}
+{"nick":"creationix","message":"right, I'm thinking about a C++ API that node could use for binary data","date":"2011-10-12T07:20:43.289Z","type":"message"}
+{"nick":"creationix","message":"but still share String's methods and interface","date":"2011-10-12T07:20:57.409Z","type":"message"}
+{"nick":"creationix","message":"your current ascii strings can't have the 8th bit set if I remember right","date":"2011-10-12T07:21:36.273Z","type":"message"}
+{"nick":"mraleph","message":"you can't use + on custom objects so it makes little sense afaik","date":"2011-10-12T07:21:41.005Z","type":"message"}
+{"nick":"mraleph","message":"well ascii strings consist of ascii characters :-)","date":"2011-10-12T07:22:04.240Z","type":"message"}
+{"nick":"creationix","message":"right, they would be real strings to the javascript that has them, but the backing store would be a vanilla 8-bit string","date":"2011-10-12T07:22:29.201Z","type":"message"}
+{"nick":"creationix","message":"it's probably a big change since the js api assumes ucs-2","date":"2011-10-12T07:22:45.418Z","type":"message"}
+{"nick":"creationix","new_nick":"creationix|aslee","date":"2011-10-12T08:06:15.342Z","type":"nick"}
+{"nick":"creationix|aslee","new_nick":"creationix|sleep","date":"2011-10-12T08:06:32.427Z","type":"nick"}
+{"nick":"mikeal","reason":"Ping timeout: 248 seconds","date":"2011-10-12T09:41:35.683Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u000287339a2\u000f \u000310\u000f/ (lib/net.js src/node.cc src/node.js lib/cluster.js)\u0002:\u000f introduce node cluster - http://git.io/06OXxQ","date":"2011-10-12T09:59:04.961Z","type":"message"}
+{"nick":"mikeal","date":"2011-10-12T10:08:10.344Z","type":"join"}
+{"nick":"piscisaureus","date":"2011-10-12T10:09:43.239Z","type":"join"}
+{"nick":"indutny","message":"cluster: meh","date":"2011-10-12T10:11:36.038Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-10-12T10:18:18.131Z","type":"message"}
+{"nick":"ryah","message":"people love shit like this","date":"2011-10-12T10:18:27.973Z","type":"message"}
+{"nick":"ryah","message":"we must make them happy","date":"2011-10-12T10:18:38.330Z","type":"message"}
+{"nick":"igorzi_","reason":"Ping timeout: 252 seconds","date":"2011-10-12T10:18:54.656Z","type":"quit"}
+{"nick":"indutny","message":":)","date":"2011-10-12T10:40:02.952Z","type":"message"}
+{"nick":"indutny","message":"we already have cluster module","date":"2011-10-12T10:40:08.788Z","type":"message"}
+{"nick":"indutny","message":"this is for user-land","date":"2011-10-12T10:40:17.991Z","type":"message"}
+{"nick":"indutny","message":"we wasn't pulling many shit that users seems to love","date":"2011-10-12T10:40:31.950Z","type":"message"}
+{"nick":"indutny","message":"but we're going to pull this","date":"2011-10-12T10:40:37.705Z","type":"message"}
+{"nick":"indutny","message":"that's not right","date":"2011-10-12T10:40:42.584Z","type":"message"}
+{"nick":"indutny","message":"we're just API providers","date":"2011-10-12T10:40:49.807Z","type":"message"}
+{"nick":"indutny","message":"not software","date":"2011-10-12T10:40:57.812Z","type":"message"}
+{"nick":"indutny","message":"probably it would be better to collaborate with tjholowachuk to improve node's API","date":"2011-10-12T10:42:09.233Z","type":"message"}
+{"nick":"indutny","message":"so cluster will benefit from 0.6.x branch","date":"2011-10-12T10:42:19.064Z","type":"message"}
+{"nick":"indutny","message":"ryah: ^","date":"2011-10-12T10:43:03.597Z","type":"message"}
+{"nick":"indutny","message":";)","date":"2011-10-12T10:43:04.472Z","type":"message"}
+{"nick":"piscisaureus","reason":"Ping timeout: 240 seconds","date":"2011-10-12T11:11:01.105Z","type":"quit"}
+{"nick":"mraleph","reason":"Read error: Connection reset by peer","date":"2011-10-12T11:40:58.540Z","type":"quit"}
+{"nick":"mraleph1","date":"2011-10-12T11:41:00.137Z","type":"join"}
+{"nick":"Casan","date":"2011-10-12T11:49:49.157Z","type":"join"}
+{"nick":"piscisaureus","date":"2011-10-12T12:02:48.456Z","type":"join"}
+{"nick":"piscisaureus","message":"does this mean that we get `node --cluster 4` in .6 already?","date":"2011-10-12T12:10:43.784Z","type":"message"}
+{"nick":"piscisaureus","message":"that would be really nice","date":"2011-10-12T12:10:49.544Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus: no it wouldn't be","date":"2011-10-12T12:11:39.686Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2011-10-12T12:11:40.365Z","type":"message"}
+{"nick":"indutny","message":"https://github.com/learnboost/cluster","date":"2011-10-12T12:11:46.062Z","type":"message"}
+{"nick":"indutny","message":"why do we need same thing as in user-land?","date":"2011-10-12T12:11:54.040Z","type":"message"}
+{"nick":"indutny","message":"anyway it won't allow you to do zero down-time updates","date":"2011-10-12T12:12:15.707Z","type":"message"}
+{"nick":"indutny","message":"and it's very high-level","date":"2011-10-12T12:12:26.760Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-10-12T12:12:30.689Z","type":"message"}
+{"nick":"piscisaureus","message":"Ik kind of agree","date":"2011-10-12T12:12:33.985Z","type":"message"}
+{"nick":"piscisaureus","message":"but is seems very nice to have it in core","date":"2011-10-12T12:12:52.364Z","type":"message"}
+{"nick":"piscisaureus","message":"because people can immediately start \"practicing\"  for their scalable app setup","date":"2011-10-12T12:13:35.153Z","type":"message"}
+{"nick":"indutny","message":"heh","date":"2011-10-12T12:13:58.843Z","type":"message"}
+{"nick":"piscisaureus","message":"and stop whining about not using all cores and stuff","date":"2011-10-12T12:13:59.681Z","type":"message"}
+{"nick":"indutny","message":"ahaha :)","date":"2011-10-12T12:14:05.504Z","type":"message"}
+{"nick":"indutny","message":"hm....","date":"2011-10-12T12:14:08.701Z","type":"message"}
+{"nick":"indutny","message":"last one is nice point","date":"2011-10-12T12:14:12.313Z","type":"message"}
+{"nick":"indutny","message":"I think `node cluster` should print message","date":"2011-10-12T12:16:19.180Z","type":"message"}
+{"nick":"indutny","message":"\"Yeah node is running on one core, but you can use all cores with modules like cluster\"","date":"2011-10-12T12:16:50.905Z","type":"message"}
+{"nick":"indutny","message":"and even more","date":"2011-10-12T12:17:02.624Z","type":"message"}
+{"nick":"indutny","message":"\"Dude it's event-loop","date":"2011-10-12T12:17:07.792Z","type":"message"}
+{"nick":"indutny","message":"fck multi-core env\"","date":"2011-10-12T12:17:13.548Z","type":"message"}
+{"nick":"indutny","message":":D","date":"2011-10-12T12:17:14.263Z","type":"message"}
+{"nick":"piscisaureus","reason":"Ping timeout: 244 seconds","date":"2011-10-12T12:21:58.514Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2011-10-12T12:25:06.640Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-10-12T12:29:09.406Z","type":"join"}
+{"nick":"mraleph","date":"2011-10-12T12:37:55.051Z","type":"join"}
+{"nick":"mraleph1","reason":"Read error: Connection reset by peer","date":"2011-10-12T12:38:51.318Z","type":"quit"}
+{"nick":"mraleph1","date":"2011-10-12T12:56:05.259Z","type":"join"}
+{"nick":"mraleph","reason":"Read error: Connection reset by peer","date":"2011-10-12T12:56:41.530Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2011-10-12T13:02:14.053Z","type":"join"}
+{"nick":"piscisaureus","reason":"Ping timeout: 244 seconds","date":"2011-10-12T13:02:47.436Z","type":"quit"}
+{"nick":"mraleph","date":"2011-10-12T13:03:28.165Z","type":"join"}
+{"nick":"mraleph1","reason":"Read error: Connection reset by peer","date":"2011-10-12T13:03:54.721Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-10-12T13:19:27.437Z","type":"join"}
+{"nick":"piscisaureus","reason":"Ping timeout: 252 seconds","date":"2011-10-12T13:24:00.495Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002752571c\u000f \u000310\u000f/ src/node.cc \u0002:\u000f Remove --use-legacy switch from --help section. - http://git.io/5IklsA","date":"2011-10-12T13:48:11.458Z","type":"message"}
+{"nick":"bradleymeck","date":"2011-10-12T14:04:43.680Z","type":"join"}
+{"nick":"piscisaureus","date":"2011-10-12T14:38:40.680Z","type":"join"}
+{"nick":"CoverSlide","action":"is listening to Bert Belder on Herding Code","date":"2011-10-12T14:54:05.545Z","type":"action"}
+{"nick":"piscisaureus","action":"to beer time","date":"2011-10-12T14:58:36.222Z","type":"action"}
+{"nick":"piscisaureus","reason":"Ping timeout: 248 seconds","date":"2011-10-12T15:03:11.680Z","type":"quit"}
+{"nick":"erickt","date":"2011-10-12T15:19:38.672Z","type":"join"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002197f591\u000f \u000310\u000f/ (include/uv.h src/unix/error.c src/uv-common.c)\u0002:\u000f common: add UV_ENOTDIR error code - http://git.io/J7qYtg","date":"2011-10-12T15:30:30.731Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u000225a177a\u000f \u000310\u000f/ (test/test-fs.c test/test-list.h test/fixtures/empty_file)\u0002:\u000f test: assert that readdir on file raises UV_ENOTDIR - http://git.io/s--Nhg","date":"2011-10-12T15:30:31.081Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ broken on windows right now","date":"2011-10-12T15:30:37.332Z","type":"message"}
+{"nick":"bnoordhuis","message":"FindFirstFile() returns ERROR_PATH_NOT_FOUND, uv__translate_sys_error() converts that to ENOENT","date":"2011-10-12T15:30:57.281Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002c82828e\u000f \u000310\u000f/ test/simple/test-readdir.js \u0002:\u000f ","date":"2011-10-12T15:38:08.349Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f test: add test for #1869","date":"2011-10-12T15:38:08.510Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f fs.readdir() on file should raise ENOTDIR, not UNKNOWN. - http://git.io/tWVGxQ","date":"2011-10-12T15:38:08.511Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u0002bc96302\u000f \u000310\u000f/ (17 files in 7 dirs)\u0002:\u000f ","date":"2011-10-12T15:38:08.790Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f uv: upgrade to 25a177a","date":"2011-10-12T15:38:08.951Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Fixes #1869. - http://git.io/g56msg","date":"2011-10-12T15:38:09.120Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307\u000f * r\u00026ed8d41\u000f \u000310\u000f/ doc/api/child_processes.markdown \u0002:\u000f docs: fix child_process.send() example - http://git.io/i2wuQw","date":"2011-10-12T15:45:22.394Z","type":"message"}
+{"nick":"creationix|sleep","reason":"Quit: creationix|sleep","date":"2011-10-12T15:50:59.671Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2011-10-12T16:03:37.182Z","type":"quit"}
+{"nick":"creationix|work","date":"2011-10-12T16:21:50.482Z","type":"join"}
+{"nick":"isaacs","date":"2011-10-12T16:23:51.620Z","type":"join"}
+{"nick":"Casan","reason":"Ping timeout: 252 seconds","date":"2011-10-12T16:31:09.126Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Ping timeout: 248 seconds","date":"2011-10-12T16:31:43.680Z","type":"quit"}
+{"nick":"creationix|work","date":"2011-10-12T16:42:56.526Z","type":"part"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2011-10-12T16:48:41.892Z","type":"quit"}
+{"nick":"piscisaureus","date":"2011-10-12T17:00:13.257Z","type":"join"}
+{"nick":"erickt","date":"2011-10-12T17:17:25.637Z","type":"join"}
+{"nick":"igorzi","date":"2011-10-12T17:27:23.663Z","type":"join"}
+{"nick":"bradleymeck","date":"2011-10-12T17:38:42.713Z","type":"join"}
+{"nick":"Casan","date":"2011-10-12T17:40:27.682Z","type":"join"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u00022216d38\u000f \u000310\u000f/ (src/win/fs.c test/test-fs.c test/test-list.h)\u0002:\u000f windows: enable uv_fs_open to open directories - http://git.io/nsP6Qg","date":"2011-10-12T17:45:33.860Z","type":"message"}
+{"nick":"brson","date":"2011-10-12T17:50:46.410Z","type":"join"}
+{"nick":"ryah","message":"bnoordhuis, igorzi: call in 10 or in an hour?","date":"2011-10-12T17:53:00.493Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: 10?","date":"2011-10-12T17:53:09.449Z","type":"message"}
+{"nick":"piscisaureus","message":"call me too","date":"2011-10-12T17:53:36.991Z","type":"message"}
+{"nick":"ryah","message":"ok","date":"2011-10-12T17:53:46.967Z","type":"message"}
+{"nick":"piscisaureus","message":"I have not done anything (I'm still in aarhus) but I'd like to keep up to date","date":"2011-10-12T17:54:07.864Z","type":"message"}
+{"nick":"piscisaureus","message":"So maybe when we meet next week I know where we are at :-)","date":"2011-10-12T17:54:53.736Z","type":"message"}
+{"nick":"igorzi","message":"i'm good in 10","date":"2011-10-12T17:55:40.641Z","type":"message"}
+{"nick":"igorzi","message":"we need to discuss the pending accepts with multi-proc servers","date":"2011-10-12T17:56:32.920Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T17:57:10.344Z","type":"join"}
+{"nick":"ryah","message":"did you guys try \"node cluster benchmark/http_simple.js\" ?","date":"2011-10-12T17:57:25.349Z","type":"message"}
+{"nick":"ryah","message":"it auto-shares the servers","date":"2011-10-12T17:58:39.119Z","type":"message"}
+{"nick":"igorzi","message":"i haven't tried it.. does cluster work with the new ipc api?","date":"2011-10-12T18:03:42.240Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/aikar/wormhole/blob/06b37c294318346da86b5c661025d019418627a5/testperf.js","date":"2011-10-12T18:10:38.785Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus:   'bash' is not recognized as an internal or external command,","date":"2011-10-12T18:16:00.577Z","type":"message"}
+{"nick":"bnoordhuis","message":"  operable program or batch file.","date":"2011-10-12T18:16:00.838Z","type":"message"}
+{"nick":"bnoordhuis","message":"  js2c, and also js2c_experimental","date":"2011-10-12T18:16:00.838Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: how do you reproduce that?","date":"2011-10-12T18:16:18.860Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: create .vcxproj files with gyp, open d8.sln, build","date":"2011-10-12T18:16:46.229Z","type":"message"}
+{"nick":"bnoordhuis","message":"s/vcxproj/sln/","date":"2011-10-12T18:16:55.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, you'll need the patch here: http://code.google.com/p/v8/issues/detail?id=1760","date":"2011-10-12T18:18:48.598Z","type":"message"}
+{"nick":"bnoordhuis","action":"tries scons","date":"2011-10-12T18:36:39.307Z","type":"action"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u000281303a7\u000f \u000310\u000f/ src/win/fs.c \u0002:\u000f fix fs_readdir_file on windows - http://git.io/YzptKg","date":"2011-10-12T18:37:38.654Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: ^ good work","date":"2011-10-12T18:38:06.930Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: https://gist.github.com/a70bb3633886b3e3752f <- scons seems to think there's nothing to do","date":"2011-10-12T18:40:55.675Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: what about adding \"sample=shell\" to the command?","date":"2011-10-12T18:41:29.535Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: we can also screen share if you're interested (and the hotel wifi can handle it)","date":"2011-10-12T18:41:50.781Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: same with sample=shell","date":"2011-10-12T18:42:30.880Z","type":"message"}
+{"nick":"bnoordhuis","message":"screen share might be tricky to set up, i'll play with it some more","date":"2011-10-12T18:42:57.241Z","type":"message"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2011-10-12T18:43:57.190Z","type":"quit"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2011-10-12T18:59:27.554Z","type":"quit"}
+{"nick":"mraleph","reason":"Read error: Connection reset by peer","date":"2011-10-12T19:00:13.944Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 255 seconds","date":"2011-10-12T19:01:45.240Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307\u000f * r\u00023fd951e\u000f \u000310\u000f/ lib/net.js \u0002:\u000f Make Socket.write optimizable - http://git.io/y8TjYw","date":"2011-10-12T19:03:04.094Z","type":"message"}
+{"nick":"piscisaureus_","date":"2011-10-12T19:03:19.126Z","type":"join"}
+{"nick":"mraleph","date":"2011-10-12T19:03:34.156Z","type":"join"}
+{"nick":"mraleph","reason":"Client Quit","date":"2011-10-12T19:03:34.311Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307\u000f * r\u0002a73384e\u000f \u000310\u000f/ lib/net.js \u0002:\u000f Make Socket.write optimizable - http://git.io/t9bbfA","date":"2011-10-12T19:06:46.320Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T19:06:48.416Z","type":"join"}
+{"nick":"piscisaureus_","message":"ryah: —^","date":"2011-10-12T19:08:17.432Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/issues/1869 <-- piscisaureus_, igorzi ","date":"2011-10-12T19:18:27.999Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: didn't i already do that optimization? :/","date":"2011-10-12T19:19:05.133Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: oh, did you?","date":"2011-10-12T19:19:18.162Z","type":"message"}
+{"nick":"ryah","message":"huh - :/","date":"2011-10-12T19:19:27.191Z","type":"message"}
+{"nick":"ryah","message":"somehow it's not there","date":"2011-10-12T19:19:31.605Z","type":"message"}
+{"nick":"ryah","message":"shit i thought i merged that perf branch","date":"2011-10-12T19:19:39.281Z","type":"message"}
+{"nick":"ryah","message":"maybe i didn't","date":"2011-10-12T19:19:42.380Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh fuck","date":"2011-10-12T19:19:47.220Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe that's why aikar is having this problem :-)","date":"2011-10-12T19:20:04.956Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/node/commit/29ec85047842dc4fc1a6127f90dc1110f7c5483e","date":"2011-10-12T19:21:22.867Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-10-12T19:21:24.214Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes I know","date":"2011-10-12T19:21:47.119Z","type":"message"}
+{"nick":"piscisaureus_","message":"merge that","date":"2011-10-12T19:21:49.916Z","type":"message"}
+{"nick":"bnoordhuis","message":"ffs, why does '\\v' in python come out as '\\x0b'? who makes up that stuff?","date":"2011-10-12T19:21:51.103Z","type":"message"}
+{"nick":"igorzi","message":"ryah: https://github.com/joyent/node/issues/1869 should be fixed in libuv now","date":"2011-10-12T19:22:03.696Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: that's in master","date":"2011-10-12T19:22:22.307Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: what happened to those changes? :/","date":"2011-10-12T19:22:30.506Z","type":"message"}
+{"nick":"isaacs","reason":"Quit: isaacs","date":"2011-10-12T19:22:32.543Z","type":"quit"}
+{"nick":"ryah","message":"igorzi: oh great - i'll upgrade libuv","date":"2011-10-12T19:22:41.145Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: well then somehow you must've reverted it","date":"2011-10-12T19:24:13.241Z","type":"message"}
+{"nick":"ryah","message":"shit. okay","date":"2011-10-12T19:25:13.509Z","type":"message"}
+{"nick":"ryah","message":"let me figure out what happened then we'll get this back in","date":"2011-10-12T19:25:36.224Z","type":"message"}
+{"nick":"ryah","message":"no wonder our benchmarks were fucked up","date":"2011-10-12T19:25:42.740Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u0002c903bc3\u000f \u000310\u000f/ src/unix/stream.c \u0002:\u000f unix: fix a few compiler warnings - http://git.io/qfB3JQ","date":"2011-10-12T19:27:09.605Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u0002b896687\u000f \u000310\u000f/ (6 files in 4 dirs)\u0002:\u000f Upgrade libuv to c903bc3 - http://git.io/m43ySw","date":"2011-10-12T19:28:09.979Z","type":"message"}
+{"nick":"ryah","message":"indutny: you going to do uv_cpus() ?","date":"2011-10-12T19:28:40.273Z","type":"message"}
+{"nick":"ryah","message":"indutny: :)","date":"2011-10-12T19:28:42.447Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u000216e1d5b\u000f \u000310\u000f/ benchmark/http_simple.js \u0002:\u000f Remove uname and git-rev detection from http_simple.js - http://git.io/nx4OiA","date":"2011-10-12T19:29:55.654Z","type":"message"}
+{"nick":"ryah","message":"=== release test-pump-file2tcp-noexist ===                                 ","date":"2011-10-12T19:30:38.398Z","type":"message"}
+{"nick":"ryah","message":"Path: simple/test-pump-file2tcp-noexist","date":"2011-10-12T19:30:38.556Z","type":"message"}
+{"nick":"ryah","message":"pump!","date":"2011-10-12T19:30:38.556Z","type":"message"}
+{"nick":"ryah","message":"util.pump's callback fired","date":"2011-10-12T19:30:38.556Z","type":"message"}
+{"nick":"ryah","message":"Command: out/Release/node /Users/ryan/projects/node/test/simple/test-pump-file2tcp-noexist.js","date":"2011-10-12T19:30:38.556Z","type":"message"}
+{"nick":"ryah","message":"--- CRASHED ---","date":"2011-10-12T19:30:41.571Z","type":"message"}
+{"nick":"ryah","message":":<","date":"2011-10-12T19:30:44.179Z","type":"message"}
+{"nick":"ryah","message":"OSX ---^","date":"2011-10-12T19:30:46.582Z","type":"message"}
+{"nick":"bnoordhuis","message":"wfm on linux","date":"2011-10-12T19:34:07.726Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: which version of gdb did you compile?","date":"2011-10-12T19:37:16.257Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: for sunos","date":"2011-10-12T19:37:34.847Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: 6.8","date":"2011-10-12T19:37:55.346Z","type":"message"}
+{"nick":"ryah","message":"why not latest?","date":"2011-10-12T19:38:10.823Z","type":"message"}
+{"nick":"bnoordhuis","message":"because it was pretty broken","date":"2011-10-12T19:38:18.311Z","type":"message"}
+{"nick":"bnoordhuis","message":"had to hack the build and then it wouldn't boot because it couldn't identify the arch it was running on","date":"2011-10-12T19:38:42.639Z","type":"message"}
+{"nick":"ryah","message":"http://github.com/joyent/node/commit/12486a6437c7615af52f3d239f0b5a3000aee45d <-- this appears to be the fuck up","date":"2011-10-12T19:40:50.551Z","type":"message"}
+{"nick":"ryah","message":"sorry about that guys..","date":"2011-10-12T19:41:17.943Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh well","date":"2011-10-12T19:41:56.138Z","type":"message"}
+{"nick":"bnoordhuis","message":"now we know who buys the beers next week","date":"2011-10-12T19:42:07.235Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-10-12T19:42:45.811Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u000225ff181\u000f \u000310\u000f/ lib/net.js \u0002:\u000f ","date":"2011-10-12T19:52:47.980Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Revert some changes made in 12486a6","date":"2011-10-12T19:52:48.144Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Some of the perf improvements from many-writes-fix branch were accidentally","date":"2011-10-12T19:52:48.144Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f undone in that commit. This puts them back in. - http://git.io/BdU5Og","date":"2011-10-12T19:52:48.144Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: do you have a patch for the gdb 6.8 build on sun?","date":"2011-10-12T19:54:11.548Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: someone is tyring to build it here","date":"2011-10-12T19:54:16.808Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: or maybe just the source tree would work","date":"2011-10-12T19:54:42.387Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: i didn't have to patch anything","date":"2011-10-12T19:54:55.031Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i can upload the source","date":"2011-10-12T19:55:06.194Z","type":"message"}
+{"nick":"bnoordhuis","message":"ftp://sourceware.org/pub/gdb/releases/gdb-6.8a.tar.bz2 <- that's the one","date":"2011-10-12T19:55:36.478Z","type":"message"}
+{"nick":"bnoordhuis","message":"no need to upload","date":"2011-10-12T19:55:44.019Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: was this on sunos 121?","date":"2011-10-12T19:57:35.523Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: yes","date":"2011-10-12T19:58:01.555Z","type":"message"}
+{"nick":"dap","date":"2011-10-12T20:02:20.931Z","type":"join"}
+{"nick":"ryah","message":"latest numbers: https://gist.github.com/1282375","date":"2011-10-12T20:07:09.987Z","type":"message"}
+{"nick":"ryah","message":"dap: welcome","date":"2011-10-12T20:07:43.479Z","type":"message"}
+{"nick":"dap","message":"ryah: greetings.  thanks!","date":"2011-10-12T20:07:57.421Z","type":"message"}
+{"nick":"ryah","message":"(dap is also a joyeur)","date":"2011-10-12T20:08:33.587Z","type":"message"}
+{"nick":"dap","message":"ryah, I'm trying gdb because I was hoping that since I'm using a debug build it would be able to show me the C++ structures or something.  is that a reasonable hope?","date":"2011-10-12T20:16:22.717Z","type":"message"}
+{"nick":"dap","message":"I mean, are you able to use gdb to inspect C++ state of node?","date":"2011-10-12T20:16:37.101Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: yes","date":"2011-10-12T20:16:45.770Z","type":"message"}
+{"nick":"bnoordhuis","message":"and hi btw :)","date":"2011-10-12T20:16:50.076Z","type":"message"}
+{"nick":"dap","message":"hi!  thanks.","date":"2011-10-12T20:16:55.906Z","type":"message"}
+{"nick":"dap","message":"okay, so I've attached gdb to a core file I created and it can't even see the stack.  does this happen to others sometimes or am I in some weird state?","date":"2011-10-12T20:17:37.557Z","type":"message"}
+{"nick":"dap","message":"like \"bt\" says \"Cannot access memory at address 0x0\"","date":"2011-10-12T20:17:51.447Z","type":"message"}
+{"nick":"bnoordhuis","message":"the core file comes from node_g?","date":"2011-10-12T20:17:56.680Z","type":"message"}
+{"nick":"dap","message":"actually d8_g, in this case.  not strictly a node question, I suppose","date":"2011-10-12T20:18:14.569Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah okay","date":"2011-10-12T20:18:29.644Z","type":"message"}
+{"nick":"bnoordhuis","message":"with what arguments did you start gdb?","date":"2011-10-12T20:18:39.266Z","type":"message"}
+{"nick":"dap","message":"~/gdb v8/d8_g core.119703","date":"2011-10-12T20:18:53.628Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, that should work","date":"2011-10-12T20:19:37.211Z","type":"message"}
+{"nick":"bnoordhuis","message":"this is on sunos, right?","date":"2011-10-12T20:19:40.534Z","type":"message"}
+{"nick":"dap","message":"this is on smartos.  I have no idea how well gdb is known to work.  I usually use mdb, but AFAIK that doesn't understand DWARF.","date":"2011-10-12T20:19:41.862Z","type":"message"}
+{"nick":"dap","message":"yeah.","date":"2011-10-12T20:19:43.303Z","type":"message"}
+{"nick":"bnoordhuis","message":"just tried it (sanity check), works for me","date":"2011-10-12T20:21:05.559Z","type":"message"}
+{"nick":"bnoordhuis","message":"what version of gdb are you using?","date":"2011-10-12T20:21:11.240Z","type":"message"}
+{"nick":"dap","message":"6.8a","date":"2011-10-12T20:21:25.850Z","type":"message"}
+{"nick":"dap","message":"well, it reports 6.8, but I downloaded 6.8a.","date":"2011-10-12T20:21:33.387Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, you're the guy ryah was talking about","date":"2011-10-12T20:21:57.058Z","type":"message"}
+{"nick":"dap","message":"yep, that's me :)","date":"2011-10-12T20:22:04.710Z","type":"message"}
+{"nick":"dap","message":"this core was generated from gcore, FWIW, not a crash.","date":"2011-10-12T20:22:10.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"hrm, maybe that's the issue - i don't know if gdb handles that","date":"2011-10-12T20:23:10.043Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe just run it with `gdb --args v8/d8_g`?","date":"2011-10-12T20:23:47.826Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 252 seconds","date":"2011-10-12T20:23:59.219Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f \u000303Igor Zinkovsky\u000f \u000307\u000f * r\u000272b5976\u000f \u000310\u000f/ (5 files in 2 dirs)\u0002:\u000f ","date":"2011-10-12T20:25:33.303Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f windows: support utf8 in uv_fs functions","date":"2011-10-12T20:25:33.467Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002libuv:\u000f fixes #201 - http://git.io/CJvVRg","date":"2011-10-12T20:25:33.467Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: just checked, i have the same issue with gcore generated cores","date":"2011-10-12T20:25:34.771Z","type":"message"}
+{"nick":"dap","message":"that's too bad.  unfortunately, I'm doing something a little unusual.  I'm trying to figure out how to get a stack trace from an arbitrary snapshot in time, rather than debug something.  I suppose I could still run it under gdb and stop it at some random point.","date":"2011-10-12T20:26:39.917Z","type":"message"}
+{"nick":"dap","message":"okay, now I've got a stack, it's just a bunch of hex addresses and no args.  is that common while running JS code?","date":"2011-10-12T20:28:37.244Z","type":"message"}
+{"nick":"dap","message":"the program is basically just an infinite loop and I CTRL-C'd it to break into gdb while it was running.","date":"2011-10-12T20:29:07.097Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: unfortunately yes","date":"2011-10-12T20:31:41.199Z","type":"message"}
+{"nick":"bnoordhuis","message":"there is/was a gdbjit patch for v8 but i don't think it ever worked really well","date":"2011-10-12T20:32:03.112Z","type":"message"}
+{"nick":"bnoordhuis","message":"seems it's still supported: scons gdbjit=on","date":"2011-10-12T20:33:20.525Z","type":"message"}
+{"nick":"dap","message":"I heard that only worked on linux, though?","date":"2011-10-12T20:33:39.111Z","type":"message"}
+{"nick":"ryah","message":"only linux, yes","date":"2011-10-12T20:34:14.956Z","type":"message"}
+{"nick":"bnoordhuis","message":"darwin too, i think?","date":"2011-10-12T20:34:25.891Z","type":"message"}
+{"nick":"ryah","message":"also need gdb 7 for that, i think","date":"2011-10-12T20:34:36.840Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T20:37:19.718Z","type":"join"}
+{"nick":"ryah","message":"http://arlolra.no.de/bench/ab-hello-world-buffer-1024 <-- you can see perf improvement on ubuntu_lucid","date":"2011-10-12T20:38:26.869Z","type":"message"}
+{"nick":"dap","message":"ah, I can print static variables, and that's proving pretty helpful.","date":"2011-10-12T20:38:37.320Z","type":"message"}
+{"nick":"isaacs","date":"2011-10-12T20:40:54.080Z","type":"join"}
+{"nick":"dap","message":"one more thing: is there a way to print a structure with its offsets?  I'd love something like what mdb can do for C structs, but for C++ classes: https://gist.github.com/ef8293fd25249a224519","date":"2011-10-12T20:41:07.432Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: not sure what you mean","date":"2011-10-12T20:44:52.282Z","type":"message"}
+{"nick":"bnoordhuis","message":"`set print pretty`?","date":"2011-10-12T20:44:56.451Z","type":"message"}
+{"nick":"dap","message":"I basically want a pretty-printed struct, where each member is prefixed with its actual address so I can see how the object is layed out in memory.  does that make sense?","date":"2011-10-12T20:45:40.006Z","type":"message"}
+{"nick":"dap","message":"(if there's another way to figure that out, even better.  I'm just trying to figure out how an instance of an arbitrary class is layed out in memory.)","date":"2011-10-12T20:46:24.907Z","type":"message"}
+{"nick":"dap","message":"but it would be sufficient to get just the offset of each member","date":"2011-10-12T20:46:38.722Z","type":"message"}
+{"nick":"bnoordhuis","message":"`set print address`?","date":"2011-10-12T20:46:53.194Z","type":"message"}
+{"nick":"dap","message":"I thought so too, but that doesn't actually change teh pretty-print output.","date":"2011-10-12T20:47:20.311Z","type":"message"}
+{"nick":"dap","message":"I think it affects stack traces and other forms of output.","date":"2011-10-12T20:47:31.201Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think Aikar needs the string concat optimization","date":"2011-10-12T20:48:34.404Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: his bottleneck is clearly the write path and he's queuing a lot of small string writes","date":"2011-10-12T20:48:53.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: ^ that","date":"2011-10-12T20:49:06.407Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: oh yeah, probably","date":"2011-10-12T20:49:25.039Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I am talking to you because I thought you were working on that","date":"2011-10-12T20:49:25.578Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis has a patch floating around","date":"2011-10-12T20:49:36.381Z","type":"message"}
+{"nick":"ryah","message":"we should try to get aikar to try it","date":"2011-10-12T20:49:46.071Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2011-10-12T20:49:59.795Z","type":"message"}
+{"nick":"piscisaureus_","message":"where's that patch?","date":"2011-10-12T20:50:03.506Z","type":"message"}
+{"nick":"bnoordhuis","message":"somewhere in my fork, let me look it up","date":"2011-10-12T20:50:24.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: sorry, don't know","date":"2011-10-12T20:50:35.506Z","type":"message"}
+{"nick":"ryah","message":"dap: i dont know either","date":"2011-10-12T20:50:48.579Z","type":"message"}
+{"nick":"dap","message":"bnoordhuis: no worries.  I'll poke around some gdb forum :)  thanks for the help.","date":"2011-10-12T20:51:01.093Z","type":"message"}
+{"nick":"ryah","message":"./node test/pummel/test-net-write-callbacks.js  4.82s user 2.28s system 100% cpu 7.083 total","date":"2011-10-12T20:52:12.191Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://gist.github.com/a7182192d0bf451c1cd0","date":"2011-10-12T20:52:23.223Z","type":"message"}
+{"nick":"bnoordhuis","message":"my pleasure, dap","date":"2011-10-12T20:52:35.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"don't know if that patch still applies...","date":"2011-10-12T20:53:06.160Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis, piscisaureus_ : https://gist.github.com/1282512","date":"2011-10-12T20:54:09.671Z","type":"message"}
+{"nick":"ryah","message":"./node test/pummel/test-net-write-callbacks.js  0.34s user 0.13s system 99% cpu 0.470 total","date":"2011-10-12T20:54:34.314Z","type":"message"}
+{"nick":"ryah","message":":P~","date":"2011-10-12T20:54:37.694Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, sweet","date":"2011-10-12T20:54:54.632Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 260 seconds","date":"2011-10-12T20:56:35.716Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes, that patch does it :-)","date":"2011-10-12T20:57:40.075Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-10-12T21:04:20.095Z","type":"message"}
+{"nick":"piscisaureus_","message":"kewl. 0.6 can really be faster than 0,4 :-)","date":"2011-10-12T21:05:51.538Z","type":"message"}
+{"nick":"ryah","message":"but that patch needs some fixing - it's breaking http_simple at least","date":"2011-10-12T21:07:16.859Z","type":"message"}
+{"nick":"bnoordhuis","message":"it wasn't remotely finished","date":"2011-10-12T21:08:07.259Z","type":"message"}
+{"nick":"bnoordhuis","message":"just a quick test to see if it makes a difference","date":"2011-10-12T21:08:18.008Z","type":"message"}
+{"nick":"bnoordhuis","message":"seems it does :)","date":"2011-10-12T21:08:28.693Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: try to not concat up strings without limits","date":"2011-10-12T21:09:08.183Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: at most a few kilobytes or so","date":"2011-10-12T21:09:27.855Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T21:09:41.134Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: otherwise we are causing v8 too much pain in dealing with cons strings","date":"2011-10-12T21:09:44.791Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: so what is the sweet spot?","date":"2011-10-12T21:10:02.111Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I don't really know (yet). We should figure it out.","date":"2011-10-12T21:10:17.008Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: go for 1kb for the moment","date":"2011-10-12T21:10:27.647Z","type":"message"}
+{"nick":"piscisaureus_","message":"or 2 or 8","date":"2011-10-12T21:10:39.941Z","type":"message"}
+{"nick":"piscisaureus_","message":"not more","date":"2011-10-12T21:10:41.931Z","type":"message"}
+{"nick":"piscisaureus_","message":"1kb should be fine","date":"2011-10-12T21:10:46.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: v8 will either flatten the string (which means 1 extra memcopy + extra gc pressure) or write from a cons string (which has this O(n^2) behavior w.r.t the number of pieces)","date":"2011-10-12T21:12:26.257Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u000208cb8fc\u000f \u000310\u000f/ src/node.cc \u0002:\u000f ","date":"2011-10-12T21:12:31.354Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Remove process.ARGV","date":"2011-10-12T21:12:31.511Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Use process.argv instead. - http://git.io/wy60tA","date":"2011-10-12T21:12:31.511Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u0002de7fb33\u000f \u000310\u000f/ (doc/api/_toc.markdown doc/api/cluster.markdown)\u0002:\u000f Add some docs for node cluster - http://git.io/HdTgUw","date":"2011-10-12T21:19:49.205Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: did you already do blocking stdout on unix?","date":"2011-10-12T21:23:56.433Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: yeah","date":"2011-10-12T21:24:33.886Z","type":"message"}
+{"nick":"CoverSlide","message":"blocking stdout ?? why ??","date":"2011-10-12T21:27:45.637Z","type":"message"}
+{"nick":"ryah","message":"CoverSlide: easier","date":"2011-10-12T21:29:06.882Z","type":"message"}
+{"nick":"CoverSlide","message":":/","date":"2011-10-12T21:29:29.767Z","type":"message"}
+{"nick":"CoverSlide","message":"is there a flag or something to change that?","date":"2011-10-12T21:29:48.106Z","type":"message"}
+{"nick":"ryah","message":"no - what's your concern?","date":"2011-10-12T21:29:56.893Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: can we make ObjectWrap::Ref() and Unref() public?","date":"2011-10-12T21:32:32.918Z","type":"message"}
+{"nick":"CoverSlide","message":"i would think that affects performance if you're outputting to stdout a lot","date":"2011-10-12T21:32:34.782Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: mmm","date":"2011-10-12T21:33:11.177Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: why?","date":"2011-10-12T21:33:24.905Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: the zlib bindings need to keep the buffer objects alive while it's running in the thread pool","date":"2011-10-12T21:33:57.037Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can make the buffer Persistent of course","date":"2011-10-12T21:34:06.905Z","type":"message"}
+{"nick":"ryah","message":"CoverSlide: it also effects performs if you don't properly throttle your output","date":"2011-10-12T21:34:10.377Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i think i like Ref() / Unref() better","date":"2011-10-12T21:34:17.234Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: can't it just attach those its object?","date":"2011-10-12T21:34:31.219Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: SetHiddenProperty or whatever","date":"2011-10-12T21:34:54.065Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: you mean req_wrap->object_->SetHiddenProperty()","date":"2011-10-12T21:35:17.425Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose so...","date":"2011-10-12T21:35:25.562Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-10-12T21:35:26.239Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: I think there is an issue with blocking stdout though atm","date":"2011-10-12T21:35:34.533Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: maybe you still set the nonblocking flag","date":"2011-10-12T21:35:46.206Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: possible","date":"2011-10-12T21:35:51.331Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: what's happening?","date":"2011-10-12T21:35:58.230Z","type":"message"}
+{"nick":"bnoordhuis","message":"but we're already spending like 8% of our time in LookupProperty() :/","date":"2011-10-12T21:35:59.156Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: because when I write a lot then some messages are discarded","date":"2011-10-12T21:36:13.522Z","type":"message"}
+{"nick":"piscisaureus_","message":"and when I do this","date":"2011-10-12T21:36:18.699Z","type":"message"}
+{"nick":"piscisaureus_","message":"`node writealot.js | cat`","date":"2011-10-12T21:36:30.296Z","type":"message"}
+{"nick":"piscisaureus_","message":"I get","date":"2011-10-12T21:36:44.230Z","type":"message"}
+{"nick":"piscisaureus_","message":"blablablablablablabstdout: Resource temporarily unavailable","date":"2011-10-12T21:36:55.871Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: mm","date":"2011-10-12T21:37:00.991Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: yes, it's possible we're not flushing properly","date":"2011-10-12T21:37:42.294Z","type":"message"}
+{"nick":"ryah","message":"i want to do requrie('os').cpus() for windows","date":"2011-10-12T21:40:07.227Z","type":"message"}
+{"nick":"ryah","message":"what function should i use?","date":"2011-10-12T21:40:10.549Z","type":"message"}
+{"nick":"bnoordhuis","message":"we have a pull request for that","date":"2011-10-12T21:40:21.431Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, from felixge's intern","date":"2011-10-12T21:40:43.025Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/joyent/node/pull/1664","date":"2011-10-12T21:40:43.309Z","type":"message"}
+{"nick":"ryah","message":"oh great","date":"2011-10-12T21:41:02.909Z","type":"message"}
+{"nick":"bnoordhuis","message":"really? you never did merge it, piscisaureus_ >:(","date":"2011-10-12T21:41:14.479Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh shit","date":"2011-10-12T21:41:37.018Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah I totally forgot","date":"2011-10-12T21:41:44.163Z","type":"message"}
+{"nick":"piscisaureus_","message":"did the network interfaces patch get merged btw?","date":"2011-10-12T21:41:57.319Z","type":"message"}
+{"nick":"piscisaureus_","message":"https://github.com/joyent/node/pull/1652","date":"2011-10-12T21:42:39.477Z","type":"message"}
+{"nick":"piscisaureus_","message":"nope, neither","date":"2011-10-12T21:42:43.355Z","type":"message"}
+{"nick":"bnoordhuis","message":"only if you merged it, bertje...","date":"2011-10-12T21:42:52.110Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: you want to add it do libuv or node","date":"2011-10-12T21:42:52.319Z","type":"message"}
+{"nick":"piscisaureus_","message":"because for node we can just land the above :-)","date":"2011-10-12T21:43:07.357Z","type":"message"}
+{"nick":"ryah","message":"we'll just land in node","date":"2011-10-12T21:43:47.217Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2011-10-12T21:43:51.377Z","type":"message"}
+{"nick":"ryah","message":"indutny is in the process of abstracting that","date":"2011-10-12T21:43:57.517Z","type":"message"}
+{"nick":"piscisaureus_","message":"let me check them for the last time","date":"2011-10-12T21:44:01.486Z","type":"message"}
+{"nick":"ryah","message":"his patch is broken.. but i can fix","date":"2011-10-12T21:44:05.908Z","type":"message"}
+{"nick":"ryah","message":"or probably better if bert does it","date":"2011-10-12T21:44:23.151Z","type":"message"}
+{"nick":"ryah","message":"hKey undefined","date":"2011-10-12T21:44:30.322Z","type":"message"}
+{"nick":"piscisaureus_","message":"In his second patch he indents everything","date":"2011-10-12T21:45:05.325Z","type":"message"}
+{"nick":"piscisaureus_","message":":-/","date":"2011-10-12T21:45:06.585Z","type":"message"}
+{"nick":"piscisaureus_","message":"hkey should just be key I think","date":"2011-10-12T21:45:56.416Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think aarhus is on fire","date":"2011-10-12T21:46:24.724Z","type":"message"}
+{"nick":"piscisaureus_","message":"There dozens of fire trucks passing under my windows","date":"2011-10-12T21:46:40.816Z","type":"message"}
+{"nick":"piscisaureus_","message":"like they are doing a street race","date":"2011-10-12T21:46:47.089Z","type":"message"}
+{"nick":"ryah","message":"are you in this hotel on the canal?","date":"2011-10-12T21:47:28.037Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: https://github.com/bnoordhuis/node/commit/bd6c789 <- review?","date":"2011-10-12T21:47:43.213Z","type":"message"}
+{"nick":"bnoordhuis","message":"you guys are free to review it too, of course","date":"2011-10-12T21:47:59.446Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: is there a test that demos that issue?","date":"2011-10-12T21:48:33.604Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: not reliably","date":"2011-10-12T21:48:53.988Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: why not just have the zlib.js hang onto a reference to it or something?","date":"2011-10-12T21:49:46.061Z","type":"message"}
+{"nick":"isaacs","message":"i mean, we know exactly when the buffer goes to c-land, and exactly when it's done with it","date":"2011-10-12T21:50:03.395Z","type":"message"}
+{"nick":"bnoordhuis","message":"that would work too","date":"2011-10-12T21:50:27.785Z","type":"message"}
+{"nick":"bnoordhuis","message":"but this also catches the case where someone calls the bindings directly","date":"2011-10-12T21:50:39.065Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: i think we should go out of our way to make sure that never happens.","date":"2011-10-12T21:51:05.813Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: i'd even be ok with putting a guard in process.binding that the first item in the stack must be a native module.","date":"2011-10-12T21:51:45.765Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, i remember - we discussed this before","date":"2011-10-12T21:51:52.700Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u000273b4b86\u000f \u000310\u000f/ node.gyp \u0002:\u000f Add cluster.js to node.gyp - http://git.io/dDdaEA","date":"2011-10-12T21:52:09.280Z","type":"message"}
+{"nick":"bnoordhuis","message":"it wouldn't work in the case where both the zlib and buffer objects are gc'ed but the thread pool worker hasn't finished yet","date":"2011-10-12T21:52:13.344Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Remote host closed the connection","date":"2011-10-12T21:52:28.464Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: no, i mean, have the code in zlib.js attach it to a module-local cache of objects.","date":"2011-10-12T21:52:33.339Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: then null it onceit comes back","date":"2011-10-12T21:52:45.475Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, like that","date":"2011-10-12T21:52:51.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"hrm... let me ponder that for a bit","date":"2011-10-12T21:52:57.368Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i think it'll be awkward","date":"2011-10-12T21:54:51.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can't use buffers as object keys (they'll get stringified)","date":"2011-10-12T21:55:02.014Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so, i'm looking at the js stuff...","date":"2011-10-12T21:55:02.322Z","type":"message"}
+{"nick":"bnoordhuis","message":"and arrays are slow, slow, slow","date":"2011-10-12T21:55:10.436Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: we can just create a random id when we call binding.write, and clear it out in the cb","date":"2011-10-12T21:55:27.848Z","type":"message"}
+{"nick":"isaacs","message":"but.... doesn't the callback itself trap it?","date":"2011-10-12T21:55:33.566Z","type":"message"}
+{"nick":"isaacs","message":"can you get this error to occur *ever*?","date":"2011-10-12T21:55:46.944Z","type":"message"}
+{"nick":"bnoordhuis","message":"you're starting to make me doubt myself :(","date":"2011-10-12T21:56:57.872Z","type":"message"}
+{"nick":"piscisaureus_","date":"2011-10-12T21:57:08.238Z","type":"join"}
+{"nick":"bnoordhuis","message":"what callback are you referring to, isaacs?","date":"2011-10-12T21:57:09.122Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm talking about the obj.write() path","date":"2011-10-12T21:57:32.735Z","type":"message"}
+{"nick":"isaacs","message":"the callback function in zlib.js, in teh _process function","date":"2011-10-12T21:57:33.466Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Client Quit","date":"2011-10-12T21:57:44.762Z","type":"quit"}
+{"nick":"isaacs","message":"thething that calls binding.write()","date":"2011-10-12T21:57:54.409Z","type":"message"}
+{"nick":"isaacs","message":"around line 290 or so in zlib.js","date":"2011-10-12T21:58:22.887Z","type":"message"}
+{"nick":"isaacs","message":"  function callback(availInAfter, availOutAfter, buffer) {","date":"2011-10-12T21:58:31.706Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm okay, that looks like it should enclose it","date":"2011-10-12T21:59:17.848Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-10-12T21:59:18.483Z","type":"message"}
+{"nick":"ryah","message":"bert - i need that cpus patch","date":"2011-10-12T21:59:26.082Z","type":"message"}
+{"nick":"ryah","message":"i wonder if he went away for the night","date":"2011-10-12T21:59:34.104Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: probably running for higher ground now","date":"2011-10-12T22:00:02.202Z","type":"message"}
+{"nick":"ryah","message":"heh","date":"2011-10-12T22:00:10.383Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i see what you mean","date":"2011-10-12T22:00:23.067Z","type":"message"}
+{"nick":"piscisaureus","date":"2011-10-12T22:00:40.294Z","type":"join"}
+{"nick":"ryah","message":"piscisaureus: i need that cpus patch - are you still working on it?","date":"2011-10-12T22:00:49.576Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: if not... you could do something like this: https://gist.github.com/1282775","date":"2011-10-12T22:00:50.023Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but i thin kit might be unnecessary.","date":"2011-10-12T22:00:56.463Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that doesn't seem to catch the case where the zlib instance itself is gc'ed","date":"2011-10-12T22:01:03.170Z","type":"message"}
+{"nick":"piscisaureus","reason":"Read error: Connection reset by peer","date":"2011-10-12T22:01:03.728Z","type":"quit"}
+{"nick":"ryah","message":"gr","date":"2011-10-12T22:01:07.402Z","type":"message"}
+{"nick":"piscisaureus","date":"2011-10-12T22:01:26.218Z","type":"join"}
+{"nick":"ryah","message":"damn third world countries","date":"2011-10-12T22:01:30.357Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so... myZ = new zlib.Deflate(); myZ.end(\"foo\"); myZ = null","date":"2011-10-12T22:01:38.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"Math.random() :(","date":"2011-10-12T22:01:43.633Z","type":"message"}
+{"nick":"bnoordhuis","message":"you hear that sound?","date":"2011-10-12T22:01:50.617Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, guess an incrementing number would be better or something.","date":"2011-10-12T22:01:58.614Z","type":"message"}
+{"nick":"bnoordhuis","message":"that is baby jesus, crying","date":"2011-10-12T22:01:58.774Z","type":"message"}
+{"nick":"isaacs","message":"haahah","date":"2011-10-12T22:02:01.280Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: what about 3rd world countries? :-/","date":"2011-10-12T22:02:29.701Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: the global cache approach should work","date":"2011-10-12T22:02:56.911Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but it's unnecessary","date":"2011-10-12T22:03:08.926Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: but i'll sleep better if this is also handled at the binding layer","date":"2011-10-12T22:03:10.584Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: also, we shouldn't assume that the binding is ever used outside of node-core.","date":"2011-10-12T22:03:25.021Z","type":"message"}
+{"nick":"isaacs","message":"and we should preach the gospel of never ever using process.binding","date":"2011-10-12T22:03:31.461Z","type":"message"}
+{"nick":"isaacs","message":"or maybe even find some way to make it *actually* private.","date":"2011-10-12T22:03:39.594Z","type":"message"}
+{"nick":"isaacs","action":"is a recovering process.binding user.","date":"2011-10-12T22:03:45.966Z","type":"action"}
+{"nick":"bnoordhuis","message":"me too :)","date":"2011-10-12T22:03:51.390Z","type":"message"}
+{"nick":"isaacs","message":"so far, it has always resulted in pain.","date":"2011-10-12T22:04:00.803Z","type":"message"}
+{"nick":"isaacs","message":"100% of the time.","date":"2011-10-12T22:04:03.970Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 252 seconds","date":"2011-10-12T22:04:27.100Z","type":"quit"}
+{"nick":"isaacs","message":"so... here's the thing: that callback function gets called later.  the callback function traps a reference to the req object, *and* to the zlib object.","date":"2011-10-12T22:04:38.942Z","type":"message"}
+{"nick":"isaacs","message":"the zlib object *can't* be gc'ed while a request is out to the binding, because there's a reference to it","date":"2011-10-12T22:04:51.345Z","type":"message"}
+{"nick":"isaacs","message":"  var self = this;","date":"2011-10-12T22:05:00.432Z","type":"message"}
+{"nick":"isaacs","message":"the cb can see that.","date":"2011-10-12T22:05:05.327Z","type":"message"}
+{"nick":"isaacs","message":"so \"self\" can't be gc'ed, so self._processing can't be gc'ed, so self._processing.buffer can't be gc'ed.","date":"2011-10-12T22:05:22.607Z","type":"message"}
+{"nick":"isaacs","message":"same with self._buffer and self._offset","date":"2011-10-12T22:06:25.411Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T22:06:51.600Z","type":"join"}
+{"nick":"bnoordhuis","message":"hmm, i suppose that's true","date":"2011-10-12T22:07:03.651Z","type":"message"}
+{"nick":"isaacs","message":"of course, if you're using the binding directly, you're in shark-infested waters without a cage.","date":"2011-10-12T22:07:16.087Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Daniel Ennis\u000f \u000307\u000f * r\u000259be975\u000f \u000310\u000f/ lib/child_process.js \u0002:\u000f ","date":"2011-10-12T22:07:28.629Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Improve IPC performance.","date":"2011-10-12T22:07:28.791Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Reading of JSON data off the buffer, 10-15% performance increase.","date":"2011-10-12T22:07:28.791Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Fixes #1864. - http://git.io/TpWYmA","date":"2011-10-12T22:07:28.791Z","type":"message"}
+{"nick":"bnoordhuis","message":"now i wonder why valgrind sometimes complains","date":"2011-10-12T22:08:59.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's one of those 1-in-a-1000 things and valgrind is way too slow to run a 1000 times in a row....","date":"2011-10-12T22:09:34.536Z","type":"message"}
+{"nick":"bnoordhuis","action":"will ponder this over a late-night snack","date":"2011-10-12T22:11:06.203Z","type":"action"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Karl Skomski\u000f \u000307\u000f * r\u00029557020\u000f \u000310\u000f/ src/platform_win32.cc \u0002:\u000f ","date":"2011-10-12T22:11:09.089Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f New win32 platform function: GetCPUInfo","date":"2011-10-12T22:11:09.246Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f Fixes #1644 - http://git.io/3gA1gA","date":"2011-10-12T22:11:09.246Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: if you can get it to break ever, i'd love to be proven wrong.","date":"2011-10-12T22:13:33.347Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: the more certain i am, the more exciting it is to find out i'm mistaken :)","date":"2011-10-12T22:13:45.426Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: it never crashed so far but valgrind sometimes complains about reads from / writes to unowned memory","date":"2011-10-12T22:15:13.880Z","type":"message"}
+{"nick":"bnoordhuis","message":"next time it happens i'll save the log","date":"2011-10-12T22:15:39.078Z","type":"message"}
+{"nick":"isaacs","message":"k, thnaks","date":"2011-10-12T22:16:29.456Z","type":"message"}
+{"nick":"DrPizza","message":"I don't suppose any of you remember that link to the LLVM mailing list where there was the discussion of the bytecode and its unsuitability for various applications","date":"2011-10-12T22:16:52.706Z","type":"message"}
+{"nick":"DrPizza","message":"due to implicit and explicit platform dependencies, etc.","date":"2011-10-12T22:16:59.763Z","type":"message"}
+{"nick":"DrPizza","message":"aha found it","date":"2011-10-12T22:17:55.592Z","type":"message"}
+{"nick":"DrPizza","message":"http://thread.gmane.org/gmane.comp.compilers.llvm.devel/43769","date":"2011-10-12T22:17:56.654Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 256 seconds","date":"2011-10-12T22:19:55.375Z","type":"quit"}
+{"nick":"ryah","message":"that post was bit of cold water in the face for me","date":"2011-10-12T22:21:09.704Z","type":"message"}
+{"nick":"ryah","message":"because i've always imagined llvm as the solution to all the world's problems","date":"2011-10-12T22:21:26.097Z","type":"message"}
+{"nick":"piscisaureus","message":"oh shit ryah ran ahead of me","date":"2011-10-12T22:21:33.309Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: heh","date":"2011-10-12T22:21:36.978Z","type":"message"}
+{"nick":"piscisaureus","message":"sorry I had to recompile everything","date":"2011-10-12T22:21:38.777Z","type":"message"}
+{"nick":"piscisaureus","message":"I was just about to push it","date":"2011-10-12T22:21:50.282Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: it certainly changed my understanding of LLVM","date":"2011-10-12T22:21:50.911Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: though in retrospect, it made sense, I think","date":"2011-10-12T22:21:58.077Z","type":"message"}
+{"nick":"ryah","message":"so 'node cluster benchmark/http_simple.js' works on win32 now","date":"2011-10-12T22:24:33.460Z","type":"message"}
+{"nick":"kuebk^","date":"2011-10-12T22:25:00.131Z","type":"join"}
+{"nick":"kuebk^","message":"hai","date":"2011-10-12T22:25:03.321Z","type":"message"}
+{"nick":"piscisaureus","message":"nope","date":"2011-10-12T22:25:30.409Z","type":"message"}
+{"nick":"ryah","message":"kuebk^: is interested in adding cpu affinity settings for libuv processes","date":"2011-10-12T22:25:40.415Z","type":"message"}
+{"nick":"ryah","message":"s/://","date":"2011-10-12T22:25:48.940Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: no it doesn't work?","date":"2011-10-12T22:26:22.022Z","type":"message"}
+{"nick":"piscisaureus","message":"Just a sec","date":"2011-10-12T22:26:43.540Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: so impatient today","date":"2011-10-12T22:26:48.386Z","type":"message"}
+{"nick":"kuebk^","message":"yea","date":"2011-10-12T22:27:06.395Z","type":"message"}
+{"nick":"kuebk^","message":"i wanted to add","date":"2011-10-12T22:27:10.716Z","type":"message"}
+{"nick":"kuebk^","message":"uv_set_affinity","date":"2011-10-12T22:27:15.437Z","type":"message"}
+{"nick":"kuebk^","message":"and uv_get_affinity","date":"2011-10-12T22:27:18.384Z","type":"message"}
+{"nick":"kuebk^","message":"but i'm not sure yet about how the api should look like","date":"2011-10-12T22:27:29.007Z","type":"message"}
+{"nick":"DrPizza","message":"char array bit mask","date":"2011-10-12T22:27:43.016Z","type":"message"}
+{"nick":"kuebk^","message":"yea","date":"2011-10-12T22:28:39.247Z","type":"message"}
+{"nick":"kuebk^","message":"that's about what i wasnt sure","date":"2011-10-12T22:28:47.056Z","type":"message"}
+{"nick":"kuebk^","message":"should it look like","date":"2011-10-12T22:28:52.936Z","type":"message"}
+{"nick":"kuebk^","message":"you just said DrPizza","date":"2011-10-12T22:29:20.040Z","type":"message"}
+{"nick":"kuebk^","message":"so uv_set_affinity(int pid, char array)","date":"2011-10-12T22:29:50.165Z","type":"message"}
+{"nick":"piscisaureus","message":"D:\\node3>debug\\node cluster benchmark\\http_simple.js","date":"2011-10-12T22:29:50.410Z","type":"message"}
+{"nick":"piscisaureus","message":"Detected 8 cpus","date":"2011-10-12T22:29:50.570Z","type":"message"}
+{"nick":"piscisaureus","message":"Worker 4376 online","date":"2011-10-12T22:29:50.570Z","type":"message"}
+{"nick":"piscisaureus","message":"Worker 1508 online","date":"2011-10-12T22:29:50.570Z","type":"message"}
+{"nick":"piscisaureus","message":"Worker 6476 online","date":"2011-10-12T22:29:50.729Z","type":"message"}
+{"nick":"piscisaureus","message":"... etc","date":"2011-10-12T22:29:50.729Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah : ^^","date":"2011-10-12T22:29:53.477Z","type":"message"}
+{"nick":"DrPizza","message":"kuebk^: probably need an array size too","date":"2011-10-12T22:30:10.799Z","type":"message"}
+{"nick":"kuebk^","message":"yea","date":"2011-10-12T22:30:16.050Z","type":"message"}
+{"nick":"DrPizza","message":"arrays are a pain in the ass in C","date":"2011-10-12T22:30:16.250Z","type":"message"}
+{"nick":"kuebk^","message":"sec","date":"2011-10-12T22:30:25.236Z","type":"message"}
+{"nick":"DrPizza","message":"but I don't know a better way to represent it","date":"2011-10-12T22:30:26.483Z","type":"message"}
+{"nick":"DrPizza","message":"since the number of cores is runtime-dependent","date":"2011-10-12T22:30:33.400Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: creating 8 workers may be a bit too much","date":"2011-10-12T22:30:40.716Z","type":"message"}
+{"nick":"kuebk^","message":"array of cores would be the best","date":"2011-10-12T22:30:45.100Z","type":"message"}
+{"nick":"piscisaureus","message":"considering that I only have 4 cores","date":"2011-10-12T22:30:46.597Z","type":"message"}
+{"nick":"kuebk^","message":"since user will have to put them in similar way in js","date":"2011-10-12T22:30:56.541Z","type":"message"}
+{"nick":"DrPizza","message":"kuebk^: so one char per core?","date":"2011-10-12T22:31:08.859Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm windows says 8, maybe because of hyperthreading","date":"2011-10-12T22:31:12.566Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: 2600K?","date":"2011-10-12T22:31:24.084Z","type":"message"}
+{"nick":"kuebk^","message":"yea","date":"2011-10-12T22:31:29.552Z","type":"message"}
+{"nick":"kuebk^","message":"my current function prototype looks like","date":"2011-10-12T22:31:39.216Z","type":"message"}
+{"nick":"kuebk^","message":"int uv_set_affinity (int pid, int **core, int core_size)","date":"2011-10-12T22:31:39.683Z","type":"message"}
+{"nick":"piscisaureus","message":"DrPizza: 2600K?","date":"2011-10-12T22:31:53.415Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: your processor","date":"2011-10-12T22:31:59.033Z","type":"message"}
+{"nick":"DrPizza","message":"what is it","date":"2011-10-12T22:32:03.457Z","type":"message"}
+{"nick":"piscisaureus","message":"core i7","date":"2011-10-12T22:32:06.825Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 255 seconds","date":"2011-10-12T22:32:21.214Z","type":"quit"}
+{"nick":"DrPizza","message":"kuebk^: using one whole int per CPU offends me, but it doesn't really matter I suppose","date":"2011-10-12T22:32:46.188Z","type":"message"}
+{"nick":"piscisaureus","message":"D:\\node3>debug\\node -e \"console.log(require('os').cpus()[0].model)\"","date":"2011-10-12T22:33:39.005Z","type":"message"}
+{"nick":"piscisaureus","message":"Intel(R) Core(TM) i7-2635QM CPU @ 2.00GHz","date":"2011-10-12T22:33:39.164Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- DrPizza","date":"2011-10-12T22:33:39.165Z","type":"message"}
+{"nick":"kuebk^","message":"i talked with friend of mine and he told me too to user char instead of int","date":"2011-10-12T22:33:46.205Z","type":"message"}
+{"nick":"DrPizza","message":"oh a laptop","date":"2011-10-12T22:33:47.470Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: yeah, hyperthreaded","date":"2011-10-12T22:34:24.303Z","type":"message"}
+{"nick":"DrPizza","message":"4C8T","date":"2011-10-12T22:34:26.149Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: i think it's reasonable to start two nodes for a hyperthreded core..","date":"2011-10-12T22:34:26.455Z","type":"message"}
+{"nick":"DrPizza","message":"you are almost always better off treating hyperthreaded threads as real cores, these days","date":"2011-10-12T22:34:46.922Z","type":"message"}
+{"nick":"DrPizza","message":"it's not like the days of the P4.","date":"2011-10-12T22:34:49.887Z","type":"message"}
+{"nick":"AvianFlu","date":"2011-10-12T22:35:08.319Z","type":"join"}
+{"nick":"ryah","message":"we definitely need an option to specify how many nodes you want","date":"2011-10-12T22:35:22.732Z","type":"message"}
+{"nick":"DrPizza","message":"there are still cases where turning hyperthreading off in the BIOS is better","date":"2011-10-12T22:35:33.499Z","type":"message"}
+{"nick":"DrPizza","message":"(not many, mind you)","date":"2011-10-12T22:35:41.773Z","type":"message"}
+{"nick":"DrPizza","message":"but if it's enabled, you're better off using it","date":"2011-10-12T22:35:47.716Z","type":"message"}
+{"nick":"ryah","message":"~/node> ./Release/node.exe","date":"2011-10-12T22:36:26.709Z","type":"message"}
+{"nick":"ryah","message":"> require('os').cpus()","date":"2011-10-12T22:36:26.886Z","type":"message"}
+{"nick":"ryah","message":"[ { model: 'Intel(R) Core(TM)2 Duo CPU     P8700  @ 2.53GHz',","date":"2011-10-12T22:36:27.048Z","type":"message"}
+{"nick":"ryah","message":"    speed: 2521,","date":"2011-10-12T22:36:27.048Z","type":"message"}
+{"nick":"ryah","message":"    times:","date":"2011-10-12T22:36:27.048Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I think `node cluster` is too chatty though","date":"2011-10-12T22:36:28.149Z","type":"message"}
+{"nick":"ryah","message":"     { user: 0,","date":"2011-10-12T22:36:29.110Z","type":"message"}
+{"nick":"ryah","message":"       nice: 0,","date":"2011-10-12T22:36:31.688Z","type":"message"}
+{"nick":"ryah","message":"       sys: 0,","date":"2011-10-12T22:36:34.342Z","type":"message"}
+{"nick":"ryah","message":"       idle: 0,","date":"2011-10-12T22:36:36.641Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-10-12T22:36:37.952Z","type":"message"}
+{"nick":"ryah","message":"       irq: 0 } },","date":"2011-10-12T22:36:39.269Z","type":"message"}
+{"nick":"ryah","message":"  { model: 'Intel(R) Core(TM)2 Duo CPU     P8700  @ 2.53GHz',","date":"2011-10-12T22:36:41.766Z","type":"message"}
+{"nick":"ryah","message":"    speed: 2521,","date":"2011-10-12T22:36:44.204Z","type":"message"}
+{"nick":"ryah","message":"    times:","date":"2011-10-12T22:36:46.727Z","type":"message"}
+{"nick":"ryah","message":"     { user: 0,","date":"2011-10-12T22:36:49.296Z","type":"message"}
+{"nick":"ryah","message":"       nice: 0,","date":"2011-10-12T22:36:51.846Z","type":"message"}
+{"nick":"ryah","message":"       sys: 0,","date":"2011-10-12T22:36:54.269Z","type":"message"}
+{"nick":"ryah","message":"       idle: 0,","date":"2011-10-12T22:36:56.630Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: indeed, the counters are all 0","date":"2011-10-12T22:36:58.419Z","type":"message"}
+{"nick":"ryah","message":"       irq: 0 } } ]","date":"2011-10-12T22:36:59.215Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: on stdout?","date":"2011-10-12T22:37:01.687Z","type":"message"}
+{"nick":"piscisaureus","message":"just, always","date":"2011-10-12T22:37:09.040Z","type":"message"}
+{"nick":"piscisaureus","message":"with counters I mean nice, user, sys, irq etc","date":"2011-10-12T22:37:37.549Z","type":"message"}
+{"nick":"DrPizza","message":"we could do something about that, of course","date":"2011-10-12T22:37:40.716Z","type":"message"}
+{"nick":"piscisaureus","message":"go aheah","date":"2011-10-12T22:37:46.445Z","type":"message"}
+{"nick":"piscisaureus","message":"skomski didn't manage","date":"2011-10-12T22:37:52.265Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: oh - yeah I mean it's too chatty on stdout","date":"2011-10-12T22:38:19.858Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: oh yeah, I was waiting until I got back from the US to look at it","date":"2011-10-12T22:38:32.882Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: are you in sf?","date":"2011-10-12T22:38:59.811Z","type":"message"}
+{"nick":"DrPizza","message":"no, back in the UK","date":"2011-10-12T22:39:08.203Z","type":"message"}
+{"nick":"piscisaureus","message":"doing AB to myself I get Requests per second:    10302.32 [#/sec] (mean)","date":"2011-10-12T22:40:06.190Z","type":"message"}
+{"nick":"piscisaureus","message":"but ab maxes out 1 core and that's it","date":"2011-10-12T22:41:37.703Z","type":"message"}
+{"nick":"ryah","message":"not so impressive","date":"2011-10-12T22:41:38.088Z","type":"message"}
+{"nick":"piscisaureus","message":"Indeed","date":"2011-10-12T22:42:55.991Z","type":"message"}
+{"nick":"piscisaureus","message":"especially considering that only 1 node does Requests per second:    7378.56 [#/sec] (mean)","date":"2011-10-12T22:43:14.897Z","type":"message"}
+{"nick":"ryah","message":"would be interesting to try in the MSFT lab","date":"2011-10-12T22:43:19.014Z","type":"message"}
+{"nick":"kuebk^","message":"DrPizza so I would also have to extend uv_process_options_t","date":"2011-10-12T22:43:24.550Z","type":"message"}
+{"nick":"kuebk^","message":"affinity","date":"2011-10-12T22:43:31.096Z","type":"message"}
+{"nick":"kuebk^","message":"and affinity_size","date":"2011-10-12T22:43:33.963Z","type":"message"}
+{"nick":"DrPizza","message":"kuebk^: hm, maybe","date":"2011-10-12T22:43:50.004Z","type":"message"}
+{"nick":"DrPizza","message":"maybe not","date":"2011-10-12T22:43:51.075Z","type":"message"}
+{"nick":"DrPizza","message":"you can change affinity after the fact","date":"2011-10-12T22:43:56.633Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: actually, 7378 #/sec is not bad at all","date":"2011-10-12T22:44:54.093Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: maybe in your unix world it is :-)","date":"2011-10-12T22:45:16.129Z","type":"message"}
+{"nick":"kuebk^","message":"what you mean DrPizza","date":"2011-10-12T22:45:25.189Z","type":"message"}
+{"nick":"ryah","message":"i want to rename 'node cluster' to something else","date":"2011-10-12T22:45:34.055Z","type":"message"}
+{"nick":"ryah","message":"so it doesn't conflict with TJ's program","date":"2011-10-12T22:45:40.300Z","type":"message"}
+{"nick":"DrPizza","message":"kuebk^: affinity doesn't have to be set at process start time afaik","date":"2011-10-12T22:45:43.508Z","type":"message"}
+{"nick":"ryah","message":"any suggestions?","date":"2011-10-12T22:45:46.664Z","type":"message"}
+{"nick":"kuebk^","message":"no it doesn't have to","date":"2011-10-12T22:46:02.644Z","type":"message"}
+{"nick":"kuebk^","message":"but it might be","date":"2011-10-12T22:46:05.488Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: node balance?","date":"2011-10-12T22:46:08.791Z","type":"message"}
+{"nick":"kuebk^","message":"balancer?","date":"2011-10-12T22:46:20.145Z","type":"message"}
+{"nick":"piscisaureus","message":"node multi","date":"2011-10-12T22:46:23.988Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: node forkbomb ","date":"2011-10-12T22:46:24.607Z","type":"message"}
+{"nick":"piscisaureus","message":"node moar","date":"2011-10-12T22:46:40.275Z","type":"message"}
+{"nick":"ryah","message":"node fork server.js ?","date":"2011-10-12T22:46:41.808Z","type":"message"}
+{"nick":"piscisaureus","message":"node many","date":"2011-10-12T22:46:49.219Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: I know, inspect argv[0]","date":"2011-10-12T22:47:01.045Z","type":"message"}
+{"nick":"piscisaureus","message":"I am not in love with fork","date":"2011-10-12T22:47:03.560Z","type":"message"}
+{"nick":"DrPizza","message":"node -> one instance","date":"2011-10-12T22:47:06.772Z","type":"message"}
+{"nick":"DrPizza","message":"nodes -> multiinstance","date":"2011-10-12T22:47:11.385Z","type":"message"}
+{"nick":"DrPizza","message":"it's very unix.","date":"2011-10-12T22:47:19.165Z","type":"message"}
+{"nick":"DrPizza","message":"unix loves changing behaviour based on argv[0]","date":"2011-10-12T22:47:29.126Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah but you don't want to have multiple binaries or what?","date":"2011-10-12T22:47:45.654Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: hard link","date":"2011-10-12T22:47:54.379Z","type":"message"}
+{"nick":"piscisaureus","message":"meh","date":"2011-10-12T22:47:59.751Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah is secretly working on the fork patch already","date":"2011-10-12T22:48:59.704Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus: for example","date":"2011-10-12T22:49:07.338Z","type":"message"}
+{"nick":"DrPizza","message":"drpizza@lunix:/bin$ diff bzcat bunzip2","date":"2011-10-12T22:49:13.109Z","type":"message"}
+{"nick":"DrPizza","message":"drpizza@lunix:/bin$ ","date":"2011-10-12T22:49:13.264Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi: ++ for wchar files btw","date":"2011-10-12T22:49:22.371Z","type":"message"}
+{"nick":"DrPizza","message":"all the bzip programs are one binary with multiple names","date":"2011-10-12T22:49:24.053Z","type":"message"}
+{"nick":"ryah","message":"node dup server.js ?","date":"2011-10-12T22:49:46.109Z","type":"message"}
+{"nick":"piscisaureus","message":"short is goof","date":"2011-10-12T22:50:03.783Z","type":"message"}
+{"nick":"piscisaureus","message":"good","date":"2011-10-12T22:50:06.764Z","type":"message"}
+{"nick":"ryah","message":"node net server.js","date":"2011-10-12T22:50:30.595Z","type":"message"}
+{"nick":"DrPizza","message":"node multi","date":"2011-10-12T22:50:32.013Z","type":"message"}
+{"nick":"ryah","message":":/","date":"2011-10-12T22:50:33.135Z","type":"message"}
+{"nick":"DrPizza","message":"node hydra","date":"2011-10-12T22:50:43.689Z","type":"message"}
+{"nick":"ryah","message":"node multi is not so good because https://github.com/kriszyp/multi-node","date":"2011-10-12T22:50:53.042Z","type":"message"}
+{"nick":"piscisaureus","message":"node octopus :-p","date":"2011-10-12T22:50:54.211Z","type":"message"}
+{"nick":"ryah","message":"node hyper ?","date":"2011-10-12T22:51:00.344Z","type":"message"}
+{"nick":"piscisaureus","message":"node many","date":"2011-10-12T22:51:02.796Z","type":"message"}
+{"nick":"piscisaureus","message":"node distribute","date":"2011-10-12T22:51:15.836Z","type":"message"}
+{"nick":"piscisaureus","message":"node dist","date":"2011-10-12T22:51:18.394Z","type":"message"}
+{"nick":"ryah","message":"node fork server.js ...sounds good...","date":"2011-10-12T22:51:20.506Z","type":"message"}
+{"nick":"piscisaureus","message":"people have expectations when you say fork","date":"2011-10-12T22:51:41.256Z","type":"message"}
+{"nick":"DrPizza","message":"yeah","date":"2011-10-12T22:51:46.086Z","type":"message"}
+{"nick":"DrPizza","message":"expectations like \"it won't work on windows2","date":"2011-10-12T22:51:51.844Z","type":"message"}
+{"nick":"ryah","message":"node dist server.js","date":"2011-10-12T22:51:53.160Z","type":"message"}
+{"nick":"piscisaureus","message":"but since it's called child_process.fork too the name may be okay","date":"2011-10-12T22:51:59.555Z","type":"message"}
+{"nick":"mikeal","date":"2011-10-12T22:52:01.406Z","type":"join"}
+{"nick":"piscisaureus","message":"node dist is also fine","date":"2011-10-12T22:52:06.598Z","type":"message"}
+{"nick":"piscisaureus","message":"node split","date":"2011-10-12T22:52:46.681Z","type":"message"}
+{"nick":"ryah","message":"cluster is really the best name..","date":"2011-10-12T22:52:48.346Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2011-10-12T22:52:52.804Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe node --cluster","date":"2011-10-12T22:52:59.099Z","type":"message"}
+{"nick":"piscisaureus","message":"that's obviously better because it doesn't get in the way of cluster.js","date":"2011-10-12T22:53:18.256Z","type":"message"}
+{"nick":"piscisaureus","message":"same is true for `node debug` btw","date":"2011-10-12T22:53:47.402Z","type":"message"}
+{"nick":"ryah","message":"*shrug*","date":"2011-10-12T22:53:57.932Z","type":"message"}
+{"nick":"ryah","message":"i dont think it should be a flag","date":"2011-10-12T22:54:04.407Z","type":"message"}
+{"nick":"piscisaureus","message":"node share","date":"2011-10-12T22:54:13.558Z","type":"message"}
+{"nick":"ryah","message":"let's just keep cluster for now","date":"2011-10-12T22:54:20.405Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-10-12T22:54:21.508Z","type":"message"}
+{"nick":"piscisaureus","message":":-)","date":"2011-10-12T22:54:25.484Z","type":"message"}
+{"nick":"piscisaureus","message":"cluster will be useless anyway :-p","date":"2011-10-12T22:54:34.808Z","type":"message"}
+{"nick":"ryah","message":"cluster gives you nice graphs","date":"2011-10-12T22:54:52.208Z","type":"message"}
+{"nick":"DrPizza","message":"I think it should be a flag","date":"2011-10-12T22:55:24.508Z","type":"message"}
+{"nick":"piscisaureus","message":"igorzi is awesome - he moved the file system functions over to unicode","date":"2011-10-12T22:55:30.584Z","type":"message"}
+{"nick":"DrPizza","message":"O_O","date":"2011-10-12T22:55:37.251Z","type":"message"}
+{"nick":"DrPizza","message":"CreateFileW?","date":"2011-10-12T22:55:40.736Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-10-12T22:57:25.376Z","type":"message"}
+{"nick":"piscisaureus","message":"I think we're now using _wstat instead of stat","date":"2011-10-12T22:57:37.188Z","type":"message"}
+{"nick":"piscisaureus","message":"so we gotta fix that at some point","date":"2011-10-12T22:57:42.600Z","type":"message"}
+{"nick":"piscisaureus","message":"but it can wait indefinitely :-)","date":"2011-10-12T22:57:48.988Z","type":"message"}
+{"nick":"DrPizza","message":"so we can do full 32k paths?","date":"2011-10-12T22:58:08.461Z","type":"message"}
+{"nick":"piscisaureus","message":"welll... I don't care much about those","date":"2011-10-12T22:58:21.207Z","type":"message"}
+{"nick":"piscisaureus","message":"just because I don't like the crt heh","date":"2011-10-12T22:58:30.184Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-10-12T22:58:37.822Z","type":"message"}
+{"nick":"piscisaureus","message":"plus _stat doesn't understand symlinks and stuff","date":"2011-10-12T22:58:38.546Z","type":"message"}
+{"nick":"DrPizza","message":"well ditching the CRT would be nice in general","date":"2011-10-12T22:58:46.363Z","type":"message"}
+{"nick":"piscisaureus","message":"which is obiviously not going to bother many people","date":"2011-10-12T22:58:55.207Z","type":"message"}
+{"nick":"piscisaureus","message":"oh shit I have to go","date":"2011-10-12T23:00:30.362Z","type":"message"}
+{"nick":"piscisaureus","message":"5 hours sleep left","date":"2011-10-12T23:00:42.058Z","type":"message"}
+{"nick":"ryah","message":"lock test/pummel/test-exec.js","date":"2011-10-12T23:00:44.753Z","type":"message"}
+{"nick":"DrPizza","message":"lol","date":"2011-10-12T23:00:44.904Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: seems to pass on windows","date":"2011-10-12T23:01:44.782Z","type":"message"}
+{"nick":"piscisaureus","message":"I want to do coding again","date":"2011-10-12T23:02:24.484Z","type":"message"}
+{"nick":"piscisaureus","message":"I am hoping for next week","date":"2011-10-12T23:02:29.316Z","type":"message"}
+{"nick":"piscisaureus","message":"in the city of code","date":"2011-10-12T23:02:35.626Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: yep - that's what we're going to do","date":"2011-10-12T23:06:02.625Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-10-12T23:06:04.014Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 260 seconds","date":"2011-10-12T23:06:05.731Z","type":"quit"}
+{"nick":"ryah","message":"bug fighting week","date":"2011-10-12T23:06:15.308Z","type":"message"}
+{"nick":"ryah","message":"we're going to be 100% on all platforms by next friday","date":"2011-10-12T23:06:31.877Z","type":"message"}
+{"nick":"piscisaureus","message":":-)","date":"2011-10-12T23:06:58.525Z","type":"message"}
+{"nick":"piscisaureus","message":"I like that","date":"2011-10-12T23:07:02.156Z","type":"message"}
+{"nick":"ryah","message":"just start working PST time so it's not a big switch :)","date":"2011-10-12T23:08:03.325Z","type":"message"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u0002651b8a0\u000f \u000310\u000f/ (lib/child_process.js test/pummel/test-exec.js)\u0002:\u000f Fix test/pummel/test-exec.js - http://git.io/__2cIw","date":"2011-10-12T23:12:41.692Z","type":"message"}
+{"nick":"DrPizza","message":"suggestion: just delete any test that doesn't pass","date":"2011-10-12T23:13:10.727Z","type":"message"}
+{"nick":"ryah","message":"yep","date":"2011-10-12T23:13:17.117Z","type":"message"}
+{"nick":"ryah","action":"locks test/pummel/test-watch-file.js                                                                   ","date":"2011-10-12T23:16:28.586Z","type":"action"}
+{"nick":"AvianFlu","date":"2011-10-12T23:18:18.752Z","type":"join"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u00027b4370e\u000f \u000310\u000f/ (lib/fs.js test/pummel/test-watch-file.js)\u0002:\u000f Fix test/pummel/test-watch-file.js - http://git.io/U4gWRg","date":"2011-10-12T23:20:10.583Z","type":"message"}
+{"nick":"ryah","message":"python tools/test.py pummel","date":"2011-10-12T23:28:44.401Z","type":"message"}
+{"nick":"ryah","message":"[01:42|% 100|+  23|-   0]: Done ","date":"2011-10-12T23:28:44.935Z","type":"message"}
+{"nick":"ryah","message":"^-- osx","date":"2011-10-12T23:28:47.175Z","type":"message"}
+{"nick":"kuebk^","date":"2011-10-12T23:57:41.339Z","type":"quit"}
+{"nick":"CIA-53","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307\u000f * r\u0002e911171\u000f \u000310\u000f/ (4 files in 2 dirs)\u0002:\u000f Move some slow tests to pummel - http://git.io/GIN2qA","date":"2011-10-12T23:59:24.940Z","type":"message"}

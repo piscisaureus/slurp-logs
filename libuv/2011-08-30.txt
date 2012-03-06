@@ -1,0 +1,594 @@
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307prefork\u000f * r\u000248f827f\u000f \u000310\u000f/ (src/win/core.c src/win/req.c)\u0002:\u000f Ugly hack to avoid loop starvation - http://git.io/c81L-A","date":"2011-08-30T00:50:59.082Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307prefork\u000f * r\u0002b087c21\u000f \u000310\u000f/ (5 files in 3 dirs)\u0002:\u000f Define uv_object_t, a base class for handles and requests - http://git.io/SFg9eQ","date":"2011-08-30T00:50:59.281Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307prefork\u000f * r\u0002b5d51a3\u000f \u000310\u000f/ (6 files in 3 dirs)\u0002:\u000f Prefork server experiment - http://git.io/REcP7w","date":"2011-08-30T00:50:59.724Z","type":"message"}
+{"nick":"graydon1","reason":"Quit: Leaving.","date":"2011-08-30T00:51:11.492Z","type":"quit"}
+{"nick":"piscisaureus_","message":"^-- prefork server experiment","date":"2011-08-30T00:51:13.356Z","type":"message"}
+{"nick":"piscisaureus_","message":"(ignore the other 2 commits)","date":"2011-08-30T00:51:21.561Z","type":"message"}
+{"nick":"piscisaureus_","message":"now if igorzi was here we could have it benchmarked ...","date":"2011-08-30T00:51:42.957Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: still kind of want to do threads","date":"2011-08-30T01:35:41.657Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-30T01:35:48.597Z","type":"message"}
+{"nick":"piscisaureus_","message":"this works for threads too","date":"2011-08-30T01:36:40.579Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: ^","date":"2011-08-30T01:36:44.664Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: can you give me the tl;dr summary of the change?","date":"2011-08-30T01:39:00.570Z","type":"message"}
+{"nick":"ryah","message":"uv_tcp_import() ?","date":"2011-08-30T01:40:04.820Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: it's not a full-blown libuv thing. Libuv uses events instead of the completion port if the completion port can't be used (because the master process claimed it). Normal ipc is used to transfer a duplicated socket to the client, this is not implemented in libuv atm.","date":"2011-08-30T01:40:28.985Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: uv_tcp_import creates an uv handle from a windows handle","date":"2011-08-30T01:41:37.676Z","type":"message"}
+{"nick":"ryah","message":"how does it use events instead of iocp?","date":"2011-08-30T01:43:00.059Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh I forgot to add a relevant part","date":"2011-08-30T01:43:13.959Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307prefork\u000f * r\u0002cfc5182\u000f \u000310\u000f/ (7 files in 3 dirs)\u0002:\u000f Prefork server experiment - http://git.io/b2eZ2g","date":"2011-08-30T01:43:54.246Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: ^- with cargo","date":"2011-08-30T01:44:02.129Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: it uses events by setting the overlapped.hEvent to a valid event. Windows signals this event when the operation completes. We wait for this event to get signaled using RegisterWaitForSingleObject. In the wait callback the overlapped structure gets queued to the iocp \"manually\".","date":"2011-08-30T01:45:15.000Z","type":"message"}
+{"nick":"ryah","message":"you send the server over the pipe? (am i reading this correctly?)","date":"2011-08-30T01:47:06.000Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2011-08-30T01:47:12.212Z","type":"message"}
+{"nick":"piscisaureus_","message":"over stdin","date":"2011-08-30T01:47:14.022Z","type":"message"}
+{"nick":"ryah","message":"yeah would be interesting to get some benchs","date":"2011-08-30T01:47:39.144Z","type":"message"}
+{"nick":"piscisaureus_","message":"indeed","date":"2011-08-30T01:47:54.035Z","type":"message"}
+{"nick":"ryah","message":"the accepted sockets still use iocp?","date":"2011-08-30T01:48:01.325Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2011-08-30T01:48:05.988Z","type":"message"}
+{"nick":"ryah","message":"yeah","date":"2011-08-30T01:48:13.733Z","type":"message"}
+{"nick":"ryah","message":"this is cool","date":"2011-08-30T01:48:15.637Z","type":"message"}
+{"nick":"piscisaureus_","message":"the listening socket on the master process also uses iocp","date":"2011-08-30T01:48:26.639Z","type":"message"}
+{"nick":"ryah","message":"so..","date":"2011-08-30T01:51:32.345Z","type":"message"}
+{"nick":"ryah","message":"hm","date":"2011-08-30T01:51:56.317Z","type":"message"}
+{"nick":"ryah","message":"where does it wait for the accept to complete?","date":"2011-08-30T01:52:09.682Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: eh?","date":"2011-08-30T01:52:25.697Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: are there two threads?","date":"2011-08-30T01:52:44.758Z","type":"message"}
+{"nick":"ryah","message":"in the slave?","date":"2011-08-30T01:52:49.310Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: there's a wait thread yeah","date":"2011-08-30T01:52:57.464Z","type":"message"}
+{"nick":"piscisaureus_","message":"RegisterWaitForSingleObject uses a special thread pool to wait for events","date":"2011-08-30T01:53:19.216Z","type":"message"}
+{"nick":"ryah","message":"how do you signal GetQueuedCompletionStatus that it's done?","date":"2011-08-30T01:53:23.919Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: the \u0003\u000301RegisterWaitForSingleObject\u0003\u000301 calls a callback in the wait thread. That callback uses PostQueuedCompletionStatus to put the overlapped in the iocp","date":"2011-08-30T01:54:22.215Z","type":"message"}
+{"nick":"piscisaureus_","message":"when that happens GetQueuedCompletionStatus wakes up","date":"2011-08-30T01:54:36.610Z","type":"message"}
+{"nick":"piscisaureus_","message":"iow, here: https://github.com/joyent/libuv/blob/cfc5182bd5f75c0271006cda9caffe22500e8a86/src/win/tcp.c#L231-242","date":"2011-08-30T01:55:26.366Z","type":"message"}
+{"nick":"ryah","message":"thanks","date":"2011-08-30T01:55:47.322Z","type":"message"}
+{"nick":"ryah","message":"my windows programming skills suck :/","date":"2011-08-30T01:56:00.354Z","type":"message"}
+{"nick":"piscisaureus_","message":"heh","date":"2011-08-30T01:56:06.939Z","type":"message"}
+{"nick":"piscisaureus_","message":"this is a complicated trick","date":"2011-08-30T01:56:10.622Z","type":"message"}
+{"nick":"ryah","message":"it's difficult for me to read - i  have to look up each functin","date":"2011-08-30T01:56:15.641Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/libuv/blob/cfc5182bd5f75c0271006cda9caffe22500e8a86/src/win/tcp.c#L286 <-- this one blocks?","date":"2011-08-30T01:56:30.986Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: no","date":"2011-08-30T01:56:42.015Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: accept is an overlapped operation. the kernel does that in the background","date":"2011-08-30T01:56:57.734Z","type":"message"}
+{"nick":"ryah","message":"oh wow","date":"2011-08-30T01:58:01.004Z","type":"message"}
+{"nick":"ryah","message":"https://github.com/joyent/libuv/blob/cfc5182bd5f75c0271006cda9caffe22500e8a86/src/win/tcp.c#L68","date":"2011-08-30T01:58:01.610Z","type":"message"}
+{"nick":"ryah","message":"so you just try - if it fails you emulate?","date":"2011-08-30T01:58:08.477Z","type":"message"}
+{"nick":"ryah","message":"no special casing ?","date":"2011-08-30T01:58:15.912Z","type":"message"}
+{"nick":"ryah","message":"will this work for other types of sockets?","date":"2011-08-30T01:58:33.675Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: well, there's no special casing there","date":"2011-08-30T01:58:34.401Z","type":"message"}
+{"nick":"piscisaureus_","message":"the special casing is here: https://github.com/joyent/libuv/blob/cfc5182bd5f75c0271006cda9caffe22500e8a86/src/win/tcp.c#L275-284 and https://github.com/joyent/libuv/blob/cfc5182bd5f75c0271006cda9caffe22500e8a86/src/win/tcp.c#L304-310","date":"2011-08-30T01:59:04.149Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: this can work for read and write as well","date":"2011-08-30T01:59:31.758Z","type":"message"}
+{"nick":"ryah","message":"sick","date":"2011-08-30T01:59:46.932Z","type":"message"}
+{"nick":"piscisaureus_","message":"(if we're interested)","date":"2011-08-30T01:59:48.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: but it comes at the price of synchronizing with the wait thread every time","date":"2011-08-30T02:00:21.162Z","type":"message"}
+{"nick":"piscisaureus_","message":"I'd rather avoid it","date":"2011-08-30T02:00:32.275Z","type":"message"}
+{"nick":"ryah","message":"well let's measure it","date":"2011-08-30T02:00:33.318Z","type":"message"}
+{"nick":"ryah","message":"first this accept ","date":"2011-08-30T02:00:41.422Z","type":"message"}
+{"nick":"ryah","message":"this seems promising","date":"2011-08-30T02:00:51.878Z","type":"message"}
+{"nick":"ryah","message":"http://ntotten.com/2011/08/nodejs-on-windows-azure/ <-- did you see this?","date":"2011-08-30T02:04:20.066Z","type":"message"}
+{"nick":"piscisaureus_","message":"Yes, I even tweeted that before you did","date":"2011-08-30T02:05:03.992Z","type":"message"}
+{"nick":"piscisaureus_","message":"muhahaha","date":"2011-08-30T02:05:06.332Z","type":"message"}
+{"nick":"piscisaureus_","message":"I hope it works well","date":"2011-08-30T02:05:37.224Z","type":"message"}
+{"nick":"piscisaureus_","message":"Maybe we should get an azure instance","date":"2011-08-30T02:05:53.181Z","type":"message"}
+{"nick":"DrPizza","message":"isn't there a macro to set the bottom bit on a handle","date":"2011-08-30T02:08:29.768Z","type":"message"}
+{"nick":"piscisaureus_","message":"*shrug*","date":"2011-08-30T02:08:51.778Z","type":"message"}
+{"nick":"piscisaureus_","message":"probably, probably not","date":"2011-08-30T02:08:59.381Z","type":"message"}
+{"nick":"DrPizza","message":":p","date":"2011-08-30T02:09:05.296Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to bed","date":"2011-08-30T02:09:23.630Z","type":"action"}
+{"nick":"piscisaureus_","message":"if we're going to do this iocp emulation at more points we should invent some clever macros for it","date":"2011-08-30T02:09:23.786Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: night","date":"2011-08-30T02:09:29.979Z","type":"message"}
+{"nick":"ryah","message":"sleep tight","date":"2011-08-30T02:09:36.670Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-30T02:09:39.861Z","type":"message"}
+{"nick":"bnoordhuis","message":"thanks, you too :)","date":"2011-08-30T02:09:42.942Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: groeten aan je chick","date":"2011-08-30T02:09:47.282Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 252 seconds","date":"2011-08-30T02:14:29.121Z","type":"quit"}
+{"nick":"ryah","message":"is there a way to make MSVS highlight long lines?","date":"2011-08-30T02:18:13.494Z","type":"message"}
+{"nick":"DrPizza","message":"I don't think so, though there may be add-ins","date":"2011-08-30T02:18:24.348Z","type":"message"}
+{"nick":"DrPizza","message":"you can get it to show a margin, at least","date":"2011-08-30T02:18:30.521Z","type":"message"}
+{"nick":"DrPizza","message":"though again better with an add-in","date":"2011-08-30T02:18:38.701Z","type":"message"}
+{"nick":"ryah","message":"http://saraford.net/2004/11/15/guidelinesa-hidden-feature-for-visual-studio-editor/","date":"2011-08-30T02:19:20.520Z","type":"message"}
+{"nick":"ryah","message":"is it possible to do this via gyp?","date":"2011-08-30T02:19:31.026Z","type":"message"}
+{"nick":"DrPizza","message":"no","date":"2011-08-30T02:19:34.310Z","type":"message"}
+{"nick":"DrPizza","message":"gyp can't touch anything like this","date":"2011-08-30T02:19:41.952Z","type":"message"}
+{"nick":"DrPizza","message":"I don't think it will be able to even when they get user file support","date":"2011-08-30T02:19:51.614Z","type":"message"}
+{"nick":"piscisaureus_","message":"just distribute a .reg file?","date":"2011-08-30T02:20:19.817Z","type":"message"}
+{"nick":"ryah","message":"igor always sends me patches with long lines :)","date":"2011-08-30T02:21:13.057Z","type":"message"}
+{"nick":"ryah","message":"but i imagine that's because MSVS doesn't highlight like my editor","date":"2011-08-30T02:21:28.401Z","type":"message"}
+{"nick":"DrPizza","message":"or maybe he just has a big monitor","date":"2011-08-30T02:21:37.104Z","type":"message"}
+{"nick":"piscisaureus_","message":"the windows api makes long lines very common","date":"2011-08-30T02:22:12.009Z","type":"message"}
+{"nick":"ryah","message":"god intended source code to be in 80 columns, no matter the monitor size","date":"2011-08-30T02:22:17.771Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: if he'd wanted that he'd make us still use punchcards","date":"2011-08-30T02:22:33.915Z","type":"message"}
+{"nick":"rmustacc","date":"2011-08-30T02:22:35.818Z","type":"part"}
+{"nick":"DrPizza","message":"it's hard enough coping with 2-space indents","date":"2011-08-30T02:23:06.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2011-08-30T02:24:51.603Z","type":"message"}
+{"nick":"piscisaureus_","message":"that registry setting doesn't work for me","date":"2011-08-30T02:25:06.612Z","type":"message"}
+{"nick":"DrPizza","message":"it's 2010 dude","date":"2011-08-30T02:25:13.295Z","type":"message"}
+{"nick":"DrPizza","message":"the world has probably changed since 2004","date":"2011-08-30T02:25:18.206Z","type":"message"}
+{"nick":"DrPizza","message":"no it isn't ","date":"2011-08-30T02:25:20.238Z","type":"message"}
+{"nick":"DrPizza","message":"it's 2011","date":"2011-08-30T02:25:21.382Z","type":"message"}
+{"nick":"DrPizza","message":"WTF","date":"2011-08-30T02:25:22.197Z","type":"message"}
+{"nick":"DrPizza","message":"when the hell did that happen","date":"2011-08-30T02:25:32.534Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: yep, it's been 2011 for a while now :)","date":"2011-08-30T02:25:50.799Z","type":"message"}
+{"nick":"DrPizza","message":"mind: blown","date":"2011-08-30T02:25:59.501Z","type":"message"}
+{"nick":"ryah","message":"google is down for me?","date":"2011-08-30T02:26:37.753Z","type":"message"}
+{"nick":"ryah","message":"strange","date":"2011-08-30T02:26:39.063Z","type":"message"}
+{"nick":"piscisaureus_","message":"not here","date":"2011-08-30T02:28:14.321Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: http://www.bing.com/","date":"2011-08-30T02:28:23.460Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://www.jeff.wilcox.name/2010/02/visualstudio2010guides/","date":"2011-08-30T02:28:59.627Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: btw what's your opinin on win8 explorer?","date":"2011-08-30T02:29:02.994Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: it hurts my brain","date":"2011-08-30T02:29:12.119Z","type":"message"}
+{"nick":"DrPizza","message":"I think it looks kind of ugly, I think it's way overblown","date":"2011-08-30T02:29:26.848Z","type":"message"}
+{"nick":"DrPizza","message":"but I haven't used it yet","date":"2011-08-30T02:29:30.147Z","type":"message"}
+{"nick":"DrPizza","message":"and from what I've heard of people using the leaked builds","date":"2011-08-30T02:29:35.503Z","type":"message"}
+{"nick":"DrPizza","message":"apparently it's really good","date":"2011-08-30T02:29:37.947Z","type":"message"}
+{"nick":"DrPizza","message":"which I just don't understand","date":"2011-08-30T02:29:43.422Z","type":"message"}
+{"nick":"DrPizza","message":"I'm by no means a ribbon-hater","date":"2011-08-30T02:29:53.359Z","type":"message"}
+{"nick":"DrPizza","message":"and think the ribbon implementation in office 2010 works really well","date":"2011-08-30T02:30:02.633Z","type":"message"}
+{"nick":"DrPizza","message":"(especially the \"backstage\" area, which sadly the built-in win32 ribbon lacks)","date":"2011-08-30T02:30:14.954Z","type":"message"}
+{"nick":"DrPizza","message":"but Office needs a ribbon because Office has about 50,000 features.","date":"2011-08-30T02:30:23.259Z","type":"message"}
+{"nick":"DrPizza","message":"Explorer? It barely does anything!","date":"2011-08-30T02:30:29.712Z","type":"message"}
+{"nick":"DrPizza","message":"but like I say","date":"2011-08-30T02:30:55.691Z","type":"message"}
+{"nick":"piscisaureus_","message":"I like the new ribbon very much","date":"2011-08-30T02:30:58.405Z","type":"message"}
+{"nick":"DrPizza","message":"everyone who's used it seems to really like it","date":"2011-08-30T02:31:01.192Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think","date":"2011-08-30T02:31:02.807Z","type":"message"}
+{"nick":"DrPizza","message":"office 2010 style ribbon == very nice","date":"2011-08-30T02:31:06.715Z","type":"message"}
+{"nick":"DrPizza","message":"win32 style == kinda meh","date":"2011-08-30T02:31:13.063Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean \"copy path\", \"command prompt here\"","date":"2011-08-30T02:31:15.096Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- damn useful","date":"2011-08-30T02:31:26.127Z","type":"message"}
+{"nick":"DrPizza","message":"copy path is already trivial, not quite sure why it needs a button","date":"2011-08-30T02:31:28.674Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's not trivial","date":"2011-08-30T02:31:38.461Z","type":"message"}
+{"nick":"piscisaureus_","message":"how do you copy a path","date":"2011-08-30T02:31:41.836Z","type":"message"}
+{"nick":"DrPizza","message":"alt-d, ctrl-c","date":"2011-08-30T02:31:46.259Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: that's the path without the file name","date":"2011-08-30T02:32:04.797Z","type":"message"}
+{"nick":"DrPizza","message":"yes you said path not filename!","date":"2011-08-30T02:32:12.579Z","type":"message"}
+{"nick":"DrPizza","message":":)","date":"2011-08-30T02:32:19.707Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean the filename w/ full path","date":"2011-08-30T02:32:27.942Z","type":"message"}
+{"nick":"piscisaureus_","message":"But there's some wft stuff as well","date":"2011-08-30T02:32:57.349Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean. Fax?","date":"2011-08-30T02:33:02.043Z","type":"message"}
+{"nick":"piscisaureus_","message":"Burn to cd?","date":"2011-08-30T02:33:06.056Z","type":"message"}
+{"nick":"DrPizza","message":"lol I didn't notice that","date":"2011-08-30T02:33:08.798Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wonder where the \"send by pigeon\" button is","date":"2011-08-30T02:33:48.615Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: hmm, in the gyp file, did you have to specify the libraries: ws2_32.lib bit?","date":"2011-08-30T02:34:57.305Z","type":"message"}
+{"nick":"DrPizza","message":"and the SubSystem: 1 bit","date":"2011-08-30T02:35:07.896Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: I just copied that from run-tests","date":"2011-08-30T02:35:19.657Z","type":"message"}
+{"nick":"DrPizza","message":"oh wait, maybe I didn't put the subsystem into uv's common.gypi","date":"2011-08-30T02:35:26.074Z","type":"message"}
+{"nick":"DrPizza","message":"ah","date":"2011-08-30T02:35:26.770Z","type":"message"}
+{"nick":"piscisaureus_","message":"the subsystem bit seemingly has no effect","date":"2011-08-30T02:35:35.799Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's still not added as a console app","date":"2011-08-30T02:35:46.974Z","type":"message"}
+{"nick":"DrPizza","message":"yeah, there's a bug in gyp","date":"2011-08-30T02:35:54.883Z","type":"message"}
+{"nick":"DrPizza","message":"I think","date":"2011-08-30T02:37:14.502Z","type":"message"}
+{"nick":"DrPizza","message":"oh hmm","date":"2011-08-30T02:37:16.773Z","type":"message"}
+{"nick":"DrPizza","message":"maybe it's just that my changes aren't there","date":"2011-08-30T02:37:21.797Z","type":"message"}
+{"nick":"DrPizza","message":"I know there was some oddness","date":"2011-08-30T02:37:48.465Z","type":"message"}
+{"nick":"DrPizza","message":"~maybe~ I just never pushed my commits to my repo","date":"2011-08-30T02:38:26.584Z","type":"message"}
+{"nick":"DrPizza","message":"all these things, and more, are possible","date":"2011-08-30T02:38:58.002Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: did you make any progress with your green threads?","date":"2011-08-30T02:39:07.846Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: https://github.com/DrPizza/node/blob/upstream_master/common.gypi#L91","date":"2011-08-30T02:41:05.101Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: with that in common.gypi, it should do the right thing","date":"2011-08-30T02:41:18.926Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: tbh, node and uv should have an identical common.gypi","date":"2011-08-30T02:41:25.898Z","type":"message"}
+{"nick":"piscisaureus_","message":"what is the difference between gyp and gypi?","date":"2011-08-30T02:41:50.615Z","type":"message"}
+{"nick":"DrPizza","message":"I don't think anything, particularly, it just seems to be convention to use .gypi for files that are only included and have no targets of their own","date":"2011-08-30T02:42:11.765Z","type":"message"}
+{"nick":"DrPizza","message":"I don't know if gyp actually enforces tht","date":"2011-08-30T02:42:16.052Z","type":"message"}
+{"nick":"DrPizza","message":"that","date":"2011-08-30T02:42:17.212Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah","date":"2011-08-30T02:43:24.626Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: one of these days I will test a .dll build","date":"2011-08-30T02:43:53.961Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: the way the .gyp files are set, it should be possible to change the library type at the top level and produce DLLs instead","date":"2011-08-30T02:44:22.522Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: one day we will need an import lib for the uv parts of node","date":"2011-08-30T02:44:38.368Z","type":"message"}
+{"nick":"DrPizza","message":"how do you mean?","date":"2011-08-30T02:44:54.259Z","type":"message"}
+{"nick":"piscisaureus_","message":"So we can give people an import lib for their compiled extensions and still link uv statically into node","date":"2011-08-30T02:45:14.535Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: is that even possible?","date":"2011-08-30T02:45:20.810Z","type":"message"}
+{"nick":"DrPizza","message":"hmmm","date":"2011-08-30T02:45:25.894Z","type":"message"}
+{"nick":"DrPizza","message":"so a lib containing the uv functions?","date":"2011-08-30T02:46:17.781Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: no progress yet - got distracted by node knockout","date":"2011-08-30T02:46:32.771Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: i'm calling them \"domains\" now","date":"2011-08-30T02:46:38.383Z","type":"message"}
+{"nick":"DrPizza","message":"oh yeah","date":"2011-08-30T02:46:42.997Z","type":"message"}
+{"nick":"DrPizza","message":"I couldn't remember the new name","date":"2011-08-30T02:46:47.541Z","type":"message"}
+{"nick":"ryah","message":"people didn't like green threads","date":"2011-08-30T02:46:54.396Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah - sorry","date":"2011-08-30T02:47:35.619Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't mind it","date":"2011-08-30T02:47:42.079Z","type":"message"}
+{"nick":"piscisaureus_","message":"but you'll confuse people","date":"2011-08-30T02:47:51.736Z","type":"message"}
+{"nick":"piscisaureus_","message":"but I think in #libuv it's safe to say green threads","date":"2011-08-30T02:48:11.097Z","type":"message"}
+{"nick":"ryah","message":"well - my boss didn't like it","date":"2011-08-30T02:48:30.116Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: btw windows doesn't lock by default","date":"2011-08-30T02:48:41.602Z","type":"message"}
+{"nick":"ryah","message":"no?","date":"2011-08-30T02:48:51.622Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's just a matter of which flags you use on CreateFile","date":"2011-08-30T02:48:55.253Z","type":"message"}
+{"nick":"DrPizza","message":"if you pass 0 it doesn't allow sharing","date":"2011-08-30T02:49:01.275Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh, that's true","date":"2011-08-30T02:49:10.637Z","type":"message"}
+{"nick":"DrPizza","message":"so I guess you could say it's \"by default\"","date":"2011-08-30T02:49:11.250Z","type":"message"}
+{"nick":"DrPizza","message":"but it's a parameter you have to explicitly set","date":"2011-08-30T02:49:22.410Z","type":"message"}
+{"nick":"DrPizza","message":"so it's something that people have to consider and then choose what to do","date":"2011-08-30T02:49:37.140Z","type":"message"}
+{"nick":"DrPizza","message":"I suspect that for libuv/node we generally what FILE_SHARE_READ/WRITE/DELETE, and to leave it up to byte range locking to effect actual locks","date":"2011-08-30T02:50:10.311Z","type":"message"}
+{"nick":"DrPizza","message":"but I don't know for sure","date":"2011-08-30T02:50:15.397Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think so too","date":"2011-08-30T02:50:25.535Z","type":"message"}
+{"nick":"DrPizza","message":"I think the discussion on the mailing list is a crock of shit","date":"2011-08-30T02:50:30.689Z","type":"message"}
+{"nick":"DrPizza","message":"the idea that you can't do file I/O without flock","date":"2011-08-30T02:50:36.348Z","type":"message"}
+{"nick":"DrPizza","message":"of course you can, just funnel everything through one node process DONE.","date":"2011-08-30T02:50:45.729Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-30T03:00:01.411Z","type":"message"}
+{"nick":"DrPizza","message":"now I'm not saying that it might not be nice to have it as a convenience","date":"2011-08-30T03:00:39.366Z","type":"message"}
+{"nick":"DrPizza","message":"but someone was saying, essentially, \"oh my god, without this file I/O is impossible!\"","date":"2011-08-30T03:01:02.538Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://flite-labs.no.de/","date":"2011-08-30T03:08:13.308Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- too bad it doesn't work","date":"2011-08-30T03:08:18.599Z","type":"message"}
+{"nick":"piscisaureus_","message":"one of the most original ideas","date":"2011-08-30T03:08:23.914Z","type":"message"}
+{"nick":"DrPizza","message":"that's... odd","date":"2011-08-30T03:18:13.253Z","type":"message"}
+{"nick":"piscisaureus_","message":"odd?","date":"2011-08-30T03:18:52.341Z","type":"message"}
+{"nick":"DrPizza","message":"oh my IRC client was being misleading","date":"2011-08-30T03:19:16.229Z","type":"message"}
+{"nick":"DrPizza","message":"it was showing an invite in this channel, but it actualyl happened on another network","date":"2011-08-30T03:19:40.030Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: I don't get it","date":"2011-08-30T03:29:14.505Z","type":"message"}
+{"nick":"DrPizza","message":"it just shows me a QR code","date":"2011-08-30T03:29:17.817Z","type":"message"}
+{"nick":"DrPizza","message":"then what?","date":"2011-08-30T03:29:19.665Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: it doesn't really work","date":"2011-08-30T03:29:36.733Z","type":"message"}
+{"nick":"piscisaureus_","message":"the idea is to use the motion sensor in your phone as a controller for a game in the browser","date":"2011-08-30T03:29:54.757Z","type":"message"}
+{"nick":"piscisaureus_","message":"on your pc","date":"2011-08-30T03:29:56.652Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think you need an iphone for it","date":"2011-08-30T03:30:02.563Z","type":"message"}
+{"nick":"piscisaureus_","message":"it didn't work with my android phone","date":"2011-08-30T03:30:09.038Z","type":"message"}
+{"nick":"DrPizza","message":"oh interesting","date":"2011-08-30T03:30:12.939Z","type":"message"}
+{"nick":"DrPizza","message":"well I doubt it will work on my Mango phone","date":"2011-08-30T03:30:21.482Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think it's more creative thinking than all the scorched earth clones and shooters","date":"2011-08-30T03:31:29.867Z","type":"message"}
+{"nick":"piscisaureus_","message":"btw - I think this was the idea but it's a bit of a guess","date":"2011-08-30T03:32:50.794Z","type":"message"}
+{"nick":"piscisaureus_","message":"of not I will do this for next years nko :-)","date":"2011-08-30T03:33:03.403Z","type":"message"}
+{"nick":"DrPizza","message":"hm, yes, it mentions a deviceorientation capable device","date":"2011-08-30T03:33:09.973Z","type":"message"}
+{"nick":"DrPizza","message":"which I guess Mango is not","date":"2011-08-30T03:33:29.938Z","type":"message"}
+{"nick":"DrPizza","message":"probably some Safari thing","date":"2011-08-30T03:33:35.435Z","type":"message"}
+{"nick":"piscisaureus_","message":"what were you thinking?","date":"2011-08-30T03:33:44.485Z","type":"message"}
+{"nick":"piscisaureus_","message":"c'mon","date":"2011-08-30T03:33:47.176Z","type":"message"}
+{"nick":"piscisaureus_","message":"a windows phone?","date":"2011-08-30T03:33:51.846Z","type":"message"}
+{"nick":"DrPizza","message":"I am totally hot for Windows Phone","date":"2011-08-30T03:34:00.620Z","type":"message"}
+{"nick":"DrPizza","message":"I find it waaaaay less annoying than iOS","date":"2011-08-30T03:34:11.611Z","type":"message"}
+{"nick":"piscisaureus_","message":"must be lonely at the top","date":"2011-08-30T03:35:04.545Z","type":"message"}
+{"nick":"piscisaureus_","message":"I bet you got it for free","date":"2011-08-30T03:35:30.063Z","type":"message"}
+{"nick":"DrPizza","message":"some free, some paid","date":"2011-08-30T03:35:40.956Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://en.wikipedia.org/wiki/Tetraphobia","date":"2011-08-30T03:40:19.295Z","type":"message"}
+{"nick":"piscisaureus_","message":"Scrabble bonus points: Hexakosioihexekontahexaphobia","date":"2011-08-30T03:41:12.177Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00025d524ff\u000f \u000310\u000f/ (src/unix/fs.c test/test-fs.c)\u0002:\u000f unix passes test fs_file_async - http://git.io/25FA3w","date":"2011-08-30T03:42:19.725Z","type":"message"}
+{"nick":"ryah","message":"just a few more to go :)","date":"2011-08-30T03:42:39.776Z","type":"message"}
+{"nick":"ryah","message":"then we're pthread-win32 free","date":"2011-08-30T03:42:45.651Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah++","date":"2011-08-30T03:42:54.803Z","type":"message"}
+{"nick":"piscisaureus_","message":"I'd love that","date":"2011-08-30T03:42:58.583Z","type":"message"}
+{"nick":"ryah","message":"thanks should go to igor who's done a great job with the uv_fs_ stuff","date":"2011-08-30T03:43:38.649Z","type":"message"}
+{"nick":"ryah","message":"these tests are beautiful","date":"2011-08-30T03:43:54.922Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi's really a machine","date":"2011-08-30T03:44:15.428Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-30T03:44:37.027Z","type":"message"}
+{"nick":"ryah","message":"i suspect he is actually a whole team of people ;)","date":"2011-08-30T03:44:48.329Z","type":"message"}
+{"nick":"piscisaureus_","message":"are you serious?","date":"2011-08-30T03:45:00.076Z","type":"message"}
+{"nick":"ryah","message":"no :)","date":"2011-08-30T03:45:07.907Z","type":"message"}
+{"nick":"ryah","message":"i think he's just really good","date":"2011-08-30T03:45:16.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"he seems to be really focused","date":"2011-08-30T03:45:36.502Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002cf08c16\u000f \u000310\u000f/ test/test-fs.c \u0002:\u000f Use Windows compatibile flags - http://git.io/T46wlg","date":"2011-08-30T03:50:25.180Z","type":"message"}
+{"nick":"ryah","message":"we really need a streaming readdir","date":"2011-08-30T04:05:12.889Z","type":"message"}
+{"nick":"ryah","message":"at some point","date":"2011-08-30T04:05:14.630Z","type":"message"}
+{"nick":"DrPizza","message":"also nice would be  ReadDirectoryChangesW wrapper","date":"2011-08-30T04:05:31.093Z","type":"message"}
+{"nick":"DrPizza","message":"but I have NFI how you might do that on unix","date":"2011-08-30T04:05:37.172Z","type":"message"}
+{"nick":"piscisaureus_","message":"why a streaming readdir?","date":"2011-08-30T04:06:42.687Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: that invokes the callback for each file?","date":"2011-08-30T04:09:08.399Z","type":"message"}
+{"nick":"piscisaureus_","message":"ryah: I wonder if that is worth the extra synchronization overhead","date":"2011-08-30T04:09:23.116Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe it's beneficial when the number of files is very high","date":"2011-08-30T04:10:15.911Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: are there not possibly other advantages though, such as allowing better interleaving of work, so that (e.g.) enumerating a large directory does not tie up the loop?","date":"2011-08-30T04:10:27.311Z","type":"message"}
+{"nick":"DrPizza","message":"s/other//","date":"2011-08-30T04:10:37.119Z","type":"message"}
+{"nick":"piscisaureus_","message":"so?","date":"2011-08-30T04:10:59.783Z","type":"message"}
+{"nick":"DrPizza","message":"latency often matters, it's not just a matter of throughput","date":"2011-08-30T04:11:15.877Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: you mean that the callback takes a long time","date":"2011-08-30T04:11:32.282Z","type":"message"}
+{"nick":"piscisaureus_","message":">","date":"2011-08-30T04:11:33.214Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2011-08-30T04:11:34.400Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: yes, since I don't think there's any kind of \"yield\" provision","date":"2011-08-30T04:14:48.990Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: even the readdir() loop may take a long time","date":"2011-08-30T04:14:58.487Z","type":"message"}
+{"nick":"DrPizza","message":"though should be on a thread pool","date":"2011-08-30T04:15:16.438Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: but the readdir loop runs in the thread pool","date":"2011-08-30T04:15:18.775Z","type":"message"}
+{"nick":"DrPizza","message":"but the callback does not","date":"2011-08-30T04:15:28.016Z","type":"message"}
+{"nick":"piscisaureus_","message":"just add WT_EXECUTELONGFUNCTION and all is fine :_)","date":"2011-08-30T04:15:31.878Z","type":"message"}
+{"nick":"DrPizza","message":"it's never been clear to me what those hints really do","date":"2011-08-30T04:15:46.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"DrPizza: look at the stuff I sent you the other day","date":"2011-08-30T04:16:05.111Z","type":"message"}
+{"nick":"DrPizza","message":"oh did it exist back then?>","date":"2011-08-30T04:16:13.123Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes sir","date":"2011-08-30T04:16:17.449Z","type":"message"}
+{"nick":"DrPizza","message":"ok will do","date":"2011-08-30T04:16:22.960Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: but let's say I need to do 0.2ms of processing per entry, and the dir has 5000 entries; that means my callback ties up the loop (and not a threadpool thread!) for a second at a time.. that seems rather unfriendly if that loop also has other work to do. ","date":"2011-08-30T04:21:12.174Z","type":"message"}
+{"nick":"DrPizza","message":"and if I never test my program on large directories, I might never notice that there's an issue","date":"2011-08-30T04:21:26.154Z","type":"message"}
+{"nick":"DrPizza","message":"whereas if I have a streaming readdir that calls one callback per dentry, I can't monopolize the loop in the same way","date":"2011-08-30T04:21:52.941Z","type":"message"}
+{"nick":"piscisaureus_","message":"2ms srsly","date":"2011-08-30T04:21:53.222Z","type":"message"}
+{"nick":"piscisaureus_","message":"you're on a 268?","date":"2011-08-30T04:22:01.749Z","type":"message"}
+{"nick":"DrPizza","message":"0.2","date":"2011-08-30T04:22:04.233Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok you're on a 468?","date":"2011-08-30T04:22:19.000Z","type":"message"}
+{"nick":"DrPizza","message":"haha","date":"2011-08-30T04:22:22.005Z","type":"message"}
+{"nick":"DrPizza","message":"piscisaureus_: maybe I am doing e.g. some XML transformation or something","date":"2011-08-30T04:23:19.008Z","type":"message"}
+{"nick":"DrPizza","message":"nice and slow.","date":"2011-08-30T04:23:31.025Z","type":"message"}
+{"nick":"DrPizza","message":"but very ~enterprise~","date":"2011-08-30T04:23:37.427Z","type":"message"}
+{"nick":"DrPizza","message":"I hear pquerna likes XML a lot.","date":"2011-08-30T04:24:37.221Z","type":"message"}
+{"nick":"ryah","message":"eio_readdir is pretty shitty","date":"2011-08-30T04:37:22.319Z","type":"message"}
+{"nick":"piscisaureus_","message":"good luck with it :-)","date":"2011-08-30T04:38:23.553Z","type":"message"}
+{"nick":"piscisaureus_","message":"goodbye","date":"2011-08-30T04:38:24.917Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 258 seconds","date":"2011-08-30T04:42:51.137Z","type":"quit"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00020e81406\u000f \u000310\u000f/ (include/uv-unix.h src/unix/fs.c test/test-fs.c)\u0002:\u000f unix fs_async_dir works - http://git.io/Jxow3g","date":"2011-08-30T05:09:28.914Z","type":"message"}
+{"nick":"ryah","message":"whew","date":"2011-08-30T05:09:35.541Z","type":"message"}
+{"nick":"ryah","message":"[% 100|+  53|-   3]: Done. ","date":"2011-08-30T05:12:26.028Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00021a4ead5\u000f \u000310\u000f/ (include/uv-unix.h include/uv.h src/unix/fs.c)\u0002:\u000f unix: implement uv_queue_work - http://git.io/tsSlFQ","date":"2011-08-30T05:57:43.298Z","type":"message"}
+{"nick":"mraleph","date":"2011-08-30T06:26:14.115Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-30T07:43:08.617Z","type":"quit"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002894c005\u000f \u000310\u000f/ (src/unix/fs.c test/test-fs.c)\u0002:\u000f unix: fix fs_async_sendfile - http://git.io/RXs7MQ","date":"2011-08-30T07:54:21.684Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002d20233c\u000f \u000310\u000f/ test/test-fs.c \u0002:\u000f Fix long lines - http://git.io/aL87qQ","date":"2011-08-30T07:55:07.499Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002dbc1cb0\u000f \u000310\u000f/ (191 files in 2 dirs)\u0002:\u000f Remove pthread-win32 - http://git.io/glWjbg","date":"2011-08-30T07:59:15.432Z","type":"message"}
+{"nick":"mraleph","date":"2011-08-30T08:16:15.911Z","type":"join"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002a6ed175\u000f \u000310\u000f/ (src/unix/fs.c test/test-fs.c)\u0002:\u000f unix: implement uv_fs_lstat - http://git.io/7F-pfw","date":"2011-08-30T08:37:12.217Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00021088638\u000f \u000310\u000f/ (196 files in 6 dirs)\u0002:\u000f upgrade libuv to a6ed175 - http://git.io/ed9yhg","date":"2011-08-30T08:37:26.631Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u0002bce41fa\u000f \u000310\u000f/ (10 files in 3 dirs)\u0002:\u000f ","date":"2011-08-30T08:37:27.374Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Use new uv_fs_ apis","date":"2011-08-30T08:37:27.535Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f This will cause master to be unstable for a while as we replace existing eio","date":"2011-08-30T08:37:27.536Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f calls with uv_fs calls. - http://git.io/Rclu8Q","date":"2011-08-30T08:37:27.536Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-30T08:40:14.074Z","type":"quit"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002ca11711\u000f \u000310\u000f/ src/win/fs.c \u0002:\u000f win: stub out missing uv_fs functions - http://git.io/fWCcFQ","date":"2011-08-30T08:54:08.288Z","type":"message"}
+{"nick":"ryah","message":"'node.exe': Loaded 'C:\\Windows\\System32\\nlaapi.dll', Cannot find or open the PDB file","date":"2011-08-30T09:24:55.171Z","type":"message"}
+{"nick":"ryah","message":"'node.exe': Loaded 'C:\\Windows\\System32\\NapiNSP.dll', Cannot find or open the PDB file","date":"2011-08-30T09:24:58.160Z","type":"message"}
+{"nick":"ryah","message":"'node.exe': Loaded 'C:\\Windows\\System32\\pnrpnsp.dll', Cannot find or open the PDB file","date":"2011-08-30T09:25:01.759Z","type":"message"}
+{"nick":"ryah","message":"'node.exe': Loaded 'C:\\Windows\\System32\\winrnr.dll', Cannot find or open the PDB file","date":"2011-08-30T09:25:05.214Z","type":"message"}
+{"nick":"ryah","message":"'node.exe': Loaded 'C:\\Windows\\System32\\cryptbase.dll', Cannot find or open the PDB file","date":"2011-08-30T09:25:08.703Z","type":"message"}
+{"nick":"ryah","message":"The thread 'Win32 Thread' (0xb84) has exited with code 0 (0x0).","date":"2011-08-30T09:25:12.132Z","type":"message"}
+{"nick":"ryah","message":"The thread 'Win32 Thread' (0xc28) has exited with code 0 (0x0).","date":"2011-08-30T09:25:14.592Z","type":"message"}
+{"nick":"ryah","message":"The program '[2872] node.exe: Native' has exited with code 0 (0x0).","date":"2011-08-30T09:25:17.091Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: you can't possibly be awake at this ungodly hour?","date":"2011-08-30T09:25:18.412Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u00022823ab4\u000f \u000310\u000f/ deps/uv/src/win/fs.c \u0002:\u000f Upgrade libuv to ca11711 - http://git.io/Lq_QJA","date":"2011-08-30T09:29:42.999Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002b68c6ba\u000f \u000310\u000f/ deps/v8/tools/gyp/v8.gyp \u0002:\u000f Fix Windows build - http://git.io/uSVTAg","date":"2011-08-30T09:29:44.298Z","type":"message"}
+{"nick":"ryah","message":"nevermind i guess those aren't errors","date":"2011-08-30T09:38:47.900Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Jeroen Janssen\u000f \u000307master\u000f * r\u00022af955d\u000f \u000310\u000f/ src/unix/fs.c \u0002:\u000f ","date":"2011-08-30T10:16:18.116Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f Fix posix dirent usage","date":"2011-08-30T10:16:18.276Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f Fixes #161 - http://git.io/si3MHQ","date":"2011-08-30T10:16:18.276Z","type":"message"}
+{"nick":"bnoordhuis","date":"2011-08-30T10:31:21.219Z","type":"join"}
+{"nick":"CIA-75","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00020ba44cf\u000f \u000310\u000f/ src/ev/config_linux.h \u0002:\u000f ev: improve feature detection on linux - http://git.io/CzEOxQ","date":"2011-08-30T10:50:29.501Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u0002fe4b742\u000f \u000310\u000f/ (deps/uv/src/ev/config_linux.h deps/uv/src/unix/fs.c)\u0002:\u000f uv: upgrade to 0ba44cf - http://git.io/ZT0bPQ","date":"2011-08-30T11:10:59.869Z","type":"message"}
+{"nick":"piscisaureus_","date":"2011-08-30T11:44:39.206Z","type":"join"}
+{"nick":"piscisaureus_","new_nick":"piscisaureus","date":"2011-08-30T11:44:45.097Z","type":"nick"}
+{"nick":"bnoordhuis","message":"piscisaureus: http://lwn.net/Articles/456798/ <- seen this?","date":"2011-08-30T11:55:44.763Z","type":"message"}
+{"nick":"piscisaureus","message":"I heard about it","date":"2011-08-30T11:56:05.056Z","type":"message"}
+{"nick":"piscisaureus","message":"have not been reading lwn tho","date":"2011-08-30T11:56:12.108Z","type":"message"}
+{"nick":"bnoordhuis","message":"fucking annoying","date":"2011-08-30T11:56:21.841Z","type":"message"}
+{"nick":"piscisaureus","message":"why","date":"2011-08-30T11:56:33.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"diginotar is the ca that signs the certs for dutch government websites","date":"2011-08-30T11:56:38.322Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I tried to confirm that","date":"2011-08-30T11:56:46.681Z","type":"message"}
+{"nick":"piscisaureus","message":"but","date":"2011-08-30T11:56:49.120Z","type":"message"}
+{"nick":"piscisaureus","message":"I removed the DigiNotar certificate from firefox","date":"2011-08-30T11:57:07.404Z","type":"message"}
+{"nick":"piscisaureus","message":"but it doesn't make any difference","date":"2011-08-30T11:57:16.411Z","type":"message"}
+{"nick":"bnoordhuis","message":"digid?","date":"2011-08-30T11:57:27.143Z","type":"message"}
+{"nick":"piscisaureus","message":"e.g. try https://as.digid.nl/","date":"2011-08-30T11:57:29.560Z","type":"message"}
+{"nick":"piscisaureus","message":"Maybe it's just a bug in firefox","date":"2011-08-30T11:57:44.726Z","type":"message"}
+{"nick":"bnoordhuis","message":"C=NL; O=DigiNotar B.V.; CN=DigiNotar PKIoverheid CA Overheid en Bedrijven","date":"2011-08-30T11:57:49.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"but weird that firefox doesn't complain, yes","date":"2011-08-30T11:58:29.907Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh sweet","date":"2011-08-30T11:59:02.797Z","type":"message"}
+{"nick":"piscisaureus","message":"bentkus: ?","date":"2011-08-30T11:59:06.896Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can't remove built-in root certs, they come back when you restart ff...","date":"2011-08-30T11:59:19.584Z","type":"message"}
+{"nick":"piscisaureus","message":"not even when you restart","date":"2011-08-30T11:59:37.380Z","type":"message"}
+{"nick":"piscisaureus","message":"even when you open the box again","date":"2011-08-30T11:59:42.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"ffs","date":"2011-08-30T11:59:47.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"stab stab","date":"2011-08-30T11:59:51.248Z","type":"message"}
+{"nick":"piscisaureus","message":"but this is what firefox itself suggested","date":"2011-08-30T11:59:54.750Z","type":"message"}
+{"nick":"piscisaureus","message":"so it is *supposed* to work","date":"2011-08-30T12:00:02.693Z","type":"message"}
+{"nick":"piscisaureus","message":"http://support.mozilla.com/en-US/kb/deleting-diginotar-ca-cert","date":"2011-08-30T12:01:04.871Z","type":"message"}
+{"nick":"piscisaureus","message":"let me file a bugzilla bug","date":"2011-08-30T12:02:12.236Z","type":"message"}
+{"nick":"piscisaureus","message":"https://bugzilla.mozilla.org/show_bug.cgi?id=683132","date":"2011-08-30T12:08:01.580Z","type":"message"}
+{"nick":"bnoordhuis","message":"good work","date":"2011-08-30T12:11:07.666Z","type":"message"}
+{"nick":"bnoordhuis","message":"now let's wait three months for the 'works for me' or 'duplicate'","date":"2011-08-30T12:11:20.504Z","type":"message"}
+{"nick":"piscisaureus","message":"I filed a bug once","date":"2011-08-30T12:16:00.656Z","type":"message"}
+{"nick":"piscisaureus","message":"they fixed that very quickly","date":"2011-08-30T12:16:08.162Z","type":"message"}
+{"nick":"piscisaureus","message":"it was https://bugzilla.mozilla.org/show_bug.cgi?id=498993","date":"2011-08-30T12:17:04.828Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: ah","date":"2011-08-30T12:22:06.871Z","type":"message"}
+{"nick":"piscisaureus","message":"got a reply already","date":"2011-08-30T12:22:14.347Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: man http://webwereld.nl/nieuws/107756/diginotar-nl-staat-al-jaren-open-voor-hackers.html","date":"2011-08-30T12:33:51.670Z","type":"message"}
+{"nick":"piscisaureus","message":"wtf","date":"2011-08-30T12:33:59.562Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: those warnings are harmless, though you can point MSVS at a Microsoft server to enable it to fetch pdb files for Windows components if you choose","date":"2011-08-30T13:04:45.942Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://www.diginotar.nl/Portals/0/Extrance.txt <- hah, untrusted","date":"2011-08-30T13:05:45.647Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: that bug report shows how broken ssl really is","date":"2011-08-30T13:08:50.510Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't trust diginotar so i remove their root cert","date":"2011-08-30T13:09:24.200Z","type":"message"}
+{"nick":"bnoordhuis","message":"but since they're also an intermediate, other certs issued by them keep on working","date":"2011-08-30T13:09:43.885Z","type":"message"}
+{"nick":"piscisaureus","message":"heh","date":"2011-08-30T13:09:55.201Z","type":"message"}
+{"nick":"piscisaureus","message":"true","date":"2011-08-30T13:09:59.185Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: revoking all digninotar certificates is pretty chauvinistic of those yanks imho","date":"2011-08-30T13:13:12.267Z","type":"message"}
+{"nick":"piscisaureus","message":"if verisign made such a mistake they would not even consider removing one cert","date":"2011-08-30T13:13:12.424Z","type":"message"}
+{"nick":"DrPizza","message":"I think the real problem is that diginotar appears not to have been very forthcoming about what happened.","date":"2011-08-30T13:13:44.142Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't mind diginotar's cert being revoked, serves them right for being incompetent","date":"2011-08-30T13:14:24.194Z","type":"message"}
+{"nick":"piscisaureus","message":"I fully agree","date":"2011-08-30T13:14:37.790Z","type":"message"}
+{"nick":"bnoordhuis","message":"but yes, what if verisign or thawte made a similar error?","date":"2011-08-30T13:14:45.360Z","type":"message"}
+{"nick":"bnoordhuis","message":"s/error/mistake/","date":"2011-08-30T13:14:59.126Z","type":"message"}
+{"nick":"DrPizza","message":"I would like to hope that if evidence emerged that they had been hacked for years, they too would be blacklisted","date":"2011-08-30T13:17:23.145Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303AJ ONeal\u000f \u000307master\u000f * r\u00028039086\u000f \u000310\u000f/ doc/api/querystring.markdown \u0002:\u000f docs: document querystring behavior for arrays and unassigned parameters - http://git.io/AUjEvw","date":"2011-08-30T13:18:12.151Z","type":"message"}
+{"nick":"isaacs","date":"2011-08-30T15:40:00.055Z","type":"join"}
+{"nick":"piscisaureus","message":"bnoordhuisL hey","date":"2011-08-30T15:47:29.671Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: hey","date":"2011-08-30T15:48:31.931Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: ho","date":"2011-08-30T15:48:38.260Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I put a microsd card in a usb card reader. How do I figure out the device name (under linux)?","date":"2011-08-30T15:49:06.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: dmesg | tail","date":"2011-08-30T15:49:40.239Z","type":"message"}
+{"nick":"piscisaureus","message":"ah. sdc :-)","date":"2011-08-30T15:50:09.176Z","type":"message"}
+{"nick":"piscisaureus","message":"I figured it would be something like /dev/usbsomehing","date":"2011-08-30T15:50:25.362Z","type":"message"}
+{"nick":"piscisaureus","message":"or /dev/sr...","date":"2011-08-30T15:50:31.739Z","type":"message"}
+{"nick":"piscisaureus","message":"but sdc that seems weird","date":"2011-08-30T15:51:43.768Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u00026b6f2b1\u000f \u000310\u000f/ src/node_root_certs.h \u0002:\u000f ","date":"2011-08-30T15:53:12.996Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Fixes #1610 Remove DigiNotar CA from trusted list","date":"2011-08-30T15:53:13.158Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Details:","date":"2011-08-30T15:53:13.158Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f https://threatpost.com/en_us/blogs/attackers-obtain-valid-cert-google-domains-mozilla-moves-revoke-it-082911","date":"2011-08-30T15:53:13.158Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f http://www.coriolis-systems.com/blog/2011/08/diginotar-certificate-security.php - http://git.io/ttzxXw","date":"2011-08-30T15:53:13.158Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.4\u000f * r\u0002ef27d56\u000f \u000310\u000f/ src/node_root_certs.h \u0002:\u000f ","date":"2011-08-30T15:53:44.587Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Fixes #1610 Remove DigiNotar CA from trusted list","date":"2011-08-30T15:53:44.748Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Details:","date":"2011-08-30T15:53:44.749Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f https://threatpost.com/en_us/blogs/attackers-obtain-valid-cert-google-domains-mozilla-moves-revoke-it-082911","date":"2011-08-30T15:53:44.749Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f http://www.coriolis-systems.com/blog/2011/08/diginotar-certificate-security.php - http://git.io/sB9N1Q","date":"2011-08-30T15:53:45.072Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: usb storage probably piggybacks on the scsi infrastructure","date":"2011-08-30T15:57:19.043Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's conjecture, i don't know that part of the kernel too well","date":"2011-08-30T15:57:37.443Z","type":"message"}
+{"nick":"DrPizza","message":"everything is SCSI these days","date":"2011-08-30T16:14:54.856Z","type":"message"}
+{"nick":"ryah","message":"we should have a method of autoimporting the cert list from chromium","date":"2011-08-30T16:38:00.294Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: fyi i usually strip the Werror ","date":"2011-08-30T16:41:08.783Z","type":"message"}
+{"nick":"ryah","message":"from v8","date":"2011-08-30T16:41:17.015Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: good, let's make it a rule","date":"2011-08-30T16:41:47.326Z","type":"message"}
+{"nick":"bnoordhuis","message":"re auto-importing cert list: does chromium generate the list with that same perl script mozilla uses?","date":"2011-08-30T16:42:34.962Z","type":"message"}
+{"nick":"ryah","message":"*shrug*","date":"2011-08-30T16:43:13.820Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: http://codereview.chromium.org/7806011","date":"2011-08-30T16:44:57.468Z","type":"message"}
+{"nick":"ryah","message":"DrPizza: they took it","date":"2011-08-30T16:45:00.382Z","type":"message"}
+{"nick":"ryah","message":"i find this strange too","date":"2011-08-30T16:45:07.500Z","type":"message"}
+{"nick":"rmustacc","date":"2011-08-30T16:45:22.278Z","type":"join"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303Ryan Dahl\u000f \u000307master\u000f * r\u0002d8f7a86\u000f \u000310\u000f/ (3 files in 2 dirs)\u0002:\u000f Strip V8 -Werror - http://git.io/JDVn2g","date":"2011-08-30T16:49:30.515Z","type":"message"}
+{"nick":"ryah","message":"^- bnoordhuis ","date":"2011-08-30T16:49:36.828Z","type":"message"}
+{"nick":"bnoordhuis","message":"good :)","date":"2011-08-30T16:49:43.077Z","type":"message"}
+{"nick":"ryah","message":"i feel like they should only have -Werror in build/standalone.gypi","date":"2011-08-30T16:50:11.740Z","type":"message"}
+{"nick":"ryah","message":"it's very annoying","date":"2011-08-30T16:50:22.385Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i believe i've brokne about 1,000,000 tests last night","date":"2011-08-30T16:53:36.518Z","type":"message"}
+{"nick":"bnoordhuis","message":"at the very least you broke the build :)","date":"2011-08-30T16:53:58.546Z","type":"message"}
+{"nick":"ryah","message":"oh - is it okay now?","date":"2011-08-30T16:54:10.285Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep, that patch from japj fixed it","date":"2011-08-30T16:54:17.757Z","type":"message"}
+{"nick":"ryah","message":"k","date":"2011-08-30T16:54:20.825Z","type":"message"}
+{"nick":"ryah","message":"i'll fix about 500,000 of the broken tests today","date":"2011-08-30T16:54:37.021Z","type":"message"}
+{"nick":"ryah","message":"the remaining will be difficult","date":"2011-08-30T16:54:44.977Z","type":"message"}
+{"nick":"ryah","message":"but we're off pthread-win32","date":"2011-08-30T16:54:51.895Z","type":"message"}
+{"nick":"ryah","message":"and windows doesnt depend on eio","date":"2011-08-30T16:54:57.686Z","type":"message"}
+{"nick":"bnoordhuis","message":"sounds good","date":"2011-08-30T16:55:22.585Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: still on target for multiplicity?","date":"2011-08-30T17:01:34.973Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-30T17:01:45.269Z","type":"message"}
+{"nick":"piscisaureus","message":"well","date":"2011-08-30T17:01:47.930Z","type":"message"}
+{"nick":"piscisaureus","message":"I'm not actually doing it","date":"2011-08-30T17:02:00.700Z","type":"message"}
+{"nick":"piscisaureus","message":"just making sure that the main loop works","date":"2011-08-30T17:02:07.457Z","type":"message"}
+{"nick":"piscisaureus","message":"and update the function signatures","date":"2011-08-30T17:02:22.181Z","type":"message"}
+{"nick":"piscisaureus","message":"so we can move on with our lives","date":"2011-08-30T17:02:43.829Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2011-08-30T17:02:47.563Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2011-08-30T17:02:48.893Z","type":"message"}
+{"nick":"ryah","message":"racing against the clock","date":"2011-08-30T17:02:57.999Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: how odd","date":"2011-08-30T17:04:15.803Z","type":"message"}
+{"nick":"DrPizza","message":"ryah: did you need to make teh gyp change to make things actually work?","date":"2011-08-30T17:04:26.986Z","type":"message"}
+{"nick":"DrPizza","message":"because I'm not even sure how 0.5.5 could build if it actually needs that modification","date":"2011-08-30T17:04:59.486Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder why v8 needs -lwinmm","date":"2011-08-30T17:10:29.779Z","type":"message"}
+{"nick":"DrPizza","message":"probably adjusts timers","date":"2011-08-30T17:10:37.330Z","type":"message"}
+{"nick":"DrPizza","message":"that's the normal reason why something that has no obvious media usage links winmm","date":"2011-08-30T17:10:57.300Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2011-08-30T17:12:14.246Z","type":"message"}
+{"nick":"piscisaureus","message":"I can't think of any winmm export that v8 might use","date":"2011-08-30T17:12:26.531Z","type":"message"}
+{"nick":"DrPizza","message":"timeGetTime","date":"2011-08-30T17:14:22.140Z","type":"message"}
+{"nick":"DrPizza","message":"that's the only thing node.exe imports from winmm","date":"2011-08-30T17:15:02.496Z","type":"message"}
+{"nick":"DrPizza","message":"which is dumb","date":"2011-08-30T17:15:05.450Z","type":"message"}
+{"nick":"piscisaureus","message":"Why don't they just use GetTickCount?","date":"2011-08-30T17:15:14.384Z","type":"message"}
+{"nick":"DrPizza","message":"it's not even increasing precision","date":"2011-08-30T17:15:16.481Z","type":"message"}
+{"nick":"DrPizza","message":"I have no idea","date":"2011-08-30T17:15:28.154Z","type":"message"}
+{"nick":"DrPizza","message":"if it were using timeBeginPeriod to increase teh clock resolution I could understand that","date":"2011-08-30T17:15:51.776Z","type":"message"}
+{"nick":"DrPizza","message":"but using timeGetTime makes no sense","date":"2011-08-30T17:15:56.462Z","type":"message"}
+{"nick":"piscisaureus","message":"http://blogs.msdn.com/b/larryosterman/archive/2009/09/02/what-s-the-difference-between-gettickcount-and-timegettime.aspx","date":"2011-08-30T17:17:53.672Z","type":"message"}
+{"nick":"DrPizza","message":"how fucking weird","date":"2011-08-30T17:19:02.070Z","type":"message"}
+{"nick":"DrPizza","message":"the whole battery life argument is a fucking scam","date":"2011-08-30T17:20:37.577Z","type":"message"}
+{"nick":"DrPizza","message":"use a tickless kernel ffs","date":"2011-08-30T17:20:40.154Z","type":"message"}
+{"nick":"brson","date":"2011-08-30T17:23:59.692Z","type":"join"}
+{"nick":"graydon","date":"2011-08-30T17:25:40.153Z","type":"join"}
+{"nick":"ryah","message":"DrPizza: yeah - it wasn't building without ws2_32","date":"2011-08-30T17:26:05.817Z","type":"message"}
+{"nick":"DrPizza","message":"wat","date":"2011-08-30T17:26:13.004Z","type":"message"}
+{"nick":"ryah","message":"got link errors","date":"2011-08-30T17:26:13.412Z","type":"message"}
+{"nick":"DrPizza","message":"then something has changed","date":"2011-08-30T17:26:20.079Z","type":"message"}
+{"nick":"DrPizza","message":"something weird must be going on","date":"2011-08-30T17:26:34.275Z","type":"message"}
+{"nick":"ryah","message":"i upgraded v8 yestreday - they did a bunch of work on gyp files","date":"2011-08-30T17:26:35.461Z","type":"message"}
+{"nick":"DrPizza","message":"hmmm","date":"2011-08-30T17:26:39.417Z","type":"message"}
+{"nick":"DrPizza","message":"that still seems strange to me, since node.exe should still be pulling in ws2_32 due to libuv","date":"2011-08-30T17:26:59.852Z","type":"message"}
+{"nick":"ryah","message":"git show da00ff4999bd26e2c17df1f84d090d3b3296e043 -- deps/v8/build deps/v8/tools/gyp","date":"2011-08-30T17:27:36.550Z","type":"message"}
+{"nick":"ryah","message":"it might be because of the mksnapshot","date":"2011-08-30T17:27:55.180Z","type":"message"}
+{"nick":"DrPizza","message":"oh!","date":"2011-08-30T17:28:02.863Z","type":"message"}
+{"nick":"DrPizza","message":"yes","date":"2011-08-30T17:28:03.598Z","type":"message"}
+{"nick":"DrPizza","message":"I forgot that v8 produces its own .exe files","date":"2011-08-30T17:28:13.143Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 264 seconds","date":"2011-08-30T17:45:02.256Z","type":"quit"}
+{"nick":"bnoordhuis","message":"ryah piscisaureus: conference call?","date":"2011-08-30T17:56:37.777Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-30T17:59:44.624Z","type":"message"}
+{"nick":"piscisaureus","message":"calling in","date":"2011-08-30T17:59:46.919Z","type":"message"}
+{"nick":"arlolra","date":"2011-08-30T18:03:23.311Z","type":"join"}
+{"nick":"arlolra","date":"2011-08-30T18:04:00.133Z","type":"part"}
+{"nick":"bnoordhuis","message":"ryah: hurry!","date":"2011-08-30T18:04:34.203Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: quick quick","date":"2011-08-30T18:04:38.626Z","type":"message"}
+{"nick":"rmustacc","message":"Want me to ping him?","date":"2011-08-30T18:07:19.634Z","type":"message"}
+{"nick":"piscisaureus","message":"yes","date":"2011-08-30T18:07:25.199Z","type":"message"}
+{"nick":"rmustacc","message":"He got caught up in a v8 debugging session.","date":"2011-08-30T18:07:29.729Z","type":"message"}
+{"nick":"piscisaureus","message":"rmustacc: do that!","date":"2011-08-30T18:07:31.320Z","type":"message"}
+{"nick":"rmustacc","message":"On it.","date":"2011-08-30T18:07:32.455Z","type":"message"}
+{"nick":"ryah","message":"hey","date":"2011-08-30T18:08:32.589Z","type":"message"}
+{"nick":"ryah","message":"one sec","date":"2011-08-30T18:08:37.043Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: on the phone","date":"2011-08-30T18:09:39.842Z","type":"message"}
+{"nick":"ryah","message":"ohokay","date":"2011-08-30T18:09:52.773Z","type":"message"}
+{"nick":"ryah","message":"with ben?","date":"2011-08-30T18:09:57.096Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2011-08-30T18:10:00.421Z","type":"message"}
+{"nick":"ryah","message":"cn you invite me","date":"2011-08-30T18:10:05.945Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: weekly call","date":"2011-08-30T18:10:06.105Z","type":"message"}
+{"nick":"bnoordhuis","message":"and msft","date":"2011-08-30T18:10:07.799Z","type":"message"}
+{"nick":"piscisaureus","message":"+18883203585","date":"2011-08-30T18:10:10.431Z","type":"message"}
+{"nick":"ryah","message":"oh shit right","date":"2011-08-30T18:10:13.661Z","type":"message"}
+{"nick":"piscisaureus","message":"36815906","date":"2011-08-30T18:10:15.891Z","type":"message"}
+{"nick":"pquerna","message":"ps, try google+ for standups/calls.... we've been using it on our scrums, way better than phone","date":"2011-08-30T18:10:50.717Z","type":"message"}
+{"nick":"bnoordhuis","message":"sorry, phone's out of juice","date":"2011-08-30T18:27:58.372Z","type":"message"}
+{"nick":"bnoordhuis","message":"pquerna: we usually skype but the msft thing is old fashioned POTS","date":"2011-08-30T18:30:25.639Z","type":"message"}
+{"nick":"bnoordhuis","message":"/bin/sh: ./tools/gyp_node: not found","date":"2011-08-30T18:52:05.912Z","type":"message"}
+{"nick":"bnoordhuis","message":"*sigh*","date":"2011-08-30T18:52:07.820Z","type":"message"}
+{"nick":"bnoordhuis","message":"(on the second make)","date":"2011-08-30T18:52:28.251Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i <3 how gyp compiles with -Wall -Wextra","date":"2011-08-30T19:00:53.668Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f \u000303koichik\u000f \u000307master\u000f * r\u00026f60683\u000f \u000310\u000f/ (4 files in 4 dirs)\u0002:\u000f ","date":"2011-08-30T19:06:34.713Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f tls: x509 certificate subject parsing fail","date":"2011-08-30T19:06:34.868Z","type":"message"}
+{"nick":"CIA-75","message":"\u0002node:\u000f Fixes #1568. - http://git.io/TV-HfQ","date":"2011-08-30T19:06:34.868Z","type":"message"}
+{"nick":"bentkus","message":"piscisaureus: you meant to call someone else?","date":"2011-08-30T19:13:28.819Z","type":"message"}
+{"nick":"mraleph","date":"2011-08-30T19:22:38.915Z","type":"join"}
+{"nick":"ryah","message":"mraleph: ","date":"2011-08-30T19:23:51.515Z","type":"message"}
+{"nick":"ryah","message":"i have a problem","date":"2011-08-30T19:23:57.103Z","type":"message"}
+{"nick":"ryah","message":"https://gist.github.com/1181777","date":"2011-08-30T19:24:03.844Z","type":"message"}
+{"nick":"ryah","message":"^-- what do you think about this","date":"2011-08-30T19:24:11.711Z","type":"message"}
+{"nick":"ryah","message":"chrome doesn't seem to crash on it but node does","date":"2011-08-30T19:25:26.238Z","type":"message"}
+{"nick":"mraleph","message":"chrome does not crash?","date":"2011-08-30T19:28:14.832Z","type":"message"}
+{"nick":"ryah","message":"no","date":"2011-08-30T19:29:07.222Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: we need to stop adding buffer methods - TypedArrays is the only future","date":"2011-08-30T19:29:30.252Z","type":"message"}
+{"nick":"mraleph","message":"well it says: \"script on the page used too much memory. reload to enable scripts again\"","date":"2011-08-30T19:29:50.982Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: fine by me","date":"2011-08-30T19:30:01.982Z","type":"message"}
+{"nick":"bnoordhuis","message":"*with","date":"2011-08-30T19:30:42.457Z","type":"message"}
+{"nick":"ryah","message":"mraleph: oh - i see that too","date":"2011-08-30T19:31:15.289Z","type":"message"}
+{"nick":"ryah","message":"mraleph: nevermind","date":"2011-08-30T19:31:18.508Z","type":"message"}
+{"nick":"mraleph","message":"ryah: you can do like them http://codesearch.google.com/#OAMlx_jo-ck/src/third_party/WebKit/Source/WebCore/bindings/v8/V8DOMWindowShell.cpp&exact_package=chromium&q=IgnoreOutOfMemory&type=cs&l=291","date":"2011-08-30T19:31:22.232Z","type":"message"}
+{"nick":"mraleph","message":"ryah: but OOM recovery is not very stable. basically you have to through v8 instance away","date":"2011-08-30T19:31:52.314Z","type":"message"}
+{"nick":"mraleph","message":"*throw","date":"2011-08-30T19:31:58.038Z","type":"message"}
+{"nick":"ryah","message":"mraleph: why is it getting that? it doesn't seem like its near the heap limit","date":"2011-08-30T19:32:24.203Z","type":"message"}
+{"nick":"mraleph","message":"hmm. does not it try to allocate L*2^100 at the end?","date":"2011-08-30T19:33:19.254Z","type":"message"}
+{"nick":"mraleph","message":"ah","date":"2011-08-30T19:33:41.355Z","type":"message"}
+{"nick":"mraleph","message":"I am stupid","date":"2011-08-30T19:33:46.857Z","type":"message"}
+{"nick":"mraleph","message":"it's probably just the limit on the string length that kicks in","date":"2011-08-30T19:34:01.398Z","type":"message"}
+{"nick":"mraleph","message":"obviously it allocates almost nothing","date":"2011-08-30T19:34:12.389Z","type":"message"}
+{"nick":"ryah","message":"what's the string length limit","date":"2011-08-30T19:35:25.003Z","type":"message"}
+{"nick":"mraleph","message":"http://codesearch.google.com/#W9JxUuHYyMg/trunk/src/heap.cc&q=String::kMaxLength&type=cs&l=2552","date":"2011-08-30T19:36:23.694Z","type":"message"}
+{"nick":"mraleph","message":"  static const int kMaxLength = (1 << (32 - 2)) - 1;","date":"2011-08-30T19:36:25.426Z","type":"message"}
+{"nick":"ryah","message":"thanks","date":"2011-08-30T19:46:29.175Z","type":"message"}
+{"nick":"bnoordhuis","message":"/usr/bin/ld.bfd.real: cannot find -lstdc++","date":"2011-08-30T20:11:15.168Z","type":"message"}
+{"nick":"bnoordhuis","message":"stab stab stab","date":"2011-08-30T20:11:17.700Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: i bet it's the arch","date":"2011-08-30T20:19:54.243Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2011-08-30T20:20:15.165Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can get it to compile properly when i strip out the -m32 switches","date":"2011-08-30T20:20:30.242Z","type":"message"}
+{"nick":"bnoordhuis","message":"mraleph: question: why does v8 compile with -fdata-sections -ffunction-sections?","date":"2011-08-30T20:20:44.382Z","type":"message"}
+{"nick":"bnoordhuis","message":"./node: error while loading shared libraries: libssl.so.1.1.0: cannot open shared object file: No such file or directory","date":"2011-08-30T20:32:22.116Z","type":"message"}
+{"nick":"bnoordhuis","action":"soldiers on","date":"2011-08-30T20:32:24.735Z","type":"action"}
+{"nick":"mraleph","message":"bnoordhuis: dunno","date":"2011-08-30T20:34:28.829Z","type":"message"}
+{"nick":"bnoordhuis","message":"mraleph: remove it? i don't think it speeds up anything on x86 and it makes the binaries bigger","date":"2011-08-30T20:35:49.747Z","type":"message"}
+{"nick":"mraleph","message":"hmm","date":"2011-08-30T20:36:16.473Z","type":"message"}
+{"nick":"mraleph","message":"maybe it does some magic","date":"2011-08-30T20:36:35.317Z","type":"message"}
+{"nick":"mraleph","message":"there should be a reasonfor that","date":"2011-08-30T20:37:05.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, let me know if you ever find out what it is, i'd be curious","date":"2011-08-30T20:37:22.159Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: probably if you svn blame SConstruct you can fine out","date":"2011-08-30T20:40:02.722Z","type":"message"}
+{"nick":"bnoordhuis","message":"This makes --gc-sections perform better, as the GC operates on whole sections.  This makes a worthwhile binary size decrease in the Chromium Linux build.","date":"2011-08-30T20:41:53.032Z","type":"message"}
+{"nick":"ryah","message":"http://code.google.com/p/v8/source/detail?spec=svn1598&r=1598","date":"2011-08-30T20:41:53.764Z","type":"message"}
+{"nick":"bnoordhuis","message":"show me the numbers, deanm!","date":"2011-08-30T20:42:03.712Z","type":"message"}
+{"nick":"rmustacc","message":"bnoordhuis: It appears to make each function into its own ELF section.","date":"2011-08-30T20:42:23.508Z","type":"message"}
+{"nick":"rmustacc","message":"Assuming the target supports it.","date":"2011-08-30T20:42:34.492Z","type":"message"}
+{"nick":"ryah","message":"deanm is the guy who wrote our typedarray stuff btw","date":"2011-08-30T20:42:44.883Z","type":"message"}
+{"nick":"rmustacc","message":"The gcc man page mentions that it can be used to 'improve locality of reference in the instruction space' assuming the linker supports it.","date":"2011-08-30T20:43:40.402Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmustacc: i doubt it actually helps","date":"2011-08-30T20:43:58.994Z","type":"message"}
+{"nick":"rmustacc","message":"Oh I doubt it does either.","date":"2011-08-30T20:44:07.511Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll play around with it when i have some time to kill","date":"2011-08-30T20:44:09.152Z","type":"message"}
+{"nick":"rmustacc","message":"Especially since the systems they mention are the old Solaris 2/SPARC and AIX.","date":"2011-08-30T20:44:24.072Z","type":"message"}
+{"nick":"brson","date":"2011-08-30T21:42:40.116Z","type":"join"}
+{"nick":"bnoordhuis","message":"ryah: https://github.com/joyent/node/issues/1609#issuecomment-1945327","date":"2011-08-30T22:08:18.321Z","type":"message"}
+{"nick":"ryah","reason":"*.net *.split","date":"2011-08-30T22:44:10.412Z","type":"quit"}
+{"nick":"jmp0","reason":"*.net *.split","date":"2011-08-30T22:44:10.572Z","type":"quit"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2011-08-30T22:47:36.212Z","type":"quit"}
+{"nick":"ryah","date":"2011-08-30T22:54:27.116Z","type":"join"}
+{"nick":"jmp0","date":"2011-08-30T22:54:27.276Z","type":"join"}
+{"nick":"DrPizza","reason":"Excess Flood","date":"2011-08-30T22:54:29.092Z","type":"quit"}
+{"nick":"DrPizza","date":"2011-08-30T22:54:33.313Z","type":"join"}
+{"nick":"piscisaureus","message":"is there a shortcut for \"go to next message\" in msvs?","date":"2011-08-30T22:57:48.640Z","type":"message"}
+{"nick":"DrPizza","message":"that is a good question","date":"2011-08-30T23:00:53.301Z","type":"message"}
+{"nick":"DrPizza","message":"that would be quite handy","date":"2011-08-30T23:00:56.675Z","type":"message"}
+{"nick":"DrPizza","message":"I do not know of one","date":"2011-08-30T23:01:01.806Z","type":"message"}
+{"nick":"ryah","reason":"*.net *.split","date":"2011-08-30T23:03:20.849Z","type":"quit"}
+{"nick":"jmp0","reason":"*.net *.split","date":"2011-08-30T23:03:21.006Z","type":"quit"}
+{"nick":"ryah","date":"2011-08-30T23:05:23.348Z","type":"join"}
+{"nick":"jmp0","date":"2011-08-30T23:05:23.508Z","type":"join"}
+{"nick":"DrPizza","reason":"Excess Flood","date":"2011-08-30T23:05:34.587Z","type":"quit"}
+{"nick":"DrPizza_","date":"2011-08-30T23:05:34.749Z","type":"join"}
+{"nick":"bnoordhuis","message":"http://www.youtube.com/watch?v=Ek47x0wUeg4 <- feel what you want, kristine w","date":"2011-08-30T23:06:55.300Z","type":"message"}
+{"nick":"bnoordhuis","message":"1994...","date":"2011-08-30T23:07:03.526Z","type":"message"}
+{"nick":"bnoordhuis","message":"i feel old now","date":"2011-08-30T23:07:05.814Z","type":"message"}
+{"nick":"DrPizza_","new_nick":"DrPizza","date":"2011-08-30T23:07:07.280Z","type":"nick"}
+{"nick":"piscisaureus","message":"DrPizza: ok it's f4","date":"2011-08-30T23:12:14.203Z","type":"message"}
+{"nick":"piscisaureus","message":"btw multiplicity is so damn annoying","date":"2011-08-30T23:12:21.623Z","type":"message"}
+{"nick":"DrPizza","message":"heh","date":"2011-08-30T23:12:24.881Z","type":"message"}
