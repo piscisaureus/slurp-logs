@@ -316,3 +316,427 @@
 {"nick":"felixge","date":"2012-03-07T15:36:56.983Z","type":"join"}
 {"nick":"piscisaureus_","message":"indutny: I saw that you once sent a pull request for uv_uptime on windows. Why did that never get landed?","date":"2012-03-07T15:45:08.215Z","type":"message"}
 {"nick":"piscisaureus_","message":"The other implementations did, right?","date":"2012-03-07T15:45:17.546Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: dunno","date":"2012-03-07T16:03:18.219Z","type":"message"}
+{"nick":"indutny","message":"can't remember","date":"2012-03-07T16:03:21.246Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: https://github.com/joyent/libuv/issues/203","date":"2012-03-07T16:03:53.978Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: it looks like we blatantly ignored your PR and igorzi implemented all of it :-)","date":"2012-03-07T16:04:09.729Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: that's bad style, sorry","date":"2012-03-07T16:04:20.814Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: hahahaha","date":"2012-03-07T16:04:21.484Z","type":"message"}
+{"nick":"indutny","message":"np","date":"2012-03-07T16:04:23.696Z","type":"message"}
+{"nick":"indutny","message":"I forgot about it","date":"2012-03-07T16:04:26.067Z","type":"message"}
+{"nick":"indutny","message":":D","date":"2012-03-07T16:04:37.306Z","type":"message"}
+{"nick":"indutny","message":"brb","date":"2012-03-07T16:04:43.107Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: did you review those PRs?","date":"2012-03-07T16:16:38.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes.","date":"2012-03-07T16:18:55.449Z","type":"message"}
+{"nick":"bnoordhuis","message":"and?","date":"2012-03-07T16:20:19.584Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, just got the github notification email","date":"2012-03-07T16:20:38.216Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you should benchmark my v8string branch again with bytes/xxx","date":"2012-03-07T16:22:06.564Z","type":"message"}
+{"nick":"isaacs","date":"2012-03-07T16:23:24.856Z","type":"join"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Shea Levy\u000f \u000307master\u000f * r\u0002024451c\u000f \u000310\u000f/ lib/child_process.js \u0002:\u000f ","date":"2012-03-07T16:26:42.617Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f fork: don't clear environment by default","date":"2012-03-07T16:26:42.810Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f - Set options.env to process.env instead of {} by default.","date":"2012-03-07T16:26:42.811Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f - Shallow clone the passed options.env in case the user passed process.env directly. - http://git.io/gaeQIQ","date":"2012-03-07T16:26:42.811Z","type":"message"}
+{"nick":"AndreasMadsen","message":"Could someone take a look at this PR https://github.com/joyent/node/pull/706 , I just faced that issue.","date":"2012-03-07T16:28:57.910Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/bnoordhuis/node/compare/v8tls <- quick win!","date":"2012-03-07T16:30:31.008Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can you review https://github.com/igorzi/node/commit/cfd18dbcc6060d97d30a1f2088fa605041443fdd? I think you are more familiar with that code.","date":"2012-03-07T16:30:38.093Z","type":"message"}
+{"nick":"bnoordhuis","message":"shaves off a couple of percentage points on http_simple","date":"2012-03-07T16:30:51.288Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-03-07T16:31:03.926Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i've seen that patch. didn't test it but generally lgtm","date":"2012-03-07T16:31:55.129Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I have a new approach for writing strings to sockets in my v8string branch, which makes a nice win.","date":"2012-03-07T16:32:03.230Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, i'll test that in a bit","date":"2012-03-07T16:32:12.369Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: The idea is to not create a Buffer object in js land, but just export the string to a malloced region.","date":"2012-03-07T16:32:41.078Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: this way we don't have all that overhead, plus we don't stress the (new Buffer) slab","date":"2012-03-07T16:33:08.766Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, let me pull from your repo","date":"2012-03-07T16:33:26.866Z","type":"message"}
+{"nick":"bnoordhuis","message":"you still haven't fixed the merge conflicts :)","date":"2012-03-07T16:33:54.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I also did another trick. I overallocate the memory so we don't need to compute the utf8 length, and we can do an unchecked write.","date":"2012-03-07T16:34:16.058Z","type":"message"}
+{"nick":"bnoordhuis","message":"unchecked meaning?","date":"2012-03-07T16:34:32.595Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: eventually I want to disable that for very long strings but for small ones it should be fine","date":"2012-03-07T16:34:32.958Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: not checking for target buffer overflow in the copy-convert code","date":"2012-03-07T16:34:57.060Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh okay. what could possibly go wrong, right?","date":"2012-03-07T16:35:43.707Z","type":"message"}
+{"nick":"piscisaureus_","message":"https://github.com/piscisaureus/node/commit/cc65a2b4a164cb2d4e62fc763ebe2fe6263b2d1f","date":"2012-03-07T16:35:53.055Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T16:41:42.258Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#566 (master - 024451c : Shea Levy): The build is still failing.","date":"2012-03-07T16:41:42.461Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/c84b3c4...024451c","date":"2012-03-07T16:41:42.461Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/815170","date":"2012-03-07T16:41:42.461Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T16:41:42.461Z","type":"part"}
+{"nick":"dap","date":"2012-03-07T16:53:00.473Z","type":"join"}
+{"nick":"stephank","date":"2012-03-07T16:53:29.755Z","type":"join"}
+{"nick":"perezd","date":"2012-03-07T17:04:16.801Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that's what it looks like: https://gist.github.com/b4f7ef6e85420e06894a","date":"2012-03-07T17:06:12.595Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so what's the numbers","date":"2012-03-07T17:08:30.934Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: callgrind is nice but it is not very meaningful to me","date":"2012-03-07T17:09:09.437Z","type":"message"}
+{"nick":"isaacs","new_nick":"rms","date":"2012-03-07T17:09:37.238Z","type":"nick"}
+{"nick":"bnoordhuis","message":"it's still quite a bit slower","date":"2012-03-07T17:09:37.639Z","type":"message"}
+{"nick":"piscisaureus_","message":"huh","date":"2012-03-07T17:09:49.066Z","type":"message"}
+{"nick":"rms","new_nick":"isaacs","date":"2012-03-07T17:09:49.718Z","type":"nick"}
+{"nick":"piscisaureus_","message":"no fucking way","date":"2012-03-07T17:09:52.921Z","type":"message"}
+{"nick":"bnoordhuis","message":"you'll have to wait a bit because i'm recompiling everything again...","date":"2012-03-07T17:09:56.197Z","type":"message"}
+{"nick":"isaacs","new_nick":"rms","date":"2012-03-07T17:10:00.667Z","type":"nick"}
+{"nick":"rms","new_nick":"Guest43961","date":"2012-03-07T17:10:06.624Z","type":"nick"}
+{"nick":"Guest43961","new_nick":"isaacs","date":"2012-03-07T17:10:27.933Z","type":"nick"}
+{"nick":"isaacs","message":"piscisaureus_: got a sec for my windows noobishness?","date":"2012-03-07T17:11:36.286Z","type":"message"}
+{"nick":"isaacs","message":"http://pastie.org/pastes/3535889/text","date":"2012-03-07T17:11:36.804Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: how do i reproduce this?  i can't cd into a UNC path, it looks like","date":"2012-03-07T17:11:47.019Z","type":"message"}
+{"nick":"isaacs","message":"ERR! cwd \\\\davidebb-main\\d$\\test\\NpmTest ","date":"2012-03-07T17:12:09.399Z","type":"message"}
+{"nick":"isaacs","message":"C:\\Users\\Isaac Schlueter\\project>cd \\\\WIN-7KF3EPK4B6V\\$C\\Users","date":"2012-03-07T17:12:27.372Z","type":"message"}
+{"nick":"isaacs","message":"'\\\\WIN-7KF3EPK4B6V\\$C\\Users'","date":"2012-03-07T17:12:27.572Z","type":"message"}
+{"nick":"isaacs","message":"CMD does not support UNC paths as current directories.","date":"2012-03-07T17:12:27.573Z","type":"message"}
+{"nick":"isaacs","message":"er, should be C$ not $C, but still, same error","date":"2012-03-07T17:12:50.624Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that's true","date":"2012-03-07T17:12:53.047Z","type":"message"}
+{"nick":"isaacs","message":"so... how do you run npm in a UNC path cwd, if you can't cd into it?","date":"2012-03-07T17:13:04.989Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: from powershell","date":"2012-03-07T17:13:14.662Z","type":"message"}
+{"nick":"isaacs","message":"oohhh.... ok","date":"2012-03-07T17:13:18.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"enter \"powershell\"","date":"2012-03-07T17:13:36.146Z","type":"message"}
+{"nick":"isaacs","message":"'\\\\WIN-7KF3EPK4B6V\\C$\\Users\\Isaac Schlueter\\project'","date":"2012-03-07T17:14:25.329Z","type":"message"}
+{"nick":"isaacs","message":"CMD.EXE was started with the above path as the current directory.","date":"2012-03-07T17:14:25.525Z","type":"message"}
+{"nick":"isaacs","message":"UNC paths are not supported.  Defaulting to Windows directory.","date":"2012-03-07T17:14:25.525Z","type":"message"}
+{"nick":"isaacs","message":"C:\\Windows","date":"2012-03-07T17:14:26.914Z","type":"message"}
+{"nick":"isaacs","message":"(empty)","date":"2012-03-07T17:14:28.861Z","type":"message"}
+{"nick":"isaacs","message":"that's hilarious","date":"2012-03-07T17:14:33.958Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that happens if you invoke cmd.exe from powershell","date":"2012-03-07T17:15:33.594Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: can you rebase your v8string branch against master?","date":"2012-03-07T17:15:37.626Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2012-03-07T17:15:45.337Z","type":"action"}
+{"nick":"isaacs","message":"piscisaureus_: right, but since we don't have #! support in windows, that's how npm works","date":"2012-03-07T17:16:34.320Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah. so thell the people complaining about that they have to invoke npm manually or map the share to a local drive","date":"2012-03-07T17:22:26.239Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: well, but that's just it.  they're managing to invoke npm, but i'm not sure how.","date":"2012-03-07T17:23:25.935Z","type":"message"}
+{"nick":"isaacs","message":"and when i invoke it manually (c:\\....\\node c:\\...\\npm\\cli.js install) it works fine","date":"2012-03-07T17:23:44.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: where's the bug?","date":"2012-03-07T17:25:16.786Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I rebased the v8string branch","date":"2012-03-07T17:25:38.350Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: also for me bytes/1024 is quite a bit faster","date":"2012-03-07T17:25:59.023Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: https://github.com/isaacs/npm/issues/2230","date":"2012-03-07T17:26:00.838Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: minor thing, but tools/installer.js isn't being linted","date":"2012-03-07T17:27:13.950Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: can you derive from that log which command is failing?","date":"2012-03-07T17:29:51.389Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that log <- http://pastie.org/pastes/3535889/text","date":"2012-03-07T17:30:02.506Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: hm.  yeah, js files in tools probably should be linted as well.","date":"2012-03-07T17:31:27.277Z","type":"message"}
+{"nick":"isaacs","message":"if we own them, anyway","date":"2012-03-07T17:31:32.875Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-03-07T17:31:40.825Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: i just commented on the bug","date":"2012-03-07T17:31:46.406Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: want a pull request or something?","date":"2012-03-07T17:31:50.657Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think the previous install failed, and npm isnt' as aggressive about cleaning up the cache as it should be on failure.","date":"2012-03-07T17:32:01.584Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: sure :)","date":"2012-03-07T17:32:03.382Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, the guy told you in the bug report that he was invoking it from powershell :-)","date":"2012-03-07T17:33:05.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you didn't read it well","date":"2012-03-07T17:33:11.216Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but anyway, this UNKNOWN error has to be fixed","date":"2012-03-07T17:33:28.439Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but I can't tell from the log where it originates","date":"2012-03-07T17:33:46.724Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it says","date":"2012-03-07T17:34:11.946Z","type":"message"}
+{"nick":"piscisaureus_","message":"ERR! error installing mkdirp@0.0.7","date":"2012-03-07T17:34:12.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"info unbuild \\\\davidebb-main\\d$\\test\\NpmTest\\node_modules\\mkdirp","date":"2012-03-07T17:34:12.593Z","type":"message"}
+{"nick":"piscisaureus_","message":"ERR! error rolling back mkdirp@0.0.7 Error: UNKNOWN, unknown error '\\\\davidebb-main\\d$\\test\\NpmTest\\node_modules\\mkdirp'","date":"2012-03-07T17:34:12.593Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that would be where it's trying to remove a directory","date":"2012-03-07T17:34:44.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"aha","date":"2012-03-07T17:34:56.238Z","type":"message"}
+{"nick":"isaacs","message":"he said he's invoking it from powershell, but he's gotta be invoking it with the full path to the npm js file, which must be super painful","date":"2012-03-07T17:35:10.070Z","type":"message"}
+{"nick":"isaacs","message":"is there some kind of like npm.psh that we should be providing along with the cmd, maybe?","date":"2012-03-07T17:35:23.464Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, you could do that.","date":"2012-03-07T17:35:43.921Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but as he explains he is not normally doing that. I think they are building an automated NPM install tool for azure.","date":"2012-03-07T17:36:02.146Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so npm would be invoked programmatically","date":"2012-03-07T17:36:18.089Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-03-07T17:36:24.479Z","type":"quit"}
+{"nick":"isaacs","message":"right","date":"2012-03-07T17:36:47.170Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: point them at haibu (we do it right (tm))","date":"2012-03-07T17:37:15.640Z","type":"message"}
+{"nick":"piscisaureus_","message":"mmalecki: steveb@microsoft.com","date":"2012-03-07T17:37:33.665Z","type":"message"}
+{"nick":"mmalecki","message":"piscisaureus_: Steve Ballmer?","date":"2012-03-07T17:38:09.620Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: there is some rmdir retry code in NPM to work around locked directories right?","date":"2012-03-07T17:40:00.277Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i don't think so","date":"2012-03-07T17:41:29.860Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: oh, wait, maybe","date":"2012-03-07T17:41:33.309Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, if it gets an EBUSY, then it retries up to 3 times","date":"2012-03-07T17:42:00.944Z","type":"message"}
+{"nick":"isaacs","message":"      if (er.code === \"EBUSY\" && busyTries < exports.BUSYTRIES_MAX) {","date":"2012-03-07T17:42:09.175Z","type":"message"}
+{"nick":"isaacs","message":"        var time = (exports.BUSYTRIES_MAX - busyTries) * 100","date":"2012-03-07T17:42:09.381Z","type":"message"}
+{"nick":"isaacs","message":"        busyTries ++","date":"2012-03-07T17:42:09.381Z","type":"message"}
+{"nick":"isaacs","message":"        // try again, with the same exact callback as this one.","date":"2012-03-07T17:42:11.514Z","type":"message"}
+{"nick":"isaacs","message":"        return setTimeout(function () {","date":"2012-03-07T17:42:12.697Z","type":"message"}
+{"nick":"isaacs","message":"          rimraf_(p, CB)","date":"2012-03-07T17:42:14.640Z","type":"message"}
+{"nick":"isaacs","message":"        })","date":"2012-03-07T17:42:16.730Z","type":"message"}
+{"nick":"igorzi_","date":"2012-03-07T17:42:17.987Z","type":"join"}
+{"nick":"isaacs","message":"      }","date":"2012-03-07T17:42:18.694Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah. It seems that windows reports a different error when a remote directory is locked, so we report UNKNOWN","date":"2012-03-07T17:42:50.423Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh wait - heh","date":"2012-03-07T17:43:10.937Z","type":"message"}
+{"nick":"piscisaureus_","message":"we always report UNNOWN","date":"2012-03-07T17:43:17.216Z","type":"message"}
+{"nick":"isaacs","message":"wait, that code is not doing what it ought to do...","date":"2012-03-07T17:43:18.943Z","type":"message"}
+{"nick":"isaacs","message":"oh, also, this dates back to the cygwin days","date":"2012-03-07T17:43:38.679Z","type":"message"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-03-07T17:45:28.001Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: that sounds like a bug :)","date":"2012-03-07T17:46:27.030Z","type":"message"}
+{"nick":"piscisaureus__","date":"2012-03-07T17:47:07.669Z","type":"join"}
+{"nick":"piscisaureus__","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-03-07T17:52:58.671Z","type":"quit"}
+{"nick":"piscisaureus__","date":"2012-03-07T17:56:46.042Z","type":"join"}
+{"nick":"igorzi_","reason":"Ping timeout: 245 seconds","date":"2012-03-07T18:01:18.003Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T18:01:22.231Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-07T18:01:33.239Z","type":"join"}
+{"nick":"mikeal","reason":"Remote host closed the connection","date":"2012-03-07T18:02:10.636Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-03-07T18:02:19.768Z","type":"join"}
+{"nick":"mikeal","date":"2012-03-07T18:02:22.620Z","type":"join"}
+{"nick":"mikeal","reason":"Remote host closed the connection","date":"2012-03-07T18:02:33.885Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-07T18:02:50.011Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-03-07T18:03:39.091Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-07T18:05:32.894Z","type":"join"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-03-07T18:20:30.999Z","type":"quit"}
+{"nick":"pietern","date":"2012-03-07T18:21:46.473Z","type":"join"}
+{"nick":"dshaw_","date":"2012-03-07T18:24:44.010Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T18:25:02.954Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-07T18:27:16.874Z","type":"join"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:28:42.335Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-03-07T18:28:49.796Z","type":"join"}
+{"nick":"mjr_","date":"2012-03-07T18:32:23.866Z","type":"join"}
+{"nick":"paddybyers_","date":"2012-03-07T18:35:16.718Z","type":"join"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:35:16.915Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2012-03-07T18:35:17.237Z","type":"nick"}
+{"nick":"paddybyers_","date":"2012-03-07T18:38:42.789Z","type":"join"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:38:42.989Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2012-03-07T18:38:43.240Z","type":"nick"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-03-07T18:48:05.813Z","type":"quit"}
+{"nick":"paddybyers_","date":"2012-03-07T18:49:16.321Z","type":"join"}
+{"nick":"paddybyers__","date":"2012-03-07T18:50:22.752Z","type":"join"}
+{"nick":"paddybyers_","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:50:22.955Z","type":"quit"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:51:06.280Z","type":"quit"}
+{"nick":"paddybyers__","new_nick":"paddybyers","date":"2012-03-07T18:51:06.476Z","type":"nick"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2012-03-07T18:54:48.166Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-03-07T18:55:38.472Z","type":"join"}
+{"nick":"indutny","new_nick":"indutny_sleeping","date":"2012-03-07T18:57:24.231Z","type":"nick"}
+{"nick":"mjr_","date":"2012-03-07T19:03:59.828Z","type":"join"}
+{"nick":"brson","date":"2012-03-07T19:09:04.711Z","type":"join"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Yoshihiro Kikuchi\u000f \u000307master\u000f * r\u0002f82ef0f\u000f \u000310\u000f/ lib/http.js \u0002:\u000f ","date":"2012-03-07T19:18:46.850Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f http: remove ClientRequest.prototype.pause()","date":"2012-03-07T19:18:47.044Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f ClientRequest.prototype.pause() is not needed. ClientRequest is a writable","date":"2012-03-07T19:18:47.044Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f stream and deferring to OutgoingMessage.prototype.pause() is broken, the method","date":"2012-03-07T19:18:47.044Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f does not exist. - http://git.io/irKC7w","date":"2012-03-07T19:18:47.044Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-03-07T19:25:42.277Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-03-07T19:33:10.090Z","type":"join"}
+{"nick":"travis-ci","date":"2012-03-07T19:34:01.607Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#567 (master - f82ef0f : Yoshihiro Kikuchi): The build is still failing.","date":"2012-03-07T19:34:01.731Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/024451c...f82ef0f","date":"2012-03-07T19:34:01.731Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/816342","date":"2012-03-07T19:34:01.731Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T19:34:01.732Z","type":"part"}
+{"nick":"AvianFlu","date":"2012-03-07T19:36:27.465Z","type":"join"}
+{"nick":"bnoordhuis","message":"okay, maybe thread-local storage doesn't make that much of a difference after all :(","date":"2012-03-07T19:44:55.766Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it seems that when rolling back NPM is trying to rmdir a directory that is not empty. Does that work on unices?","date":"2012-03-07T19:48:08.688Z","type":"message"}
+{"nick":"isaacs","message":"kewl/","date":"2012-03-07T19:48:23.635Z","type":"message"}
+{"nick":"isaacs","message":"why is it not empty?","date":"2012-03-07T19:48:29.626Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: cuz windows says so :-)","date":"2012-03-07T19:48:42.388Z","type":"message"}
+{"nick":"isaacs","message":"(no, that doesn't work on unix)","date":"2012-03-07T19:48:42.662Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: rimraf only rmdir's once it's successfully (according to node) unlinked all the files in that dir.","date":"2012-03-07T19:49:03.444Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: is node calling the cb before the files are done unlinking?","date":"2012-03-07T19:49:17.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: hmm, let me figure that out","date":"2012-03-07T19:50:21.025Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-03-07T19:52:53.427Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-03-07T19:54:21.241Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T19:55:41.994Z","type":"quit"}
+{"nick":"paddybyers","reason":"Ping timeout: 260 seconds","date":"2012-03-07T19:56:11.473Z","type":"quit"}
+{"nick":"felixge","date":"2012-03-07T19:58:10.947Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-03-07T19:58:10.947Z","type":"quit"}
+{"nick":"felixge","date":"2012-03-07T19:58:10.947Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: is all file writing done via WriteStream in npm?","date":"2012-03-07T20:01:33.106Z","type":"message"}
+{"nick":"piscisaureus_","message":"(it's so big)","date":"2012-03-07T20:01:37.311Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: hm... i am not sure of that.","date":"2012-03-07T20:03:54.887Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i'm pretty sure i call fs.writeFile here and there","date":"2012-03-07T20:04:03.535Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: writeFile is fine. fs.write is not","date":"2012-03-07T20:04:26.901Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: no, it's always either writeFile or a WriteStream","date":"2012-03-07T20:05:04.407Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: what do you get if you try to remove an non-empty directory on unix?","date":"2012-03-07T20:10:15.486Z","type":"message"}
+{"nick":"piscisaureus_","message":"(with node)","date":"2012-03-07T20:10:18.100Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: exec(\"rm -rf \" + dir)","date":"2012-03-07T20:11:10.760Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's so much wrong with that example...","date":"2012-03-07T20:11:26.153Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I want to know what error code you get in node","date":"2012-03-07T20:11:42.990Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: `mkdir foo && echo bar > foo/bar`","date":"2012-03-07T20:12:09.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: node -e \"require('fs').rmdirSync('foo')\"","date":"2012-03-07T20:12:23.889Z","type":"message"}
+{"nick":"bnoordhuis","message":"at a guess, EEXIST","date":"2012-03-07T20:13:09.329Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i'll try it","date":"2012-03-07T20:13:12.258Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: Error: UNKNOWN, unknown error 'tmp/'","date":"2012-03-07T20:13:52.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"right","date":"2012-03-07T20:13:58.767Z","type":"message"}
+{"nick":"piscisaureus_","message":"writing a patch","date":"2012-03-07T20:14:03.618Z","type":"message"}
+{"nick":"bnoordhuis","message":"which probably means we haven't mapped ENOTEMPTY","date":"2012-03-07T20:14:06.429Z","type":"message"}
+{"nick":"piscisaureus_","message":"yup","date":"2012-03-07T20:14:14.090Z","type":"message"}
+{"nick":"bnoordhuis","message":"rmdir(\"tmp/\") = -1 ENOTEMPTY (Directory not empty) <- yup indeed","date":"2012-03-07T20:14:25.099Z","type":"message"}
+{"nick":"perezd_","date":"2012-03-07T20:19:09.322Z","type":"join"}
+{"nick":"perezd","reason":"Ping timeout: 276 seconds","date":"2012-03-07T20:21:12.806Z","type":"quit"}
+{"nick":"perezd_","new_nick":"perezd","date":"2012-03-07T20:21:13.041Z","type":"nick"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307maperr\u000f * r\u00021ac71a3\u000f \u000310\u000f/ (include/uv.h src/unix/error.c src/win/error.c)\u0002:\u000f Map EBUSY and ENOTEMPTY errors - http://git.io/IZKzCQ","date":"2012-03-07T20:28:38.572Z","type":"message"}
+{"nick":"piscisaureus_","message":"^^ bnoordhuis / igorzi - review?","date":"2012-03-07T20:28:58.078Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T20:30:16.445Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#119 (maperr - 1ac71a3 : Bert Belder): The build failed.","date":"2012-03-07T20:30:16.640Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/commit/1ac71a3","date":"2012-03-07T20:30:16.641Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/816667","date":"2012-03-07T20:30:16.641Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T20:30:16.641Z","type":"part"}
+{"nick":"bnoordhuis","message":"piscisaureus_: lgtm","date":"2012-03-07T20:31:30.567Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307v0.6\u000f * r\u00021ac71a3\u000f \u000310\u000f/ (include/uv.h src/unix/error.c src/win/error.c)\u0002:\u000f Map EBUSY and ENOTEMPTY errors - http://git.io/IZKzCQ","date":"2012-03-07T20:32:22.166Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T20:34:03.033Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#120 (v0.6 - 1ac71a3 : Bert Belder): The build is still failing.","date":"2012-03-07T20:34:03.235Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/b3fe183...1ac71a3","date":"2012-03-07T20:34:03.236Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/816697","date":"2012-03-07T20:34:03.236Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-07T20:34:03.236Z","type":"part"}
+{"nick":"mikeal","date":"2012-03-07T20:34:45.926Z","type":"join"}
+{"nick":"bnoordhuis","message":"slow recompile is slow...","date":"2012-03-07T20:54:02.240Z","type":"message"}
+{"nick":"igorzi","date":"2012-03-07T20:54:45.012Z","type":"join"}
+{"nick":"saghul","reason":"Ping timeout: 272 seconds","date":"2012-03-07T20:58:32.322Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 252 seconds","date":"2012-03-07T21:03:24.488Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs, piscisaureus_: https://github.com/bnoordhuis/node/compare/benchmark <- 4.5% increase in http_simple buffer/32 performance","date":"2012-03-07T21:03:39.792Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis++","date":"2012-03-07T21:03:50.207Z","type":"message"}
+{"nick":"kohai","message":"bnoordhuis has 11 beers","date":"2012-03-07T21:03:51.262Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, wait until you see it - it's not pretty :)","date":"2012-03-07T21:04:02.773Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: deps/v8/src/platform-linux.cc??","date":"2012-03-07T21:04:23.322Z","type":"message"}
+{"nick":"isaacs","message":"srsly?","date":"2012-03-07T21:04:25.610Z","type":"message"}
+{"nick":"isaacs","message":";P","date":"2012-03-07T21:04:39.174Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it turns out that v8's tls and MakeCallback() are the most expensive functions","date":"2012-03-07T21:04:40.807Z","type":"message"}
+{"nick":"brson","date":"2012-03-07T21:04:47.240Z","type":"join"}
+{"nick":"bnoordhuis","message":"now http_parser_execute() is at the top of profiler graph, as it should be","date":"2012-03-07T21:05:11.779Z","type":"message"}
+{"nick":"isaacs","message":"interesting","date":"2012-03-07T21:06:09.024Z","type":"message"}
+{"nick":"bnoordhuis","message":"so it looks like we need to rethink MakeCallback()","date":"2012-03-07T21:06:43.913Z","type":"message"}
+{"nick":"bnoordhuis","message":"and send a patch to v8 that makes tls optional","date":"2012-03-07T21:06:57.705Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes, MakeCallback shows up on high on windows too","date":"2012-03-07T21:12:08.919Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: (tls does not btw)","date":"2012-03-07T21:12:18.327Z","type":"message"}
+{"nick":"piscisaureus_","message":"except on windows-x64, tls seems to be slow there","date":"2012-03-07T21:12:39.548Z","type":"message"}
+{"nick":"bnoordhuis","message":"i wonder why that is","date":"2012-03-07T21:13:00.102Z","type":"message"}
+{"nick":"bnoordhuis","message":"pthread_getspecific() is pretty optimized","date":"2012-03-07T21:13:08.622Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I would still like to see the ab output for bytes/1024","date":"2012-03-07T21:13:37.416Z","type":"message"}
+{"nick":"bnoordhuis","message":"i wasn't able to beat it with hand-coded tls","date":"2012-03-07T21:13:40.366Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: with or without your patch?","date":"2012-03-07T21:13:54.343Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: for me it bumps from 5900 to 6400 so that's significant","date":"2012-03-07T21:13:57.865Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: both :-)","date":"2012-03-07T21:14:03.501Z","type":"message"}
+{"nick":"bnoordhuis","message":"aww, so much recompiling","date":"2012-03-07T21:14:12.983Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: aah - I am interested in my patch","date":"2012-03-07T21:14:17.882Z","type":"message"}
+{"nick":"bnoordhuis","message":"i need to get a laptop with more cores...","date":"2012-03-07T21:14:23.623Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you should keep 2 working copies","date":"2012-03-07T21:14:27.124Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2012-03-07T21:14:39.031Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: or use your mac","date":"2012-03-07T21:14:42.022Z","type":"message"}
+{"nick":"bnoordhuis","message":"no reliable valgrind on the mac","date":"2012-03-07T21:14:56.672Z","type":"message"}
+{"nick":"bnoordhuis","message":"did you rebase your patch?","date":"2012-03-07T21:15:04.111Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes","date":"2012-03-07T21:15:11.800Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, /me compiles","date":"2012-03-07T21:15:19.647Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it has to compile with NDEBUG btw, there is a really slow assert in there otherwise (that verifies the assumptions I make when I decide to do an unchecked write)","date":"2012-03-07T21:15:58.425Z","type":"message"}
+{"nick":"igorzi_","date":"2012-03-07T21:17:09.923Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: okay... do i need to modify common.gypi or ?","date":"2012-03-07T21:17:22.513Z","type":"message"}
+{"nick":"isaacs","action":"is working on setting up a few build slaves on JPC","date":"2012-03-07T21:18:02.266Z","type":"action"}
+{"nick":"TooTallNate","message":"isaacs++","date":"2012-03-07T21:18:25.465Z","type":"message"}
+{"nick":"kohai","message":"isaacs has 9 beers","date":"2012-03-07T21:18:26.967Z","type":"message"}
+{"nick":"isaacs","message":"i'd like to have a service where we can push a branch, and then compare benchmarks between then","date":"2012-03-07T21:18:36.659Z","type":"message"}
+{"nick":"bnoordhuis","message":"that would be sweet","date":"2012-03-07T21:18:46.951Z","type":"message"}
+{"nick":"isaacs","message":"the first step is to automate a lot of the manual steps that go into making a build.","date":"2012-03-07T21:19:09.475Z","type":"message"}
+{"nick":"isaacs","message":"becasue that shit is making me crazy.","date":"2012-03-07T21:19:13.701Z","type":"message"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-03-07T21:19:37.916Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no","date":"2012-03-07T21:19:46.437Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: there's a commit in the tree that does it","date":"2012-03-07T21:20:02.120Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: just compile in Release mode","date":"2012-03-07T21:20:08.035Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: well, NDEBUG is currently off even in release mode","date":"2012-03-07T21:20:26.078Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: that still doesn't help if you have to recompile all of v8","date":"2012-03-07T21:20:27.379Z","type":"message"}
+{"nick":"bnoordhuis","message":"or was that about NDEBUG?","date":"2012-03-07T21:20:34.283Z","type":"message"}
+{"nick":"TooTallNate","message":"i thought Release mode added NDEBUG","date":"2012-03-07T21:20:46.068Z","type":"message"}
+{"nick":"TooTallNate","action":"don't mind me, don't really know what you're talking about :p","date":"2012-03-07T21:21:06.004Z","type":"action"}
+{"nick":"piscisaureus_","message":"TooTallNate: NDEBUG got disabled at some point. imho it has to be enabled again before 0.8.0 drops","date":"2012-03-07T21:21:41.726Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: ahh you're right, however Debug mode still adds DEBUG flag","date":"2012-03-07T21:22:45.014Z","type":"message"}
+{"nick":"TooTallNate","message":"and _DEBUG","date":"2012-03-07T21:22:53.648Z","type":"message"}
+{"nick":"bnoordhuis","message":"*sigh* forgot to `cp -a`, now it's rebuilding everything again...","date":"2012-03-07T21:22:54.102Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: that's righj","date":"2012-03-07T21:22:57.328Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-03-07T21:23:10.613Z","type":"quit"}
+{"nick":"TooTallNate","message":"why was NDEBUG removed? and what projects use it?","date":"2012-03-07T21:23:24.542Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: NDEBUG disables asserts","date":"2012-03-07T21:23:41.522Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: ahhh, sweet. learned something new about c today :)","date":"2012-03-07T21:24:18.092Z","type":"message"}
+{"nick":"TooTallNate","message":"thanks","date":"2012-03-07T21:24:18.793Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: got another c question: why the do {} while (0) thing in the macro?","date":"2012-03-07T21:28:06.495Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: to make statements like `if (cond) foo(); else bar();` work (where foo and bar are macros)","date":"2012-03-07T21:28:53.170Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: clever","date":"2012-03-07T21:29:26.734Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-03-07T21:29:35.525Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: out/Release/node benchmark/http_simple_auto.js -c 100 -n 100000 bytes/1024","date":"2012-03-07T21:32:11.365Z","type":"message"}
+{"nick":"bnoordhuis","message":"with your patch: 4891.52 req/s","date":"2012-03-07T21:32:22.964Z","type":"message"}
+{"nick":"bnoordhuis","message":"without: 5031.41 req/s","date":"2012-03-07T21:32:32.549Z","type":"message"}
+{"nick":"bnoordhuis","message":"want me to profile it with callgrind?","date":"2012-03-07T21:33:02.773Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: that is very weird and quite unexpected.","date":"2012-03-07T21:34:04.274Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: since here it is the other way round","date":"2012-03-07T21:34:11.209Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can you try with a different number of bytes btw?","date":"2012-03-07T21:34:21.211Z","type":"message"}
+{"nick":"piscisaureus_","message":"just for my info?","date":"2012-03-07T21:34:25.136Z","type":"message"}
+{"nick":"bnoordhuis","message":"like?","date":"2012-03-07T21:34:29.317Z","type":"message"}
+{"nick":"piscisaureus_","message":"dunno, 10kb?","date":"2012-03-07T21:34:36.695Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay","date":"2012-03-07T21:35:05.807Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: to be honest, I quite heavily optimized with/for msvc","date":"2012-03-07T21:35:14.360Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T21:35:16.031Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: seems a little faster now","date":"2012-03-07T21:36:33.136Z","type":"message"}
+{"nick":"bnoordhuis","message":"with your patch: 4354.42","date":"2012-03-07T21:36:51.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"without: 4149.98","date":"2012-03-07T21:37:00.680Z","type":"message"}
+{"nick":"bnoordhuis","message":"so that's almost 5% faster","date":"2012-03-07T21:37:27.080Z","type":"message"}
+{"nick":"bnoordhuis","message":"let me try bytes/1024 again","date":"2012-03-07T21:37:31.928Z","type":"message"}
+{"nick":"bnoordhuis","message":"4419.65 vs 4316.87 now, good","date":"2012-03-07T21:38:58.881Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307master\u000f * r\u00025ad0140\u000f \u000310\u000f/ (lib/http.js test/simple/test-http-pause-resume-one-end.js)\u0002:\u000f ","date":"2012-03-07T21:39:03.127Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Emit end event only once","date":"2012-03-07T21:39:03.323Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f fixes #2888","date":"2012-03-07T21:39:03.323Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f Previously a pair of end events would be emitted if a response was","date":"2012-03-07T21:39:03.324Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f paused/resumed, and the underlying socket was closed while the","date":"2012-03-07T21:39:03.324Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f response was paused - http://git.io/BIITRw","date":"2012-03-07T21:39:03.758Z","type":"message"}
+{"nick":"bnoordhuis","message":"odd that it was slower the last two times...","date":"2012-03-07T21:39:29.842Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: (only if you're interested)","date":"2012-03-07T21:39:30.044Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if you chop up http_simple.js a little bit so the string gets constructed differently (like `a = 'C' + a`, or `a += a` instead of `a += c`), or including some unicode characters in there, the difference will be way bigger","date":"2012-03-07T21:40:53.305Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what http_simple tests is the case where the \"new\" method performs worst","date":"2012-03-07T21:41:17.154Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and funny enough, it happens to be the case where the v8 method performs best","date":"2012-03-07T21:42:16.158Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll give it a spin","date":"2012-03-07T21:42:27.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, almost 9.5% speedup","date":"2012-03-07T21:46:35.127Z","type":"message"}
+{"nick":"igorzi_","message":"isaacs piscisaureus_: https://gist.github.com/1996441","date":"2012-03-07T21:46:43.090Z","type":"message"}
+{"nick":"igorzi_","message":"(with additional error mapping)","date":"2012-03-07T21:46:51.978Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: yeah, I am looking at that too. Something really funny is going on.","date":"2012-03-07T21:47:17.878Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: I can reproduce in about 25% of the cases or so","date":"2012-03-07T21:47:44.758Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://gist.github.com/2c62b4e8d151a64a918b <- it's with that patch that i'm seeing the 9.5% speedup","date":"2012-03-07T21:48:59.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"pretty impressive","date":"2012-03-07T21:49:01.633Z","type":"message"}
+{"nick":"igorzi_","message":"piscisaureus_: verbose mkdir (expected) error ENOENT, no such file or directory '\\\\igorzi-dev8\\public\\igorzi-dev8'","date":"2012-03-07T21:49:15.050Z","type":"message"}
+{"nick":"igorzi_","message":"piscisaureus_: nm, i guess this is expected","date":"2012-03-07T21:50:00.314Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the magic is not really in the new string writer btw (it is in some cases - like when there is unicode in there)","date":"2012-03-07T21:51:05.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it is mostly this - https://github.com/piscisaureus/node/commit/816ef22fbf2158d8ab4063fcab109a702d02ee19","date":"2012-03-07T21:51:10.954Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: convert string to buffer in the binding layer","date":"2012-03-07T21:51:27.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i actually tried something like that a couple of days ago but i didn't see much of a speedup","date":"2012-03-07T21:52:12.533Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: part of it is also in skipping utf8length(), and just allocate three times the string length instead","date":"2012-03-07T21:52:46.702Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that what String::Utf8Value() does?","date":"2012-03-07T21:53:13.100Z","type":"message"}
+{"nick":"bnoordhuis","message":"calculating the byte length, i mean?","date":"2012-03-07T21:53:37.556Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no, String->Utf8Length() does that","date":"2012-03-07T21:53:54.484Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we're not using string::Utf8Value for creating buffers, that would be even more retarded","date":"2012-03-07T21:54:12.654Z","type":"message"}
+{"nick":"igorzi_","message":"piscisaureus_: i'm actually able to reproduce pretty much every time","date":"2012-03-07T21:58:44.527Z","type":"message"}
+{"nick":"igorzi_","message":"piscisaureus_: and every time i get: npm ERR! Error: ENOENT, no such file or directory 'Z:\\node_modules\\mkdirp\\package.json'","date":"2012-03-07T21:58:57.431Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: yeah, funny innit :-)","date":"2012-03-07T22:00:13.717Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: https://github.com/isaacs/npm/blob/af7a466e53c096e54534009e89304e16a7ef1828/lib/utils/tar.js#L192","date":"2012-03-07T22:01:19.217Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: should i just test for EBUSY and UNKNOWN there?","date":"2012-03-07T22:01:27.849Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it's pretty safe to get a false positive.","date":"2012-03-07T22:01:42.829Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: just test for EBUSY and EACCESS","date":"2012-03-07T22:01:43.024Z","type":"message"}
+{"nick":"isaacs","message":"the only hazard of testing for UNKNOWN is that it might take a second longer to fail","date":"2012-03-07T22:01:58.553Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: testing for UNKOWN seems rather odd :_)","date":"2012-03-07T22:01:58.978Z","type":"message"}
+{"nick":"isaacs","message":"and spin the disk a bit.","date":"2012-03-07T22:02:03.314Z","type":"message"}
+{"nick":"piscisaureus_","message":"emit some CO2","date":"2012-03-07T22:02:19.781Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-03-07T22:02:22.943Z","type":"message"}
+{"nick":"isaacs","message":"meh","date":"2012-03-07T22:02:23.950Z","type":"message"}
+{"nick":"isaacs","message":"people drive cars.  whatever.","date":"2012-03-07T22:02:33.758Z","type":"message"}
+{"nick":"piscisaureus_","message":"Oh, right, you're american :-)","date":"2012-03-07T22:02:38.946Z","type":"message"}
+{"nick":"isaacs","message":"mother nature's too high and mighty.","date":"2012-03-07T22:02:42.218Z","type":"message"}
+{"nick":"isaacs","message":"needs to be put in her place sometimes.","date":"2012-03-07T22:02:47.477Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that slide/chain thing is virtually impossible to debug :-/","date":"2012-03-07T22:03:45.507Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: what do you mean, man?","date":"2012-03-07T22:06:33.690Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it's just \"do this function, then do the next one\"","date":"2012-03-07T22:06:39.804Z","type":"message"}
+{"nick":"igorzi_","message":"isaacs: here's what i get every time: https://gist.github.com/1996552","date":"2012-03-07T22:07:11.910Z","type":"message"}
+{"nick":"isaacs","message":"it's like a 20 like module, man.","date":"2012-03-07T22:07:19.437Z","type":"message"}
+{"nick":"igorzi_","message":"isaacs: i'm not sure how exactly to read the log, but isn't it failing because of \"Error: ENOENT, no such file or directory 'Z:\\node_modules\\mkdirp\\package.json'\" ?","date":"2012-03-07T22:08:02.210Z","type":"message"}
+{"nick":"isaacs","message":"igorzi_: yeah, but then fails to rollback","date":"2012-03-07T22:09:08.814Z","type":"message"}
+{"nick":"isaacs","message":"it's weird","date":"2012-03-07T22:09:12.162Z","type":"message"}
+{"nick":"piscisaureus_","message":"apparently it's writeFile that is failing","date":"2012-03-07T22:09:36.130Z","type":"message"}
+{"nick":"rendar","date":"2012-03-07T22:12:34.458Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: weird.","date":"2012-03-07T22:14:49.999Z","type":"message"}
+{"nick":"igorzi_","message":"is there a way to tell from the log what operation causes the error?","date":"2012-03-07T22:19:31.788Z","type":"message"}
+{"nick":"igorzi_","message":"isaacs piscisaureus_:  --^","date":"2012-03-07T22:19:45.181Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: oh wait, it's just unpack() that errs","date":"2012-03-07T22:20:59.471Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: no there isn't. I am chopping up chain.js to console.log what it does","date":"2012-03-07T22:21:15.173Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: when i want logging that insane, i usually just run it through dtruss, but i guess there is no such thing in windows?","date":"2012-03-07T22:26:16.922Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2012-03-07T22:29:01.471Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: yes I am trying with process monitor","date":"2012-03-07T22:29:19.253Z","type":"message"}
+{"nick":"isaacs","message":"kewl","date":"2012-03-07T22:29:30.893Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the problem is, the slowdown caused by that makes the error go away","date":"2012-03-07T22:29:35.664Z","type":"message"}
+{"nick":"isaacs","message":"ew","date":"2012-03-07T22:29:40.757Z","type":"message"}
+{"nick":"isaacs","message":"that sucks","date":"2012-03-07T22:29:44.637Z","type":"message"}
+{"nick":"isaacs","message":"how do you reproduce the problem?","date":"2012-03-07T22:30:00.496Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-03-07T22:30:14.226Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: `npm install express` on a remote share","date":"2012-03-07T22:30:23.613Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: errs in about 1 in 3 cases for me","date":"2012-03-07T22:30:36.425Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-07T22:31:14.434Z","type":"join"}
+{"nick":"isaacs","message":"hmm..","date":"2012-03-07T22:31:44.224Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: this is funny, it shows up in process explorer","date":"2012-03-07T22:32:52.819Z","type":"message"}
+{"nick":"piscisaureus_","message":"11:29:41.1717471 PM     node.exe     5956     IRP_MJ_QUERY_INFORMATION     \\\\PISCISAUREUS\\Users\\Public\\node_modules\\express\\node_modules\\___connect.npm\\package\\lib\\middleware     BUFFER OVERFLOW     Type: QueryAllInformationFile, CreationTime: 3/7/2012 11:30:00 PM, LastAccessTime: 3/7/2012 11:30:16 PM, LastWriteTime: 3/7/2012 11:30:16 PM, ChangeTime: 3/7/2012 11:30:16 PM, FileAttributes: D, AllocationSize: 4,096, EndOfFile: 4,096, NumberOfLi","date":"2012-03-07T22:32:54.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: buffer overflow on stat() ?","date":"2012-03-07T22:33:10.568Z","type":"message"}
+{"nick":"isaacs","message":"hm.  maybe it's just that my windows is in a VM, but it works 100% of the time.","date":"2012-03-07T22:33:30.759Z","type":"message"}
+{"nick":"paddybyers","date":"2012-03-07T22:43:37.313Z","type":"join"}
+{"nick":"igorzi_","message":"piscisaureus_: i see a bunch of \"CreateFile\t\\\\igorzi-devsun\\public\\node_modules\\mkdirp\\package.json\tNAME NOT FOUND\tDesired Access: Read Attributes, Synchronize, Disposition: Open, Options: Synchronous IO Non-Alert, Attributes: n/a, ShareMode: Read, Write, Delete, AllocationSize: n/a\"","date":"2012-03-07T22:43:50.138Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-03-07T22:51:17.618Z","type":"join"}
+{"nick":"piscisaureus_","message":"igorzi_: we should change node_file.cc to include the syscall name when an error happens for an asynchronous operation","date":"2012-03-07T23:04:00.624Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: also, it would be nice if the callback would be deferred to the next tick on immediate failure (although I think that should never happen)","date":"2012-03-07T23:04:28.295Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi_: https://gist.github.com/1997086 <-- review?","date":"2012-03-07T23:14:41.736Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-03-07T23:23:03.953Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T23:26:15.795Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-03-07T23:40:30.468Z","type":"join"}
+{"nick":"mikeal","date":"2012-03-07T23:43:08.901Z","type":"join"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-03-07T23:47:24.837Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-07T23:56:34.537Z","type":"quit"}
