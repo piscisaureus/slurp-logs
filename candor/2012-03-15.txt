@@ -89,3 +89,164 @@
 {"nick":"piscisaureus_","message":"creationix: so you mean, you cannot upcast uvHandle to uvTimer","date":"2012-03-15T15:59:34.083Z","type":"message"}
 {"nick":"creationix","message":"it's stored as a void* in the CData that the script has","date":"2012-03-15T15:59:51.727Z","type":"message"}
 {"nick":"piscisaureus_","message":"creationix: you should not need to - just make sure you have multiple versions of onclose","date":"2012-03-15T15:59:53.610Z","type":"message"}
+{"nick":"creationix","message":"the problem is what do I typecast the void* to","date":"2012-03-15T16:00:13.099Z","type":"message"}
+{"nick":"creationix","message":"I don't know if it's a uvTimer or uvHandle","date":"2012-03-15T16:00:20.363Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah, right","date":"2012-03-15T16:00:24.994Z","type":"message"}
+{"nick":"creationix","message":"(well, in this case it's easy, there are no uvHandle instances)","date":"2012-03-15T16:00:29.594Z","type":"message"}
+{"nick":"creationix","message":"but later when I have uvTcp and uvPipe","date":"2012-03-15T16:00:37.156Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, you have to remember the type somehow","date":"2012-03-15T16:01:01.842Z","type":"message"}
+{"nick":"creationix","message":"in libuv it's ok, I can cast a uv_timer_t to a uv_handle_t and use it as a uv_handle_t","date":"2012-03-15T16:01:02.042Z","type":"message"}
+{"nick":"creationix","message":"so maybe wrap the class instance in a struct","date":"2012-03-15T16:01:41.978Z","type":"message"}
+{"nick":"creationix","message":"{int type, uvHandle* handle}","date":"2012-03-15T16:02:00.250Z","type":"message"}
+{"nick":"piscisaureus_","message":"or use a base class","date":"2012-03-15T16:02:10.029Z","type":"message"}
+{"nick":"creationix","message":"and then do a switch on the type?","date":"2012-03-15T16:02:15.241Z","type":"message"}
+{"nick":"piscisaureus_","message":"class uvHandle {","date":"2012-03-15T16:02:41.964Z","type":"message"}
+{"nick":"piscisaureus_","message":"  HandleType type","date":"2012-03-15T16:02:42.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"}","date":"2012-03-15T16:02:42.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"class uvPipe: public uvHandle {","date":"2012-03-15T16:02:42.164Z","type":"message"}
+{"nick":"creationix","message":"will that work","date":"2012-03-15T16:03:10.576Z","type":"message"}
+{"nick":"piscisaureus_","message":"why not?","date":"2012-03-15T16:03:18.223Z","type":"message"}
+{"nick":"creationix","message":"that's still typecasting to a bast class type","date":"2012-03-15T16:03:40.055Z","type":"message"}
+{"nick":"piscisaureus_","message":"in noe","date":"2012-03-15T16:03:47.270Z","type":"message"}
+{"nick":"creationix","message":"I can't get at the type member without first typecasting the void*","date":"2012-03-15T16:04:03.620Z","type":"message"}
+{"nick":"piscisaureus_","message":"sure","date":"2012-03-15T16:04:10.004Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's the downside of having only a void pointer :-)","date":"2012-03-15T16:04:20.659Z","type":"message"}
+{"nick":"piscisaureus_","message":"so what you would do is typecast the CData to uvHandle","date":"2012-03-15T16:04:40.920Z","type":"message"}
+{"nick":"piscisaureus_","message":"then get the type","date":"2012-03-15T16:04:47.268Z","type":"message"}
+{"nick":"piscisaureus_","message":"and then typecast again to the actual type.","date":"2012-03-15T16:04:54.059Z","type":"message"}
+{"nick":"piscisaureus_","message":"node basically does the same btw","date":"2012-03-15T16:05:04.845Z","type":"message"}
+{"nick":"creationix","message":"so members are safe to access, just not methods?","date":"2012-03-15T16:05:10.051Z","type":"message"}
+{"nick":"piscisaureus_","message":"if you don't use multiple inheritance and you make sure that uvPipe extends uvHandle","date":"2012-03-15T16:05:49.628Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: CWrapper class has virtual destructor","date":"2012-03-15T16:05:52.201Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: I think things are little bit more complicated with that","date":"2012-03-15T16:06:10.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"can you show me the api?","date":"2012-03-15T16:06:31.497Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: better ask creationix , he has much more examples","date":"2012-03-15T16:06:44.851Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: https://github.com/indutny/candor/blob/master/test/test-api.cc#L93","date":"2012-03-15T16:07:04.510Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: and following lines","date":"2012-03-15T16:07:13.938Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't see any problems","date":"2012-03-15T16:07:40.952Z","type":"message"}
+{"nick":"creationix","message":"piscisaureus_, https://github.com/indutny/candor/blob/master/include/candor.h#L233-256","date":"2012-03-15T16:07:42.968Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's what a virtual destructor is for","date":"2012-03-15T16:07:48.795Z","type":"message"}
+{"nick":"piscisaureus_","message":"and virtual functions in general","date":"2012-03-15T16:08:04.407Z","type":"message"}
+{"nick":"creationix","message":"ok, so typecast void* to the base uvHandle, look up the type and then typecast to the right type?","date":"2012-03-15T16:08:22.370Z","type":"message"}
+{"nick":"piscisaureus_","message":"so you can downcast but when you do that the right method still gets called","date":"2012-03-15T16:08:26.903Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: yeah","date":"2012-03-15T16:08:33.150Z","type":"message"}
+{"nick":"creationix","message":"wait, virtual functions work when downcast","date":"2012-03-15T16:08:53.291Z","type":"message"}
+{"nick":"creationix","message":"what's downcast","date":"2012-03-15T16:08:55.654Z","type":"message"}
+{"nick":"piscisaureus_","message":"if you have class A: public B;","date":"2012-03-15T16:09:29.479Z","type":"message"}
+{"nick":"piscisaureus_","message":"A* a = new A();","date":"2012-03-15T16:09:43.552Z","type":"message"}
+{"nick":"piscisaureus_","message":"B* b = A; // Downcast","date":"2012-03-15T16:09:55.511Z","type":"message"}
+{"nick":"creationix","message":"s/= A/= a/ ?","date":"2012-03-15T16:10:14.752Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-03-15T16:10:27.460Z","type":"message"}
+{"nick":"piscisaureus_","message":"b->foo() // if foo is declared virtual, a::foo is called, otherwise b::foo is called","date":"2012-03-15T16:10:51.779Z","type":"message"}
+{"nick":"creationix","message":"ok, so I have","date":"2012-03-15T16:10:56.606Z","type":"message"}
+{"nick":"creationix","message":"what's the difference between a::foo and b::foo?","date":"2012-03-15T16:11:22.167Z","type":"message"}
+{"nick":"creationix","message":"aren't they the same function","date":"2012-03-15T16:11:27.721Z","type":"message"}
+{"nick":"creationix","message":"since it inherits","date":"2012-03-15T16:11:30.471Z","type":"message"}
+{"nick":"piscisaureus_","message":"well, if you overload foo() in a then they are not.","date":"2012-03-15T16:11:42.706Z","type":"message"}
+{"nick":"piscisaureus_","message":"so what you could even do is this","date":"2012-03-15T16:11:48.689Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh nvm","date":"2012-03-15T16:12:16.572Z","type":"message"}
+{"nick":"creationix","message":"void* b = new B();","date":"2012-03-15T16:13:10.634Z","type":"message"}
+{"nick":"creationix","message":"a = (A*)b","date":"2012-03-15T16:13:21.039Z","type":"message"}
+{"nick":"creationix","message":"a->foo() //  This breaks","date":"2012-03-15T16:13:27.742Z","type":"message"}
+{"nick":"creationix","message":"would making foo be virtual help?","date":"2012-03-15T16:13:48.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: does not break if A is a base class of B or vice versa.","date":"2012-03-15T16:13:49.980Z","type":"message"}
+{"nick":"creationix","message":"B inherits from A","date":"2012-03-15T16:13:58.467Z","type":"message"}
+{"nick":"creationix","message":"and yes it breaks, my offsets are all messed up","date":"2012-03-15T16:14:10.763Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: where?","date":"2012-03-15T16:14:52.279Z","type":"message"}
+{"nick":"creationix","message":"it calls the right function","date":"2012-03-15T16:15:20.000Z","type":"message"}
+{"nick":"creationix","message":"but the member values are wrong","date":"2012-03-15T16:15:25.094Z","type":"message"}
+{"nick":"creationix","message":"hmm, maybe it's because I override the \"handle\" member","date":"2012-03-15T16:16:06.402Z","type":"message"}
+{"nick":"creationix","message":"if uv_handle_t handle in uvHandle","date":"2012-03-15T16:16:18.602Z","type":"message"}
+{"nick":"creationix","message":"and uv_timer_t handle in uvTimer","date":"2012-03-15T16:16:24.640Z","type":"message"}
+{"nick":"creationix","message":"maybe I need to use a union struct as that member and not override it","date":"2012-03-15T16:16:52.615Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: an union struct seems wrong to me.","date":"2012-03-15T16:17:02.502Z","type":"message"}
+{"nick":"creationix","message":"use the uv_any_handle?","date":"2012-03-15T16:17:50.314Z","type":"message"}
+{"nick":"piscisaureus_","message":"naah","date":"2012-03-15T16:18:20.826Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: I am somewhat surprised that the compiler does not reject what you are doing","date":"2012-03-15T16:18:44.095Z","type":"message"}
+{"nick":"creationix","message":"it's void* how would it know","date":"2012-03-15T16:19:12.839Z","type":"message"}
+{"nick":"creationix","message":"there is no type saftey","date":"2012-03-15T16:19:17.012Z","type":"message"}
+{"nick":"piscisaureus_","message":"if you force it to have a subclass with a different layout as your base class it should barge","date":"2012-03-15T16:20:14.475Z","type":"message"}
+{"nick":"piscisaureus_","message":"aaah","date":"2012-03-15T16:20:54.220Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: ghehe","date":"2012-03-15T16:20:59.176Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: the handle member is private","date":"2012-03-15T16:21:05.105Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: so you end up with two handles in uvTimer","date":"2012-03-15T16:21:15.543Z","type":"message"}
+{"nick":"indutny","message":"hah","date":"2012-03-15T16:21:27.686Z","type":"message"}
+{"nick":"piscisaureus_","message":"one uv_handle_t that is visible only to uvHandle","date":"2012-03-15T16:21:28.519Z","type":"message"}
+{"nick":"creationix","message":"uninitilized data","date":"2012-03-15T16:21:39.752Z","type":"message"}
+{"nick":"piscisaureus_","message":"and another uv_timer_t that is visible to uvTimer","date":"2012-03-15T16:21:44.741Z","type":"message"}
+{"nick":"creationix","message":"that would explain the bogous values","date":"2012-03-15T16:21:46.158Z","type":"message"}
+{"nick":"creationix","message":"ok, so everything has to be public","date":"2012-03-15T16:22:00.360Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: you should not put uv_handle_t in uvHandle at all.","date":"2012-03-15T16:22:01.026Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: no, if you do that the compiler will reject your code","date":"2012-03-15T16:22:13.913Z","type":"message"}
+{"nick":"creationix","message":"well if I don't have handle at all","date":"2012-03-15T16:22:42.277Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: instead you should implement UvClose in every subclass of UvHandle (you can speed that up with template)","date":"2012-03-15T16:22:47.146Z","type":"message"}
+{"nick":"creationix","message":"how will uvHandle::Close get at handle?","date":"2012-03-15T16:22:50.816Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: or what you could do is have a virtual function uv_handle_t* getHandle()","date":"2012-03-15T16:23:15.254Z","type":"message"}
+{"nick":"piscisaureus_","message":"and implement that in all subclasses","date":"2012-03-15T16:23:21.139Z","type":"message"}
+{"nick":"piscisaureus_","message":"so you can call `uv_close(getHandle())`","date":"2012-03-15T16:23:33.886Z","type":"message"}
+{"nick":"creationix","message":"what about the callbacks","date":"2012-03-15T16:24:00.803Z","type":"message"}
+{"nick":"creationix","message":"can those stay privite","date":"2012-03-15T16:24:04.146Z","type":"message"}
+{"nick":"creationix","message":"(private","date":"2012-03-15T16:24:07.749Z","type":"message"}
+{"nick":"creationix","message":"since they are only set or read by the same class","date":"2012-03-15T16:24:15.152Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: you cannot overload private members. So you have to take care not to end up with two copies.","date":"2012-03-15T16:24:42.250Z","type":"message"}
+{"nick":"creationix","message":"they won't overload","date":"2012-03-15T16:24:54.555Z","type":"message"}
+{"nick":"creationix","message":"the callback names will be unique","date":"2012-03-15T16:24:58.909Z","type":"message"}
+{"nick":"piscisaureus_","message":"then it's fine","date":"2012-03-15T16:24:59.664Z","type":"message"}
+{"nick":"creationix","message":"ok, I like the getHandle() idea","date":"2012-03-15T16:25:15.174Z","type":"message"}
+{"nick":"creationix","message":"less code duplication","date":"2012-03-15T16:25:19.447Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: actually, I don't really like it that much :-)","date":"2012-03-15T16:25:27.630Z","type":"message"}
+{"nick":"creationix","message":"slow?","date":"2012-03-15T16:25:32.364Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's an extra pointer in your class","date":"2012-03-15T16:25:32.565Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, and an extra indirection","date":"2012-03-15T16:25:40.270Z","type":"message"}
+{"nick":"creationix","message":"and virtual functions are the slowest right","date":"2012-03-15T16:25:50.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-03-15T16:25:56.331Z","type":"message"}
+{"nick":"piscisaureus_","message":"although - it's not likely that it will really hurt in this case","date":"2012-03-15T16:26:08.163Z","type":"message"}
+{"nick":"creationix","message":"ok, so would the template way work?","date":"2012-03-15T16:26:15.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: let me hammer something out","date":"2012-03-15T16:26:27.822Z","type":"message"}
+{"nick":"creationix","message":"what I don't want is to have to copy-paste functions for all the stream methods into every type that inherits from stream","date":"2012-03-15T16:26:37.247Z","type":"message"}
+{"nick":"piscisaureus_","message":"a sec","date":"2012-03-15T16:28:33.523Z","type":"message"}
+{"nick":"piscisaureus_","message":"We never really fixed this in node btw","date":"2012-03-15T16:31:16.111Z","type":"message"}
+{"nick":"piscisaureus_","message":"but that does not have to matter","date":"2012-03-15T16:31:19.799Z","type":"message"}
+{"nick":"indutny","message":"crap, that GC bug makes me angry","date":"2012-03-15T16:32:46.079Z","type":"message"}
+{"nick":"creationix","message":"indutny, still need a Object::GetKeys API","date":"2012-03-15T16:40:26.377Z","type":"message"}
+{"nick":"creationix","message":"last night I ended up compiling a small script and using keysof","date":"2012-03-15T16:40:42.621Z","type":"message"}
+{"nick":"creationix","message":"it was ugly","date":"2012-03-15T16:40:47.134Z","type":"message"}
+{"nick":"indutny","message":"creationix: ok","date":"2012-03-15T16:41:39.711Z","type":"message"}
+{"nick":"indutny","message":"I'll do it after I'll fix this stupid bug","date":"2012-03-15T16:41:48.468Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: what does the uv api that registers runtime functions look like?","date":"2012-03-15T17:11:49.052Z","type":"message"}
+{"nick":"creationix","message":"?","date":"2012-03-15T17:11:57.050Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: so in node we have NODE_SET_METHOD","date":"2012-03-15T17:12:08.984Z","type":"message"}
+{"nick":"creationix","message":"oh, candor API you mean","date":"2012-03-15T17:12:18.936Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-03-15T17:12:22.166Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/creationix/candor.io/blob/master/src/luv_handle.cc#L23","date":"2012-03-15T17:12:39.505Z","type":"message"}
+{"nick":"creationix","message":"just set a function as a property","date":"2012-03-15T17:12:44.199Z","type":"message"}
+{"nick":"creationix","message":"there are no methods in candor, no \"this\"","date":"2012-03-15T17:12:51.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: looking at it you can be sure that if the Close callback is made,  you know the type of CData","date":"2012-03-15T17:16:31.458Z","type":"message"}
+{"nick":"creationix","message":"how do","date":"2012-03-15T17:17:00.031Z","type":"message"}
+{"nick":"creationix","message":"all uv types inherit close from uv_handle_t","date":"2012-03-15T17:17:09.695Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, so we are going to can that :-)","date":"2012-03-15T17:17:19.967Z","type":"message"}
+{"nick":"creationix","message":"what, the massive switch statement for uv_close?","date":"2012-03-15T17:17:43.975Z","type":"message"}
+{"nick":"creationix","message":"what about the stream functions","date":"2012-03-15T17:18:11.615Z","type":"message"}
+{"nick":"creationix","message":"those are more general and a lot of code to wrap","date":"2012-03-15T17:18:17.208Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: I am making a template for it","date":"2012-03-15T17:18:51.539Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: sorry, I have to go","date":"2012-03-15T17:19:21.524Z","type":"message"}
+{"nick":"creationix","message":"ok","date":"2012-03-15T17:19:21.718Z","type":"message"}
+{"nick":"piscisaureus_","message":"forgot :-(","date":"2012-03-15T17:19:23.918Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: will finish it tonight","date":"2012-03-15T17:19:30.497Z","type":"message"}
+{"nick":"creationix","message":"ok, I'll try a template","date":"2012-03-15T17:19:34.655Z","type":"message"}
+{"nick":"piscisaureus_","message":"I assume you're not out of work :-)","date":"2012-03-15T17:19:36.351Z","type":"message"}
+{"nick":"creationix","message":"heh","date":"2012-03-15T17:19:42.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: the trick is to have no UvHandle that is the base class to UvAnything","date":"2012-03-15T17:19:56.440Z","type":"message"}
+{"nick":"piscisaureus_","message":"just have a template that generates all these methods","date":"2012-03-15T17:20:08.949Z","type":"message"}
+{"nick":"creationix","message":"right","date":"2012-03-15T17:20:15.793Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: https://gist.github.com/2045459","date":"2012-03-15T17:27:40.778Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: probably you could also partially template-ify the init() method","date":"2012-03-15T17:28:05.765Z","type":"message"}
+{"nick":"indutny","message":"going to sleep guys :)","date":"2012-03-15T17:29:44.216Z","type":"message"}
+{"nick":"indutny","message":"ttyl","date":"2012-03-15T17:29:45.082Z","type":"message"}
+{"nick":"indutny","new_nick":"indutny_sleeping","date":"2012-03-15T17:29:50.454Z","type":"nick"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 255 seconds","date":"2012-03-15T17:35:17.517Z","type":"quit"}
+{"nick":"karterk","reason":"Remote host closed the connection","date":"2012-03-15T18:31:46.838Z","type":"quit"}
+{"nick":"karterk","date":"2012-03-15T18:34:33.101Z","type":"join"}
+{"nick":"karterk","reason":"Remote host closed the connection","date":"2012-03-15T18:42:13.815Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-03-15T22:49:14.375Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-03-15T23:37:41.339Z","type":"quit"}
