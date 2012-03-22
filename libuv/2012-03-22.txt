@@ -1,0 +1,139 @@
+{"nick":"piscisaureus_","message":"woah, cconf! philips++ :-)","date":"2012-03-22T00:10:49.537Z","type":"message"}
+{"nick":"piscisaureus_","message":"philips: who is backing this?","date":"2012-03-22T00:11:41.902Z","type":"message"}
+{"nick":"dylukes","message":"Why are uv_tcp_connect and uv_tcp_connect6 distinct?","date":"2012-03-22T00:12:30.415Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: *shrug* they just are. It's fallout from the fact that we pass sockaddr_in[6] by value.","date":"2012-03-22T00:14:04.595Z","type":"message"}
+{"nick":"dylukes","message":">_>. That was smart.","date":"2012-03-22T00:14:20.731Z","type":"message"}
+{"nick":"piscisaureus_","message":"it should probably be changed at some point (we take patches)","date":"2012-03-22T00:14:23.017Z","type":"message"}
+{"nick":"dylukes","message":"I'll just switch over res->ai_family for the moment.","date":"2012-03-22T00:14:35.483Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: it's not as if it is really hard to switch between the two","date":"2012-03-22T00:14:56.544Z","type":"message"}
+{"nick":"piscisaureus_","message":"so yeah","date":"2012-03-22T00:15:01.353Z","type":"message"}
+{"nick":"piscisaureus_","message":"that'll do","date":"2012-03-22T00:15:05.855Z","type":"message"}
+{"nick":"dylukes","message":"Hm, it's not shown in the docs... but they return an int...","date":"2012-03-22T00:15:26.964Z","type":"message"}
+{"nick":"dylukes","message":"that couldn't indicate connection success/failure really though","date":"2012-03-22T00:15:42.430Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: they return -1 on failure and 0 on suyccess.","date":"2012-03-22T00:15:47.958Z","type":"message"}
+{"nick":"dylukes","message":"right but the callback isn't called until it's established.","date":"2012-03-22T00:15:58.934Z","type":"message"}
+{"nick":"dylukes","message":"so success can't be guaranteed until you're in the callback and check the status.","date":"2012-03-22T00:16:08.605Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: ah right, well it can fail immediately if for example the socket is fucked, or already connected or something","date":"2012-03-22T00:16:13.501Z","type":"message"}
+{"nick":"dylukes","message":"Oh awesome.","date":"2012-03-22T00:16:28.393Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: so, when it returns 0 it doesn't mean that it will all be well","date":"2012-03-22T00:16:29.855Z","type":"message"}
+{"nick":"dylukes","message":"So there's TWO places I need to check errors :D?","date":"2012-03-22T00:16:33.939Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: yep","date":"2012-03-22T00:16:38.913Z","type":"message"}
+{"nick":"dylukes","message":"I'm just trying to work out how to walk the list asynchronously.","date":"2012-03-22T00:16:55.211Z","type":"message"}
+{"nick":"dylukes","message":"It's going to involve a try_next_ai function and statics, I suppose.","date":"2012-03-22T00:17:04.518Z","type":"message"}
+{"nick":"dylukes","message":"Or I could just pass the state every time and keep it functional.","date":"2012-03-22T00:17:12.068Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: I am not sure if uv_connect will ever fail immediately if your application is bug-free. It probably shouldn't","date":"2012-03-22T00:17:23.429Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: so you could just assert that uv_connect returns 0","date":"2012-03-22T00:17:38.792Z","type":"message"}
+{"nick":"dylukes","message":"Assuming you're application is bug-free is a programmer bug :\\.","date":"2012-03-22T00:17:39.616Z","type":"message"}
+{"nick":"dylukes","message":"Okay so if I fudge the ownership a bit this can work.","date":"2012-03-22T00:20:25.525Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 240 seconds","date":"2012-03-22T00:24:36.660Z","type":"quit"}
+{"nick":"pfox___","reason":"Ping timeout: 248 seconds","date":"2012-03-22T00:25:53.951Z","type":"quit"}
+{"nick":"dylukes","message":"ohhh lovely...","date":"2012-03-22T00:26:08.949Z","type":"message"}
+{"nick":"dylukes","message":"Does freeing uv_getaddrinfo_t delete the results?","date":"2012-03-22T00:26:30.551Z","type":"message"}
+{"nick":"dylukes","message":"or do I have to free them separately?","date":"2012-03-22T00:26:42.318Z","type":"message"}
+{"nick":"dylukes","message":"(that would be a *good thing* in this case >_<)","date":"2012-03-22T00:26:47.409Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: no, only uv_freeaddrinfo_t does that.","date":"2012-03-22T00:26:47.982Z","type":"message"}
+{"nick":"dylukes","message":"thank goodness.","date":"2012-03-22T00:26:54.259Z","type":"message"}
+{"nick":"dylukes","message":"^^;","date":"2012-03-22T00:26:56.190Z","type":"message"}
+{"nick":"dylukes","message":"I need the addrinfo list to persist for a bit...","date":"2012-03-22T00:27:06.416Z","type":"message"}
+{"nick":"piscisaureus_","message":"uv_freeaddrinfo that would be","date":"2012-03-22T00:27:08.355Z","type":"message"}
+{"nick":"dylukes","message":"I'm sticking the current list head in the connect handle as a baton.","date":"2012-03-22T00:27:29.403Z","type":"message"}
+{"nick":"dylukes","message":"So if the connection fails it just calls a try_next_addr with it, which factors the traversal code out.","date":"2012-03-22T00:27:48.535Z","type":"message"}
+{"nick":"dylukes","message":"basically.","date":"2012-03-22T00:27:49.940Z","type":"message"}
+{"nick":"piscisaureus_","message":"sounds fine.","date":"2012-03-22T00:28:18.334Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am off, bye all","date":"2012-03-22T00:31:12.042Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-03-22T00:35:33.506Z","type":"join"}
+{"nick":"benvie","date":"2012-03-22T00:37:48.788Z","type":"join"}
+{"nick":"mikeal","date":"2012-03-22T00:40:47.633Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 248 seconds","date":"2012-03-22T00:44:33.951Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-03-22T00:44:44.379Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-03-22T00:47:54.188Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 244 seconds","date":"2012-03-22T00:49:55.442Z","type":"quit"}
+{"nick":"pietern","reason":"Read error: Connection reset by peer","date":"2012-03-22T01:05:06.214Z","type":"quit"}
+{"nick":"pietern","date":"2012-03-22T01:05:23.540Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-03-22T01:09:30.642Z","type":"join"}
+{"nick":"indutny","new_nick":"indutny_away","date":"2012-03-22T01:12:19.484Z","type":"nick"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-03-22T01:13:21.450Z","type":"quit"}
+{"nick":"perezd","date":"2012-03-22T01:14:45.611Z","type":"join"}
+{"nick":"dylukes","message":"eek.","date":"2012-03-22T01:18:11.924Z","type":"message"}
+{"nick":"dylukes","message":"So uh, I'm a little shocked by how bad some of the 4/6 compat stuff is.","date":"2012-03-22T01:18:20.517Z","type":"message"}
+{"nick":"dylukes","message":"Would you guys mind a patch deleting all of the 6 methods?","date":"2012-03-22T01:20:40.347Z","type":"message"}
+{"nick":"dylukes","message":"All of the functions with 4/6 variants can/should be agnostic.","date":"2012-03-22T01:20:55.119Z","type":"message"}
+{"nick":"dylukes","message":"in fact, the implementations are IDENTICAL underneath...","date":"2012-03-22T01:21:01.636Z","type":"message"}
+{"nick":"dylukes","message":"the sockaddr arguments just need to be passed as pointers, not by value.","date":"2012-03-22T01:21:15.705Z","type":"message"}
+{"nick":"TooTallNate","message":"dylukes: probably ask bert or ben tomorrow when they're online","date":"2012-03-22T01:24:28.140Z","type":"message"}
+{"nick":"dylukes","message":"Yeah, it'd be a big breaking patch.","date":"2012-03-22T01:24:37.639Z","type":"message"}
+{"nick":"dylukes","message":"Since every function with a 6 variant would lose the 6 variant, and sockaddr_in[6] params would change to sockaddr *","date":"2012-03-22T01:24:53.852Z","type":"message"}
+{"nick":"dylukes","message":"Basically... there's no point to having different versions. The af_family field in the sockaddr lets you distinguish underneath... not that you have to anyways.","date":"2012-03-22T01:25:32.360Z","type":"message"}
+{"nick":"dylukes","message":"All of the BSD/Winsock code is totally agnostic... ","date":"2012-03-22T01:25:43.814Z","type":"message"}
+{"nick":"dylukes","message":"if you use getaddrinfo, you shouldn't even ever have to type a 4 or 6.","date":"2012-03-22T01:25:52.932Z","type":"message"}
+{"nick":"dylukes","message":"TooTallNate: what're they're names on irc?","date":"2012-03-22T01:26:10.205Z","type":"message"}
+{"nick":"TooTallNate","message":"well sounds like you have a pretty good argument on your side ;)","date":"2012-03-22T01:26:14.024Z","type":"message"}
+{"nick":"TooTallNate","message":"dylukes: look for piscisaureus or bnoordhuis","date":"2012-03-22T01:26:39.401Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus is which one?","date":"2012-03-22T01:26:52.289Z","type":"message"}
+{"nick":"TooTallNate","message":"bert","date":"2012-03-22T01:26:56.563Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-03-22T01:28:01.297Z","type":"quit"}
+{"nick":"orlandovftw","reason":"Ping timeout: 272 seconds","date":"2012-03-22T01:28:38.158Z","type":"quit"}
+{"nick":"dylukes","message":"is libuv used by node yet?","date":"2012-03-22T01:34:05.867Z","type":"message"}
+{"nick":"dylukes","message":"or is it still its own experimental thing?","date":"2012-03-22T01:34:15.521Z","type":"message"}
+{"nick":"TooTallNate","message":"dylukes: node as of v0.6.x uses libuv everywhere","date":"2012-03-22T01:34:39.594Z","type":"message"}
+{"nick":"dylukes","message":"crap.","date":"2012-03-22T01:34:46.430Z","type":"message"}
+{"nick":"dylukes","message":"so... this will break node too ^^.","date":"2012-03-22T01:34:52.573Z","type":"message"}
+{"nick":"TooTallNate","message":"most likely :p","date":"2012-03-22T01:35:05.628Z","type":"message"}
+{"nick":"isaacs","message":"dylukes: yeah.","date":"2012-03-22T01:35:10.144Z","type":"message"}
+{"nick":"dylukes","message":"luckily nodes net library is already 4/6 agnostic.","date":"2012-03-22T01:35:48.808Z","type":"message"}
+{"nick":"dylukes","message":"so the changes on its front should be minimal.","date":"2012-03-22T01:35:55.871Z","type":"message"}
+{"nick":"dylukes","message":"in fact, it's probably going to constitute REMOVING code, not adding it ^^.","date":"2012-03-22T01:36:06.009Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-03-22T01:37:15.354Z","type":"quit"}
+{"nick":"creationix","message":"dylukes, I like the change","date":"2012-03-22T01:46:15.718Z","type":"message"}
+{"nick":"creationix","message":"I maintain 3 projects that use libuv","date":"2012-03-22T01:46:22.210Z","type":"message"}
+{"nick":"creationix","message":"writing bindings for 4 and 6 is a pain","date":"2012-03-22T01:46:28.621Z","type":"message"}
+{"nick":"dylukes","message":"It needs to be done...","date":"2012-03-22T01:46:30.587Z","type":"message"}
+{"nick":"dylukes","message":"Yeah, I'm gonna branch and try it out tomorrow.","date":"2012-03-22T01:46:40.758Z","type":"message"}
+{"nick":"dylukes","message":"It's just blatant code duplication.","date":"2012-03-22T01:46:53.839Z","type":"message"}
+{"nick":"dylukes","message":"Literally.","date":"2012-03-22T01:46:55.065Z","type":"message"}
+{"nick":"dylukes","message":"The definitions for uv__tcp_connect and uv__tcp_connect6 actually are *identical* :P","date":"2012-03-22T01:47:18.997Z","type":"message"}
+{"nick":"dylukes","message":"they both just cast the sockaddr_in/6's to what they SHOULD have been originally (struct sockaddr *)","date":"2012-03-22T01:47:37.269Z","type":"message"}
+{"nick":"creationix","message":"so I'll just have to pass in my address by address when I call","date":"2012-03-22T01:48:12.422Z","type":"message"}
+{"nick":"creationix","message":"that's not a big change","date":"2012-03-22T01:48:16.869Z","type":"message"}
+{"nick":"isaacs","message":"dylukes: as long as it's agreeable to piscisaureus and bnoordhuis, it sounds reasonable to me, as long as it's not in the v0.6 branch","date":"2012-03-22T01:49:21.550Z","type":"message"}
+{"nick":"creationix","message":"Isn't node 0.8.0 getting close? I would think now is the ideal time to make these kind of changes in master libuv","date":"2012-03-22T01:50:22.757Z","type":"message"}
+{"nick":"creationix","message":"safe, but API changing cleanups","date":"2012-03-22T01:50:37.629Z","type":"message"}
+{"nick":"dylukes","message":"heh?","date":"2012-03-22T01:51:56.104Z","type":"message"}
+{"nick":"dylukes","message":"why is the v0.6 branch separate from master?","date":"2012-03-22T01:52:02.968Z","type":"message"}
+{"nick":"dylukes","message":"I mean, it has independent changes","date":"2012-03-22T01:52:16.943Z","type":"message"}
+{"nick":"dylukes","message":"seems odd.","date":"2012-03-22T01:52:19.242Z","type":"message"}
+{"nick":"dylukes","message":"oh, a patch got put on both branches.","date":"2012-03-22T01:52:32.247Z","type":"message"}
+{"nick":"creationix","message":"node has strict API and ABI stability within a stable series","date":"2012-03-22T01:53:24.054Z","type":"message"}
+{"nick":"creationix","message":"the libuv abi can't change for the node 0.6.x lifespan","date":"2012-03-22T01:53:34.777Z","type":"message"}
+{"nick":"dylukes","message":"but isn't that why there's a v0.6 branch?","date":"2012-03-22T01:53:52.096Z","type":"message"}
+{"nick":"dylukes","message":"node's external API/ABI shouldn't change at all.","date":"2012-03-22T01:54:10.611Z","type":"message"}
+{"nick":"dylukes","message":"All this is is remapping some internal functions.","date":"2012-03-22T01:54:18.073Z","type":"message"}
+{"nick":"dylukes","message":"and removing redundancy.","date":"2012-03-22T01:54:22.830Z","type":"message"}
+{"nick":"creationix","message":"ask bert or ben","date":"2012-03-22T01:54:37.452Z","type":"message"}
+{"nick":"creationix","message":"they are in Europe","date":"2012-03-22T01:54:45.148Z","type":"message"}
+{"nick":"dylukes","message":"hehe yeah","date":"2012-03-22T01:54:49.602Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T01:59:53.241Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-22T02:23:40.733Z","type":"join"}
+{"nick":"benvie","date":"2012-03-22T02:35:03.706Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T03:10:29.429Z","type":"quit"}
+{"nick":"benvie","date":"2012-03-22T03:13:05.399Z","type":"join"}
+{"nick":"dylukes","reason":"Quit: Pipes are broken. Sending packets via Fedex.","date":"2012-03-22T03:24:17.597Z","type":"quit"}
+{"nick":"pfox___","date":"2012-03-22T03:48:09.323Z","type":"join"}
+{"nick":"mikeal","date":"2012-03-22T03:55:12.076Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T04:06:13.673Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-03-22T04:09:32.516Z","type":"join"}
+{"nick":"Aria","date":"2012-03-22T04:29:14.902Z","type":"join"}
+{"nick":"pfox___","reason":"Ping timeout: 264 seconds","date":"2012-03-22T04:38:23.316Z","type":"quit"}
+{"nick":"orlandovftw","reason":"Ping timeout: 264 seconds","date":"2012-03-22T04:42:35.319Z","type":"quit"}
+{"nick":"perezd","reason":"Read error: Connection reset by peer","date":"2012-03-22T05:00:11.036Z","type":"quit"}
+{"nick":"perezd","date":"2012-03-22T05:00:39.797Z","type":"join"}
+{"nick":"perezd","reason":"Ping timeout: 246 seconds","date":"2012-03-22T05:05:01.015Z","type":"quit"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-03-22T05:15:51.392Z","type":"quit"}
+{"nick":"perezd","date":"2012-03-22T05:54:08.045Z","type":"join"}
+{"nick":"benvie","reason":"Ping timeout: 260 seconds","date":"2012-03-22T05:55:07.289Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-03-22T06:09:45.078Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-03-22T06:26:52.051Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-03-22T06:27:47.633Z","type":"join"}
+{"nick":"orlandovftw","reason":"Ping timeout: 244 seconds","date":"2012-03-22T07:49:27.348Z","type":"quit"}
+{"nick":"rendar","date":"2012-03-22T07:51:54.167Z","type":"join"}
+{"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-03-22T07:58:05.258Z","type":"quit"}
