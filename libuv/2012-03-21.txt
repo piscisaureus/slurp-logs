@@ -196,3 +196,359 @@
 {"nick":"indutny","message":"isaacs: how are you doing?","date":"2012-03-21T15:55:27.431Z","type":"message"}
 {"nick":"perezd","date":"2012-03-21T15:55:54.239Z","type":"join"}
 {"nick":"isaacs","message":"hola","date":"2012-03-21T15:57:45.963Z","type":"message"}
+{"nick":"isaacs","message":"indutny: so, i added a 50ms timeout on startup, and now debugger is working.","date":"2012-03-21T16:00:14.553Z","type":"message"}
+{"nick":"isaacs","message":"indutny: but this is a terrible fix.  i'm not happy with it.","date":"2012-03-21T16:00:21.678Z","type":"message"}
+{"nick":"indutny","message":"on debugger startup?","date":"2012-03-21T16:01:21.526Z","type":"message"}
+{"nick":"indutny","message":"I think I did that before","date":"2012-03-21T16:01:25.011Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-03-21T16:01:29.880Z","type":"message"}
+{"nick":"indutny","message":"and we decided to remove that","date":"2012-03-21T16:01:36.652Z","type":"message"}
+{"nick":"isaacs","message":"ha","date":"2012-03-21T16:01:42.507Z","type":"message"}
+{"nick":"isaacs","message":"yeah, it *shouldn't* be necessary","date":"2012-03-21T16:01:48.086Z","type":"message"}
+{"nick":"isaacs","message":"but it looks like v8 sends the \"breakpoint\" message for line=1 before the client is ready to receive it","date":"2012-03-21T16:02:03.703Z","type":"message"}
+{"nick":"indutny","message":"aaah","date":"2012-03-21T16:02:21.289Z","type":"message"}
+{"nick":"indutny","message":"I remembered that","date":"2012-03-21T16:02:24.935Z","type":"message"}
+{"nick":"indutny","message":"yes, that's it","date":"2012-03-21T16:02:28.183Z","type":"message"}
+{"nick":"indutny","message":"I've an idea","date":"2012-03-21T16:02:54.876Z","type":"message"}
+{"nick":"isaacs","message":"so i added a timeout before we call Module.runMain()","date":"2012-03-21T16:02:58.544Z","type":"message"}
+{"nick":"indutny","message":"let it break somewhere in module.js before entering that module","date":"2012-03-21T16:03:19.222Z","type":"message"}
+{"nick":"indutny","message":"and on connection send \"continue\"","date":"2012-03-21T16:03:25.861Z","type":"message"}
+{"nick":"isaacs","message":"hm.","date":"2012-03-21T16:03:33.075Z","type":"message"}
+{"nick":"isaacs","message":"that sounds more reliable","date":"2012-03-21T16:03:37.218Z","type":"message"}
+{"nick":"indutny","message":"dunno, why I hadn't thought that before","date":"2012-03-21T16:03:37.513Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-03-21T16:03:40.268Z","type":"message"}
+{"nick":"indutny","message":"we can just ignore any messages before reply to our continue","date":"2012-03-21T16:03:52.964Z","type":"message"}
+{"nick":"isaacs","message":"if you feel like doing a patch for this, then that'd be fine.  or, we could just figure out why it's hitting the breakpoint before there's a message.","date":"2012-03-21T16:03:57.343Z","type":"message"}
+{"nick":"indutny","message":"it just emits message","date":"2012-03-21T16:04:11.330Z","type":"message"}
+{"nick":"indutny","message":"messages ain't buffered","date":"2012-03-21T16:04:21.481Z","type":"message"}
+{"nick":"isaacs","message":"like, it'd be nice if we could do something like: global.v8debug.DebugServer.onConnection = Module.runMain","date":"2012-03-21T16:04:22.025Z","type":"message"}
+{"nick":"isaacs","message":"or something like that","date":"2012-03-21T16:04:24.996Z","type":"message"}
+{"nick":"indutny","message":"because connection may happen in the middle of execution","date":"2012-03-21T16:04:33.610Z","type":"message"}
+{"nick":"indutny","message":"or client may reconnect","date":"2012-03-21T16:04:36.440Z","type":"message"}
+{"nick":"isaacs","message":"sure","date":"2012-03-21T16:04:45.838Z","type":"message"}
+{"nick":"isaacs","message":"yeah, i guess.","date":"2012-03-21T16:04:53.859Z","type":"message"}
+{"nick":"indutny","message":"lets try my patch first :)","date":"2012-03-21T16:04:54.054Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-03-21T16:04:55.944Z","type":"message"}
+{"nick":"indutny","message":"will work on that","date":"2012-03-21T16:04:56.639Z","type":"message"}
+{"nick":"isaacs","message":"i'm not very familiar with the debugger api, and it's kind of huge.","date":"2012-03-21T16:05:07.242Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it does look like there are a few other methods we could expose pretty easily, though","date":"2012-03-21T16:05:20.058Z","type":"message"}
+{"nick":"isaacs","message":"i dunno if they've been added recently, or if there just wasn't any desire for them","date":"2012-03-21T16:05:39.251Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-03-21T16:05:47.546Z","type":"message"}
+{"nick":"isaacs","message":"test/simple/test-dgram-pingpong.js is my next victim.","date":"2012-03-21T16:05:48.048Z","type":"message"}
+{"nick":"indutny","message":"what are those methods?","date":"2012-03-21T16:06:05.396Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-03-21T16:10:45.173Z","type":"join"}
+{"nick":"isaacs","message":"scope, scopes, gc","date":"2012-03-21T16:14:52.508Z","type":"message"}
+{"nick":"isaacs","message":"indutny: also, it looks like we always loop over the full source code, but the \"source\" directive can pre-filter the lines.","date":"2012-03-21T16:15:20.169Z","type":"message"}
+{"nick":"isaacs","message":"getting this from here: http://code.google.com/p/v8/wiki/DebuggerProtocol","date":"2012-03-21T16:15:30.184Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-03-21T16:16:39.311Z","type":"message"}
+{"nick":"isaacs","message":"that isn't important, though, really.","date":"2012-03-21T16:19:19.180Z","type":"message"}
+{"nick":"isaacs","message":"gc would be cool","date":"2012-03-21T16:19:21.117Z","type":"message"}
+{"nick":"isaacs","message":"the more important thing is to work and not break the tests half the time ;)","date":"2012-03-21T16:19:35.241Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-03-21T16:19:46.092Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-03-21T16:26:27.328Z","type":"quit"}
+{"nick":"dap","date":"2012-03-21T16:28:21.469Z","type":"join"}
+{"nick":"indutny","message":"isaacs: yt?","date":"2012-03-21T16:39:07.702Z","type":"message"}
+{"nick":"isaacs","message":"hi","date":"2012-03-21T16:39:24.552Z","type":"message"}
+{"nick":"isaacs","message":"indutny: pong","date":"2012-03-21T16:40:16.437Z","type":"message"}
+{"nick":"indutny","message":"one sec","date":"2012-03-21T16:40:19.431Z","type":"message"}
+{"nick":"indutny","message":"finalizing my patch","date":"2012-03-21T16:40:24.032Z","type":"message"}
+{"nick":"indutny","reason":"Ping timeout: 265 seconds","date":"2012-03-21T16:52:31.156Z","type":"quit"}
+{"nick":"indutny","date":"2012-03-21T16:56:22.333Z","type":"join"}
+{"nick":"indutny","message":"isaacs: https://github.com/indutny/node/commit/72e5237243c992015ac33a78c1b4058ce666f1d9","date":"2012-03-21T16:56:35.255Z","type":"message"}
+{"nick":"indutny","message":"test please","date":"2012-03-21T16:56:39.492Z","type":"message"}
+{"nick":"isaacs","message":"indutny: should also remove the 50ms timeout in src/node.js","date":"2012-03-21T16:58:38.185Z","type":"message"}
+{"nick":"indutny","message":"isaacs: agreed","date":"2012-03-21T16:58:49.128Z","type":"message"}
+{"nick":"indutny","message":"isaacs: https://github.com/indutny/node/commit/5882fbe9c2bc20e5533aaa30b53a08152eed86fb","date":"2012-03-21T17:00:15.789Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it should probably just revert that commit.  we *do* still need the nextTick","date":"2012-03-21T17:01:13.471Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-03-21T17:01:21.884Z","type":"message"}
+{"nick":"indutny","message":"whole commit?","date":"2012-03-21T17:01:42.493Z","type":"message"}
+{"nick":"isaacs","message":"indutny: yeah","date":"2012-03-21T17:02:18.502Z","type":"message"}
+{"nick":"isaacs","message":"c781f17","date":"2012-03-21T17:02:19.284Z","type":"message"}
+{"nick":"isaacs","message":"git revert c781f17","date":"2012-03-21T17:02:22.421Z","type":"message"}
+{"nick":"indutny","message":"one sec","date":"2012-03-21T17:03:28.894Z","type":"message"}
+{"nick":"indutny","message":"isaacs: two commits, then: https://github.com/indutny/node/compare/fix-debugger-repl-race","date":"2012-03-21T17:03:58.091Z","type":"message"}
+{"nick":"isaacs","message":"is it possible to just infer --debug-repl-start from --debug-brk?","date":"2012-03-21T17:04:48.724Z","type":"message"}
+{"nick":"demarchi","date":"2012-03-21T17:04:56.159Z","type":"join"}
+{"nick":"isaacs","message":"oh, i guess not..","date":"2012-03-21T17:04:57.596Z","type":"message"}
+{"nick":"isaacs","message":"since it doesn't mean that w're necessarily going to get a repl connection immediately","date":"2012-03-21T17:05:07.154Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-03-21T17:05:15.929Z","type":"message"}
+{"nick":"indutny","message":"one may start node with just --debug-brk","date":"2012-03-21T17:05:22.250Z","type":"message"}
+{"nick":"isaacs","message":"so, let's say, yo udo `node --debug-brk foo.js`","date":"2012-03-21T17:06:22.882Z","type":"message"}
+{"nick":"isaacs","message":"the issue, then, is that you might be about to connect with node-inspector, or some other debugger client?","date":"2012-03-21T17:06:36.568Z","type":"message"}
+{"nick":"isaacs","message":"which doesn't know to send a `c` to start?","date":"2012-03-21T17:06:53.224Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-03-21T17:06:57.367Z","type":"message"}
+{"nick":"indutny","message":"that's why I've introduced --debug-repl-start","date":"2012-03-21T17:07:03.336Z","type":"message"}
+{"nick":"indutny","message":"which will add additional breakpoint","date":"2012-03-21T17:07:10.712Z","type":"message"}
+{"nick":"isaacs","message":"right.","date":"2012-03-21T17:07:11.286Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i think it should probably be moved down a few lines, right before   return compiledWrapper.apply(self.exports, args);, no?","date":"2012-03-21T17:08:52.811Z","type":"message"}
+{"nick":"indutny","message":"isaacs: are you ok with that?","date":"2012-03-21T17:09:05.820Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-03-21T17:09:21.099Z","type":"message"}
+{"nick":"isaacs","message":"oh, i guess it doesn't matter... since you're just going to \"continue\" right into that anyway","date":"2012-03-21T17:09:22.476Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-03-21T17:09:26.015Z","type":"message"}
+{"nick":"isaacs","message":"and there's really nothign controversial between there...","date":"2012-03-21T17:09:38.837Z","type":"message"}
+{"nick":"isaacs","message":"ok, it passes meat-brain scrutiny.  pulling and testing now.  hold one","date":"2012-03-21T17:09:55.293Z","type":"message"}
+{"nick":"isaacs","message":"*hold on","date":"2012-03-21T17:09:57.111Z","type":"message"}
+{"nick":"indutny","message":"kk","date":"2012-03-21T17:10:22.960Z","type":"message"}
+{"nick":"isaacs","message":"indutny: hmm..","date":"2012-03-21T17:13:42.632Z","type":"message"}
+{"nick":"isaacs","message":"$ ./node debug --port=13683 test/fixtures/breakpoints.js","date":"2012-03-21T17:13:44.713Z","type":"message"}
+{"nick":"isaacs","message":"< debugger listening on port 13683","date":"2012-03-21T17:13:44.908Z","type":"message"}
+{"nick":"isaacs","message":"connecting... ok","date":"2012-03-21T17:13:44.908Z","type":"message"}
+{"nick":"isaacs","message":"break in test/fixtures/breakpoints.js:5","date":"2012-03-21T17:13:46.640Z","type":"message"}
+{"nick":"isaacs","message":"  3   var i = 10;","date":"2012-03-21T17:13:48.661Z","type":"message"}
+{"nick":"isaacs","message":"  4   while (--i != 0);","date":"2012-03-21T17:13:50.627Z","type":"message"}
+{"nick":"isaacs","message":"  5   debugger;","date":"2012-03-21T17:13:52.628Z","type":"message"}
+{"nick":"isaacs","message":"  6   return i;","date":"2012-03-21T17:13:54.625Z","type":"message"}
+{"nick":"isaacs","message":"  7 }","date":"2012-03-21T17:13:56.629Z","type":"message"}
+{"nick":"isaacs","message":"debug> ","date":"2012-03-21T17:13:58.626Z","type":"message"}
+{"nick":"isaacs","message":"(^C again to quit)","date":"2012-03-21T17:14:00.679Z","type":"message"}
+{"nick":"isaacs","message":"debug> ","date":"2012-03-21T17:14:02.652Z","type":"message"}
+{"nick":"indutny","message":"huh?","date":"2012-03-21T17:14:36.075Z","type":"message"}
+{"nick":"indutny","message":"it's quite different for me","date":"2012-03-21T17:15:05.756Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 250 seconds","date":"2012-03-21T17:15:10.196Z","type":"quit"}
+{"nick":"indutny","message":"~/Code/git/indutny/node > ./node debug --port=13683 test/fixtures/breakpoints.js","date":"2012-03-21T17:15:18.406Z","type":"message"}
+{"nick":"indutny","message":"< debugger listening on port 13683","date":"2012-03-21T17:15:18.756Z","type":"message"}
+{"nick":"indutny","message":"connecting... ok","date":"2012-03-21T17:15:18.950Z","type":"message"}
+{"nick":"indutny","message":"break in test/fixtures/breakpoints.js:1","date":"2012-03-21T17:15:18.950Z","type":"message"}
+{"nick":"indutny","message":"  1 debugger;","date":"2012-03-21T17:15:18.950Z","type":"message"}
+{"nick":"indutny","message":"  2 function a(x) {","date":"2012-03-21T17:15:18.950Z","type":"message"}
+{"nick":"indutny","message":"  3   var i = 10;","date":"2012-03-21T17:15:19.459Z","type":"message"}
+{"nick":"indutny","message":"debug> ","date":"2012-03-21T17:15:19.660Z","type":"message"}
+{"nick":"isaacs","message":"i sometimes also see this:","date":"2012-03-21T17:15:48.978Z","type":"message"}
+{"nick":"isaacs","message":"$ ./node debug --port=13683 test/fixtures/breakpoints.js","date":"2012-03-21T17:15:51.729Z","type":"message"}
+{"nick":"isaacs","message":"< debugger listening on port 13683","date":"2012-03-21T17:15:52.214Z","type":"message"}
+{"nick":"isaacs","message":"connecting... ok","date":"2012-03-21T17:15:52.214Z","type":"message"}
+{"nick":"isaacs","message":"break in test/fixtures/breakpoints.js:1","date":"2012-03-21T17:15:53.202Z","type":"message"}
+{"nick":"isaacs","message":"  1 debugger;","date":"2012-03-21T17:15:55.244Z","type":"message"}
+{"nick":"isaacs","message":"  2 function a(x) {","date":"2012-03-21T17:15:57.205Z","type":"message"}
+{"nick":"isaacs","message":"  3   var i = 10;","date":"2012-03-21T17:15:59.202Z","type":"message"}
+{"nick":"isaacs","message":"break in test/fixtures/breakpoints.js:5","date":"2012-03-21T17:16:01.212Z","type":"message"}
+{"nick":"isaacs","message":"  3   var i = 10;","date":"2012-03-21T17:16:03.201Z","type":"message"}
+{"nick":"isaacs","message":"  4   while (--i != 0);","date":"2012-03-21T17:16:05.255Z","type":"message"}
+{"nick":"isaacs","message":"  5   debugger;","date":"2012-03-21T17:16:07.201Z","type":"message"}
+{"nick":"isaacs","message":"  6   return i;","date":"2012-03-21T17:16:09.205Z","type":"message"}
+{"nick":"isaacs","message":"  7 }","date":"2012-03-21T17:16:11.233Z","type":"message"}
+{"nick":"isaacs","message":"debug> ","date":"2012-03-21T17:16:13.202Z","type":"message"}
+{"nick":"isaacs","message":"like, it misses the one in lib/module.js, hits line 1, continues past it","date":"2012-03-21T17:16:15.203Z","type":"message"}
+{"nick":"indutny","message":"ok, it's too raw now","date":"2012-03-21T17:16:24.663Z","type":"message"}
+{"nick":"indutny","message":"I'll finish it tomorrow then","date":"2012-03-21T17:16:35.390Z","type":"message"}
+{"nick":"isaacs","message":"the approach seems like it might be a bit more efficient than a dumb 50ms timeout","date":"2012-03-21T17:17:55.406Z","type":"message"}
+{"nick":"isaacs","message":"but it's not much less hacky.","date":"2012-03-21T17:17:59.442Z","type":"message"}
+{"nick":"isaacs","message":"i'll try to ping some v8 guys and see if there's a hook we're just not aware of","date":"2012-03-21T17:18:39.507Z","type":"message"}
+{"nick":"mmalecki[away]","new_nick":"mmalecki","date":"2012-03-21T17:19:29.337Z","type":"nick"}
+{"nick":"indutny","date":"2012-03-21T17:29:26.973Z","type":"part"}
+{"nick":"stephank","date":"2012-03-21T17:32:19.433Z","type":"join"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-03-21T17:38:49.630Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 248 seconds","date":"2012-03-21T17:41:05.966Z","type":"quit"}
+{"nick":"indutny","date":"2012-03-21T17:44:20.728Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-21T17:47:29.567Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-21T18:02:10.213Z","type":"join"}
+{"nick":"brson","date":"2012-03-21T18:07:47.156Z","type":"join"}
+{"nick":"dshaw_","date":"2012-03-21T18:18:14.216Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-03-21T18:32:55.067Z","type":"join"}
+{"nick":"TooTallNate","message":"sup guys","date":"2012-03-21T18:41:19.042Z","type":"message"}
+{"nick":"TooTallNate","message":"anyone care to review? https://github.com/TooTallNate/node/commit/interactive","date":"2012-03-21T18:41:22.732Z","type":"message"}
+{"nick":"benvie","message":"how goes","date":"2012-03-21T18:48:33.301Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-21T18:52:37.545Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-03-21T18:57:11.000Z","type":"join"}
+{"nick":"TooTallNate","message":"tired","date":"2012-03-21T18:58:16.682Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-21T19:01:16.758Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-03-21T19:03:09.993Z","type":"quit"}
+{"nick":"isaacs","message":"TooTallNate: lgtm.","date":"2012-03-21T19:15:20.294Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: i think we meant to do that back in 0.5 but didn't for some reason.","date":"2012-03-21T19:15:46.894Z","type":"message"}
+{"nick":"isaacs","message":"probably lazines.","date":"2012-03-21T19:15:50.254Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-03-21T19:16:29.412Z","type":"join"}
+{"nick":"TooTallNate","message":"isaacs: thanks","date":"2012-03-21T19:18:36.989Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Nathan Rajlich\u000f \u000307master\u000f * r\u0002feaa8a4\u000f \u000310\u000f/ (src/node.cc src/node.js test/simple/test-force-repl.js)\u0002:\u000f ","date":"2012-03-21T19:18:38.034Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f cmd: add a -i / --interactive flag to force the REPL","date":"2012-03-21T19:18:38.514Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f This is the only way to spawn a node child process in REPL mode, and will","date":"2012-03-21T19:18:38.514Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f also be needed to be able to use the REPL in MinTTY. - http://git.io/H5ZQeg","date":"2012-03-21T19:18:38.514Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: that v0.6 patch is still being reviewed (https://github.com/igorzi/node/commit/f8932effcddd1a0ee07e3d3dfd68fcfd1d6824bf)... hopefully it'll land later today","date":"2012-03-21T19:21:01.478Z","type":"message"}
+{"nick":"mjr_","date":"2012-03-21T19:22:22.741Z","type":"join"}
+{"nick":"benvie","message":"amg","date":"2012-03-21T19:24:55.268Z","type":"message"}
+{"nick":"benvie","message":"mintty","date":"2012-03-21T19:24:56.771Z","type":"message"}
+{"nick":"benvie","message":"the i is for inspiration","date":"2012-03-21T19:25:23.483Z","type":"message"}
+{"nick":"TooTallNate","message":"benvie: it won't quite work in mintty just yet","date":"2012-03-21T19:25:47.453Z","type":"message"}
+{"nick":"TooTallNate","message":"benvie: my tty->readline migration branch needs to land first","date":"2012-03-21T19:25:58.561Z","type":"message"}
+{"nick":"TooTallNate","message":"just gotta find time to finish it up","date":"2012-03-21T19:26:03.876Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 240 seconds","date":"2012-03-21T19:30:06.607Z","type":"quit"}
+{"nick":"kohai","reason":"Remote host closed the connection","date":"2012-03-21T19:32:19.802Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-03-21T19:33:09.062Z","type":"join"}
+{"nick":"kohai","date":"2012-03-21T19:34:07.605Z","type":"join"}
+{"nick":"travis-ci","date":"2012-03-21T19:35:00.363Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#628 (master - feaa8a4 : Nathan Rajlich): The build is still failing.","date":"2012-03-21T19:35:00.559Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d2389f8...feaa8a4","date":"2012-03-21T19:35:00.559Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/916581","date":"2012-03-21T19:35:00.559Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-21T19:35:00.559Z","type":"part"}
+{"nick":"benvie","message":"ooh","date":"2012-03-21T19:35:56.334Z","type":"message"}
+{"nick":"benvie","message":"yeah","date":"2012-03-21T19:35:57.682Z","type":"message"}
+{"nick":"skomski","reason":"Remote host closed the connection","date":"2012-03-21T19:36:27.239Z","type":"quit"}
+{"nick":"k-s","new_nick":"k-s[AWAY]","date":"2012-03-21T19:38:38.845Z","type":"nick"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-03-21T19:46:19.888Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-21T19:46:56.365Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-03-21T19:49:05.799Z","type":"join"}
+{"nick":"isaacs","message":"igorzi: thanks","date":"2012-03-21T19:50:54.590Z","type":"message"}
+{"nick":"orlandovftw","reason":"Quit: leaving","date":"2012-03-21T19:57:42.283Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-03-21T19:58:02.019Z","type":"join"}
+{"nick":"AndreasMadsen","date":"2012-03-21T20:11:09.668Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-21T20:34:34.233Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-21T20:46:42.246Z","type":"join"}
+{"nick":"perezd","reason":"Read error: Connection reset by peer","date":"2012-03-21T20:49:08.839Z","type":"quit"}
+{"nick":"perezd_","date":"2012-03-21T20:49:11.898Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-21T20:56:02.396Z","type":"quit"}
+{"nick":"creationix","message":"what would cause \"canio: src/unix/core.c:237: uv__finish_close: Assertion `!(handle->flags & UV_CLOSED)' failed.\"","date":"2012-03-21T21:07:33.209Z","type":"message"}
+{"nick":"creationix","message":"calling uv_close() twice on the same handle?","date":"2012-03-21T21:07:43.746Z","type":"message"}
+{"nick":"creationix","message":"I'm pretty sure I'm not doing that","date":"2012-03-21T21:07:49.904Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-03-21T21:10:44.315Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-03-21T21:12:56.405Z","type":"quit"}
+{"nick":"mikeal","date":"2012-03-21T21:18:09.199Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-03-21T21:22:01.656Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-03-21T21:24:01.549Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-03-21T21:24:48.658Z","type":"join"}
+{"nick":"igorzi","date":"2012-03-21T21:32:07.891Z","type":"join"}
+{"nick":"creationix","message":"Is there a way to know what's holding up the libuv event loop?","date":"2012-03-21T21:34:34.027Z","type":"message"}
+{"nick":"creationix","message":"from the C level","date":"2012-03-21T21:34:37.352Z","type":"message"}
+{"nick":"rendar","date":"2012-03-21T21:42:42.252Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-03-21T22:01:17.343Z","type":"quit"}
+{"nick":"perezd_","reason":"Quit: perezd_","date":"2012-03-21T22:01:49.812Z","type":"quit"}
+{"nick":"dylukes","date":"2012-03-21T22:06:03.948Z","type":"join"}
+{"nick":"dylukes","message":"I don't suppose this is a room for joyent/libuv, huh","date":"2012-03-21T22:06:20.115Z","type":"message"}
+{"nick":"isaacs","message":"dylukes: it is","date":"2012-03-21T22:12:10.958Z","type":"message"}
+{"nick":"dylukes","message":"whoo.","date":"2012-03-21T22:12:17.465Z","type":"message"}
+{"nick":"dylukes","message":"okay so... what's the equivalent in ares to getaddrinfo?","date":"2012-03-21T22:12:30.998Z","type":"message"}
+{"nick":"dylukes","message":"Or rather, how do I accomplish the same task as using getaddrinfo and then looping through the results?","date":"2012-03-21T22:14:53.917Z","type":"message"}
+{"nick":"perezd","date":"2012-03-21T22:15:12.981Z","type":"join"}
+{"nick":"TooTallNate","message":"dylukes: i think most of the uv gurus are offline atm, but when in doubt, read the node source code ;)","date":"2012-03-21T22:15:49.748Z","type":"message"}
+{"nick":"dylukes","message":"I'm trudging through the libuv source heh.","date":"2012-03-21T22:16:01.052Z","type":"message"}
+{"nick":"dylukes","message":"I've never touched node in my life.","date":"2012-03-21T22:16:05.441Z","type":"message"}
+{"nick":"dylukes","message":"I'm just looking to get familiar since rust seems to be adopting it.","date":"2012-03-21T22:16:17.581Z","type":"message"}
+{"nick":"benvie","date":"2012-03-21T22:21:38.188Z","type":"quit"}
+{"nick":"dylukes","message":"I'm trying to puzzle out how to use area, haha.","date":"2012-03-21T22:22:57.767Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-03-21T22:23:34.216Z","type":"join"}
+{"nick":"piscisaureus_","message":"hello","date":"2012-03-21T22:25:03.934Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: what's up?","date":"2012-03-21T22:25:08.289Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs:","date":"2012-03-21T22:25:22.125Z","type":"message"}
+{"nick":"piscisaureus_","message":"\u0003\u000305ircretary: \u000301Here are your notes:","date":"2012-03-21T22:25:22.320Z","type":"message"}
+{"nick":"piscisaureus_","message":"\u000305ircretary: \u000301At 2012-03-21T19:54:48.107Z, in PM, isaacs said: when \u000310piscisaureus\u0003\u000301","date":"2012-03-21T22:25:22.320Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- not quite helpful","date":"2012-03-21T22:25:27.566Z","type":"message"}
+{"nick":"isaacs","message":"oh, hahahah","date":"2012-03-21T22:26:28.560Z","type":"message"}
+{"nick":"isaacs","message":"she should not make notes of when requests.","date":"2012-03-21T22:26:37.579Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think i wanted to ask if you knew anything about dgram failing, if that's something we should care about .","date":"2012-03-21T22:26:59.048Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I know nothing about it, and whether we should care depdends on what the failure is.","date":"2012-03-21T22:27:44.888Z","type":"message"}
+{"nick":"isaacs","message":"https://github.com/joyent/node/issues/2981","date":"2012-03-21T22:27:46.569Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it looks like this sporadically failing test is a result of the message not getting received properly","date":"2012-03-21T22:28:06.643Z","type":"message"}
+{"nick":"isaacs","message":"like, instead of getting 'PING' or 'PONG' it gets a buffer of length=0","date":"2012-03-21T22:28:19.805Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: right, that doesn't look right.","date":"2012-03-21T22:28:36.203Z","type":"message"}
+{"nick":"isaacs","message":"it's very sporadic.  happens for me ~1/200 times","date":"2012-03-21T22:28:53.314Z","type":"message"}
+{"nick":"piscisaureus_","message":"I will try to reproduce on windows to see if it is a node issue or a libuv problem","date":"2012-03-21T22:29:23.497Z","type":"message"}
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2012-03-21T22:31:49.816Z","type":"quit"}
+{"nick":"ircretary","date":"2012-03-21T22:31:56.879Z","type":"join"}
+{"nick":"isaacs","message":"thanks!","date":"2012-03-21T22:32:02.698Z","type":"message"}
+{"nick":"piscisaureus_","message":"kompaailing now","date":"2012-03-21T22:32:36.807Z","type":"message"}
+{"nick":"isaacs","message":"is that some kind of krazy nordic word?","date":"2012-03-21T22:32:53.192Z","type":"message"}
+{"nick":"isaacs","message":"i like it","date":"2012-03-21T22:33:04.025Z","type":"message"}
+{"nick":"piscisaureus_","message":"no","date":"2012-03-21T22:34:11.669Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: 1 in 200 runs or 1 in 200 packets?","date":"2012-03-21T22:36:30.959Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: on windows I can't repro it","date":"2012-03-21T22:37:28.879Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: 1 in 200 runs","date":"2012-03-21T22:38:25.729Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: https://github.com/isaacs/node/commit/dgram-pingpong makes it run a lot faster","date":"2012-03-21T22:38:47.589Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah that's what I am using","date":"2012-03-21T22:38:57.338Z","type":"message"}
+{"nick":"isaacs","message":"and provide a clearer failure","date":"2012-03-21T22:39:00.156Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: never failes me","date":"2012-03-21T22:39:01.803Z","type":"message"}
+{"nick":"isaacs","message":"interesting","date":"2012-03-21T22:39:04.716Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but - I am on windows. We have our own issues :-)","date":"2012-03-21T22:39:28.680Z","type":"message"}
+{"nick":"isaacs","message":"for sure.  apparently this is not one of them, though.","date":"2012-03-21T22:39:42.111Z","type":"message"}
+{"nick":"piscisaureus_","action":"summons bnoordhuis","date":"2012-03-21T22:39:51.057Z","type":"action"}
+{"nick":"piscisaureus_","message":"isaacs: my suspicion is that we either do not handle an error correctly or it is something similar to the ECONNABORTED issue we just fixed.","date":"2012-03-21T22:40:22.235Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-03-21T22:40:29.431Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: e.g. this is the kernel's own special way of saying \"hey, there used to be some packet here but we dropped it\"","date":"2012-03-21T22:40:50.149Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: did we just fix that?  ben's patch lgty?","date":"2012-03-21T22:41:24.329Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, it did. I think he landed it too.","date":"2012-03-21T22:41:38.307Z","type":"message"}
+{"nick":"AvianFlu","message":"isaacs, do you just see that test fail, or do you see the test runner crash?","date":"2012-03-21T22:41:50.361Z","type":"message"}
+{"nick":"isaacs","message":"AvianFlu: i see the test fail, but only 1/200 times","date":"2012-03-21T22:42:13.263Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: hm.  i don't see it","date":"2012-03-21T22:42:18.066Z","type":"message"}
+{"nick":"isaacs","message":"oh, it's on master.","date":"2012-03-21T22:42:26.358Z","type":"message"}
+{"nick":"AvianFlu","message":"I see that test crash the test runner, and it's more like 1 in 5 for me","date":"2012-03-21T22:42:26.601Z","type":"message"}
+{"nick":"isaacs","message":"yeah, we need that in v0.6","date":"2012-03-21T22:42:51.006Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah, should also be backported to 0.6","date":"2012-03-21T22:42:53.832Z","type":"message"}
+{"nick":"isaacs","message":"blazow.","date":"2012-03-21T22:43:22.228Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307v0.6\u000f * r\u00028409a67\u000f \u000310\u000f/ src/unix/stream.c \u0002:\u000f ","date":"2012-03-21T22:43:22.463Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f unix: ignore ECONNABORTED errors from accept()","date":"2012-03-21T22:43:22.664Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f ECONNABORTED means that the connection was torn down by the peer before the","date":"2012-03-21T22:43:22.664Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f TCP handshake completed. Ignore it, there's nothing we can do and it simplifies","date":"2012-03-21T22:43:22.664Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002libuv:\u000f error handling for libuv users. - http://git.io/IMARTw","date":"2012-03-21T22:43:22.664Z","type":"message"}
+{"nick":"isaacs","message":"thanks, bnoordhuis","date":"2012-03-21T22:43:28.042Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-21T22:45:04.024Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#146 (v0.6 - 8409a67 : Ben Noordhuis): The build is still failing.","date":"2012-03-21T22:45:04.227Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/4ae316b...8409a67","date":"2012-03-21T22:45:04.227Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/917979","date":"2012-03-21T22:45:04.227Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-21T22:45:04.227Z","type":"part"}
+{"nick":"bnoordhuis","date":"2012-03-21T22:45:46.908Z","type":"join"}
+{"nick":"dylukes","message":"The problem I'm having with c-ares,","date":"2012-03-21T22:46:50.915Z","type":"message"}
+{"nick":"dylukes","message":"is there doesn't seem to be a simple analog to getaddrinfo","date":"2012-03-21T22:47:03.393Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: uv_getaddrinfo ?","date":"2012-03-21T22:51:52.537Z","type":"message"}
+{"nick":"dylukes","message":"wait","date":"2012-03-21T22:52:00.671Z","type":"message"}
+{"nick":"dylukes","message":"really","date":"2012-03-21T22:52:01.534Z","type":"message"}
+{"nick":"dylukes","message":";___;","date":"2012-03-21T22:52:03.469Z","type":"message"}
+{"nick":"dylukes","message":"fuck","date":"2012-03-21T22:52:05.048Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: it runs in the thread pool though","date":"2012-03-21T22:52:17.622Z","type":"message"}
+{"nick":"dylukes","message":"so can you give me a brief rundown of who to uh,","date":"2012-03-21T22:53:24.032Z","type":"message"}
+{"nick":"dylukes","message":"enter libuv's \"main loop\" so to speak?","date":"2012-03-21T22:53:29.289Z","type":"message"}
+{"nick":"dylukes","message":"or yield control to libuv?","date":"2012-03-21T22:53:39.747Z","type":"message"}
+{"nick":"piscisaureus_","message":"uv_run() ?","date":"2012-03-21T22:53:44.675Z","type":"message"}
+{"nick":"dylukes","message":"it always seems to exit immediately...","date":"2012-03-21T22:53:57.182Z","type":"message"}
+{"nick":"dylukes","message":"I assume I need,","date":"2012-03-21T22:54:00.718Z","type":"message"}
+{"nick":"dylukes","message":"to have something for it to run, or it stops?","date":"2012-03-21T22:54:07.154Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: yep, of course","date":"2012-03-21T22:54:14.060Z","type":"message"}
+{"nick":"dylukes","message":"alrighty, seems simple enough :)","date":"2012-03-21T22:54:48.118Z","type":"message"}
+{"nick":"dylukes","message":"The only similar thing I've used in C is libdispatch ","date":"2012-03-21T22:55:05.693Z","type":"message"}
+{"nick":"dylukes","message":"So, what's up with uv_getaddrinfo_t, uv_connect_t...","date":"2012-03-21T22:55:22.647Z","type":"message"}
+{"nick":"dylukes","message":"it seems like every function has some struct associated with it?","date":"2012-03-21T22:55:29.497Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: I'm not here to provide you with a full intro to libuv. To figure out how to use it, look at include/uv.h, or look at test/echo-server.c for an example.","date":"2012-03-21T22:57:25.606Z","type":"message"}
+{"nick":"dylukes","message":"That's what I've been doing.","date":"2012-03-21T22:57:33.950Z","type":"message"}
+{"nick":"dylukes","message":"I'm just asking about that, since it's the one thing not catching.","date":"2012-03-21T22:57:43.608Z","type":"message"}
+{"nick":"dylukes","message":"Thanks anyways.","date":"2012-03-21T22:57:52.427Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-21T22:58:14.754Z","type":"quit"}
+{"nick":"piscisaureus_","message":"dylukes: http://vimeo.com/24713213 is mostly accurate.","date":"2012-03-21T22:59:35.934Z","type":"message"}
+{"nick":"dylukes","message":"cool thanks.","date":"2012-03-21T22:59:57.330Z","type":"message"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-03-21T23:09:05.309Z","type":"quit"}
+{"nick":"mmalecki","new_nick":"mmalecki[zzz]","date":"2012-03-21T23:16:56.381Z","type":"nick"}
+{"nick":"dylukes","message":"piscisaureus_: uv_init is just gone now, right?","date":"2012-03-21T23:21:56.586Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: yeah, we now have uv_default_loop(). It auto-inits the default loop.","date":"2012-03-21T23:22:20.414Z","type":"message"}
+{"nick":"dylukes","message":"Oh I was just using uv_loop_new.","date":"2012-03-21T23:22:37.176Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: that also works.","date":"2012-03-21T23:22:46.812Z","type":"message"}
+{"nick":"dylukes","message":"actually, if I use uv_default_loop... it doesn't work :|","date":"2012-03-21T23:23:01.323Z","type":"message"}
+{"nick":"dylukes","message":"or is that my imagination...","date":"2012-03-21T23:23:08.357Z","type":"message"}
+{"nick":"dylukes","message":"indeed it is.","date":"2012-03-21T23:23:17.840Z","type":"message"}
+{"nick":"dylukes","message":"I guess uv_getaddrinfo_s is just kind of... there.","date":"2012-03-21T23:25:31.366Z","type":"message"}
+{"nick":"dylukes","message":"rather, it doesn't have a bunch of functions like say, uv_tcp_t","date":"2012-03-21T23:25:54.539Z","type":"message"}
+{"nick":"dylukes","message":"s/_s/_t","date":"2012-03-21T23:26:02.726Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: yeah, it is not a handle","date":"2012-03-21T23:26:05.567Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: it is more like uv_write but it doesn't operate on a handle","date":"2012-03-21T23:26:16.450Z","type":"message"}
+{"nick":"dylukes","message":"Header seems to indicate it's a \"request\" type?","date":"2012-03-21T23:26:39.673Z","type":"message"}
+{"nick":"dylukes","message":"not a handle.","date":"2012-03-21T23:26:51.147Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: https://github.com/joyent/libuv/blob/master/test/benchmark-getaddrinfo.c","date":"2012-03-21T23:27:00.956Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: you probably want to malloc the getaddrinfo_t struct","date":"2012-03-21T23:27:40.920Z","type":"message"}
+{"nick":"dylukes","message":"Right.","date":"2012-03-21T23:27:49.287Z","type":"message"}
+{"nick":"piscisaureus_","message":"(and free it in the callback)","date":"2012-03-21T23:27:50.714Z","type":"message"}
+{"nick":"dylukes","message":"So, as far as I see.. it's basically memory for libuv to do stuff with in the background.","date":"2012-03-21T23:28:04.222Z","type":"message"}
+{"nick":"dylukes","message":"It's just the state of the request.","date":"2012-03-21T23:28:11.801Z","type":"message"}
+{"nick":"k-s[AWAY]","new_nick":"k-s","date":"2012-03-21T23:28:24.946Z","type":"nick"}
+{"nick":"piscisaureus_","message":"dylukes: yes. it's just an opaque struct that libuv uses to store state.","date":"2012-03-21T23:28:31.813Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: the size of it is platform-dependent","date":"2012-03-21T23:28:42.475Z","type":"message"}
+{"nick":"dylukes","message":"Yeah, I noticed the macromagic.","date":"2012-03-21T23:28:57.219Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: the uv_getaddrinfo interface is a little weird (because the system getaddrinfo interface is also a little weird)","date":"2012-03-21T23:29:18.415Z","type":"message"}
+{"nick":"dylukes","message":"is it?","date":"2012-03-21T23:29:29.908Z","type":"message"}
+{"nick":"dylukes","message":"getaddrinfo isn't too strange, I don't think.","date":"2012-03-21T23:29:36.769Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 245 seconds","date":"2012-03-21T23:29:47.685Z","type":"quit"}
+{"nick":"piscisaureus_","message":"welll... normally syscalls don't allocate memory :-)","date":"2012-03-21T23:29:50.995Z","type":"message"}
+{"nick":"dylukes","message":"oooh, that's true.","date":"2012-03-21T23:30:52.706Z","type":"message"}
+{"nick":"dylukes","message":"it does allocate the linked list and expect you to clean it up.","date":"2012-03-21T23:31:03.428Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-03-21T23:31:09.011Z","type":"message"}
+{"nick":"dylukes","message":"But I mean, how would you have the user provide the memory? :\\.","date":"2012-03-21T23:31:10.988Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: well - I'm not saying that it should","date":"2012-03-21T23:31:25.421Z","type":"message"}
+{"nick":"dylukes","message":"The user has zero idea how many results will come up... that's why they're calling the function :P.","date":"2012-03-21T23:31:26.108Z","type":"message"}
+{"nick":"dylukes","message":"Right right. I see your point though.","date":"2012-03-21T23:31:32.895Z","type":"message"}
+{"nick":"dylukes","message":"Hm, having everything asynchronous does... challenge my usual method of using gai. :\\.","date":"2012-03-21T23:32:52.064Z","type":"message"}
+{"nick":"dylukes","message":"I usually loop through the results and try to connect in order, and take the first one that works... but it's not asynchronous.","date":"2012-03-21T23:33:27.615Z","type":"message"}
+{"nick":"dylukes","message":"I'll have to rethink this.","date":"2012-03-21T23:33:30.264Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-03-21T23:48:57.527Z","type":"quit"}
+{"nick":"perezd","date":"2012-03-21T23:55:24.722Z","type":"join"}
