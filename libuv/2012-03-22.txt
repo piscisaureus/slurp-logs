@@ -503,3 +503,953 @@
 {"nick":"creationix","message":"if anyone has any ideas of how indutny can fix this for me in the vm without causing undue constraints on the vm, I'm all ears","date":"2012-03-22T15:58:50.276Z","type":"message"}
 {"nick":"creationix","message":"otherwise I need to use double pointers and register weak callbacks myself","date":"2012-03-22T15:59:13.534Z","type":"message"}
 {"nick":"creationix","message":"(I'm already using double pointers to get the CData*)","date":"2012-03-22T15:59:38.363Z","type":"message"}
+{"nick":"bnoordhuis","message":"what's wrong with double pointers?","date":"2012-03-22T16:00:03.581Z","type":"message"}
+{"nick":"creationix","message":"more complex code and more overhead","date":"2012-03-22T16:00:17.380Z","type":"message"}
+{"nick":"creationix","message":"that's all","date":"2012-03-22T16:00:24.553Z","type":"message"}
+{"nick":"dylukes","message":"the overhead is barely existant. ","date":"2012-03-22T16:00:28.459Z","type":"message"}
+{"nick":"dylukes","message":"Don't worry over that :P.","date":"2012-03-22T16:00:34.486Z","type":"message"}
+{"nick":"dylukes","message":"And, double pointers are pretty common anyways.","date":"2012-03-22T16:00:41.245Z","type":"message"}
+{"nick":"bnoordhuis","message":"having variable sized heap objects makes for a GC that's more complex and has more overhead ","date":"2012-03-22T16:00:51.210Z","type":"message"}
+{"nick":"dylukes","message":"But the pointer is fixed size :P.","date":"2012-03-22T16:01:04.215Z","type":"message"}
+{"nick":"dylukes","message":"The struct isn't in the GC.","date":"2012-03-22T16:01:10.195Z","type":"message"}
+{"nick":"creationix","message":"so when libuv has a timer event, it calls my C function and passes in the request or stream struct, that has a ->data pointer to a (Handle<T>) pointer to a (CData*) which has a ->value pointer to my uv_timer_t** which points to my uv_timer_t* which points to the actual uv_timer_t","date":"2012-03-22T16:03:21.385Z","type":"message"}
+{"nick":"dylukes","message":"Hm, so a small issue bnoordhuis ","date":"2012-03-22T16:03:53.638Z","type":"message"}
+{"nick":"dylukes","message":"Normally when you have an addrinfo, you get ->ai_addrlen and pass that to bind :\\","date":"2012-03-22T16:04:10.829Z","type":"message"}
+{"nick":"dylukes","message":"so, ostensibly uv__tcp_bind should expose that parameter?","date":"2012-03-22T16:04:33.620Z","type":"message"}
+{"nick":"creationix","message":"I guess such pointer chains are common in such dynamic environments","date":"2012-03-22T16:06:07.321Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-03-22T16:08:20.632Z","type":"quit"}
+{"nick":"isaacs","date":"2012-03-22T16:09:04.970Z","type":"join"}
+{"nick":"creationix","message":"I think I'll make a new struct that contains my uv_timer_t*","date":"2012-03-22T16:10:12.451Z","type":"message"}
+{"nick":"creationix","message":"then I can add other info if I want later on","date":"2012-03-22T16:10:18.886Z","type":"message"}
+{"nick":"dylukes","message":"huh","date":"2012-03-22T16:17:56.306Z","type":"message"}
+{"nick":"dylukes","message":"actually, this is kind of amusing","date":"2012-03-22T16:17:59.818Z","type":"message"}
+{"nick":"dylukes","message":"nevermind.. it can be cleaned up later...","date":"2012-03-22T16:18:07.382Z","type":"message"}
+{"nick":"creationix","message":"in C++, can \"new\" be used to allocate x void* bytes?","date":"2012-03-22T16:18:37.106Z","type":"message"}
+{"nick":"creationix","message":"or do I have to use malloc","date":"2012-03-22T16:18:42.516Z","type":"message"}
+{"nick":"dylukes","message":"yes, it can.","date":"2012-03-22T16:18:58.841Z","type":"message"}
+{"nick":"dylukes","message":"for arrays.","date":"2012-03-22T16:19:00.249Z","type":"message"}
+{"nick":"dylukes","message":"http://www.cplusplus.com/reference/std/new/operator%20new[]/","date":"2012-03-22T16:19:04.848Z","type":"message"}
+{"nick":"dylukes","message":"oh... for void *... that I don't know.","date":"2012-03-22T16:19:19.775Z","type":"message"}
+{"nick":"dylukes","message":"C++ tries to dodge void * wherever possible.","date":"2012-03-22T16:19:26.822Z","type":"message"}
+{"nick":"kohai","message":"C has 13 beers","date":"2012-03-22T16:19:27.024Z","type":"message"}
+{"nick":"dylukes","message":"dylukes++","date":"2012-03-22T16:19:32.958Z","type":"message"}
+{"nick":"kohai","message":"You can't give karma to yourself!","date":"2012-03-22T16:19:33.154Z","type":"message"}
+{"nick":"dylukes","message":":<","date":"2012-03-22T16:19:34.888Z","type":"message"}
+{"nick":"dylukes","message":"I didn't want karma, just a beer...","date":"2012-03-22T16:19:40.802Z","type":"message"}
+{"nick":"creationix","message":"void* foo = new void[size];","date":"2012-03-22T16:20:17.770Z","type":"message"}
+{"nick":"creationix","message":"we'll see if that works","date":"2012-03-22T16:20:26.520Z","type":"message"}
+{"nick":"creationix","message":"I guess I can use uint8_t[size] and typecase to void*","date":"2012-03-22T16:20:58.154Z","type":"message"}
+{"nick":"creationix","message":"*typecast","date":"2012-03-22T16:21:03.165Z","type":"message"}
+{"nick":"dylukes","message":"heheh. bnoordhuis, I keep having to police myself to keep myself in your style guidelines :P","date":"2012-03-22T16:22:06.491Z","type":"message"}
+{"nick":"dylukes","message":"I keep typing sockaddr * instead of sockaddr* >.<","date":"2012-03-22T16:22:15.632Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: it's not my style either","date":"2012-03-22T16:22:27.753Z","type":"message"}
+{"nick":"dylukes","message":"Well, the changes are going pretty easily...","date":"2012-03-22T16:22:45.713Z","type":"message"}
+{"nick":"dylukes","message":"In face.. it looks like I may just get rid of the uv_tcp_connect and uv__tcp_connect duality later too.","date":"2012-03-22T16:23:04.504Z","type":"message"}
+{"nick":"dylukes","message":"At the moment the former is just forwarding to the latter.","date":"2012-03-22T16:23:12.404Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: new void[size] is bogus","date":"2012-03-22T16:23:13.121Z","type":"message"}
+{"nick":"dylukes","message":"There's no particular reason for them to exist.","date":"2012-03-22T16:23:19.790Z","type":"message"}
+{"nick":"dylukes","message":"creationix: You can't have an array of void.","date":"2012-03-22T16:23:24.712Z","type":"message"}
+{"nick":"dylukes","message":"Just a pointer to void.","date":"2012-03-22T16:23:26.996Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: think of it like this, what would sizeof(void) return?","date":"2012-03-22T16:23:46.175Z","type":"message"}
+{"nick":"creationix","message":"right, I know in the gcc extension sizeof(void) is 1 byte","date":"2012-03-22T16:24:02.118Z","type":"message"}
+{"nick":"creationix","message":"but that's non-standard","date":"2012-03-22T16:24:07.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is a blasphemy unto the lord","date":"2012-03-22T16:24:15.201Z","type":"message"}
+{"nick":"dylukes","message":"Actually, in C++ sizeof(void) is a compile time error...","date":"2012-03-22T16:24:25.223Z","type":"message"}
+{"nick":"dylukes","message":"In C it's usually 1.","date":"2012-03-22T16:24:30.276Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2012-03-22T16:24:46.752Z","type":"action"}
+{"nick":"dylukes","message":"seeya","date":"2012-03-22T16:24:56.751Z","type":"message"}
+{"nick":"creationix","message":"ok, on destructors, if I have two members that are pointers that I allocated with new, do I have to delete them in the destructor, or is that automatic?","date":"2012-03-22T16:25:00.410Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-03-22T16:25:05.291Z","type":"join"}
+{"nick":"creationix","message":"or in other words, is delete recursive","date":"2012-03-22T16:25:25.469Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: no","date":"2012-03-22T16:25:33.137Z","type":"message"}
+{"nick":"bnoordhuis","message":"(how could it be?)","date":"2012-03-22T16:25:46.336Z","type":"message"}
+{"nick":"k-s[AWAY]","new_nick":"k-s","date":"2012-03-22T16:25:55.657Z","type":"nick"}
+{"nick":"bnoordhuis","action":"is now really off to dinner","date":"2012-03-22T16:25:55.992Z","type":"action"}
+{"nick":"creationix","message":"thanks","date":"2012-03-22T16:26:00.245Z","type":"message"}
+{"nick":"creationix","message":"I think I'll just mix new and malloc","date":"2012-03-22T16:27:34.858Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/a679bfcf94371d1531db","date":"2012-03-22T16:27:35.426Z","type":"message"}
+{"nick":"creationix","message":"it's more straightforward","date":"2012-03-22T16:27:40.351Z","type":"message"}
+{"nick":"creationix","message":"and the reason I'm not doing new uv_handle_t is because it's actually any uv_*_t and I assume they are different sizes","date":"2012-03-22T16:28:04.560Z","type":"message"}
+{"nick":"creationix","message":"so I'm having the user pass in the size","date":"2012-03-22T16:28:09.849Z","type":"message"}
+{"nick":"dylukes","message":"Oh... there's a few warnings I'm getting about stuff being deprecated on OS X 10.8 too.","date":"2012-03-22T16:28:31.780Z","type":"message"}
+{"nick":"dylukes","message":"I can clean those up later too.","date":"2012-03-22T16:28:35.445Z","type":"message"}
+{"nick":"creationix","message":"hmm, I guess I shouldn't delete a non-pointer","date":"2012-03-22T16:29:26.447Z","type":"message"}
+{"nick":"dylukes","message":"creationix: Hey, are you on windows?","date":"2012-03-22T16:30:13.079Z","type":"message"}
+{"nick":"creationix","message":"nope, linux","date":"2012-03-22T16:30:20.233Z","type":"message"}
+{"nick":"creationix","message":"why?","date":"2012-03-22T16:30:22.127Z","type":"message"}
+{"nick":"dylukes","message":"Bah.","date":"2012-03-22T16:30:22.738Z","type":"message"}
+{"nick":"dylukes","message":"Because I only get compile time type checking for the unix stuff.","date":"2012-03-22T16:30:33.282Z","type":"message"}
+{"nick":"dylukes","message":"due to the defines :P.","date":"2012-03-22T16:30:36.623Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T16:30:41.390Z","type":"quit"}
+{"nick":"creationix","message":"piscisaureus_, usually is though if he has time","date":"2012-03-22T16:30:50.409Z","type":"message"}
+{"nick":"dylukes","message":"I can just use travis.","date":"2012-03-22T16:30:52.756Z","type":"message"}
+{"nick":"dylukes","message":"Anyhow, I've just about got TCP cleaned up.","date":"2012-03-22T16:32:09.344Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-22T16:32:42.502Z","type":"join"}
+{"nick":"indutny","reason":"Ping timeout: 252 seconds","date":"2012-03-22T16:34:43.731Z","type":"quit"}
+{"nick":"dylukes","message":"Alright!","date":"2012-03-22T16:35:08.424Z","type":"message"}
+{"nick":"dylukes","message":"TCP is 4/6 agnostic on unix platforms.","date":"2012-03-22T16:35:13.491Z","type":"message"}
+{"nick":"dylukes","message":"Moving on to windows...","date":"2012-03-22T16:35:16.124Z","type":"message"}
+{"nick":"dylukes","message":"Well, first I'll clean up UDP here.","date":"2012-03-22T16:35:26.512Z","type":"message"}
+{"nick":"dylukes","message":"Need to make sure I rewrite the documentation too!","date":"2012-03-22T16:37:04.656Z","type":"message"}
+{"nick":"dshaw_","date":"2012-03-22T16:37:47.898Z","type":"join"}
+{"nick":"kuebk","date":"2012-03-22T16:41:09.016Z","type":"part"}
+{"nick":"dylukes","message":"piscisaureus_: Hey, you around?","date":"2012-03-22T16:46:44.223Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: sup?","date":"2012-03-22T16:48:21.119Z","type":"message"}
+{"nick":"pietern","date":"2012-03-22T16:48:22.595Z","type":"join"}
+{"nick":"dylukes","message":"piscisaureus_: I'm working on that patch, but I don't have a way to test on windows that everything's compiling through.","date":"2012-03-22T16:48:38.371Z","type":"message"}
+{"nick":"dylukes","message":"(I'm on an OS X/Linux dualboot)","date":"2012-03-22T16:48:43.967Z","type":"message"}
+{"nick":"dylukes","message":"What would you recommend?","date":"2012-03-22T16:48:52.609Z","type":"message"}
+{"nick":"dylukes","message":"and on another note, when is UV_HANDLE_IPV6 supposed to be set?","date":"2012-03-22T16:49:47.315Z","type":"message"}
+{"nick":"dylukes","message":"it seems it's only set on Windows UDP ipv6 connections >_>...","date":"2012-03-22T16:49:54.411Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-03-22T16:50:11.780Z","type":"join"}
+{"nick":"mmalecki","new_nick":"mmalecki[brb]","date":"2012-03-22T16:50:57.294Z","type":"nick"}
+{"nick":"AndreasMadsen","message":"When I press docs on nodejs.org it says v0.6.13 but when I go to fs.html it says v0.6.14-pre","date":"2012-03-22T16:50:57.813Z","type":"message"}
+{"nick":"dylukes","message":">_<","date":"2012-03-22T16:54:13.263Z","type":"message"}
+{"nick":"dylukes","message":"This IOCP stuff is messy, egh.","date":"2012-03-22T16:54:18.019Z","type":"message"}
+{"nick":"dylukes","message":"ahaha, oh wait nevermind, these two functions aren't different at all :P","date":"2012-03-22T16:54:52.189Z","type":"message"}
+{"nick":"isaacs","message":"AndreasMadsen: whoops, i think i regenerated that page for a typo post-0.6.13","date":"2012-03-22T16:55:28.708Z","type":"message"}
+{"nick":"isaacs","message":"one sec","date":"2012-03-22T16:55:29.968Z","type":"message"}
+{"nick":"isaacs","message":"AndreasMadsen: should be fixed.","date":"2012-03-22T16:57:01.498Z","type":"message"}
+{"nick":"AndreasMadsen","message":"isaacs: it is","date":"2012-03-22T16:57:12.654Z","type":"message"}
+{"nick":"isaacs","message":"great :)","date":"2012-03-22T16:57:17.692Z","type":"message"}
+{"nick":"AndreasMadsen","message":"isaacs: not that I care, but I think you do","date":"2012-03-22T16:57:31.245Z","type":"message"}
+{"nick":"isaacs","message":"i do a little, yeah :)","date":"2012-03-22T16:57:49.713Z","type":"message"}
+{"nick":"isaacs","message":"it's a wart.","date":"2012-03-22T16:57:58.837Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-03-22T16:58:29.239Z","type":"quit"}
+{"nick":"travis-ci","date":"2012-03-22T16:58:54.513Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] DylanLukes/libuv#1 (ipv46agnostic - 15785ee : Dylan Lukes): The build failed.","date":"2012-03-22T16:58:54.707Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/DylanLukes/libuv/commit/15785ee","date":"2012-03-22T16:58:54.708Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/DylanLukes/libuv/builds/923455","date":"2012-03-22T16:58:54.708Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T16:58:54.708Z","type":"part"}
+{"nick":"dylukes","message":"Oh, I guess that's picking up my fork too :\\.","date":"2012-03-22T16:59:18.501Z","type":"message"}
+{"nick":"dylukes","message":"Forgot to fix up the tests too >.<","date":"2012-03-22T16:59:26.236Z","type":"message"}
+{"nick":"AndreasMadsen","message":"isaacs: Oh please don't write word I don't know. I look them up and get stupid picture.","date":"2012-03-22T17:00:03.159Z","type":"message"}
+{"nick":"isaacs","message":"AndreasMadsen: lol","date":"2012-03-22T17:00:15.399Z","type":"message"}
+{"nick":"isaacs","message":"sorry :)","date":"2012-03-22T17:00:19.563Z","type":"message"}
+{"nick":"tjfontaine","message":"haha","date":"2012-03-22T17:00:33.126Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: to test on windows I recomment windows","date":"2012-03-22T17:01:01.997Z","type":"message"}
+{"nick":"dylukes","message":"Great idea.","date":"2012-03-22T17:01:09.414Z","type":"message"}
+{"nick":"dylukes","message":":)","date":"2012-03-22T17:01:10.645Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: and \u000301 UV_HANDLE_IPV6\u0003\u000301 is set for ipv6 sockets","date":"2012-03-22T17:01:13.914Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: i want to fork 0.6.14 today","date":"2012-03-22T17:01:14.110Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: did you have something you needed piscisaureus_ to review?  or can i review it?","date":"2012-03-22T17:01:35.299Z","type":"message"}
+{"nick":"isaacs","message":"where's that at?","date":"2012-03-22T17:01:37.907Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: Well... it's not set for any sockets on unic it doesn't seem.","date":"2012-03-22T17:01:40.696Z","type":"message"}
+{"nick":"dylukes","message":"searching unix/tcp.c for UV_HANDLE_IPV6 turns up nothing.","date":"2012-03-22T17:03:05.380Z","type":"message"}
+{"nick":"dylukes","message":"So... from the looks of it you assume IPv6 compatibility for the POSIX socks api, but not for Winsocks?","date":"2012-03-22T17:04:50.730Z","type":"message"}
+{"nick":"dylukes","message":"Is that correct?","date":"2012-03-22T17:04:53.373Z","type":"message"}
+{"nick":"dylukes","message":"(the winsock code has a lot of checks)","date":"2012-03-22T17:04:59.161Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: windows and unix have separate implementations.","date":"2012-03-22T17:09:12.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: on windows we set the IPV6 handle so we can remember whether the socket was ipv4 or ipv5","date":"2012-03-22T17:09:46.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"er, 6","date":"2012-03-22T17:09:48.645Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: and it is needed so it needs to stay. On unix it is not needed so we don't use it on unix.","date":"2012-03-22T17:10:28.040Z","type":"message"}
+{"nick":"philips","message":"piscisaureus_: :)","date":"2012-03-22T17:11:22.491Z","type":"message"}
+{"nick":"dylukes","message":"kk cool","date":"2012-03-22T17:11:23.838Z","type":"message"}
+{"nick":"dylukes","message":"windows ia bit harder because I'm kind of guessing about the API, and I don't have a windows dev system set up ","date":"2012-03-22T17:11:39.105Z","type":"message"}
+{"nick":"piscisaureus_","message":"philips: ?","date":"2012-03-22T17:11:45.802Z","type":"message"}
+{"nick":"dylukes","message":"I'll set up a virtualbox w/ XP and msvc I suppose.","date":"2012-03-22T17:11:52.132Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: that seems best yeah.","date":"2012-03-22T17:11:58.830Z","type":"message"}
+{"nick":"philips","message":"piscisaureus_: cconf, you mentioned it yesterday but I was away","date":"2012-03-22T17:12:06.322Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: so what are you working on anyway?","date":"2012-03-22T17:12:14.653Z","type":"message"}
+{"nick":"piscisaureus_","message":"philips: ah, right. Yeah that's pretty cool. When is it scheduled?","date":"2012-03-22T17:12:28.302Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: I'm merging all of the 4/6 functions.","date":"2012-03-22T17:12:46.679Z","type":"message"}
+{"nick":"philips","message":"piscisaureus_: Working on that- probably August as three of speakers I want will be in the US for Linux Plumbers and Kernel Summit","date":"2012-03-22T17:13:08.835Z","type":"message"}
+{"nick":"dylukes","message":"And changing all the sockaddr_in/6 parameters to sockaddr * and a socklen_t","date":"2012-03-22T17:13:10.736Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: windows has no socklen_t so you can't use that.","date":"2012-03-22T17:14:00.348Z","type":"message"}
+{"nick":"dylukes","message":"sec","date":"2012-03-22T17:14:13.479Z","type":"message"}
+{"nick":"dylukes","message":"k so...","date":"2012-03-22T17:17:23.385Z","type":"message"}
+{"nick":"dylukes","message":"I thought there was a socklen_t in winsock?","date":"2012-03-22T17:17:34.995Z","type":"message"}
+{"nick":"dylukes","message":"oh, it just uses an int.","date":"2012-03-22T17:18:49.684Z","type":"message"}
+{"nick":"dylukes","message":"okay.","date":"2012-03-22T17:18:50.568Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: could be in ws2tcpip.h","date":"2012-03-22T17:18:57.816Z","type":"message"}
+{"nick":"piscisaureus_","message":"that I am not sure of","date":"2012-03-22T17:19:00.528Z","type":"message"}
+{"nick":"dylukes","message":"Perhaps I should add a uv_socklen_t type?","date":"2012-03-22T17:19:06.370Z","type":"message"}
+{"nick":"dylukes","message":"which is int on windows, and socklen_t on unix?","date":"2012-03-22T17:19:15.521Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: http://msdn.microsoft.com/en-us/library/windows/desktop/ms738531%28v=vs.85%29.aspx seems to suggest that socklen_t is there.","date":"2012-03-22T17:19:37.272Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: so maybe it's better to try with socklen_t anyway","date":"2012-03-22T17:19:50.204Z","type":"message"}
+{"nick":"piscisaureus_","message":"sorry for the confusion","date":"2012-03-22T17:19:53.143Z","type":"message"}
+{"nick":"dylukes","message":"no problem :)","date":"2012-03-22T17:19:57.541Z","type":"message"}
+{"nick":"dylukes","message":"Nonetheless, windows connect/bind uses an int.","date":"2012-03-22T17:20:11.419Z","type":"message"}
+{"nick":"dylukes","message":"and calls it namelen, not addrlen...","date":"2012-03-22T17:20:17.742Z","type":"message"}
+{"nick":"dylukes","message":"winsock is messy :\\","date":"2012-03-22T17:20:20.766Z","type":"message"}
+{"nick":"dylukes","message":"Anyhow, I'm just going to get the tests working on unix first","date":"2012-03-22T17:20:33.730Z","type":"message"}
+{"nick":"dylukes","message":"then commit that, then install windows and finish it up there.","date":"2012-03-22T17:20:42.065Z","type":"message"}
+{"nick":"piscisaureus_","message":"philips: you already have a list of speakers you want? that's fast :-)","date":"2012-03-22T17:22:41.078Z","type":"message"}
+{"nick":"philips","message":"piscisaureus_: I started the website so I had something to discuss as I got a core list of speakers/organizers. Then it got picked up by HN and I got swarmed. It was great though :)","date":"2012-03-22T17:23:18.420Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah right","date":"2012-03-22T17:23:37.394Z","type":"message"}
+{"nick":"piscisaureus_","message":"I just happened to see that ryah started following github.com/cconf :-)","date":"2012-03-22T17:24:00.361Z","type":"message"}
+{"nick":"dylukes","message":"See the nice thing is,","date":"2012-03-22T17:24:05.846Z","type":"message"}
+{"nick":"dylukes","message":"since I'm adding a parameter... I get \"too few arguments\" errors everywhere,","date":"2012-03-22T17:24:19.211Z","type":"message"}
+{"nick":"dylukes","message":"and then I just fix them.","date":"2012-03-22T17:24:22.207Z","type":"message"}
+{"nick":"dylukes","message":"^^.","date":"2012-03-22T17:24:27.528Z","type":"message"}
+{"nick":"dylukes","message":"types <3","date":"2012-03-22T17:24:33.907Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-03-22T17:30:33.668Z","type":"quit"}
+{"nick":"indutny","date":"2012-03-22T17:31:07.780Z","type":"join"}
+{"nick":"indutny","date":"2012-03-22T17:31:11.112Z","type":"part"}
+{"nick":"indutny","date":"2012-03-22T17:31:15.022Z","type":"join"}
+{"nick":"dylukes","message":"oh god dammit","date":"2012-03-22T17:31:18.710Z","type":"message"}
+{"nick":"dylukes","message":"even the unit tests have 4/6 variants.","date":"2012-03-22T17:31:22.761Z","type":"message"}
+{"nick":"dylukes","message":"Oh well, those should stay separate.","date":"2012-03-22T17:31:34.176Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: Is there any plan to subdivide the test suite?","date":"2012-03-22T17:33:54.255Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: no. what would there be to subdivide?","date":"2012-03-22T17:35:01.819Z","type":"message"}
+{"nick":"dylukes","message":"nevermind.","date":"2012-03-22T17:35:24.236Z","type":"message"}
+{"nick":"dylukes","message":"Anyways, all of the unit tests currently create a sockaddr_in on the stack and pass that","date":"2012-03-22T17:35:38.645Z","type":"message"}
+{"nick":"dylukes","message":"so I'm changing them all to (struct sockaddr *)&addr","date":"2012-03-22T17:35:48.829Z","type":"message"}
+{"nick":"dylukes","message":"The calls don't require the addresses to stick around later, so even a pointer into the stack should be fine, yes?","date":"2012-03-22T17:36:05.726Z","type":"message"}
+{"nick":"dylukes","message":"Currently I'm just running through these unit tests with some regexes hehe.","date":"2012-03-22T17:39:11.162Z","type":"message"}
+{"nick":"dylukes","message":"(checking each one by hand mind you, just saving myself some typing)","date":"2012-03-22T17:39:32.963Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: so bnoordhuis was saying this sort of big patch wouldn't make it in until 0.9.","date":"2012-03-22T17:42:47.616Z","type":"message"}
+{"nick":"mmalecki[brb]","new_nick":"mmalecki","date":"2012-03-22T17:44:29.425Z","type":"nick"}
+{"nick":"TooTallNate","date":"2012-03-22T17:49:38.621Z","type":"join"}
+{"nick":"piscisaureus_","message":"dylukes: right, I think he's right","date":"2012-03-22T17:50:12.867Z","type":"message"}
+{"nick":"dylukes","message":"As long as it can eventually be useful :P.","date":"2012-03-22T17:50:32.731Z","type":"message"}
+{"nick":"dylukes","message":"I'll try to keep my patch up to date so it can be merged easily when the time comes.","date":"2012-03-22T17:50:57.497Z","type":"message"}
+{"nick":"piscisaureus_","message":"k, cool","date":"2012-03-22T17:51:04.266Z","type":"message"}
+{"nick":"dylukes","message":"I'm chugging through the unit tests fixing them up >.<","date":"2012-03-22T17:51:26.305Z","type":"message"}
+{"nick":"dylukes","message":"Probably another dozen more","date":"2012-03-22T17:51:38.252Z","type":"message"}
+{"nick":"dylukes","message":"the only slight \"downside\" to the API change is (and this is pretty minor), you have to pass the addrlen down from the top.","date":"2012-03-22T17:52:41.833Z","type":"message"}
+{"nick":"dylukes","message":"so it's an extra parameter.","date":"2012-03-22T17:52:48.177Z","type":"message"}
+{"nick":"dylukes","message":"There are two alternatives...","date":"2012-03-22T17:55:02.311Z","type":"message"}
+{"nick":"dylukes","message":"either require the user to feed in the sizeof the parameter (which is a sockaddr *, but in reality its a in/in6","date":"2012-03-22T17:55:29.712Z","type":"message"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-03-22T17:55:38.180Z","type":"quit"}
+{"nick":"dylukes","message":"or infer it from the sa_family","date":"2012-03-22T17:55:38.675Z","type":"message"}
+{"nick":"dylukes","message":"the problem with the latter is it will wreak havoc if they pass in a sockaddr_storage.","date":"2012-03-22T17:55:50.095Z","type":"message"}
+{"nick":"dylukes","message":"So the former seems safer to me, just a slight bit more verbose.","date":"2012-03-22T17:56:00.847Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-03-22T18:00:23.365Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-03-22T18:01:58.763Z","type":"join"}
+{"nick":"dylukes","message":"hrm... on the last test, I hit one catch.","date":"2012-03-22T18:04:47.923Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: It seems I'll also have to change the udp_recv_cb_t.","date":"2012-03-22T18:05:00.926Z","type":"message"}
+{"nick":"dylukes","message":"It needs to pass the addrlen in as well, for uv_udp_send to use.","date":"2012-03-22T18:05:27.037Z","type":"message"}
+{"nick":"dshaw_1","date":"2012-03-22T18:07:07.580Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 276 seconds","date":"2012-03-22T18:09:26.560Z","type":"quit"}
+{"nick":"dylukes","message":"heh, that actually was pretty painless.","date":"2012-03-22T18:09:31.130Z","type":"message"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-03-22T18:11:00.016Z","type":"quit"}
+{"nick":"brson","date":"2012-03-22T18:12:12.525Z","type":"join"}
+{"nick":"travis-ci","date":"2012-03-22T18:13:00.116Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] DylanLukes/libuv#2 (ipv46agnostic - 1aefc47 : Dylan Lukes): The build is still failing.","date":"2012-03-22T18:13:00.323Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/DylanLukes/libuv/compare/15785ee...1aefc47","date":"2012-03-22T18:13:00.323Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/DylanLukes/libuv/builds/924012","date":"2012-03-22T18:13:00.323Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T18:13:00.323Z","type":"part"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 246 seconds","date":"2012-03-22T18:18:06.984Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T18:18:20.750Z","type":"quit"}
+{"nick":"travis-ci","date":"2012-03-22T18:22:09.410Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] DylanLukes/libuv#3 (ipv46agnostic - abe8165 : Dylan Lukes): The build is still failing.","date":"2012-03-22T18:22:09.622Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/DylanLukes/libuv/compare/1aefc47...abe8165","date":"2012-03-22T18:22:09.622Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/DylanLukes/libuv/builds/924070","date":"2012-03-22T18:22:09.622Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T18:22:09.622Z","type":"part"}
+{"nick":"orlandovftw","date":"2012-03-22T18:23:26.822Z","type":"join"}
+{"nick":"orlandovftw","reason":"Client Quit","date":"2012-03-22T18:23:49.655Z","type":"quit"}
+{"nick":"dylukes","message":"So uh... are all these unit tests supposed to be failing right now?","date":"2012-03-22T18:23:52.468Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-03-22T18:24:00.815Z","type":"join"}
+{"nick":"igorzi","message":"bnoordhuis: hey","date":"2012-03-22T18:24:18.288Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: yt?","date":"2012-03-22T18:24:31.825Z","type":"message"}
+{"nick":"sh1mmer","date":"2012-03-22T18:27:22.927Z","type":"join"}
+{"nick":"mmalecki","message":"dylukes: they fail on Linux for various reasons, so answer to your question is \"yes\". consult with Travis to check which are expected to fail.","date":"2012-03-22T18:27:24.741Z","type":"message"}
+{"nick":"dylukes","message":"travis is running less tests... strangely.","date":"2012-03-22T18:27:41.362Z","type":"message"}
+{"nick":"mmalecki","message":"how come?","date":"2012-03-22T18:28:08.306Z","type":"message"}
+{"nick":"dylukes","message":"I have +114, -16, it has +103, -12","date":"2012-03-22T18:28:08.780Z","type":"message"}
+{"nick":"dylukes","message":"I don't know. I branched just today.","date":"2012-03-22T18:28:17.797Z","type":"message"}
+{"nick":"mmalecki","message":"interesting.","date":"2012-03-22T18:28:20.019Z","type":"message"}
+{"nick":"mmalecki","message":"I will look into it later.","date":"2012-03-22T18:28:37.795Z","type":"message"}
+{"nick":"dylukes","message":"But uh, one of the failing ones is test_udp_send_recv","date":"2012-03-22T18:28:39.824Z","type":"message"}
+{"nick":"dylukes","message":"which really shouldn't be failing for sure","date":"2012-03-22T18:28:44.745Z","type":"message"}
+{"nick":"dylukes","message":"I need to get my changes working in windows as well, then I'll start debugging unit tests...","date":"2012-03-22T18:30:04.724Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-03-22T18:31:48.336Z","type":"join"}
+{"nick":"CoverSli1e","reason":"Read error: Connection reset by peer","date":"2012-03-22T18:40:33.134Z","type":"quit"}
+{"nick":"igorzi","message":"bnoordhuis: pls comment on https://github.com/igorzi/node/commit/f8932effcddd1a0ee07e3d3dfd68fcfd1d6824bf#commitcomment-1111378","date":"2012-03-22T18:42:51.996Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-22T18:44:54.180Z","type":"join"}
+{"nick":"isaacs","date":"2012-03-22T18:50:48.399Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T18:50:55.473Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-03-22T18:51:56.942Z","type":"join"}
+{"nick":"AndreasMadsen","date":"2012-03-22T18:52:24.142Z","type":"part"}
+{"nick":"hij1nx","reason":"Remote host closed the connection","date":"2012-03-22T18:54:32.604Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-03-22T18:59:36.321Z","type":"join"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-03-22T18:59:57.914Z","type":"quit"}
+{"nick":"mjr_","date":"2012-03-22T19:00:14.252Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-03-22T19:01:17.965Z","type":"join"}
+{"nick":"skomski","date":"2012-03-22T19:03:22.933Z","type":"join"}
+{"nick":"CoverSlide","date":"2012-03-22T19:17:15.355Z","type":"join"}
+{"nick":"dylukes","message":"I'm installing windows on a VM to work on it there to.","date":"2012-03-22T19:23:08.289Z","type":"message"}
+{"nick":"dylukes","message":"s/to/too","date":"2012-03-22T19:23:13.083Z","type":"message"}
+{"nick":"indutny","reason":"Read error: Connection timed out","date":"2012-03-22T19:26:11.058Z","type":"quit"}
+{"nick":"indutny","date":"2012-03-22T19:29:27.501Z","type":"join"}
+{"nick":"igorzi","reason":"Ping timeout: 245 seconds","date":"2012-03-22T19:30:54.951Z","type":"quit"}
+{"nick":"skomski","reason":"Quit: skomski","date":"2012-03-22T19:40:20.516Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-03-22T19:44:42.352Z","type":"join"}
+{"nick":"dshaw_1","reason":"Ping timeout: 244 seconds","date":"2012-03-22T19:46:35.376Z","type":"quit"}
+{"nick":"dylukes","message":"Do you guys use mingw for windows?","date":"2012-03-22T19:57:42.588Z","type":"message"}
+{"nick":"pfox___","message":"i don't think its the core build env in windows, but its doable?","date":"2012-03-22T19:59:45.408Z","type":"message"}
+{"nick":"pfox___","message":"it's what rust in windows is built on, so presumably libuv is , as well","date":"2012-03-22T19:59:56.189Z","type":"message"}
+{"nick":"dylukes","message":"er, I mean","date":"2012-03-22T20:03:23.380Z","type":"message"}
+{"nick":"dylukes","message":"what is the core build env? :P","date":"2012-03-22T20:03:26.544Z","type":"message"}
+{"nick":"dylukes","action":"hopes he doesn't need visual studio. ugh.","date":"2012-03-22T20:03:39.547Z","type":"action"}
+{"nick":"pfox___","message":"im pretty sure you can dev on mingw","date":"2012-03-22T20:04:12.873Z","type":"message"}
+{"nick":"pfox___","message":"but i believe VS is the primary","date":"2012-03-22T20:04:30.286Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-03-22T20:04:35.489Z","type":"join"}
+{"nick":"pfox___","message":"ill let an experienced windows mount a defense for why this is preferrable","date":"2012-03-22T20:04:40.689Z","type":"message"}
+{"nick":"pfox___","message":"speak of the devil","date":"2012-03-22T20:04:47.115Z","type":"message"}
+{"nick":"pfox___","message":"piscisaureus_: query: why is VS a preferrable build env on windows?","date":"2012-03-22T20:04:58.791Z","type":"message"}
+{"nick":"piscisaureus_","message":"pfox___: because msvc is a better compiler than gcc?","date":"2012-03-22T20:05:13.327Z","type":"message"}
+{"nick":"dylukes","message":"Or rather, what IS the preferable build env?","date":"2012-03-22T20:05:18.620Z","type":"message"}
+{"nick":"pfox___","message":"on windows.","date":"2012-03-22T20:05:18.947Z","type":"message"}
+{"nick":"dylukes","message":"because we can't all afford msvc.","date":"2012-03-22T20:05:22.140Z","type":"message"}
+{"nick":"dylukes","message":"Oh well, I guess there's a free version.","date":"2012-03-22T20:05:34.082Z","type":"message"}
+{"nick":"piscisaureus_","message":"everyone can afford msvc","date":"2012-03-22T20:05:35.842Z","type":"message"}
+{"nick":"piscisaureus_","message":"vs express is free and so is the sdk","date":"2012-03-22T20:05:45.157Z","type":"message"}
+{"nick":"dylukes","message":"Right.","date":"2012-03-22T20:07:52.584Z","type":"message"}
+{"nick":"dylukes","message":"hm","date":"2012-03-22T20:08:17.034Z","type":"message"}
+{"nick":"dylukes","message":"the SDK isn't installed by the MSCV setup...","date":"2012-03-22T20:08:25.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"it is","date":"2012-03-22T20:08:45.989Z","type":"message"}
+{"nick":"dylukes","message":"I'm not seeing it in the list.","date":"2012-03-22T20:08:52.013Z","type":"message"}
+{"nick":"dylukes","message":"Oh, it's been merged with .NET now.","date":"2012-03-22T20:09:14.458Z","type":"message"}
+{"nick":"dylukes","message":"That'd explain it.","date":"2012-03-22T20:09:16.297Z","type":"message"}
+{"nick":"dylukes","message":"I was used to the Platform SDK and .NET framewor being separate... heh.","date":"2012-03-22T20:09:27.044Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-03-22T20:19:27.050Z","type":"quit"}
+{"nick":"indutny","message":"Assertion failed: (!(handle->flags & UV_CLOSED)), function uv__finish_close, file src/unix/core.c, line 237.","date":"2012-03-22T20:23:54.790Z","type":"message"}
+{"nick":"indutny","message":"why that may happen? ^","date":"2012-03-22T20:23:59.266Z","type":"message"}
+{"nick":"indutny","message":"well, I understand assertion","date":"2012-03-22T20:24:15.218Z","type":"message"}
+{"nick":"indutny","message":"but that handle was just opened","date":"2012-03-22T20:24:20.844Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: funny, creationix asked the same today","date":"2012-03-22T20:24:21.600Z","type":"message"}
+{"nick":"indutny","message":"heh","date":"2012-03-22T20:24:28.300Z","type":"message"}
+{"nick":"indutny","message":"that's the same problem","date":"2012-03-22T20:24:32.612Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: was init properly initialized?","date":"2012-03-22T20:24:33.721Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: let me see","date":"2012-03-22T20:24:41.541Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: did candor move the object?","date":"2012-03-22T20:24:48.127Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: not anymore","date":"2012-03-22T20:24:56.484Z","type":"message"}
+{"nick":"indutny","message":"it's allocated with 'new'","date":"2012-03-22T20:25:01.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: is it also initialized with uv_xyz_init?","date":"2012-03-22T20:25:28.888Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yes","date":"2012-03-22T20:25:42.076Z","type":"message"}
+{"nick":"indutny","message":"uv_timer_init","date":"2012-03-22T20:25:51.587Z","type":"message"}
+{"nick":"creationix","message":"the timer object is fine, I don't call close till after it's timeout fires","date":"2012-03-22T20:26:16.762Z","type":"message"}
+{"nick":"creationix","message":"and I have another timer that's repeating and it closes without error","date":"2012-03-22T20:26:34.068Z","type":"message"}
+{"nick":"indutny","message":"aah","date":"2012-03-22T20:26:52.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"let me check uv_unix","date":"2012-03-22T20:27:05.177Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: it could also happen if you previously freed another object oo early","date":"2012-03-22T20:27:09.389Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-03-22T20:27:28.904Z","type":"message"}
+{"nick":"indutny","message":"you may want to test it with gdb","date":"2012-03-22T20:27:35.125Z","type":"message"}
+{"nick":"indutny","new_nick":"indutny_sleeping","date":"2012-03-22T20:28:09.971Z","type":"nick"}
+{"nick":"indutny_sleeping","message":"going to sleep now","date":"2012-03-22T20:28:19.733Z","type":"message"}
+{"nick":"indutny_sleeping","message":"ttyl","date":"2012-03-22T20:28:21.307Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: So, libuv is now powering node.js (of course), luvit, candor, and luvmonkey...","date":"2012-03-22T20:30:08.023Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think that the next frontier is Algol-68","date":"2012-03-22T20:30:17.157Z","type":"message"}
+{"nick":"piscisaureus_","message":":-p","date":"2012-03-22T20:30:36.669Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i'm not joking.","date":"2012-03-22T20:30:41.585Z","type":"message"}
+{"nick":"isaacs","message":"it's a fanTAStic language.","date":"2012-03-22T20:30:44.398Z","type":"message"}
+{"nick":"piscisaureus_","message":"pyuv too btw","date":"2012-03-22T20:30:56.168Z","type":"message"}
+{"nick":"isaacs","message":"nah, python and ruby are lost causes.","date":"2012-03-22T20:31:15.847Z","type":"message"}
+{"nick":"igorzi","date":"2012-03-22T20:31:26.917Z","type":"join"}
+{"nick":"pfox___","message":"rust","date":"2012-03-22T20:31:30.413Z","type":"message"}
+{"nick":"isaacs","message":"too much synchronicity in their core stdlibs","date":"2012-03-22T20:31:32.185Z","type":"message"}
+{"nick":"piscisaureus_","message":"candor and luvmonkey are not quite there yet :-)","date":"2012-03-22T20:31:35.199Z","type":"message"}
+{"nick":"isaacs","message":"algol, man","date":"2012-03-22T20:31:36.236Z","type":"message"}
+{"nick":"isaacs","message":"it's great.","date":"2012-03-22T20:31:41.145Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: are you serious?","date":"2012-03-22T20:31:48.524Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: still waiting for bnoordhuis to review https://github.com/igorzi/node/commit/f8932effcddd1a0ee07e3d3dfd68fcfd1d6824bf#commitcomment-1111378","date":"2012-03-22T20:31:50.481Z","type":"message"}
+{"nick":"piscisaureus_","message":"I never looked at it","date":"2012-03-22T20:31:51.878Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ^","date":"2012-03-22T20:31:59.264Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: how is the connected socket sharing coming along?","date":"2012-03-22T20:32:11.795Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: soon I will write my own language","date":"2012-03-22T20:32:55.106Z","type":"message"}
+{"nick":"piscisaureus_","message":"which will blow algol away","date":"2012-03-22T20:33:00.554Z","type":"message"}
+{"nick":"piscisaureus_","message":"not to mention candor","date":"2012-03-22T20:33:08.458Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: algol-68 is actually really really nice.  you should at least take a close look at it.","date":"2012-03-22T20:33:08.984Z","type":"message"}
+{"nick":"isaacs","message":"it got a lot right.","date":"2012-03-22T20:33:18.123Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: should have it ready within next few days (got distracted by another project)","date":"2012-03-22T20:33:32.883Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ok","date":"2012-03-22T20:33:43.070Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I will take a look,","date":"2012-03-22T20:34:21.338Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the frustrating thing is that it was designed before the internet.","date":"2012-03-22T20:34:36.445Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but I don't think anybody uses algol these days","date":"2012-03-22T20:34:39.610Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: so most of the documentation is in PDFs scanned and held behind closed doors by the ACM and whatnot.","date":"2012-03-22T20:34:54.407Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that's only because there's no modern implementation!","date":"2012-03-22T20:35:08.256Z","type":"message"}
+{"nick":"isaacs","action":"sometimes can't tell when he's kidding and when he's serious...","date":"2012-03-22T20:35:18.084Z","type":"action"}
+{"nick":"isaacs","message":"i think i might be only like 25% kidding on this one, though","date":"2012-03-22T20:35:26.628Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the language tries too hard to look like natural english","date":"2012-03-22T20:36:03.176Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so instead of `if (date.day == 22)`","date":"2012-03-22T20:36:24.083Z","type":"message"}
+{"nick":"piscisaureus_","message":"they do `if day of date eq 22 then`","date":"2012-03-22T20:36:48.860Z","type":"message"}
+{"nick":"piscisaureus_","message":"or something","date":"2012-03-22T20:36:49.062Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: btw, did you know that there is a german variant of algol btw","date":"2012-03-22T20:37:03.268Z","type":"message"}
+{"nick":"isaacs","message":"i did not know that.","date":"2012-03-22T20:39:49.105Z","type":"message"}
+{"nick":"creationix","message":"piscisaureus_, candor is getting there","date":"2012-03-22T20:40:36.995Z","type":"message"}
+{"nick":"creationix","message":"I just fixed the tcp echo server to not crash under high load","date":"2012-03-22T20:40:47.982Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: you should create a new Algol, though, not Algol-68","date":"2012-03-22T20:41:12.863Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-03-22T20:41:17.954Z","type":"join"}
+{"nick":"creationix","message":"added an extra layer of pointers so when my cdata moves, my uv structs don't","date":"2012-03-22T20:41:19.688Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: call it Algol-13 or whenever you end up doing it","date":"2012-03-22T20:41:22.904Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that works on two levels, because it'll be both newer (2013 > 1968) and also slimmed down and re-imagined (since 13 < 68)","date":"2012-03-22T20:41:55.473Z","type":"message"}
+{"nick":"creationix","message":"smalltalk, self, or io might be fun","date":"2012-03-22T20:41:59.876Z","type":"message"}
+{"nick":"piscisaureus_","message":"io is actually pretty neat","date":"2012-03-22T20:42:10.224Z","type":"message"}
+{"nick":"creationix","message":"candor is neat, but there is zero protypal inheritance","date":"2012-03-22T20:42:24.551Z","type":"message"}
+{"nick":"isaacs","message":"http://jmvdveer.home.xs4all.nl/algol68g.pdf","date":"2012-03-22T20:42:50.122Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't know what I would do with prototypal inheritance","date":"2012-03-22T20:42:53.109Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am try to solve concurrency in a nice way","date":"2012-03-22T20:43:13.670Z","type":"message"}
+{"nick":"creationix","message":"yes, I think I'll try io next instead of ruby","date":"2012-03-22T20:43:14.351Z","type":"message"}
+{"nick":"creationix","message":"I forgot how tidy that one was","date":"2012-03-22T20:43:22.120Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: ping","date":"2012-03-22T20:43:24.840Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: i see, so (looking closely at this patch)...","date":"2012-03-22T20:45:27.409Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: it looks like the issue is that you do write(), write(), write(), queueing them up.  then the handle goes away, and we throw at some point in the future.","date":"2012-03-22T20:45:52.012Z","type":"message"}
+{"nick":"creationix","message":"so candor + libuv is candor.io, would io + libuv be io.io ?","date":"2012-03-22T20:45:58.253Z","type":"message"}
+{"nick":"AvianFlu","message":"creationix, e.io.io?","date":"2012-03-22T20:46:12.650Z","type":"message"}
+{"nick":"isaacs","message":"creationix: it'd be uvio","date":"2012-03-22T20:46:22.423Z","type":"message"}
+{"nick":"creationix","message":"io�","date":"2012-03-22T20:46:23.884Z","type":"message"}
+{"nick":"creationix","message":"it supports unicode","date":"2012-03-22T20:46:39.812Z","type":"message"}
+{"nick":"creationix","message":":)","date":"2012-03-22T20:46:42.113Z","type":"message"}
+{"nick":"creationix","message":"AvianFlu, is that some io joke.  I don't actually know the language","date":"2012-03-22T20:47:39.120Z","type":"message"}
+{"nick":"AvianFlu","message":"nah, it was a roundabout attempt at an old mcdonald joke","date":"2012-03-22T20:48:07.203Z","type":"message"}
+{"nick":"creationix","message":"ahh","date":"2012-03-22T20:48:13.269Z","type":"message"}
+{"nick":"AvianFlu","message":"I don't know the language either","date":"2012-03-22T20:48:13.527Z","type":"message"}
+{"nick":"piscisaureus_","message":"I have to go. Unfortunately my language isn't done yet :-p","date":"2012-03-22T20:50:11.953Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: have fun :)","date":"2012-03-22T20:50:25.620Z","type":"message"}
+{"nick":"piscisaureus_","message":"thanks","date":"2012-03-22T20:52:04.802Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: yep, exactly","date":"2012-03-22T20:52:08.676Z","type":"message"}
+{"nick":"indutny_sleeping","reason":"Read error: Connection timed out","date":"2012-03-22T20:52:33.999Z","type":"quit"}
+{"nick":"isaacs","message":"igorzi: ok.  so, i'd say, +1 on bnoordhuis's comments.  plus, the cb argument should always go last (not super relevant, since this is an internal function, but consistency etc.)","date":"2012-03-22T20:52:46.807Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: when the handle goes away we also destroy _connectQueue (which we're still iterating it in the loop)","date":"2012-03-22T20:52:49.612Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: did you see my other comment?","date":"2012-03-22T20:53:04.023Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: if we're talking about consistency we should also fire the write callback in case of non-quued writes","date":"2012-03-22T20:53:27.837Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: yes.  i see that.  (not the comment, github gremlins got that one, i think()","date":"2012-03-22T20:54:04.076Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: but yeah, really, we should only keep iterating as long as teh _handle is ther.","date":"2012-03-22T20:54:25.497Z","type":"message"}
+{"nick":"dylukes","message":"hm.","date":"2012-03-22T20:55:01.063Z","type":"message"}
+{"nick":"dylukes","message":"piscisaureus_: So the only thing I'm actually kind of worried about with this change,","date":"2012-03-22T20:55:11.256Z","type":"message"}
+{"nick":"dylukes","message":"is that uv_udp_recv_cb changes.","date":"2012-03-22T20:55:18.645Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: that part is easy.. the part that we can't seem to agree on is what to do with the callbacks for writes that are queued","date":"2012-03-22T20:55:32.206Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: and yes, we should call the cb if it's provided, even if it's not queued.","date":"2012-03-22T20:55:36.748Z","type":"message"}
+{"nick":"dylukes","message":"And C compilers do a notoriously bad job of typechecking function poiners.","date":"2012-03-22T20:55:37.783Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: but really, no one uses that anyway (since they can't, since it's not consistently applied ;)","date":"2012-03-22T20:55:59.439Z","type":"message"}
+{"nick":"pietern_","date":"2012-03-22T20:56:09.705Z","type":"join"}
+{"nick":"pietern_","reason":"Read error: Connection reset by peer","date":"2012-03-22T20:56:47.598Z","type":"quit"}
+{"nick":"pietern__","date":"2012-03-22T20:56:49.239Z","type":"join"}
+{"nick":"isaacs","message":"oh, wait, we do, nevermind","date":"2012-03-22T20:56:49.786Z","type":"message"}
+{"nick":"isaacs","message":"  writeReq.oncomplete = afterWrite;","date":"2012-03-22T20:56:51.366Z","type":"message"}
+{"nick":"isaacs","message":"  writeReq.cb = cb;","date":"2012-03-22T20:56:51.560Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: ^","date":"2012-03-22T20:56:52.947Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: right","date":"2012-03-22T20:56:58.583Z","type":"message"}
+{"nick":"igorzi","message":"so, in case of non-queued writes if a write fails (status != 0 in afterWrite) we don't fire the write callback","date":"2012-03-22T20:57:53.434Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: ^","date":"2012-03-22T20:57:58.876Z","type":"message"}
+{"nick":"pietern","reason":"Ping timeout: 240 seconds","date":"2012-03-22T20:58:06.622Z","type":"quit"}
+{"nick":"igorzi","message":"isaacs: we emit the 'error' event on the socket object","date":"2012-03-22T20:58:15.566Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-03-22T20:58:19.610Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: you're taling about this bit?","date":"2012-03-22T20:58:42.988Z","type":"message"}
+{"nick":"isaacs","message":"  if (!writeReq) {","date":"2012-03-22T20:58:44.567Z","type":"message"}
+{"nick":"isaacs","message":"    this.destroy(errnoException(errno, 'write'));","date":"2012-03-22T20:58:44.762Z","type":"message"}
+{"nick":"isaacs","message":"    return false;","date":"2012-03-22T20:58:45.623Z","type":"message"}
+{"nick":"isaacs","message":"  }","date":"2012-03-22T20:58:47.556Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: yes","date":"2012-03-22T20:59:08.375Z","type":"message"}
+{"nick":"indutny","date":"2012-03-22T20:59:16.213Z","type":"join"}
+{"nick":"isaacs","message":"igorzi: so, not to be dense here, just thorough... but why exactly do we *need* to call the cb when it fails?","date":"2012-03-22T20:59:46.840Z","type":"message"}
+{"nick":"isaacs","message":"i mean, it seems straightforward enough that we have to either call the cb(er) all the time on failure, or only call it when it succeeds, but not both.","date":"2012-03-22T21:00:33.058Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs:","date":"2012-03-22T21:01:12.782Z","type":"message"}
+{"nick":"piscisaureus_","message":"var pending_writes = 0;","date":"2012-03-22T21:01:12.975Z","type":"message"}
+{"nick":"piscisaureus_","message":"while (1) {","date":"2012-03-22T21:01:12.976Z","type":"message"}
+{"nick":"piscisaureus_","message":"  socket.write('foo', function() { pending_writes--; });","date":"2012-03-22T21:01:12.976Z","type":"message"}
+{"nick":"piscisaureus_","message":"  pending_writes++;","date":"2012-03-22T21:01:12.976Z","type":"message"}
+{"nick":"piscisaureus_","message":"}","date":"2012-03-22T21:01:13.484Z","type":"message"}
+{"nick":"dylukes","message":"What git line ending mode does libuv recommend piscisaureus_ ?","date":"2012-03-22T21:01:17.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- it must always end up 0","date":"2012-03-22T21:01:24.915Z","type":"message"}
+{"nick":"piscisaureus_","message":"dylukes: unix style","date":"2012-03-22T21:01:31.616Z","type":"message"}
+{"nick":"pietern__","reason":"Ping timeout: 272 seconds","date":"2012-03-22T21:01:34.144Z","type":"quit"}
+{"nick":"dylukes","message":"So, commit unix style?","date":"2012-03-22T21:01:38.638Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis's argument was that we need to call cb to not have resource leaks","date":"2012-03-22T21:01:39.193Z","type":"message"}
+{"nick":"isaacs","message":"ok, kewl.","date":"2012-03-22T21:01:39.687Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-03-22T21:01:44.106Z","type":"message"}
+{"nick":"dylukes","message":"excellent.","date":"2012-03-22T21:01:47.271Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_, igorzi: i lean that way myself.  ok.  so, we need to call the cb every time.","date":"2012-03-22T21:02:01.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"we must call the cb always unless write() throws","date":"2012-03-22T21:02:14.874Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: so, that's my point.. we also need to fix up the non-queued writes code-path","date":"2012-03-22T21:02:28.416Z","type":"message"}
+{"nick":"pietern","date":"2012-03-22T21:02:39.704Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: we can call self.destroy(er, cb) on that failure.  then destroy will emit('error', er) and then call the cb","date":"2012-03-22T21:02:46.156Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I gotto get out of the train now. sorry.","date":"2012-03-22T21:03:18.431Z","type":"message"}
+{"nick":"isaacs","message":"unless it's extremely obvious that a function was called inappropriately -- wrong args etc -- then we should emit('error') rather than throw","date":"2012-03-22T21:03:25.334Z","type":"message"}
+{"nick":"isaacs","message":"and, actually, there's a lot of cleanup in .destroy() that we're skipping as well.","date":"2012-03-22T21:04:02.294Z","type":"message"}
+{"nick":"isaacs","message":"that's not great.","date":"2012-03-22T21:04:03.694Z","type":"message"}
+{"nick":"CoverSlide","reason":"Ping timeout: 272 seconds","date":"2012-03-22T21:04:44.192Z","type":"quit"}
+{"nick":"igorzi","message":"isaacs: ok, i'll tweak the patch to fire the write cb on all failure paths","date":"2012-03-22T21:05:27.700Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: it'd be best to funnel everything through .destroy()","date":"2012-03-22T21:06:39.763Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: k","date":"2012-03-22T21:07:00.511Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: oh, i guess it's not that simple, since .destroy() aborts if you'er already destroyed","date":"2012-03-22T21:07:23.888Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: but they should call .destroy() at some point","date":"2012-03-22T21:07:36.881Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 246 seconds","date":"2012-03-22T21:07:41.676Z","type":"quit"}
+{"nick":"isaacs","message":"just in case you'er swallowing 'error' events","date":"2012-03-22T21:07:43.911Z","type":"message"}
+{"nick":"perezd","reason":"Ping timeout: 276 seconds","date":"2012-03-22T21:08:11.621Z","type":"quit"}
+{"nick":"isaacs","message":"igorzi: in other news... i actually just put that fs.rename() kludge into graceful-fs for win32","date":"2012-03-22T21:08:38.208Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: the tar/cache refactoring is coming along, but it's a big risky change.  i'd like to not rush it.","date":"2012-03-22T21:08:56.834Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: nice","date":"2012-03-22T21:09:24.801Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: lmk when you're happy with the net write queue thing, and i'll branch v0.6.14-release","date":"2012-03-22T21:09:26.560Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: you also want to change this https://github.com/joyent/node/blob/v0.6/lib/net.js#L453 ? (to emit 'error' rather than throwing)?","date":"2012-03-22T21:10:42.353Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: seems a bit risky for v0.6?","date":"2012-03-22T21:10:52.717Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: yes, emit error rather than throwing.","date":"2012-03-22T21:11:31.898Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: it throws by default if there's no handler anywy.","date":"2012-03-22T21:11:38.220Z","type":"message"}
+{"nick":"isaacs","message":"it's not particularly riky.","date":"2012-03-22T21:11:42.438Z","type":"message"}
+{"nick":"isaacs","message":"*risky","date":"2012-03-22T21:11:43.846Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: k","date":"2012-03-22T21:11:48.763Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: the problem (which would be good to fix in v0.8 if we have cycles for it) is that the http<->net boundary is a bit convoluted, and there are examples that we see in the wild where \"impossible\" things happen, resulting in throws that restart servers.","date":"2012-03-22T21:12:45.392Z","type":"message"}
+{"nick":"isaacs","message":"error events are catchable","date":"2012-03-22T21:13:01.386Z","type":"message"}
+{"nick":"isaacs","message":"throws are not","date":"2012-03-22T21:13:05.782Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: yep, i'm all for error events.. just was wandering if you wanted to go that route in v0.6","date":"2012-03-22T21:14:09.358Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-03-22T21:14:25.834Z","type":"message"}
+{"nick":"isaacs","message":"it's pretty clearly winful in this case, i think","date":"2012-03-22T21:14:31.462Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-03-22T21:18:33.012Z","type":"quit"}
+{"nick":"dylukes","message":"Windows is driving me insane..","date":"2012-03-22T21:21:18.357Z","type":"message"}
+{"nick":"rendar","date":"2012-03-22T21:28:23.913Z","type":"quit"}
+{"nick":"k-s","new_nick":"k-s[AWAY]","date":"2012-03-22T21:29:57.244Z","type":"nick"}
+{"nick":"pfox___","reason":"Quit: leaving","date":"2012-03-22T21:31:39.903Z","type":"quit"}
+{"nick":"bnoordhuis","message":"igorzi: pong","date":"2012-03-22T21:31:49.887Z","type":"message"}
+{"nick":"bnoordhuis","message":"you want me to review https://github.com/igorzi/node/commit/f8932effcddd1a0ee07e3d3dfd68fcfd1d6824bf#commitcomment-1111378 ?","date":"2012-03-22T21:31:59.781Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: yeah.. see the discussion above too","date":"2012-03-22T21:32:32.298Z","type":"message"}
+{"nick":"perezd","date":"2012-03-22T21:33:19.858Z","type":"join"}
+{"nick":"mjr_","message":"Hey guys, what do you make of this one:  https://gist.github.com/e477b14f80f9ecf84624","date":"2012-03-22T21:38:13.522Z","type":"message"}
+{"nick":"mjr_","message":"That process is using 3K out of 10K permitted fds.  Nowhere near the limit","date":"2012-03-22T21:38:39.934Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: i've read the discussion but can you please give me the executive summary? :)","date":"2012-03-22T21:40:15.553Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: basically, the question was should we fire the write callback for the 'regular' (non-queued) write.","date":"2012-03-22T21:41:49.442Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: we should","date":"2012-03-22T21:42:02.095Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: odd... is it just process.memoryUsage() that does that?","date":"2012-03-22T21:42:13.174Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: i'm going to add that to the patch","date":"2012-03-22T21:42:17.379Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: oh right, yes we should","date":"2012-03-22T21:42:30.903Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: yes, just process.memoryUsage()","date":"2012-03-22T21:42:43.571Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: i'm also going to change this https://github.com/joyent/node/blob/v0.6/lib/net.js#L453 to emit 'error' event instead of throwing","date":"2012-03-22T21:42:43.772Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: gah, i'm not in favor of that change","date":"2012-03-22T21:43:24.610Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: is this on smartos?","date":"2012-03-22T21:43:58.052Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: it is","date":"2012-03-22T21:44:03.430Z","type":"message"}
+{"nick":"mjr_","message":"Our whole node operation is now finally on Joyent.","date":"2012-03-22T21:44:24.705Z","type":"message"}
+{"nick":"mjr_","message":"The whole damn thing.","date":"2012-03-22T21:44:28.946Z","type":"message"}
+{"nick":"bnoordhuis","message":"congratulations :)","date":"2012-03-22T21:45:01.305Z","type":"message"}
+{"nick":"bnoordhuis","message":"what version of node are you running?","date":"2012-03-22T21:45:11.671Z","type":"message"}
+{"nick":"mjr_","message":"v0.6.12","date":"2012-03-22T21:45:26.041Z","type":"message"}
+{"nick":"mjr_","message":"These processes doing this are in a sad state, large heaps and I can't tell why.  GC is on fire.","date":"2012-03-22T21:46:07.509Z","type":"message"}
+{"nick":"mjr_","message":"Check this out","date":"2012-03-22T21:48:20.347Z","type":"message"}
+{"nick":"mjr_","message":"http://ranney.com/hotnode1.svg","date":"2012-03-22T21:48:20.697Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: fight it out with isaacs :)","date":"2012-03-22T21:48:57.109Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: fancy flame graph :)","date":"2012-03-22T21:49:24.878Z","type":"message"}
+{"nick":"bnoordhuis","message":"that error you're seeing might be a misreported errno","date":"2012-03-22T21:49:38.229Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: in this case, it's absolutely right to emit error rather than throwing.","date":"2012-03-22T21:50:19.255Z","type":"message"}
+{"nick":"mjr_","message":"That would make sense.  There are plenty of fds available, and dtrace doesn't suggest we are returning EMFILE anywhere","date":"2012-03-22T21:50:19.452Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: a) it's the same most of the time, and b) it happens in the future, uncatchably.","date":"2012-03-22T21:50:31.894Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: there is virtually no benefit to throwing rather than emitting, unless it's a badargs issue.","date":"2012-03-22T21:50:49.998Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i half-agree, i think the check should be moved from _write() to write()","date":"2012-03-22T21:51:17.771Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but the problem is that the socket can close while processing the pending write queue.","date":"2012-03-22T21:51:38.504Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: let me run a quick check on a smartos machine","date":"2012-03-22T21:51:40.792Z","type":"message"}
+{"nick":"mjr_","message":"some of our processes work fine for process.memoryUsage()","date":"2012-03-22T21:52:10.405Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: we need to clean up the net-http interface somewhat, and then i think we can be more strict about these.","date":"2012-03-22T21:52:28.148Z","type":"message"}
+{"nick":"isaacs","message":"but for now, it just makes issues harder to handle in the wild.","date":"2012-03-22T21:52:39.406Z","type":"message"}
+{"nick":"ryah","message":"mjr_: might make sense to test a less aggressive GC polling code...","date":"2012-03-22T21:53:31.275Z","type":"message"}
+{"nick":"ryah","message":"there's all this stuff in src/node.cc that tries to notify V8 that we're idle","date":"2012-03-22T21:54:09.792Z","type":"message"}
+{"nick":"mjr_","message":"Sure, but memory usage is the reason I want to ask V8 how big it thinks the heap is.","date":"2012-03-22T21:54:19.212Z","type":"message"}
+{"nick":"ryah","message":"but it's largely unneccessary","date":"2012-03-22T21:54:20.348Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-03-22T21:54:32.515Z","type":"quit"}
+{"nick":"dylukes","message":"I'm slowly killing myself","date":"2012-03-22T21:54:34.526Z","type":"message"}
+{"nick":"dylukes","message":"trying to get windows working for this stuff","date":"2012-03-22T21:54:42.805Z","type":"message"}
+{"nick":"ryah","message":"sure would be nice if dtrace could demangle the c++ symbols :(","date":"2012-03-22T21:55:09.375Z","type":"message"}
+{"nick":"paddybyers","date":"2012-03-22T21:55:16.264Z","type":"join"}
+{"nick":"bnoordhuis","message":"waf is so hideously broken with JOBS=16 :(","date":"2012-03-22T21:55:38.843Z","type":"message"}
+{"nick":"dylukes","message":"I have to restart to change the PATH.","date":"2012-03-22T21:55:41.128Z","type":"message"}
+{"nick":"dylukes","message":"What is this.","date":"2012-03-22T21:55:42.532Z","type":"message"}
+{"nick":"mjr_","message":"ryah: mangling sucks, but those flame graphs are pretty great, right?","date":"2012-03-22T21:56:04.203Z","type":"message"}
+{"nick":"ryah","message":"omg they are awesome","date":"2012-03-22T21:56:39.180Z","type":"message"}
+{"nick":"ryah","message":"you can actually see js functions :)","date":"2012-03-22T21:56:51.469Z","type":"message"}
+{"nick":"mjr_","message":"It's amazing how little of the graph is our code.","date":"2012-03-22T21:57:04.256Z","type":"message"}
+{"nick":"ryah","message":"utter magic","date":"2012-03-22T21:57:06.344Z","type":"message"}
+{"nick":"TooTallNate","message":"dylukes: just closing and re-opening the terminal works for me","date":"2012-03-22T21:57:12.882Z","type":"message"}
+{"nick":"mjr_","message":"But our source lines and function names are right there in the stacks.  Amazing.","date":"2012-03-22T21:57:19.709Z","type":"message"}
+{"nick":"dylukes","message":"TooTallNate: What version of windows are you on?","date":"2012-03-22T21:57:26.054Z","type":"message"}
+{"nick":"dylukes","message":"That doesn't work on W7 as far as I can tell.","date":"2012-03-22T21:57:31.850Z","type":"message"}
+{"nick":"ryah","message":"mjr_: can i post that on twitter?","date":"2012-03-22T21:58:54.721Z","type":"message"}
+{"nick":"mjr_","message":"sure","date":"2012-03-22T21:59:19.292Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: i'm not able to reproduce it","date":"2012-03-22T21:59:19.972Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: our non-busy processes do not exhibit this behavior","date":"2012-03-22T21:59:30.794Z","type":"message"}
+{"nick":"mjr_","message":"ryah: feel free to also mention it came from us if that's fun for you, otherwise whatever","date":"2012-03-22T21:59:53.926Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i don't understand what you mean - there is no pending write queue, at least not in node","date":"2012-03-22T22:01:59.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: and the one in libuv does The Right Thing(TM)","date":"2012-03-22T22:02:11.248Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: run dtrace's output through c++filt","date":"2012-03-22T22:05:15.652Z","type":"message"}
+{"nick":"bnoordhuis","message":"(i assume gcc on smartos comes with c++filt too)","date":"2012-03-22T22:05:34.268Z","type":"message"}
+{"nick":"bnoordhuis","message":"(it does)","date":"2012-03-22T22:05:45.689Z","type":"message"}
+{"nick":"dylukes","message":"Alright yes!!","date":"2012-03-22T22:06:40.276Z","type":"message"}
+{"nick":"dylukes","message":"I have Windows environment set up!","date":"2012-03-22T22:06:44.219Z","type":"message"}
+{"nick":"dylukes","message":"^_^","date":"2012-03-22T22:06:46.325Z","type":"message"}
+{"nick":"dylukes","message":"bnoordhuis: I'm elated. I might have that patch for you tonight or tomorrow! ","date":"2012-03-22T22:07:04.297Z","type":"message"}
+{"nick":"mjr_","message":"Pretty happy about this dtrace jsstack + flame graph thing.  It's a HUGE piece that's been missing from node.","date":"2012-03-22T22:07:09.432Z","type":"message"}
+{"nick":"mjr_","message":"Now we just need better heap profiling, and we can solve most production problems.","date":"2012-03-22T22:07:32.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi, isaacs: https://github.com/igorzi/node/commit/f8932effcddd1a0ee07e3d3dfd68fcfd1d6824bf#commitcomment-1121404","date":"2012-03-22T22:08:23.213Z","type":"message"}
+{"nick":"ryah","message":"mjr_: do all your processes look like that?","date":"2012-03-22T22:09:30.005Z","type":"message"}
+{"nick":"mjr_","message":"nope, just the routers","date":"2012-03-22T22:09:35.316Z","type":"message"}
+{"nick":"mjr_","message":"We are rolling a restart right now.","date":"2012-03-22T22:09:48.279Z","type":"message"}
+{"nick":"ryah","message":"are they at 100% cpu?","date":"2012-03-22T22:10:04.257Z","type":"message"}
+{"nick":"mjr_","message":"yes","date":"2012-03-22T22:10:07.242Z","type":"message"}
+{"nick":"ryah","message":"i think we should comment out the idle notification code","date":"2012-03-22T22:10:19.306Z","type":"message"}
+{"nick":"ryah","message":"can probably add an ifdef","date":"2012-03-22T22:10:26.512Z","type":"message"}
+{"nick":"benvie","date":"2012-03-22T22:11:05.292Z","type":"join"}
+{"nick":"mjr_","message":"https://gist.github.com/2164999","date":"2012-03-22T22:11:17.355Z","type":"message"}
+{"nick":"mjr_","message":"Also, look at me, I'm using prstat and pgrep like that wasn't a super different and annoying thing to learn.","date":"2012-03-22T22:12:05.340Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2012-03-22T22:12:43.028Z","type":"message"}
+{"nick":"mjr_","message":"We are really burning up these machines with node though.","date":"2012-03-22T22:13:22.900Z","type":"message"}
+{"nick":"mjr_","message":"If riak wasn't broken again, we'd be doing at least double, maybe 4X the traffic.","date":"2012-03-22T22:13:42.358Z","type":"message"}
+{"nick":"mjr_","message":"We've almost hit 1M sessions/https a few times a week ago, before we went on this datacenter move adventure","date":"2012-03-22T22:14:19.875Z","type":"message"}
+{"nick":"ryah","message":"mjr_: if i add a flag --no-idle-notifications will you try it?","date":"2012-03-22T22:16:07.052Z","type":"message"}
+{"nick":"mjr_","message":"oh sure","date":"2012-03-22T22:16:12.544Z","type":"message"}
+{"nick":"mjr_","message":"We've got nearly 400 router processes alone.  We can easily just run one of them with that flag and see what happens.","date":"2012-03-22T22:16:44.627Z","type":"message"}
+{"nick":"Raynos","reason":"Ping timeout: 240 seconds","date":"2012-03-22T22:17:06.788Z","type":"quit"}
+{"nick":"mrb_bk","reason":"Ping timeout: 240 seconds","date":"2012-03-22T22:17:36.726Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: yes, that's correct.","date":"2012-03-22T22:17:57.993Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: hah okay. yes, that throw should go","date":"2012-03-22T22:18:21.768Z","type":"message"}
+{"nick":"coderarity","reason":"Ping timeout: 252 seconds","date":"2012-03-22T22:18:32.710Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-03-22T22:20:43.075Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis, igorzi: it should probably be a errnoException('ECONNABORTED', 'write'), too","date":"2012-03-22T22:21:18.851Z","type":"message"}
+{"nick":"isaacs","message":"though actually that would perhaps change error handling logic somewhere","date":"2012-03-22T22:22:00.980Z","type":"message"}
+{"nick":"isaacs","message":"better to keep the same error in v0.6","date":"2012-03-22T22:22:07.351Z","type":"message"}
+{"nick":"isaacs","message":"ryah: i'm going to do a v0.6.14 branch this evening.  wanna send a patch? ;P","date":"2012-03-22T22:23:38.634Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: make sure he signs the CLA","date":"2012-03-22T22:24:07.450Z","type":"message"}
+{"nick":"mjr_","message":"Oh nice, it'd be great to try that and a memoryUsage fix.","date":"2012-03-22T22:24:10.288Z","type":"message"}
+{"nick":"isaacs","message":"hehe","date":"2012-03-22T22:24:16.268Z","type":"message"}
+{"nick":"isaacs","message":"mjr_: memoryUsage fix?","date":"2012-03-22T22:24:28.847Z","type":"message"}
+{"nick":"mjr_","message":"Bryan promised me that you would put such a fix in 0.6.14","date":"2012-03-22T22:24:41.690Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: i don't quite know what's causing it","date":"2012-03-22T22:24:41.889Z","type":"message"}
+{"nick":"mjr_","message":"I'm working this issue both top-down, and bottom-up.","date":"2012-03-22T22:25:03.527Z","type":"message"}
+{"nick":"isaacs","message":"mjr_: bmc is doing a patch right now for 0.6.14 for the FILE uchar 256 EMFILE problem","date":"2012-03-22T22:25:07.693Z","type":"message"}
+{"nick":"mjr_","message":"Oh, that's the same","date":"2012-03-22T22:25:16.822Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok","date":"2012-03-22T22:25:29.625Z","type":"message"}
+{"nick":"mjr_","message":"Oh, it only kicks in when you get more than 256 fds or something?","date":"2012-03-22T22:25:39.042Z","type":"message"}
+{"nick":"isaacs","message":"yes, 0.6.14 is waiting on that, and igorzi's socket connect queue throw, and i'm just testing a pretty minor npm bugfix release to put in it","date":"2012-03-22T22:26:03.001Z","type":"message"}
+{"nick":"ryah","message":"what's happening with emfile?","date":"2012-03-22T22:26:06.762Z","type":"message"}
+{"nick":"mjr_","message":"Anyway, it causes process.memoryUsage() to fail EMFILE on our busy processes.","date":"2012-03-22T22:26:13.477Z","type":"message"}
+{"nick":"txdv","reason":"Quit: No Ping reply in 180 seconds.","date":"2012-03-22T22:26:53.726Z","type":"quit"}
+{"nick":"txdv","date":"2012-03-22T22:27:14.491Z","type":"join"}
+{"nick":"dylukes","message":"Argh.","date":"2012-03-22T22:34:07.762Z","type":"message"}
+{"nick":"dylukes","message":"Is anyone on Windows still here?","date":"2012-03-22T22:34:11.097Z","type":"message"}
+{"nick":"dylukes","message":"visual studio decided to stop working.","date":"2012-03-22T22:34:16.016Z","type":"message"}
+{"nick":"dylukes","message":"apparently.","date":"2012-03-22T22:34:17.943Z","type":"message"}
+{"nick":"dylukes","message":"I'm getting MSB8012","date":"2012-03-22T22:35:28.466Z","type":"message"}
+{"nick":"benvie","message":"I am but I try to stay out of VS unless something just won't compile from the command line","date":"2012-03-22T22:35:29.976Z","type":"message"}
+{"nick":"mrb_bk","date":"2012-03-22T22:35:46.642Z","type":"join"}
+{"nick":"benvie","message":"that built targets stuff gets really old after a while","date":"2012-03-22T22:36:20.841Z","type":"message"}
+{"nick":"dylukes","message":"*sigh*","date":"2012-03-22T22:36:33.747Z","type":"message"}
+{"nick":"benvie","message":"that's just a warning no?","date":"2012-03-22T22:36:39.346Z","type":"message"}
+{"nick":"benvie","message":"because it still should work","date":"2012-03-22T22:36:42.929Z","type":"message"}
+{"nick":"dylukes","message":"Yeah, no.","date":"2012-03-22T22:37:01.953Z","type":"message"}
+{"nick":"benvie","message":"if it's failing it might because warn on errors is on","date":"2012-03-22T22:37:03.221Z","type":"message"}
+{"nick":"dylukes","message":"I just get zero warnings or errors.","date":"2012-03-22T22:37:09.370Z","type":"message"}
+{"nick":"benvie","message":"or whatever","date":"2012-03-22T22:37:11.234Z","type":"message"}
+{"nick":"dylukes","message":"When I should be getting ~20.","date":"2012-03-22T22:37:13.181Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Lal Jérémy\u000f \u000307master\u000f * r\u0002ef046bf\u000f \u000310\u000f/ test/fixtures/keys/Makefile \u0002:\u000f test: generate 1024-bit keys, pacify openssl 1.0.1 - http://git.io/SNrO9Q","date":"2012-03-22T22:37:20.976Z","type":"message"}
+{"nick":"dylukes","message":"It just suddenly happened. It was building fine before.","date":"2012-03-22T22:37:23.899Z","type":"message"}
+{"nick":"benvie","message":"warnaing as error","date":"2012-03-22T22:37:25.194Z","type":"message"}
+{"nick":"benvie","message":"yeah there was changes to the build process","date":"2012-03-22T22:37:35.108Z","type":"message"}
+{"nick":"dylukes","message":"It *claims* the build went perfectly,","date":"2012-03-22T22:37:37.244Z","type":"message"}
+{"nick":"dylukes","message":"but I know that's not true.","date":"2012-03-22T22:37:41.639Z","type":"message"}
+{"nick":"dylukes","message":"they show up from the command line build haha","date":"2012-03-22T22:38:13.354Z","type":"message"}
+{"nick":"benvie","message":"my stop stuff working too, not sure what in the build process caused the fail but I know it was because I was using a custom build thing that replaced msbuild","date":"2012-03-22T22:38:31.886Z","type":"message"}
+{"nick":"dylukes","message":"I have no idea.","date":"2012-03-22T22:38:50.703Z","type":"message"}
+{"nick":"dylukes","message":"It literally built one second, and stopped working the next.","date":"2012-03-22T22:38:57.391Z","type":"message"}
+{"nick":"benvie","message":"it has something to do with some changes to specifying the build platform and the target platform that were made in terms of feeding info into gyp","date":"2012-03-22T22:39:09.346Z","type":"message"}
+{"nick":"benvie","message":"oh maybe not that then, I dunno","date":"2012-03-22T22:39:21.286Z","type":"message"}
+{"nick":"dylukes","message":"Warning\t1\twarning MSB8012: TargetPath(C:\\Users\\Dylan\\Desktop\\libuv\\Debug\\uv.lib) does not match the Library's OutputFile property value (C:\\Users\\Dylan\\Desktop\\libuv\\Debug\\lib\\uv.lib). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Lib.OutputFile).\tC:\\Program Files","date":"2012-03-22T22:39:23.563Z","type":"message"}
+{"nick":"dylukes","message":" (x86)\\MSBuild\\Microsoft.Cpp\\v4.0\\Microsoft.CppBuild.targets\t1151","date":"2012-03-22T22:39:23.759Z","type":"message"}
+{"nick":"dylukes","message":"And that's all I see.","date":"2012-03-22T22:39:29.628Z","type":"message"}
+{"nick":"dylukes","message":"It just blindly says \"build succeeded\" otherwise.","date":"2012-03-22T22:39:38.763Z","type":"message"}
+{"nick":"benvie","message":"I see that error every time","date":"2012-03-22T22:39:39.513Z","type":"message"}
+{"nick":"dylukes","message":"It wasn't there until just now.","date":"2012-03-22T22:39:49.299Z","type":"message"}
+{"nick":"benvie","message":"it lots of projects","date":"2012-03-22T22:39:52.966Z","type":"message"}
+{"nick":"benvie","message":"in","date":"2012-03-22T22:39:57.693Z","type":"message"}
+{"nick":"dylukes","message":"Yeah well, now I can't do anything.","date":"2012-03-22T22:40:10.756Z","type":"message"}
+{"nick":"benvie","message":"http://blogs.msdn.com/b/vcblog/archive/2010/03/02/visual-studio-2010-c-project-upgrade-guide.aspx","date":"2012-03-22T22:40:35.447Z","type":"message"}
+{"nick":"benvie","message":"maybe that will help =/","date":"2012-03-22T22:40:44.330Z","type":"message"}
+{"nick":"benvie","message":"there's a big chunk in there about that error","date":"2012-03-22T22:40:58.667Z","type":"message"}
+{"nick":"dylukes","message":"What perplexes me is how this just showed up out of nowhere.","date":"2012-03-22T22:41:21.490Z","type":"message"}
+{"nick":"dylukes","message":"I was just routinely building, fixing a bug, etc","date":"2012-03-22T22:41:33.657Z","type":"message"}
+{"nick":"benvie","message":"was this in VS or running a build bat?","date":"2012-03-22T22:41:45.570Z","type":"message"}
+{"nick":"benvie","message":"the bat file may have regenerated the project files","date":"2012-03-22T22:41:58.981Z","type":"message"}
+{"nick":"benvie","message":"which happens often enough","date":"2012-03-22T22:42:05.740Z","type":"message"}
+{"nick":"benvie","message":"and that's probably the source of the problem, the project file has some issue ","date":"2012-03-22T22:42:22.195Z","type":"message"}
+{"nick":"benvie","message":"which really means gyp was given some wrong input params and generated a faulty project file","date":"2012-03-22T22:42:56.398Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-22T22:42:56.889Z","type":"join"}
+{"nick":"ryah","message":"mjr_: https://gist.github.com/2165201","date":"2012-03-22T22:43:02.191Z","type":"message"}
+{"nick":"mikeal","message":"ryan: come to Haus :)","date":"2012-03-22T22:43:18.957Z","type":"message"}
+{"nick":"ryah","message":"mikeal: heading over now","date":"2012-03-22T22:43:26.623Z","type":"message"}
+{"nick":"ryah","message":"mikeal:have you got lunch yet?","date":"2012-03-22T22:43:41.047Z","type":"message"}
+{"nick":"dylukes","message":"benvie: rightb ut... it was working just fine :|","date":"2012-03-22T22:44:26.792Z","type":"message"}
+{"nick":"dylukes","message":"this is in VS","date":"2012-03-22T22:44:29.076Z","type":"message"}
+{"nick":"dylukes","message":"I generated once.","date":"2012-03-22T22:44:32.070Z","type":"message"}
+{"nick":"Raynos","date":"2012-03-22T22:44:34.885Z","type":"join"}
+{"nick":"ryah","message":"mjr_: try that patch and see if it helps the GC issue...","date":"2012-03-22T22:44:39.161Z","type":"message"}
+{"nick":"dylukes","message":"And then it was working just fine, then suddenly stopped working.","date":"2012-03-22T22:44:40.508Z","type":"message"}
+{"nick":"benvie","message":"ah","date":"2012-03-22T22:45:05.072Z","type":"message"}
+{"nick":"dylukes","message":"http://social.msdn.microsoft.com/Forums/en/vcprerelease/thread/3c03e730-6a0e-4ee4-a0d6-6a5c3ce4343c","date":"2012-03-22T22:46:09.519Z","type":"message"}
+{"nick":"dylukes","message":"this looks relevant","date":"2012-03-22T22:46:11.439Z","type":"message"}
+{"nick":"igorzi","message":"isaacs bnoordhuis: https://github.com/igorzi/node/commit/50ab22827af246a11c9caec4f72e4aa957bc3ead","date":"2012-03-22T22:46:19.262Z","type":"message"}
+{"nick":"dylukes","message":"what the hell... how it's telling me there are no warnings or errors.","date":"2012-03-22T22:48:48.422Z","type":"message"}
+{"nick":"dylukes","message":"Again, this is untrue.","date":"2012-03-22T22:48:51.199Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: testing.","date":"2012-03-22T22:49:05.440Z","type":"message"}
+{"nick":"dylukes","message":"I am just going to delete this and try again *sigh*","date":"2012-03-22T22:49:54.190Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: passes look-over scrutiny, though.  much nicer.","date":"2012-03-22T22:50:12.670Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: re self.errorEmitted: is it because .destroy() is supposed to be idempotent?","date":"2012-03-22T22:51:48.372Z","type":"message"}
+{"nick":"mjr_","message":"Is there ever hope of getrusage being part of libuv?","date":"2012-03-22T22:52:02.365Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: why would you want it?","date":"2012-03-22T22:52:30.302Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: yep","date":"2012-03-22T22:52:33.291Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: because I want to ask my processes how much CPU time they've consumed.","date":"2012-03-22T22:52:48.852Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T22:53:03.692Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#630 (master - ef046bf : Lal Jérémy): The build is still failing.","date":"2012-03-22T22:53:03.887Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/feaa8a4...ef046bf","date":"2012-03-22T22:53:03.887Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/925871","date":"2012-03-22T22:53:03.887Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T22:53:03.887Z","type":"part"}
+{"nick":"bnoordhuis","message":"igorzi: okay, in that case disregard my second comment :)","date":"2012-03-22T22:53:12.214Z","type":"message"}
+{"nick":"mjr_","message":"We already have to ask them about various other application counters and such, including this memoryUsage() thing.","date":"2012-03-22T22:53:13.767Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: k :).  the use case is - if you do many queued writes, and if the socket is closed - we probably don't want to emit 'error' on every one of them","date":"2012-03-22T22:54:32.749Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T22:55:22.722Z","type":"quit"}
+{"nick":"dylukes","reason":"Quit: Computer has gone to sleep.","date":"2012-03-22T22:55:43.635Z","type":"quit"}
+{"nick":"skomski","date":"2012-03-22T22:55:45.042Z","type":"join"}
+{"nick":"bnoordhuis","message":"igorzi: okay, that makes sense","date":"2012-03-22T22:55:52.954Z","type":"message"}
+{"nick":"mmalecki","message":"+1 on the getrusage thing","date":"2012-03-22T22:56:03.184Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: one thing though, you're changing the function prototype of .destroy()","date":"2012-03-22T22:56:05.778Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: iow, api change","date":"2012-03-22T22:56:13.510Z","type":"message"}
+{"nick":"benvie","message":"dylukes: can't say I blame you and deleting the repo entirely and starting over has fixed my broken stuff on more than one occasion (building node and/or libuv)","date":"2012-03-22T22:56:32.104Z","type":"message"}
+{"nick":"igorzi","message":"bnoordhuis: hmm, how about i create _destroy ?","date":"2012-03-22T22:57:10.965Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: it would be better to move the body of .destroy() into a new method ._destroy() and make .destroy() a stub that calls ._destroy()","date":"2012-03-22T22:57:13.068Z","type":"message"}
+{"nick":"bnoordhuis","message":"igorzi: exactly :)","date":"2012-03-22T22:57:16.234Z","type":"message"}
+{"nick":"mikeal","date":"2012-03-22T22:57:18.523Z","type":"join"}
+{"nick":"igorzi","message":"bnoordhuis: ok :)","date":"2012-03-22T22:57:46.113Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: re getrusage... it's very unix-y","date":"2012-03-22T22:58:08.359Z","type":"message"}
+{"nick":"mjr_","message":"bnoordhuis: sure, but there's no Windows version of \"how much CPU time have I used?\"","date":"2012-03-22T22:58:25.687Z","type":"message"}
+{"nick":"avsej","reason":"Excess Flood","date":"2012-03-22T22:58:32.985Z","type":"quit"}
+{"nick":"mjr_","message":"That's what I really want to ask.","date":"2012-03-22T22:58:40.412Z","type":"message"}
+{"nick":"avsej","date":"2012-03-22T22:58:55.875Z","type":"join"}
+{"nick":"bnoordhuis","message":"mjr_: what about a small add-on?","date":"2012-03-22T23:00:17.792Z","type":"message"}
+{"nick":"mjr_","message":"oh sure, that's probably what we'll do","date":"2012-03-22T23:00:27.535Z","type":"message"}
+{"nick":"mjr_","message":"But if we have process.memoryUsage() already, it seems like process.CPUUsage() is a natural compliment.","date":"2012-03-22T23:00:59.497Z","type":"message"}
+{"nick":"dylukes","date":"2012-03-22T23:02:20.528Z","type":"join"}
+{"nick":"mmalecki","message":"btw, we should think about unifying APIs. we have getters/setters and functions all over the place. what's the actual convention?","date":"2012-03-22T23:02:29.054Z","type":"message"}
+{"nick":"bnoordhuis","message":"mjr_: process.memoryUsage() was thought up in a time when we were all still young and foolish :)","date":"2012-03-22T23:03:26.299Z","type":"message"}
+{"nick":"bnoordhuis","message":"we're not young anymore","date":"2012-03-22T23:03:29.645Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: functions, much to my dismay","date":"2012-03-22T23:03:46.435Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: :(","date":"2012-03-22T23:04:37.817Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: oh well, we're still foolish, it seems","date":"2012-03-22T23:04:49.631Z","type":"message"}
+{"nick":"bnoordhuis","message":"that was the implied joke, yes :)","date":"2012-03-22T23:05:00.202Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: it was also related to functions, in this case","date":"2012-03-22T23:05:48.297Z","type":"message"}
+{"nick":"mmalecki","message":"ugh, I have to write an e-mail today :/","date":"2012-03-22T23:06:30.705Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: yeah, bnoordhuis's nit about destroy's signature changing is valid, but it's minor.","date":"2012-03-22T23:07:30.892Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: lgtm once that nit is resolved, though.","date":"2012-03-22T23:07:52.276Z","type":"message"}
+{"nick":"benvie","message":"I'm curious on what you mean mmaelecki, since there's no much difference between an accessor and a function","date":"2012-03-22T23:09:41.545Z","type":"message"}
+{"nick":"mmalecki","message":"benvie: API-wise, there is :)","date":"2012-03-22T23:09:57.685Z","type":"message"}
+{"nick":"TooTallNate","message":"mmalecki: where are you talking about though?","date":"2012-03-22T23:10:19.495Z","type":"message"}
+{"nick":"CoverSlide","date":"2012-03-22T23:10:21.300Z","type":"join"}
+{"nick":"TooTallNate","message":"like `process.stdin` starts off as a getter, for the lazy-loading","date":"2012-03-22T23:10:32.712Z","type":"message"}
+{"nick":"benvie","message":"it's funny because I've end implementing things as functions where before I would have ussed accessors out of complaints","date":"2012-03-22T23:10:34.187Z","type":"message"}
+{"nick":"mmalecki","message":"TooTallNate: process.memoryUsage() vs process.memoryUsage","date":"2012-03-22T23:10:37.324Z","type":"message"}
+{"nick":"benvie","message":"because an accessor isn't usable with functional application without wrapping it","date":"2012-03-22T23:10:57.136Z","type":"message"}
+{"nick":"skomski","reason":"Quit: skomski","date":"2012-03-22T23:10:58.022Z","type":"quit"}
+{"nick":"bnoordhuis","message":"process.env vs. process.getpid() for example","date":"2012-03-22T23:11:08.891Z","type":"message"}
+{"nick":"bnoordhuis","action":"is responsible for that first one","date":"2012-03-22T23:11:14.539Z","type":"action"}
+{"nick":"TooTallNate","message":"mmalecki: in my book, that should be a function (opinions and all :p)","date":"2012-03-22T23:11:15.237Z","type":"message"}
+{"nick":"TooTallNate","message":"process.env is an interesting one","date":"2012-03-22T23:11:38.839Z","type":"message"}
+{"nick":"TooTallNate","message":"the only proxy object in node, right?","date":"2012-03-22T23:11:46.730Z","type":"message"}
+{"nick":"txdv","reason":"Ping timeout: 260 seconds","date":"2012-03-22T23:12:01.383Z","type":"quit"}
+{"nick":"TooTallNate","message":"but","date":"2012-03-22T23:12:04.592Z","type":"message"}
+{"nick":"TooTallNate","message":"`process.pid` should exist :p","date":"2012-03-22T23:12:21.165Z","type":"message"}
+{"nick":"benvie","message":"only one I've seen, and it shows up funny too cause its prototype is this weird anonymous thing","date":"2012-03-22T23:12:21.606Z","type":"message"}
+{"nick":"dylukes","message":"this is sort of orthogonal, but","date":"2012-03-22T23:13:19.405Z","type":"message"}
+{"nick":"benvie","message":"process.env.__proto__","date":"2012-03-22T23:13:23.547Z","type":"message"}
+{"nick":"dylukes","message":"the current way uv_tcp_listen() is setup, it only does ipv4...","date":"2012-03-22T23:13:33.484Z","type":"message"}
+{"nick":"dylukes","message":"that's probably not an issue right now","date":"2012-03-22T23:13:38.940Z","type":"message"}
+{"nick":"dylukes","message":"but... just saying.","date":"2012-03-22T23:13:42.561Z","type":"message"}
+{"nick":"benvie","message":"`new process.env.__proto__.constructor` returns a new process.env copy","date":"2012-03-22T23:14:46.638Z","type":"message"}
+{"nick":"mmalecki","message":"we should ask twitter for an opinion!","date":"2012-03-22T23:14:52.972Z","type":"message"}
+{"nick":"mmalecki","action":"ducks","date":"2012-03-22T23:15:00.867Z","type":"action"}
+{"nick":"TooTallNate","message":"benvie: haha, thats an interesting find","date":"2012-03-22T23:15:23.348Z","type":"message"}
+{"nick":"benvie","message":"yeah I figured it would crash node or something but it actually works","date":"2012-03-22T23:15:42.567Z","type":"message"}
+{"nick":"TooTallNate","message":"benvie: almost something that child_process should use :D","date":"2012-03-22T23:15:48.450Z","type":"message"}
+{"nick":"benvie","message":"also just called it produces an empt copy","date":"2012-03-22T23:15:50.202Z","type":"message"}
+{"nick":"benvie","message":"so new matters","date":"2012-03-22T23:15:59.862Z","type":"message"}
+{"nick":"benvie","message":"so there's you're empty env object for child processes too =D","date":"2012-03-22T23:16:27.217Z","type":"message"}
+{"nick":"TooTallNate","message":"mmalecki: well what's your opinion?","date":"2012-03-22T23:17:00.586Z","type":"message"}
+{"nick":"mmalecki","message":"TooTallNate: most important thing here is consistency. also, I prefer getters :)","date":"2012-03-22T23:18:13.120Z","type":"message"}
+{"nick":"TooTallNate","message":"it's circumstantial imo","date":"2012-03-22T23:18:28.682Z","type":"message"}
+{"nick":"TooTallNate","message":"if a value isn't gonna change, just use a regular prop","date":"2012-03-22T23:18:43.522Z","type":"message"}
+{"nick":"TooTallNate","message":"i.e. getpid()","date":"2012-03-22T23:18:46.332Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, definitely","date":"2012-03-22T23:18:55.854Z","type":"message"}
+{"nick":"TooTallNate","message":"i only like getters really for the lazy-load case. where the getter is removed after the first call","date":"2012-03-22T23:19:13.919Z","type":"message"}
+{"nick":"benvie","message":"yeah I think that's basically the rule of thumb. If the property doesn't change in the lifetime of its container then make it a property","date":"2012-03-22T23:19:20.287Z","type":"message"}
+{"nick":"benvie","message":"most of the functions in `os` for example can arbitrarily change on each call","date":"2012-03-22T23:19:50.510Z","type":"message"}
+{"nick":"TooTallNate","message":"where are we using getters that aren't lazy-getters?","date":"2012-03-22T23:20:54.282Z","type":"message"}
+{"nick":"dylukes","message":"Getting there...","date":"2012-03-22T23:21:01.355Z","type":"message"}
+{"nick":"TooTallNate","message":"i'm sure there are some","date":"2012-03-22T23:21:05.891Z","type":"message"}
+{"nick":"benvie","message":"if I want to pass a function that has teh task of \"return the current value for X\" it's not possible to simply use a property","date":"2012-03-22T23:21:49.914Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Shigeki Ohtsu\u000f \u000307master\u000f * r\u0002e1199fa\u000f \u000310\u000f/ lib/tls.js \u0002:\u000f tls: fix CryptoStream.setKeepAlive() - http://git.io/rro28A","date":"2012-03-22T23:21:52.155Z","type":"message"}
+{"nick":"benvie","message":"which is the use case that convinced me accessors need to either come with functional versions in most cases or should just be functions","date":"2012-03-22T23:22:11.144Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:22:22.498Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] DylanLukes/libuv#4 (ipv46agnostic - d074861 : Dylan Lukes): The build is still failing.","date":"2012-03-22T23:22:22.697Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/DylanLukes/libuv/compare/abe8165...d074861","date":"2012-03-22T23:22:22.697Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/DylanLukes/libuv/builds/926121","date":"2012-03-22T23:22:22.697Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:22:22.697Z","type":"part"}
+{"nick":"mmalecki","message":"also, os.getNetworkInterfaces should be os.networkInterfaces imo","date":"2012-03-22T23:22:54.278Z","type":"message"}
+{"nick":"benvie","message":"I've started actually providing both becaue I like accessors too","date":"2012-03-22T23:22:57.963Z","type":"message"}
+{"nick":"benvie","message":"or using proxies to both provide a functional one and then a proxy wrapped \"natural looking\" one with stuff as properties","date":"2012-03-22T23:23:32.432Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: it is in master already, i believe","date":"2012-03-22T23:23:34.072Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: I'm running master here","date":"2012-03-22T23:23:52.291Z","type":"message"}
+{"nick":"benvie","message":"both currently work","date":"2012-03-22T23:24:05.570Z","type":"message"}
+{"nick":"benvie","message":"the get version a a lazy getter","date":"2012-03-22T23:24:13.699Z","type":"message"}
+{"nick":"isaacs","message":"> require(\"os\").networkInterfaces","date":"2012-03-22T23:24:18.639Z","type":"message"}
+{"nick":"isaacs","message":"[Function]","date":"2012-03-22T23:24:18.639Z","type":"message"}
+{"nick":"benvie","message":"with the deprecation warning","date":"2012-03-22T23:24:18.639Z","type":"message"}
+{"nick":"mmalecki","message":"ah, yeah","date":"2012-03-22T23:24:22.537Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: yeah, well, that's how we roll :)","date":"2012-03-22T23:24:23.911Z","type":"message"}
+{"nick":"perezd","reason":"Read error: Connection reset by peer","date":"2012-03-22T23:24:27.768Z","type":"quit"}
+{"nick":"mmalecki","message":"backward compatibility. right.","date":"2012-03-22T23:24:41.721Z","type":"message"}
+{"nick":"isaacs","message":"> os.getNetworkInterfaces()","date":"2012-03-22T23:24:42.199Z","type":"message"}
+{"nick":"isaacs","message":"os.getNetworkInterfaces is deprecated. It is now called `os.networkInterfaces`.","date":"2012-03-22T23:24:42.400Z","type":"message"}
+{"nick":"isaacs","message":"{ lo0: ","date":"2012-03-22T23:24:43.428Z","type":"message"}
+{"nick":"perezd","date":"2012-03-22T23:25:28.106Z","type":"join"}
+{"nick":"isaacs","message":"releasing npm 1.1.11","date":"2012-03-22T23:25:46.195Z","type":"message"}
+{"nick":"isaacs","message":"very auspicious version number!  lucky!","date":"2012-03-22T23:25:54.185Z","type":"message"}
+{"nick":"benvie","message":"maybe I just like things that hide their internal works, but it's almost like fun to wrap something like the os module in a proxy object that exposes everything as if they were properties","date":"2012-03-22T23:26:00.893Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: oh, btw, registry replication works even better when I replicate using 1.2","date":"2012-03-22T23:26:25.207Z","type":"message"}
+{"nick":"benvie","message":"but I also see the new for one that doesn't so I'd end up having both","date":"2012-03-22T23:26:31.583Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: that's not surprising","date":"2012-03-22T23:26:36.083Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: but it is good news! :)","date":"2012-03-22T23:26:40.459Z","type":"message"}
+{"nick":"mmalecki","message":"couch 1.2 is the best thing since sliced bread, actually","date":"2012-03-22T23:26:46.270Z","type":"message"}
+{"nick":"dylukes","message":"the person who wrote thi...","date":"2012-03-22T23:27:02.297Z","type":"message"}
+{"nick":"dylukes","message":"\u000312if\u0003 (!(handle->flags & UV_HANDLE_BOUND) &&","date":"2012-03-22T23:27:15.354Z","type":"message"}
+{"nick":"dylukes","message":"      uv_udp_bind(handle, (\u000312struct\u0003 sockaddr *)&uv_addr_ip6_any_, ","date":"2012-03-22T23:27:15.553Z","type":"message"}
+{"nick":"dylukes","message":"                  \u000312sizeof\u0003(uv_addr_ip6_any_), 0) < 0) {","date":"2012-03-22T23:27:15.553Z","type":"message"}
+{"nick":"dylukes","message":"    \u000312return\u0003 -1;","date":"2012-03-22T23:27:15.553Z","type":"message"}
+{"nick":"dylukes","message":"https://gist.github.com/2165457","date":"2012-03-22T23:27:15.553Z","type":"message"}
+{"nick":"dylukes","message":"ack, sorry","date":"2012-03-22T23:27:25.370Z","type":"message"}
+{"nick":"dylukes","message":"I keep having to switch between ctrl and cmd...","date":"2012-03-22T23:27:46.980Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: you should grab the updated node-gyp ;)","date":"2012-03-22T23:28:54.788Z","type":"message"}
+{"nick":"isaacs","message":"d'oh!!","date":"2012-03-22T23:29:05.535Z","type":"message"}
+{"nick":"isaacs","message":"forgot about that.","date":"2012-03-22T23:29:09.799Z","type":"message"}
+{"nick":"isaacs","message":"auspicious version numbers be damned.","date":"2012-03-22T23:29:16.308Z","type":"message"}
+{"nick":"dylukes","message":"Question: Why does Visual studio hate inline typed variables?","date":"2012-03-22T23:29:50.955Z","type":"message"}
+{"nick":"dylukes","message":"struct sockaddr_in addr = uv_ip4_addr(\"0.0.0.0\", TEST_PORT);","date":"2012-03-22T23:30:07.183Z","type":"message"}
+{"nick":"dylukes","message":"this is an error.","date":"2012-03-22T23:30:09.949Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-03-22T23:30:10.233Z","type":"quit"}
+{"nick":"dylukes","message":":|","date":"2012-03-22T23:30:10.736Z","type":"message"}
+{"nick":"isaacs","message":"publishing 1.1.12","date":"2012-03-22T23:30:26.925Z","type":"message"}
+{"nick":"dylukes","message":"doesn't hurt to not declare them inline, but still... what is it? The 1970s?","date":"2012-03-22T23:30:39.466Z","type":"message"}
+{"nick":"benvie","message":"it's state of the art","date":"2012-03-22T23:31:50.763Z","type":"message"}
+{"nick":"dylukes","message":"Visual Studio comes close. The VS debugger? Same. MSVC... not so much. ","date":"2012-03-22T23:32:18.328Z","type":"message"}
+{"nick":"benvie","message":"I've heard good things about VS 2011 actually but don't intend to use it and really just hope it makes more things not made for Windows automatically work","date":"2012-03-22T23:33:06.008Z","type":"message"}
+{"nick":"benvie","message":"or whatever the one for windows 8 is called","date":"2012-03-22T23:33:19.415Z","type":"message"}
+{"nick":"benvie","message":"11","date":"2012-03-22T23:33:24.560Z","type":"message"}
+{"nick":"dylukes","message":":D","date":"2012-03-22T23:35:15.323Z","type":"message"}
+{"nick":"dylukes","message":"+132/-4 tests!","date":"2012-03-22T23:35:20.668Z","type":"message"}
+{"nick":"dylukes","message":"I'll take that as a sign of relative success.","date":"2012-03-22T23:35:25.811Z","type":"message"}
+{"nick":"dylukes","message":"MSVC is great IDE.","date":"2012-03-22T23:35:28.275Z","type":"message"}
+{"nick":"dylukes","message":"Don't get me wrong.","date":"2012-03-22T23:35:30.906Z","type":"message"}
+{"nick":"dylukes","message":"It's probably the best *IDE* out there. (there are better editors, but it's the best IDE).","date":"2012-03-22T23:35:47.784Z","type":"message"}
+{"nick":"dylukes","message":"bnoordhuis: :D","date":"2012-03-22T23:36:33.244Z","type":"message"}
+{"nick":"dylukes","message":"Believe it or not...","date":"2012-03-22T23:36:38.527Z","type":"message"}
+{"nick":"dylukes","message":"It's done!","date":"2012-03-22T23:36:41.349Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:37:15.638Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] DylanLukes/libuv#5 (ipv46agnostic - 6575c89 : Dylan Lukes): The build is still failing.","date":"2012-03-22T23:37:15.837Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/DylanLukes/libuv/compare/d074861...6575c89","date":"2012-03-22T23:37:15.837Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/DylanLukes/libuv/builds/926204","date":"2012-03-22T23:37:15.837Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:37:15.837Z","type":"part"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Bryan Cantrill\u000f \u000307v0.6\u000f * r\u0002d125591\u000f \u000310\u000f/ (2 files in 2 dirs)\u0002:\u000f sunos: fix EMFILE on process.memoryUsage() - http://git.io/bf_73A","date":"2012-03-22T23:37:21.090Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:37:35.627Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#631 (master - e1199fa : Shigeki Ohtsu): The build is still failing.","date":"2012-03-22T23:37:35.827Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/ef046bf...e1199fa","date":"2012-03-22T23:37:35.827Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/926143","date":"2012-03-22T23:37:35.827Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:37:35.827Z","type":"part"}
+{"nick":"benvie","message":"yeah I actually wouldn't necessarily disagree with that out of hand although my experience with eclipse is better. But I also haven't met and IDE that isn't viscerally slowish nor one that has the syntax highlighting and language parsing customization that I want","date":"2012-03-22T23:39:06.516Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u000267f1778\u000f \u000310\u000f/ (126 files in 17 dirs)\u0002:\u000f Upgrade npm to 1.1.12 - http://git.io/uLJeUA","date":"2012-03-22T23:39:38.630Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: includes node-gyp 0.3.7 ^","date":"2012-03-22T23:39:50.745Z","type":"message"}
+{"nick":"dylukes","message":"Eclipse is horrible compared to MSVS.","date":"2012-03-22T23:40:03.288Z","type":"message"}
+{"nick":"benvie","message":"specifically it was Aptana's eclipse","date":"2012-03-22T23:40:28.915Z","type":"message"}
+{"nick":"benvie","message":"that I had the best experience","date":"2012-03-22T23:40:35.171Z","type":"message"}
+{"nick":"mmalecki","message":"eclipse is horrible compared to everything. has MSVS changed much since 3 years or so?","date":"2012-03-22T23:41:02.784Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-03-22T23:41:17.423Z","type":"quit"}
+{"nick":"dylukes","message":"Eh, 2010 was a pretty big change I think.","date":"2012-03-22T23:41:17.811Z","type":"message"}
+{"nick":"benvie","message":"three years ago 2010 was in beta so ","date":"2012-03-22T23:41:24.670Z","type":"message"}
+{"nick":"dylukes","message":"2011 is a huge interface overhaul.","date":"2012-03-22T23:41:25.246Z","type":"message"}
+{"nick":"benvie","message":"if you used 2010 it hasn't =D","date":"2012-03-22T23:41:29.119Z","type":"message"}
+{"nick":"benvie","message":"last time I used vs11 it was the same as 2010 mostly but I'm guessing that changed/","date":"2012-03-22T23:41:55.820Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: ok, just waiting on the last write_cb queue thing","date":"2012-03-22T23:42:16.599Z","type":"message"}
+{"nick":"dylukes","message":"http://www.neowin.net/news/visual-studio-11-gets-new-almost-metro-interface","date":"2012-03-22T23:42:46.951Z","type":"message"}
+{"nick":"dylukes","message":"It's almost Metro... though it looks a lot like Android 4.0","date":"2012-03-22T23:43:09.479Z","type":"message"}
+{"nick":"benvie","message":"ah yes so it changed significantly. I'm guessing it be coming out for windows 7","date":"2012-03-22T23:43:12.417Z","type":"message"}
+{"nick":"benvie","message":"won't be","date":"2012-03-22T23:43:19.616Z","type":"message"}
+{"nick":"mmalecki","message":"you'll need a tablet pc to use it, I assume.","date":"2012-03-22T23:43:42.328Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-03-22T23:43:51.636Z","type":"quit"}
+{"nick":"benvie","message":"it's for touch development, and I mean using touch to developer and ONLY touch","date":"2012-03-22T23:44:09.432Z","type":"message"}
+{"nick":"mmalecki","message":"(that's how Metro interface looks to me, at least)","date":"2012-03-22T23:44:09.905Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002a7cd76b\u000f \u000310\u000f/ (5 files)\u0002:\u000f Remove unused fast-list module from npm - http://git.io/3dkQag","date":"2012-03-22T23:44:44.397Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002d227084\u000f \u000310\u000f/ (5 files in 3 dirs)\u0002:\u000f Upgrade libuv to 8409a67 - http://git.io/2FlajQ","date":"2012-03-22T23:44:44.597Z","type":"message"}
+{"nick":"mmalecki","message":"I actually downloaded the dev preview, but I NOPEd back to my beloved linux after a very short time, so I don't expect anything good from Metro","date":"2012-03-22T23:44:56.530Z","type":"message"}
+{"nick":"benvie","message":"vs11 wasn't usable in Metro and I don't think it'll ever be unless having more than one program open becomes possible. Which will be the same time I actually think about using metro","date":"2012-03-22T23:45:07.610Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:45:12.677Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#632 (v0.6 - d125591 : Bryan Cantrill): The build passed.","date":"2012-03-22T23:45:12.878Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/ea44d30...d125591","date":"2012-03-22T23:45:12.878Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/926207","date":"2012-03-22T23:45:12.878Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:45:12.878Z","type":"part"}
+{"nick":"benvie","message":"I NOPEd back to Windows 7 which gave you no hope of considering coming from a linux preference","date":"2012-03-22T23:45:59.435Z","type":"message"}
+{"nick":"dylukes","message":"oh snap.","date":"2012-03-22T23:46:56.541Z","type":"message"}
+{"nick":"dylukes","message":"I forgot the benchmarks XD.","date":"2012-03-22T23:46:59.343Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: \"That being said, I think node-inspector is not as beneficial as shipping a profiling tool.\" <- i'm not quite sure how to parse that","date":"2012-03-22T23:47:00.752Z","type":"message"}
+{"nick":"dylukes","message":"bnoordhuis: Ok then! Once I do the benchmarks, this patch will be done :).","date":"2012-03-22T23:47:12.033Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: shipping a profiler is more important than shipping a second debugger client.","date":"2012-03-22T23:47:26.692Z","type":"message"}
+{"nick":"dylukes","message":"Then I just have to keep it up to date with other people's changes in the upstream for a while... any thoughts on when 0.9 will be ready to take the patch?","date":"2012-03-22T23:47:31.433Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: oh right, no disagreement there","date":"2012-03-22T23:47:37.249Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: or is node-inspector also a profiler?","date":"2012-03-22T23:47:37.776Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yes","date":"2012-03-22T23:47:41.288Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:47:50.594Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#633 (v0.6 - 67f1778 : isaacs): The build was broken.","date":"2012-03-22T23:47:50.791Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/d125591...67f1778","date":"2012-03-22T23:47:50.791Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/926229","date":"2012-03-22T23:47:50.791Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:47:50.791Z","type":"part"}
+{"nick":"isaacs","message":"bnoordhuis: honestly, i sort of find node-inspector sort of confusing.","date":"2012-03-22T23:47:51.995Z","type":"message"}
+{"nick":"isaacs","message":"the built-in debugger is nice.","date":"2012-03-22T23:47:59.371Z","type":"message"}
+{"nick":"benvie","message":"the profiling api is part of the debugger api","date":"2012-03-22T23:47:59.984Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok.  i didn't realize that","date":"2012-03-22T23:48:10.444Z","type":"message"}
+{"nick":"isaacs","message":"i thought it was a separate thing","date":"2012-03-22T23:48:15.536Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: expect at least a couple of weeks","date":"2012-03-22T23:48:22.208Z","type":"message"}
+{"nick":"dylukes","message":"oh wow, that's less then I though :D","date":"2012-03-22T23:48:30.475Z","type":"message"}
+{"nick":"dylukes","message":"I was expect a couple months >.<","date":"2012-03-22T23:48:35.043Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: note my careful use of \"at least\" :)","date":"2012-03-22T23:48:49.294Z","type":"message"}
+{"nick":"dylukes","message":"heh.","date":"2012-03-22T23:48:52.462Z","type":"message"}
+{"nick":"dylukes","message":"So this definitely can't get in for 0.8?","date":"2012-03-22T23:48:58.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"no","date":"2012-03-22T23:49:03.527Z","type":"message"}
+{"nick":"benvie","message":"I expect some fun new things to be trickling out of the chromium stuff too because the latest canary has a lot of awesome new dev tools","date":"2012-03-22T23:49:44.962Z","type":"message"}
+{"nick":"bnoordhuis","message":"benvie: i confess the only reason i want a profiler in the core is cold calculated self-interest","date":"2012-03-22T23:50:44.088Z","type":"message"}
+{"nick":"avsej","reason":"Excess Flood","date":"2012-03-22T23:50:48.860Z","type":"quit"}
+{"nick":"benvie","message":"it's one thing to have v8 expose an API and another to have a fully built interface for them","date":"2012-03-22T23:50:50.419Z","type":"message"}
+{"nick":"bnoordhuis","message":"i do a lot of profiling and node-inspector is broken more often than not","date":"2012-03-22T23:50:58.650Z","type":"message"}
+{"nick":"benvie","message":"yeah that's what I was going to say too","date":"2012-03-22T23:51:13.125Z","type":"message"}
+{"nick":"benvie","message":"it's in the API BUT","date":"2012-03-22T23:51:16.682Z","type":"message"}
+{"nick":"benvie","message":"you have to magic it into working too","date":"2012-03-22T23:51:22.785Z","type":"message"}
+{"nick":"avsej","date":"2012-03-22T23:51:25.018Z","type":"join"}
+{"nick":"dylukes","message":"Now, bnoordhuis, realistically, the change is from","date":"2012-03-22T23:51:30.649Z","type":"message"}
+{"nick":"dylukes","message":"uv_udp_bind(handle, addr, 0);","date":"2012-03-22T23:51:32.051Z","type":"message"}
+{"nick":"dylukes","message":"to","date":"2012-03-22T23:51:32.418Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: * 44527e6 deps: upgrade http_parser to joyent/http-parser@b47c44d (Ben Noordhuis) ","date":"2012-03-22T23:51:39.116Z","type":"message"}
+{"nick":"dylukes","message":"uv_udp_bind(handle, (struct sockaddr *)addr, sizeof(addr), 0);","date":"2012-03-22T23:51:46.015Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: are you sure that's the right ref? joyent/http-parser@b47c44d?","date":"2012-03-22T23:51:51.645Z","type":"message"}
+{"nick":"igorzi","message":"isaacs: just running tests on the write_cb patch.. once i confirm that there are no issues - i'll land","date":"2012-03-22T23:51:56.806Z","type":"message"}
+{"nick":"dylukes","message":"however, in the case that you're using getaddrinfo (correctly), it's just","date":"2012-03-22T23:52:08.581Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: great","date":"2012-03-22T23:52:11.294Z","type":"message"}
+{"nick":"benvie","message":"I last used node-inspector a couple months ago and as a whole it was...marginally working","date":"2012-03-22T23:52:11.527Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: * b47c44d koichik Fix response body is not read (3 months ago)","date":"2012-03-22T23:52:18.991Z","type":"message"}
+{"nick":"dylukes","message":"uv_udp_bind(handle, ai->addr, ai->addrlen, 0)","date":"2012-03-22T23:52:21.679Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yes","date":"2012-03-22T23:52:28.628Z","type":"message"}
+{"nick":"mmalecki","message":"!gh joyent/http-parser@b47c44d","date":"2012-03-22T23:52:30.573Z","type":"message"}
+{"nick":"kohai","message":"mmalecki, https://github.com/joyent/http-parser/commit/b47c44d","date":"2012-03-22T23:52:30.767Z","type":"message"}
+{"nick":"dylukes","message":"Seem reasonable?","date":"2012-03-22T23:52:32.138Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i upgraded the parser in v0.6 from b47c44d^^ to b47c44d","date":"2012-03-22T23:52:49.074Z","type":"message"}
+{"nick":"isaacs","message":"oh, right, duh.  v0.6","date":"2012-03-22T23:53:01.835Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:53:02.722Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#634 (v0.6 - d227084 : isaacs): The build is still failing.","date":"2012-03-22T23:53:02.918Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/67f1778...d227084","date":"2012-03-22T23:53:02.918Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/926261","date":"2012-03-22T23:53:02.918Z","type":"message"}
+{"nick":"travis-ci","date":"2012-03-22T23:53:02.918Z","type":"part"}
+{"nick":"isaacs","message":"wow, that's super old..","date":"2012-03-22T23:53:44.255Z","type":"message"}
+{"nick":"isaacs","message":"heh","date":"2012-03-22T23:53:46.013Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: the struct sockaddr should be const","date":"2012-03-22T23:53:48.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: otherwise i can live with it (probably)","date":"2012-03-22T23:54:03.745Z","type":"message"}
+{"nick":"dylukes","message":"Should it be const?","date":"2012-03-22T23:54:18.932Z","type":"message"}
+{"nick":"dylukes","message":"I don't think so.","date":"2012-03-22T23:54:30.853Z","type":"message"}
+{"nick":"dylukes","message":"bind()/accept()/connect() do not take consts.","date":"2012-03-22T23:54:45.349Z","type":"message"}
+{"nick":"bnoordhuis","message":"do too","date":"2012-03-22T23:54:53.795Z","type":"message"}
+{"nick":"dylukes","message":"No they don't...","date":"2012-03-22T23:55:01.901Z","type":"message"}
+{"nick":"dylukes","message":"Oh weird, it seems to differ by platform.","date":"2012-03-22T23:55:25.677Z","type":"message"}
+{"nick":"dylukes","message":"Let me check the POSIX spec then...","date":"2012-03-22T23:55:30.417Z","type":"message"}
+{"nick":"dylukes","message":"Do you want me to go through every single unit test and include the const in the cast -__-?","date":"2012-03-22T23:55:57.213Z","type":"message"}
+{"nick":"dylukes","message":"Or just put it in the type signature.","date":"2012-03-22T23:56:02.139Z","type":"message"}
+{"nick":"bnoordhuis","message":"dylukes: just the function prototype","date":"2012-03-22T23:56:28.275Z","type":"message"}
+{"nick":"dylukes","message":"can and will do. It's a good idea.","date":"2012-03-22T23:56:44.204Z","type":"message"}
+{"nick":"dylukes","message":"oooh... crap.","date":"2012-03-22T23:57:14.117Z","type":"message"}
+{"nick":"dylukes","message":"I've been writing (struct sockaddr *) everything (note the position of the asterisk).","date":"2012-03-22T23:57:26.079Z","type":"message"}
+{"nick":"dylukes","message":"Well, looks like I'm going to be having fun fixing that now. ^_^","date":"2012-03-22T23:57:51.862Z","type":"message"}
