@@ -1,0 +1,215 @@
+{"nick":"piscisaureus_","message":"bnoordhuis: the file is probably still open when the readFile callback is made. So unlink() doesn't really delete the directory entry, it's just marked for deletion.","date":"2012-04-06T00:00:29.174Z","type":"message"}
+{"nick":"piscisaureus_","message":"but as soon as the user tries to delete the dir, there's still a file in there.","date":"2012-04-06T00:00:46.562Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: how are you going to fix it?","date":"2012-04-06T00:01:03.215Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: am i?","date":"2012-04-06T00:01:09.544Z","type":"message"}
+{"nick":"piscisaureus_","message":":-p","date":"2012-04-06T00:01:11.873Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i expect a fix by 4 on my desk","date":"2012-04-06T00:01:44.616Z","type":"message"}
+{"nick":"elijah-mbp","date":"2012-04-06T00:01:51.653Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you also expect to get paid by the 20th, don't you :-p","date":"2012-04-06T00:02:05.713Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so maybe no fix is possible.","date":"2012-04-06T00:02:16.070Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: maybe we can change fs.ReadStream to actually close the file *before* the end event","date":"2012-04-06T00:02:33.586Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: okay. in that case it ought to be documented","date":"2012-04-06T00:02:41.466Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: fs.ReadStream?","date":"2012-04-06T00:02:54.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: why?","date":"2012-04-06T00:02:55.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I don't think anybody will notice :_)","date":"2012-04-06T00:03:01.819Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: or fs.ReadFile (which uses readStream under the hood) could wait for the \"close\" event and not the \"end\" event.","date":"2012-04-06T00:03:18.353Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: are you mixing issues?","date":"2012-04-06T00:03:42.872Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no","date":"2012-04-06T00:03:57.989Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: in that case you need to explain to me how this is related to fs.unlinkSync and fs.rmdirSync :)","date":"2012-04-06T00:04:24.308Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: On Windows, fs.unlinkSync does not work if called in the callback of fs.readFile","date":"2012-04-06T00:04:41.108Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the key is in \"the callback of fs.Readfile\"","date":"2012-04-06T00:04:50.458Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: oh? that actually makes a difference?","date":"2012-04-06T00:05:35.926Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: as I just explained, you cannot delete a file that is open (it just gets marked for deletion) and you cannot remove a directory with files in it (even those pending deletion) - it fails with ENOTEMPTY","date":"2012-04-06T00:05:55.033Z","type":"message"}
+{"nick":"bnoordhuis","message":"your windows file semantics are strange and confusing","date":"2012-04-06T00:06:05.790Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: fs.readFile uses fs.ReadStream underneath","date":"2012-04-06T00:06:08.017Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: fs.readFIle makes its callback when ReadStream emits \"end\"","date":"2012-04-06T00:06:24.651Z","type":"message"}
+{"nick":"piscisaureus_","message":"by that time the file is still open","date":"2012-04-06T00:06:32.340Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: right. so essentially this could be fixed by deferring the callback with process.nextTick?","date":"2012-04-06T00:06:41.327Z","type":"message"}
+{"nick":"piscisaureus_","message":"so if you try to unlink it and then delete it's parent directory, it fails","date":"2012-04-06T00:06:48.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"assuming that the file is closed on the current tick","date":"2012-04-06T00:06:49.000Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well, the close happens on the thread pool","date":"2012-04-06T00:07:02.300Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so you would have to wait until after \"close\" returns, somehow","date":"2012-04-06T00:07:12.624Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah","date":"2012-04-06T00:07:12.973Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's starting to make sense","date":"2012-04-06T00:07:43.083Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so here were my options: (a) actually close first, then emit \"end\"","date":"2012-04-06T00:07:58.523Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: or make fs.ReadFile wait for \"close\"","date":"2012-04-06T00:08:05.523Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307v0.6\u000f * r\u0002052aaa4\u000f \u000310\u000f/ (src/node.h src/node_file.cc)\u0002:\u000f windows: use 64bit offsets for uv_fs apis - http://git.io/Dkrt4w","date":"2012-04-06T00:08:10.762Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis, it would slightly increase latency so maybe we should do it only on windows","date":"2012-04-06T00:08:27.047Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i don't think people use node for its high-performance file I/O","date":"2012-04-06T00:08:48.951Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: (if you care)","date":"2012-04-06T00:08:49.163Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is a shame","date":"2012-04-06T00:08:55.615Z","type":"message"}
+{"nick":"piscisaureus_","message":"we should add unbuffered ReadStreams","date":"2012-04-06T00:09:19.113Z","type":"message"}
+{"nick":"piscisaureus_","message":"that would help","date":"2012-04-06T00:09:20.826Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't know","date":"2012-04-06T00:09:38.428Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no? where do you spend your time on unix?","date":"2012-04-06T00:09:57.939Z","type":"message"}
+{"nick":"bnoordhuis","message":"profiling suggests that it's malloc and the overhead of threads that is expensive","date":"2012-04-06T00:10:07.231Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: with unbuffer ReadStream we can use kernel aio","date":"2012-04-06T00:10:09.550Z","type":"message"}
+{"nick":"piscisaureus_","message":"so no threads","date":"2012-04-06T00:10:15.159Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, you mean O_DIRECT","date":"2012-04-06T00:10:18.486Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-04-06T00:10:25.491Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, well... O_DIRECT and/or AIO doesn't work with all filesystems","date":"2012-04-06T00:10:49.060Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: is it possible to detect failure and fall back?","date":"2012-04-06T00:11:06.755Z","type":"message"}
+{"nick":"piscisaureus_","message":"I suppose that is what windows would need to","date":"2012-04-06T00:11:14.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: not reliably, for sure","date":"2012-04-06T00:11:25.466Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307v0.6\u000f * r\u0002f178f2a\u000f \u000310\u000f/ (13 files in 5 dirs)\u0002:\u000f upgrade libuv to d68b3d960b6d95bfc16027cecca2f3fa48bcc36f - http://git.io/PXUG9A","date":"2012-04-06T00:11:31.466Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a sad state of affairs, AIO is :/","date":"2012-04-06T00:11:39.212Z","type":"message"}
+{"nick":"isaacs","message":"I'd like to do a v0.6 release tomorrow or monday.  anything pending to get into it?","date":"2012-04-06T00:12:01.327Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: license stuff.","date":"2012-04-06T00:12:08.675Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: right, but that's done in master, right?  looks easy enough to port, i can handle it.","date":"2012-04-06T00:12:27.513Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah, it's just... there are tasks left :-)","date":"2012-04-06T00:12:40.018Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: kewl :)","date":"2012-04-06T00:12:46.249Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: anything that you're aware of that needs to be finished or figured out?","date":"2012-04-06T00:13:02.359Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I think the license file just needs a review. And maybe you want to install the license file itself as well (as opposed to just showing it in the installer)","date":"2012-04-06T00:13:41.298Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: https://github.com/joyent/node/issues/3056 <-- tracking bug","date":"2012-04-06T00:13:51.843Z","type":"message"}
+{"nick":"isaacs","message":"yeah, that's a big part of the motivation, actually","date":"2012-04-06T00:14:05.134Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it would be good to get a test for the large file issue that igorzi just fixed in","date":"2012-04-06T00:14:27.883Z","type":"message"}
+{"nick":"isaacs","message":"mark was pretty cool about the whole thing, but i do feel kind of bad that we raised his ire even a little.","date":"2012-04-06T00:14:32.157Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: (in node)","date":"2012-04-06T00:14:35.254Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so he just emailed ryan?","date":"2012-04-06T00:15:35.312Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: or was it legal department stuff?","date":"2012-04-06T00:15:49.877Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T00:16:18.729Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#696 (v0.6 - 052aaa4 : Igor Zinkovsky): The build passed.","date":"2012-04-06T00:16:18.933Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/ffee873...052aaa4","date":"2012-04-06T00:16:18.933Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/1028661","date":"2012-04-06T00:16:18.933Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T00:16:18.933Z","type":"part"}
+{"nick":"orlandovftw","reason":"Ping timeout: 272 seconds","date":"2012-04-06T00:16:19.729Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: I guess you should just tell him sorry, it was an oversight, we are just getting used to binary distributions","date":"2012-04-06T00:16:24.505Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_ isaacs: i'll create a test for the large file","date":"2012-04-06T00:17:08.704Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: kewl","date":"2012-04-06T00:17:17.020Z","type":"message"}
+{"nick":"seebees1","message":"hey, can I ask a question about 0.7 -> 0.8?","date":"2012-04-06T00:18:30.010Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, that's exactly what ryan told him, and then i also apologized and told him that it'd be fixed in the next release.","date":"2012-04-06T00:19:28.160Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: like i said, he was pretty understanding.","date":"2012-04-06T00:19:47.193Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ok, cool","date":"2012-04-06T00:19:54.934Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T00:20:00.653Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#697 (v0.6 - f178f2a : Igor Zinkovsky): The build passed.","date":"2012-04-06T00:20:01.086Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/052aaa4...f178f2a","date":"2012-04-06T00:20:01.086Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/1028692","date":"2012-04-06T00:20:01.087Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T00:20:01.087Z","type":"part"}
+{"nick":"igorzi","message":"https://github.com/joyent/node/blob/master/test/disabled/test-fs-largefile.js","date":"2012-04-06T00:20:18.510Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: do you know why it's disabled? ^","date":"2012-04-06T00:20:27.613Z","type":"message"}
+{"nick":"bnoordhuis","message":"seebees1: sure","date":"2012-04-06T00:22:21.955Z","type":"message"}
+{"nick":"seebees1","message":"What is the time frame for winding down 0.7?","date":"2012-04-06T00:22:46.783Z","type":"message"}
+{"nick":"seebees1","message":"Because I don't want to start on something and only get it half done…","date":"2012-04-06T00:23:02.374Z","type":"message"}
+{"nick":"isaacs","message":"seebees1: very soon.","date":"2012-04-06T00:23:15.181Z","type":"message"}
+{"nick":"seebees1","message":"hum","date":"2012-04-06T00:23:20.370Z","type":"message"}
+{"nick":"seebees1","message":"so if I bust out something this weekend?","date":"2012-04-06T00:23:32.272Z","type":"message"}
+{"nick":"isaacs","message":"seebees1: i'd like to finish the remaining features by May 1.","date":"2012-04-06T00:23:40.007Z","type":"message"}
+{"nick":"isaacs","message":"seebees1: and release 0.8 by June 1","date":"2012-04-06T00:23:45.125Z","type":"message"}
+{"nick":"bnoordhuis","message":"seebees1: depends on what it is","date":"2012-04-06T00:23:52.467Z","type":"message"}
+{"nick":"isaacs","message":"so we have a month to bang on it and can brag about how awesome it is at NodeConf on July 2","date":"2012-04-06T00:23:59.699Z","type":"message"}
+{"nick":"bnoordhuis","message":"that long stack traces thing?","date":"2012-04-06T00:24:02.984Z","type":"message"}
+{"nick":"seebees1","message":"yup","date":"2012-04-06T00:24:08.528Z","type":"message"}
+{"nick":"seebees1","message":"I think I know how I can make it work","date":"2012-04-06T00:24:18.106Z","type":"message"}
+{"nick":"seebees1","message":"but I need to find time","date":"2012-04-06T00:24:21.490Z","type":"message"}
+{"nick":"seebees1","message":"to work on it.  and \"real\" work is being anoying...","date":"2012-04-06T00:24:32.713Z","type":"message"}
+{"nick":"seebees1","message":"but if I can get something real this weekend and make a pull then people can look at it.","date":"2012-04-06T00:24:50.264Z","type":"message"}
+{"nick":"seebees1","message":"so it might work...","date":"2012-04-06T00:24:55.810Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-04-06T00:24:58.137Z","type":"message"}
+{"nick":"seebees1","message":"ok.  good to know.  Monday at the latest then.  thanks.","date":"2012-04-06T00:25:13.150Z","type":"message"}
+{"nick":"bnoordhuis","message":"seebees1: no rush. worst case, it doesn't make the cut and lands in 0.9","date":"2012-04-06T00:25:37.694Z","type":"message"}
+{"nick":"seebees1","message":"bnoordhuis: too true.  just my pride ;)","date":"2012-04-06T00:25:57.325Z","type":"message"}
+{"nick":"seebees1","message":"my guess is if it get's in it would probably .9 in any event.  But I can hope...","date":"2012-04-06T00:26:35.340Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I am also doing a patch for #3051 quickly.","date":"2012-04-06T00:29:34.971Z","type":"message"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-04-06T00:31:06.257Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: kewl","date":"2012-04-06T00:31:30.815Z","type":"message"}
+{"nick":"toothr","message":"i'm still wondering about the subtree watching for windows... will this ever be configurable, or is this passed over due to not being avail in other platforms? https://github.com/joyent/libuv/blob/master/src/win/fs-event.c#L240","date":"2012-04-06T00:37:11.674Z","type":"message"}
+{"nick":"toothr","message":"i guess i can just make my own version of uv_fs_event_init without requiring any changes to libuv.. right","date":"2012-04-06T00:43:47.096Z","type":"message"}
+{"nick":"piscisaureus_","message":"toothr: I am not agains it... but we have no story for other platforms except (maybe) recent versions of OS X","date":"2012-04-06T00:47:17.502Z","type":"message"}
+{"nick":"piscisaureus_","message":"toothr: but solaris and bsd and linux just won't do it","date":"2012-04-06T00:47:32.126Z","type":"message"}
+{"nick":"toothr","message":"aha, perhaps I will open an issue if that's the right thing to do?","date":"2012-04-06T00:48:38.458Z","type":"message"}
+{"nick":"piscisaureus_","message":"toothr: well, you could, but I doubt it'd help much","date":"2012-04-06T00:56:18.203Z","type":"message"}
+{"nick":"piscisaureus_","message":"toothr: it would be better to come up with a nice solution :-)","date":"2012-04-06T00:56:34.274Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307reviewme\u000f * r\u000248eb490\u000f \u000310\u000f/ (lib/fs.js test/simple/test-fs-readfile-unlink.js)\u0002:\u000f ","date":"2012-04-06T01:04:24.953Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f fs.readFile: don't make the callback before the fd is closed","date":"2012-04-06T01:04:25.158Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f On Windows it is not possible to unlink() the read file in the callback.","date":"2012-04-06T01:04:25.158Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f This fixes #3051. A test is included. - http://git.io/TT5g5Q","date":"2012-04-06T01:04:25.158Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307reviewme\u000f * r\u0002bb82907\u000f \u000310\u000f/ src/v8_typed_array.cc \u0002:\u000f Please the compiler - http://git.io/2bWI1Q","date":"2012-04-06T01:04:25.158Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- bnoordhuis igorzi - review?","date":"2012-04-06T01:04:27.904Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:12:30.114Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#698 (reviewme - bb82907 : Bert Belder): The build is still failing.","date":"2012-04-06T01:12:30.319Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/56a8101...bb82907","date":"2012-04-06T01:12:30.319Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/1028841","date":"2012-04-06T01:12:30.319Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:12:30.319Z","type":"part"}
+{"nick":"igorzi","message":"piscisaureus_: i'll enable this test: https://github.com/joyent/node/blob/v0.6/test/disabled/test-fs-largefile.js","date":"2012-04-06T01:13:25.317Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: kk","date":"2012-04-06T01:13:51.958Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: no more comments besides the callback(error) ?","date":"2012-04-06T01:14:59.153Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: nope.. both patches lgtm","date":"2012-04-06T01:15:21.925Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307v0.6\u000f * r\u000240b7302\u000f \u000310\u000f/ (lib/fs.js test/simple/test-fs-readfile-unlink.js)\u0002:\u000f ","date":"2012-04-06T01:15:30.373Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f fs.readFile: don't make the callback before the fd is closed","date":"2012-04-06T01:15:30.373Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f On Windows it is not possible to unlink() the read file in the callback.","date":"2012-04-06T01:15:30.373Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f This fixes #3051. A test is included. - http://git.io/l2-akg","date":"2012-04-06T01:15:30.373Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307v0.6\u000f * r\u00021042a8d\u000f \u000310\u000f/ src/v8_typed_array.cc \u0002:\u000f Please the compiler - http://git.io/g91hmA","date":"2012-04-06T01:15:30.373Z","type":"message"}
+{"nick":"CIA-99","message":"\u0002node:\u000f \u000303Igor Zinkovsky\u000f \u000307v0.6\u000f * r\u00020b57fee\u000f \u000310\u000f/ (2 files in 2 dirs)\u0002:\u000f enable test-fs-largefile.js test - http://git.io/t05Ycg","date":"2012-04-06T01:19:41.605Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:23:26.928Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#699 (v0.6 - 1042a8d : Bert Belder): The build was broken.","date":"2012-04-06T01:23:27.134Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/f178f2a...1042a8d","date":"2012-04-06T01:23:27.134Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/1028871","date":"2012-04-06T01:23:27.134Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:23:27.134Z","type":"part"}
+{"nick":"piscisaureus_","message":"igorzi: isaacs: on windows, would you want to install LICENSE or license.rtf?","date":"2012-04-06T01:26:49.078Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i'm not sure we really need to *install* the license.","date":"2012-04-06T01:27:13.743Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: just need to display and have the user click-through","date":"2012-04-06T01:27:22.686Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that being said, meh.  LICENSE (text file) probably.","date":"2012-04-06T01:27:33.575Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:27:41.880Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/node#700 (v0.6 - 0b57fee : Igor Zinkovsky): The build is still failing.","date":"2012-04-06T01:27:42.089Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/node/compare/1042a8d...0b57fee","date":"2012-04-06T01:27:42.089Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/node/builds/1028881","date":"2012-04-06T01:27:42.089Z","type":"message"}
+{"nick":"travis-ci","date":"2012-04-06T01:27:42.089Z","type":"part"}
+{"nick":"piscisaureus_","message":"isaacs: ah, right. I recall that you said you wanted to install the thing, but I must have misunderstood.","date":"2012-04-06T01:27:57.608Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: personally, I don't care","date":"2012-04-06T01:29:45.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ?","date":"2012-04-06T01:29:54.027Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: re \"?\" - ?","date":"2012-04-06T01:30:23.174Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: \"bnoordhuis: personally, I don't care\"","date":"2012-04-06T01:30:41.502Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh, sorry","date":"2012-04-06T01:30:48.877Z","type":"message"}
+{"nick":"bnoordhuis","message":"don't care about what?","date":"2012-04-06T01:30:49.232Z","type":"message"}
+{"nick":"piscisaureus_","message":"confused you with isaacs","date":"2012-04-06T01:30:52.561Z","type":"message"}
+{"nick":"piscisaureus_","message":"getting tired","date":"2012-04-06T01:30:58.864Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm the tall guy, remember?","date":"2012-04-06T01:31:06.051Z","type":"message"}
+{"nick":"TooTallNate","reason":"Ping timeout: 260 seconds","date":"2012-04-06T01:31:32.066Z","type":"quit"}
+{"nick":"bnoordhuis","message":"okay, off to bed - sleep tight, guys","date":"2012-04-06T01:31:35.085Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, me too","date":"2012-04-06T01:32:13.753Z","type":"message"}
+{"nick":"piscisaureus_","message":"later guys","date":"2012-04-06T01:32:15.329Z","type":"message"}
+{"nick":"abraxas","date":"2012-04-06T01:32:16.485Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-04-06T01:32:19.116Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 276 seconds","date":"2012-04-06T01:37:06.200Z","type":"quit"}
+{"nick":"pietern","reason":"Ping timeout: 265 seconds","date":"2012-04-06T01:51:23.889Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2012-04-06T02:04:26.125Z","type":"quit"}
+{"nick":"abraxas","reason":"Read error: Connection reset by peer","date":"2012-04-06T02:19:02.784Z","type":"quit"}
+{"nick":"abraxas","date":"2012-04-06T02:19:28.590Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-04-06T02:46:08.279Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-04-06T02:51:48.530Z","type":"quit"}
+{"nick":"abraxas_","date":"2012-04-06T02:53:14.946Z","type":"join"}
+{"nick":"abraxas","reason":"Read error: Connection reset by peer","date":"2012-04-06T02:54:12.589Z","type":"quit"}
+{"nick":"mikeal","date":"2012-04-06T03:07:56.405Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 240 seconds","date":"2012-04-06T03:12:40.188Z","type":"quit"}
+{"nick":"mikeal","date":"2012-04-06T03:16:06.456Z","type":"join"}
+{"nick":"dylukes","reason":"Quit: Pipes are broken. Sending packets via Fedex.","date":"2012-04-06T03:24:48.200Z","type":"quit"}
+{"nick":"mikeal1","date":"2012-04-06T03:24:58.048Z","type":"join"}
+{"nick":"mikeal","reason":"Read error: Connection reset by peer","date":"2012-04-06T03:25:58.616Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-04-06T03:33:07.660Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-04-06T03:48:40.932Z","type":"quit"}
+{"nick":"mikeal1","reason":"Read error: Connection reset by peer","date":"2012-04-06T04:14:23.138Z","type":"quit"}
+{"nick":"mikeal","date":"2012-04-06T04:25:06.099Z","type":"join"}
+{"nick":"mikeal","reason":"Read error: Connection reset by peer","date":"2012-04-06T04:26:41.415Z","type":"quit"}
+{"nick":"mikeal","date":"2012-04-06T04:26:47.992Z","type":"join"}
+{"nick":"abraxas_","reason":"Read error: No route to host","date":"2012-04-06T04:36:03.761Z","type":"quit"}
+{"nick":"abraxas","date":"2012-04-06T04:36:13.985Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 245 seconds","date":"2012-04-06T04:40:41.173Z","type":"quit"}
+{"nick":"abraxas","date":"2012-04-06T04:41:03.741Z","type":"join"}
+{"nick":"abraxas_","date":"2012-04-06T04:45:11.057Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 245 seconds","date":"2012-04-06T04:45:41.263Z","type":"quit"}
+{"nick":"pietern","date":"2012-04-06T04:49:42.059Z","type":"join"}
+{"nick":"pietern","reason":"Client Quit","date":"2012-04-06T04:50:53.345Z","type":"quit"}
+{"nick":"ryah","reason":"Ping timeout: 264 seconds","date":"2012-04-06T04:54:02.941Z","type":"quit"}
+{"nick":"ryah","date":"2012-04-06T05:13:32.705Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 250 seconds","date":"2012-04-06T05:13:58.665Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-04-06T05:14:37.740Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-04-06T05:44:37.699Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 250 seconds","date":"2012-04-06T05:56:52.380Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-04-06T06:11:34.370Z","type":"join"}
+{"nick":"mmalecki[away]","new_nick":"mmalecki","date":"2012-04-06T06:11:56.341Z","type":"nick"}
+{"nick":"mmalecki","new_nick":"mmalecki[zzz]","date":"2012-04-06T06:15:22.024Z","type":"nick"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-04-06T07:00:10.655Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-04-06T07:00:52.683Z","type":"join"}
+{"nick":"txdv_","date":"2012-04-06T07:23:36.288Z","type":"join"}
+{"nick":"txdv","reason":"Ping timeout: 245 seconds","date":"2012-04-06T07:27:21.130Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-04-06T07:38:49.732Z","type":"join"}
