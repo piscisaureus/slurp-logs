@@ -108,3 +108,534 @@
 {"nick":"erickt","date":"2012-05-07T15:54:34.979Z","type":"join"}
 {"nick":"dap","date":"2012-05-07T15:56:35.257Z","type":"join"}
 {"nick":"stephank","date":"2012-05-07T15:57:08.533Z","type":"join"}
+{"nick":"pietern","date":"2012-05-07T16:10:20.312Z","type":"join"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-05-07T16:16:50.168Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-05-07T16:21:24.250Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-05-07T16:22:31.672Z","type":"quit"}
+{"nick":"piscisaureus_","message":"socket.bytesWritten is lame","date":"2012-05-07T16:24:14.483Z","type":"message"}
+{"nick":"piscisaureus_","message":":-(","date":"2012-05-07T16:24:16.431Z","type":"message"}
+{"nick":"benvie_","reason":"Remote host closed the connection","date":"2012-05-07T16:24:39.763Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-05-07T16:26:51.432Z","type":"join"}
+{"nick":"loladiro","reason":"Remote host closed the connection","date":"2012-05-07T16:33:30.397Z","type":"quit"}
+{"nick":"indutny","message":"piscisaureus_: really?","date":"2012-05-07T16:34:32.732Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-05-07T16:34:43.073Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: cause I use them in one pretty private place","date":"2012-05-07T16:34:45.622Z","type":"message"}
+{"nick":"loladiro","date":"2012-05-07T16:34:54.228Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: is there something wrong with it?","date":"2012-05-07T16:34:59.461Z","type":"message"}
+{"nick":"loladiro","reason":"Remote host closed the connection","date":"2012-05-07T16:35:02.753Z","type":"quit"}
+{"nick":"piscisaureus_","message":"indutny: ummm... I don't wanna know what you do with it :-)","date":"2012-05-07T16:35:14.785Z","type":"message"}
+{"nick":"loladiro","date":"2012-05-07T16:35:18.219Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: well, I use it! :)","date":"2012-05-07T16:35:23.739Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: for counting bytes, that was written :P","date":"2012-05-07T16:35:40.641Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: writing strings to sockets can be optimized seriously by not constructing a buffer every time","date":"2012-05-07T16:35:40.840Z","type":"message"}
+{"nick":"indutny","message":"aaah","date":"2012-05-07T16:35:47.105Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: just spatting it into a malloced buffer is much faster","date":"2012-05-07T16:36:01.309Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: we can try to introduce LazyBuffer","date":"2012-05-07T16:36:04.062Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: but since net.js uses this queue","date":"2012-05-07T16:36:10.329Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: which is just a JS wrapper for string","date":"2012-05-07T16:36:20.462Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: we have to compute the byte length of a string upfront","date":"2012-05-07T16:36:24.169Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: hm...","date":"2012-05-07T16:36:32.925Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yep","date":"2012-05-07T16:36:34.542Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: anyway, LazyBuffer may improve performance","date":"2012-05-07T16:36:53.662Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: yeah maybe, but this improves performance more","date":"2012-05-07T16:37:15.390Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: what this?","date":"2012-05-07T16:37:24.687Z","type":"message"}
+{"nick":"indutny","message":"s/this/`this`","date":"2012-05-07T16:37:28.881Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: I optimize it by","date":"2012-05-07T16:39:30.997Z","type":"message"}
+{"nick":"piscisaureus_","message":"1. don't construct a buffer. just use a malloced buffer.","date":"2012-05-07T16:39:31.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"2.  the allocated buffer is allocated in the same memory area that holds the reqwrap","date":"2012-05-07T16:39:31.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"3. I conservatively allocate space so (a) we don't have to do a preliminary encoding pass to calculate the buffer size and (b) to allow v8 to eliminate overflow checks.","date":"2012-05-07T16:39:31.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: the only problem is... we only know the amount of bytes written after WriteWrap is constructed","date":"2012-05-07T16:39:55.931Z","type":"message"}
+{"nick":"indutny","message":"oh crap","date":"2012-05-07T16:40:19.738Z","type":"message"}
+{"nick":"indutny","message":"this's tough","date":"2012-05-07T16:40:26.364Z","type":"message"}
+{"nick":"indutny","message":"does it really hit us? :)","date":"2012-05-07T16:40:35.011Z","type":"message"}
+{"nick":"indutny","message":"because if it don't - I prefer to not touch it","date":"2012-05-07T16:40:59.678Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: So am am thinking 2 options.","date":"2012-05-07T16:41:00.247Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: (1) we construct the ReqWrap ahead of time but only dispatch it when the time comes. The downside - the patch is invasive and now 2 js/c transitions are required per write.","date":"2012-05-07T16:41:46.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: (2) make bytesWritten a getter and do some hackery to compute the size of unsubmitted writes.","date":"2012-05-07T16:42:11.266Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: the downsize - bytesWritten will be slow(er)","date":"2012-05-07T16:42:32.775Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-05-07T16:42:38.348Z","type":"message"}
+{"nick":"indutny","message":"I'm quite sure it won't hit anyone","date":"2012-05-07T16:42:51.691Z","type":"message"}
+{"nick":"indutny","message":"may be make it a function?","date":"2012-05-07T16:42:59.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's an api change...","date":"2012-05-07T16:43:08.417Z","type":"message"}
+{"nick":"indutny","message":"yep","date":"2012-05-07T16:43:12.693Z","type":"message"}
+{"nick":"indutny","message":"getters works too","date":"2012-05-07T16:43:17.558Z","type":"message"}
+{"nick":"indutny","message":"but I think methods are quite faster","date":"2012-05-07T16:43:27.655Z","type":"message"}
+{"nick":"piscisaureus_","message":"or we could say that a write is only accounted for after the write callback is made","date":"2012-05-07T16:43:30.608Z","type":"message"}
+{"nick":"piscisaureus_","message":"but that may not be so nice","date":"2012-05-07T16:43:42.495Z","type":"message"}
+{"nick":"indutny","message":"btw, that's even beter","date":"2012-05-07T16:43:44.229Z","type":"message"}
+{"nick":"piscisaureus_","message":"right now it's unspecified","date":"2012-05-07T16:43:57.228Z","type":"message"}
+{"nick":"indutny","message":"indeed","date":"2012-05-07T16:44:01.191Z","type":"message"}
+{"nick":"indutny","message":"we ain't relying on it","date":"2012-05-07T16:44:35.797Z","type":"message"}
+{"nick":"piscisaureus_","message":"the question is - who is","date":"2012-05-07T16:45:02.892Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wish I could grep the npm repo","date":"2012-05-07T16:45:13.005Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think making bytesWritten a getter is probably fine","date":"2012-05-07T16:47:03.088Z","type":"message"}
+{"nick":"erickt","date":"2012-05-07T16:53:43.097Z","type":"join"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-05-07T16:53:47.162Z","type":"quit"}
+{"nick":"mikeal1","reason":"Quit: Leaving.","date":"2012-05-07T16:55:39.244Z","type":"quit"}
+{"nick":"mikeal","date":"2012-05-07T16:56:21.497Z","type":"join"}
+{"nick":"mikeal1","date":"2012-05-07T16:56:52.278Z","type":"join"}
+{"nick":"mikeal","reason":"Read error: Connection reset by peer","date":"2012-05-07T16:56:52.279Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: ok. Although I still think bytesWritten is lame atm :-p","date":"2012-05-07T16:57:50.308Z","type":"message"}
+{"nick":"indutny","message":"hahah","date":"2012-05-07T16:58:30.171Z","type":"message"}
+{"nick":"indutny","message":"but it's useful","date":"2012-05-07T16:58:32.988Z","type":"message"}
+{"nick":"loladiro_","date":"2012-05-07T16:58:59.180Z","type":"join"}
+{"nick":"TheJH","date":"2012-05-07T17:00:16.997Z","type":"join"}
+{"nick":"hij1nx","date":"2012-05-07T17:00:25.213Z","type":"join"}
+{"nick":"loladiro","reason":"Ping timeout: 255 seconds","date":"2012-05-07T17:01:34.531Z","type":"quit"}
+{"nick":"loladiro_","new_nick":"loladiro","date":"2012-05-07T17:01:35.238Z","type":"nick"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, it's kinda useful in some edge case scenarios.","date":"2012-05-07T17:03:06.101Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but really, yeah... dumb.","date":"2012-05-07T17:03:11.501Z","type":"message"}
+{"nick":"isaacs","message":"the nice thing about a getter is that we can make our benchmarks faster while making node actually slower.","date":"2012-05-07T17:03:31.850Z","type":"message"}
+{"nick":"isaacs","message":"so that's always fun and ironic.","date":"2012-05-07T17:03:39.247Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-05-07T17:05:35.444Z","type":"quit"}
+{"nick":"piscisaureus_","message":"does a getter make node slower entirely?","date":"2012-05-07T17:07:06.849Z","type":"message"}
+{"nick":"piscisaureus_","message":"what exactly is affected  by the presence of a getter?","date":"2012-05-07T17:07:18.552Z","type":"message"}
+{"nick":"c4milo","reason":"Read error: Connection reset by peer","date":"2012-05-07T17:07:41.526Z","type":"quit"}
+{"nick":"c4milo","date":"2012-05-07T17:07:53.144Z","type":"join"}
+{"nick":"igorzi","date":"2012-05-07T17:14:50.437Z","type":"join"}
+{"nick":"orlandovftw","reason":"Ping timeout: 260 seconds","date":"2012-05-07T17:16:40.053Z","type":"quit"}
+{"nick":"bnoordhuis","message":"were you guys talking about .bytesWritten?","date":"2012-05-07T17:17:39.546Z","type":"message"}
+{"nick":"bnoordhuis","message":"i hate that property, adding it was a bad idea","date":"2012-05-07T17:17:53.580Z","type":"message"}
+{"nick":"pietern","date":"2012-05-07T17:19:20.986Z","type":"join"}
+{"nick":"piscisaureus_","message":"yeah I hate it too","date":"2012-05-07T17:20:31.880Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's super lame","date":"2012-05-07T17:20:33.629Z","type":"message"}
+{"nick":"piscisaureus_","message":"What I dislike especially is that it takes unwritten bytes into account","date":"2012-05-07T17:20:51.024Z","type":"message"}
+{"nick":"bnoordhuis","message":"the thing i dislike the most is that it got added because \"yeah, it might come in handy\"","date":"2012-05-07T17:21:55.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"i wouldn't mind axing it altogether","date":"2012-05-07T17:22:06.648Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: getters don't slow things down unless you get them","date":"2012-05-07T17:23:32.521Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: can you email nodejs-dev saying that you want to remove it, because it's a pita, incorrect, and broken?","date":"2012-05-07T17:24:19.016Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: then we can see who complains, and remove it anyway.","date":"2012-05-07T17:24:25.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: sure thing","date":"2012-05-07T17:24:31.295Z","type":"message"}
+{"nick":"isaacs","message":"it will have to be documented on the wiki if we do that","date":"2012-05-07T17:24:48.175Z","type":"message"}
+{"nick":"isaacs","message":"but you never know, there might be some super valid reason to make it worth fixing rather than axing","date":"2012-05-07T17:24:57.297Z","type":"message"}
+{"nick":"isaacs","message":"doubtful, but worth checking","date":"2012-05-07T17:25:10.650Z","type":"message"}
+{"nick":"bnoordhuis","message":"we'll find out :) i'll mail nodejs-dev","date":"2012-05-07T17:25:25.774Z","type":"message"}
+{"nick":"isaacs","message":"thanks","date":"2012-05-07T17:25:35.106Z","type":"message"}
+{"nick":"isaacs","message":"it's easy enough to implement as a decoration later anywa","date":"2012-05-07T17:25:55.775Z","type":"message"}
+{"nick":"isaacs","message":"res.write = function (o) { return function (c) { res.bytesWritten += Buffer.byteLenth(c); return o.call(res, c) } }(res.write)","date":"2012-05-07T17:26:38.082Z","type":"message"}
+{"nick":"ira","reason":"Quit: Leaving...","date":"2012-05-07T17:34:40.899Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: when did you find that security issue ?","date":"2012-05-07T17:43:17.312Z","type":"message"}
+{"nick":"isaacs","message":"April 17th","date":"2012-05-07T17:44:12.421Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: though, technically, i didn't find it","date":"2012-05-07T17:46:15.291Z","type":"message"}
+{"nick":"isaacs","message":"oh, also, i think 0.6.16 actually has the fix","date":"2012-05-07T17:46:27.360Z","type":"message"}
+{"nick":"isaacs","message":"but 0.6.16 is not as awesome as 0.6.17","date":"2012-05-07T17:46:34.603Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah. I actually just found the blog :-)","date":"2012-05-07T17:46:35.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I was already wondering why that took so long :-)","date":"2012-05-07T17:46:56.990Z","type":"message"}
+{"nick":"piscisaureus_","message":"but apparently it was fixed in 0.6 already","date":"2012-05-07T17:47:06.032Z","type":"message"}
+{"nick":"isaacs","message":"yeah, we fixed it in the code right away.  matt pretty much told us exactly what to do","date":"2012-05-07T17:47:29.902Z","type":"message"}
+{"nick":"isaacs","message":"and it was a one-char fix","date":"2012-05-07T17:47:37.409Z","type":"message"}
+{"nick":"piscisaureus_","message":"Anyone wants a nodeconf ticket?","date":"2012-05-07T17:50:13.001Z","type":"message"}
+{"nick":"piscisaureus_","message":"I tried the website for fun and I actually got one","date":"2012-05-07T17:50:22.577Z","type":"message"}
+{"nick":"piscisaureus_","message":"Well, I suppose I'll let it fall","date":"2012-05-07T17:52:00.592Z","type":"message"}
+{"nick":"pietern_","date":"2012-05-07T17:52:48.299Z","type":"join"}
+{"nick":"pietern","reason":"Ping timeout: 244 seconds","date":"2012-05-07T17:54:54.078Z","type":"quit"}
+{"nick":"pietern_","new_nick":"pietern","date":"2012-05-07T17:54:54.381Z","type":"nick"}
+{"nick":"brson","date":"2012-05-07T17:55:59.295Z","type":"join"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-05-07T18:01:28.818Z","type":"quit"}
+{"nick":"orlandovftw","date":"2012-05-07T18:04:34.450Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: I complain","date":"2012-05-07T18:18:58.148Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: we use it internally","date":"2012-05-07T18:19:17.397Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: tell me for what and i'll tell you what you're doing wrong :)","date":"2012-05-07T18:19:33.387Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hahaha","date":"2012-05-07T18:19:41.027Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: well, we can calculate that stuff manually","date":"2012-05-07T18:19:52.348Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: bandwidth statistic","date":"2012-05-07T18:19:58.787Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: that's something of a special case","date":"2012-05-07T18:20:47.337Z","type":"message"}
+{"nick":"bnoordhuis","message":"the problem with .bytesWritten is that it gets in the way of optimizing for the common case","date":"2012-05-07T18:21:02.488Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, it was broken until v0.6 - it sometimes didn't record bytes but chars written..","date":"2012-05-07T18:21:22.849Z","type":"message"}
+{"nick":"indutny","message":"yes, I know","date":"2012-05-07T18:21:37.074Z","type":"message"}
+{"nick":"indutny","message":"we're on 0.6.x","date":"2012-05-07T18:21:44.496Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis, indutny: really, this is something that should be tracked at a much lower level using dtrace or something anyway.","date":"2012-05-07T18:22:02.682Z","type":"message"}
+{"nick":"indutny","message":"as I said it can be implemented in user-land","date":"2012-05-07T18:22:04.349Z","type":"message"}
+{"nick":"isaacs","message":"if you want to track bandwidth stats, doing so at the app level is a bit odd.","date":"2012-05-07T18:22:16.827Z","type":"message"}
+{"nick":"isaacs","message":"and probably wrong.","date":"2012-05-07T18:22:21.781Z","type":"message"}
+{"nick":"indutny","message":"isaacs: that really depends","date":"2012-05-07T18:22:29.076Z","type":"message"}
+{"nick":"indutny","message":"isaacs: having all logic in one place is good too","date":"2012-05-07T18:22:37.415Z","type":"message"}
+{"nick":"isaacs","message":"true that","date":"2012-05-07T18:22:40.554Z","type":"message"}
+{"nick":"isaacs","message":"indutny: you can use node-dtrace-provider to create arbitrary app-specific probes, and then aggregate them at run-time","date":"2012-05-07T18:23:07.156Z","type":"message"}
+{"nick":"indutny","message":"I don't really care, actually :P","date":"2012-05-07T18:23:30.723Z","type":"message"}
+{"nick":"indutny","message":"if you think it's wasting our resources - I'm ok with removing it","date":"2012-05-07T18:23:42.903Z","type":"message"}
+{"nick":"dshaw_","date":"2012-05-07T18:28:40.232Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-05-07T18:31:57.037Z","type":"join"}
+{"nick":"arlolra","date":"2012-05-07T18:36:49.234Z","type":"join"}
+{"nick":"hij1nx","reason":"Ping timeout: 260 seconds","date":"2012-05-07T18:37:09.891Z","type":"quit"}
+{"nick":"mikeal1","reason":"Quit: Leaving.","date":"2012-05-07T18:37:51.186Z","type":"quit"}
+{"nick":"loladiro","date":"2012-05-07T18:39:01.697Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-05-07T18:39:55.446Z","type":"quit"}
+{"nick":"pietern","date":"2012-05-07T18:44:28.172Z","type":"join"}
+{"nick":"piscisaureus_","message":"We could also put the connect queue in libuv","date":"2012-05-07T18:48:03.187Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-07T18:54:12.957Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/joyent/libuv/issues/409 <- how can that happen?","date":"2012-05-07T19:06:43.705Z","type":"message"}
+{"nick":"loladiro","date":"2012-05-07T19:07:22.258Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: hmm, that's odd. Is he improperly reusing write reqs?","date":"2012-05-07T19:07:41.927Z","type":"message"}
+{"nick":"piscisaureus_","message":"or clobbering memory?","date":"2012-05-07T19:07:46.054Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i am not the one you should be asking these questions of:)","date":"2012-05-07T19:08:27.216Z","type":"message"}
+{"nick":"mjr_","date":"2012-05-07T19:16:18.034Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: unix has readonly?","date":"2012-05-07T19:20:22.695Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: btw \"man chattr\" suggests there are more","date":"2012-05-07T19:20:39.392Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: chattr is fs specific","date":"2012-05-07T19:20:53.984Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I also couldn't find a man 2/3 chattr","date":"2012-05-07T19:21:30.782Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: is there a ioctl for this?","date":"2012-05-07T19:21:37.299Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: not an ioctl but separate syscalls like getxattr and setxattr","date":"2012-05-07T19:23:03.608Z","type":"message"}
+{"nick":"bnoordhuis","message":"they're not well documented but you can find them in the kernel source","date":"2012-05-07T19:23:19.214Z","type":"message"}
+{"nick":"bnoordhuis","message":"grep SYSCALL fs/xattr.c","date":"2012-05-07T19:23:45.668Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so the primary reason was because I want to allow people to delete files with the rdonly flag set","date":"2012-05-07T19:24:31.174Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and with the +s flag","date":"2012-05-07T19:24:40.955Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: people have been complaining about it for node. Apparently you're supposed to be able to delete files on unix even if you cannot write them","date":"2012-05-07T19:25:07.794Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: deleting read-only files just works on unices :)","date":"2012-05-07T19:25:17.069Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-07T19:25:22.941Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so at first I wanted to remove the +r flag automatically when the user attempts to unlink","date":"2012-05-07T19:25:34.206Z","type":"message"}
+{"nick":"bnoordhuis","message":"with +s you mean the sticky bit?","date":"2012-05-07T19:25:42.226Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but I have second thoughts. No, \"system\" flag","date":"2012-05-07T19:25:51.456Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah okay, no such concept on unices","date":"2012-05-07T19:26:04.424Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: on windows people set the +r flag on files to make them readonly. That is typically with a reason","date":"2012-05-07T19:26:22.084Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: removing the flag under their ass is kinda rude","date":"2012-05-07T19:26:33.368Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i suppose so","date":"2012-05-07T19:26:44.688Z","type":"message"}
+{"nick":"piscisaureus_","message":"so we need a way to control the flags field","date":"2012-05-07T19:26:58.218Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's why I suggested to add support for it","date":"2012-05-07T19:27:39.424Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-05-07T19:27:44.908Z","type":"message"}
+{"nick":"piscisaureus_","message":"so at first I though it should just be moreorless windows specific","date":"2012-05-07T19:28:00.030Z","type":"message"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-05-07T19:28:01.106Z","type":"quit"}
+{"nick":"piscisaureus_","message":"fs.attrib()","date":"2012-05-07T19:28:04.642Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it turns out that unix has chattr and hfs also has some extended attributes that are supported by mac os","date":"2012-05-07T19:28:38.186Z","type":"message"}
+{"nick":"piscisaureus_","message":"so now I don't know what to do anymore :-(","date":"2012-05-07T19:28:46.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, but uv-unix doesn't use any of that","date":"2012-05-07T19:28:56.683Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wish these things were easier","date":"2012-05-07T19:28:58.805Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's all very os and fs specific","date":"2012-05-07T19:29:01.128Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i say uv-unix doesn't use any of that","date":"2012-05-07T19:30:18.702Z","type":"message"}
+{"nick":"bnoordhuis","message":"but in general no one uses any of that","date":"2012-05-07T19:30:29.725Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://www.twitter.com/UPC/status/199581891488268289 <-- that took a while","date":"2012-05-07T19:31:08.753Z","type":"message"}
+{"nick":"bnoordhuis","message":"upc's connection to twitter.com probably kept timing out :)","date":"2012-05-07T19:32:05.630Z","type":"message"}
+{"nick":"piscisaureus_","message":"upc is actually pretty bad","date":"2012-05-07T19:32:44.658Z","type":"message"}
+{"nick":"piscisaureus_","message":"their customer service is ok nowadays but their internet delivery","date":"2012-05-07T19:33:00.816Z","type":"message"}
+{"nick":"piscisaureus_","message":"and I thought surfnet had problems ... :x","date":"2012-05-07T19:33:08.281Z","type":"message"}
+{"nick":"piscisaureus_","message":"Our stream_wrap/pipe_wrap/tcp_wrap/tty_wrap implementation is so incredibly lame","date":"2012-05-07T19:38:48.063Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean, ryah_ actually did it while I only procrastinated, so I probably shouldn't complain","date":"2012-05-07T19:39:26.895Z","type":"message"}
+{"nick":"bnoordhuis","message":"what's so bad about it?","date":"2012-05-07T19:40:57.131Z","type":"message"}
+{"nick":"piscisaureus_","message":"So much duplication of code","date":"2012-05-07T19:41:05.854Z","type":"message"}
+{"nick":"bnoordhuis","message":"how would you improve it?","date":"2012-05-07T19:41:35.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"<piscisaureus> well x and y and","date":"2012-05-07T19:42:11.398Z","type":"message"}
+{"nick":"piscisaureus_","message":"<bnoordhuis> Go do it!","date":"2012-05-07T19:42:11.602Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- no thank you, sir","date":"2012-05-07T19:42:11.602Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303Kevin Gadd\u000f \u000307master\u000f * r\u00021eb9fc5\u000f \u000310\u000f/ doc/api/vm.markdown \u0002:\u000f ","date":"2012-05-07T19:43:43.354Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f docs: add warning to vm module docs","date":"2012-05-07T19:43:43.354Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f Add a clear warning about known issues with the module and a pointer to the","date":"2012-05-07T19:43:43.355Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f GitHub issues list for the module. Describe some of the biggest known issues","date":"2012-05-07T19:43:43.355Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f with the module. - http://git.io/_Y2grA","date":"2012-05-07T19:43:43.355Z","type":"message"}
+{"nick":"bnoordhuis","message":"ircretary: tell isaacs https://github.com/joyent/node/issues/3231 <- seen this?","date":"2012-05-07T19:45:29.469Z","type":"message"}
+{"nick":"ircretary","message":"bnoordhuis: I'll be sure to tell isaacs","date":"2012-05-07T19:45:29.694Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: good timing :p","date":"2012-05-07T19:45:59.731Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: i know, right? :)","date":"2012-05-07T19:46:25.244Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you're the c++ guru here, right?","date":"2012-05-07T19:52:30.819Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what is the idiomatic way of doing the placement constructor stuff?","date":"2012-05-07T19:54:07.531Z","type":"message"}
+{"nick":"piscisaureus_","message":"wrap = new (sizeof(WriteWrap) + bonus) WriteWrap();","date":"2012-05-07T19:54:07.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"~ or ~","date":"2012-05-07T19:54:07.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"buf = new char[sizeof(WriteWrap) + bonus];","date":"2012-05-07T19:54:07.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"wrap = new (buf) WriteWrap();","date":"2012-05-07T19:54:07.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis ^-- ?","date":"2012-05-07T19:54:12.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: new (ptr) Foo();","date":"2012-05-07T19:56:59.665Z","type":"message"}
+{"nick":"bnoordhuis","message":"new (new char[n]) Foo() works too","date":"2012-05-07T19:57:15.863Z","type":"message"}
+{"nick":"bnoordhuis","message":"you may have to implement operator new() for the class","date":"2012-05-07T19:57:37.015Z","type":"message"}
+{"nick":"piscisaureus_","message":"I know","date":"2012-05-07T19:57:45.008Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: deletion works like this, right?","date":"2012-05-07T19:58:42.537Z","type":"message"}
+{"nick":"piscisaureus_","message":"wrap->~Wrap()","date":"2012-05-07T19:58:42.734Z","type":"message"}
+{"nick":"piscisaureus_","message":"delete[] reinterpret_cast<char[]>(wrap);","date":"2012-05-07T19:58:42.734Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: wrap->~Wrap()","date":"2012-05-07T19:59:27.598Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I had that one :-)","date":"2012-05-07T19:59:59.373Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but I have to free the storage after that","date":"2012-05-07T20:00:14.835Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yeah, cast the wrap pointer to char*","date":"2012-05-07T20:00:37.907Z","type":"message"}
+{"nick":"bnoordhuis","message":"but... why would you use placement new?","date":"2012-05-07T20:00:47.709Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you're going to delete the memory immediately afterwards anyway","date":"2012-05-07T20:01:01.556Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: because I need to control the space","date":"2012-05-07T20:01:29.079Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I need extra bytes after the Wrap to store stuff","date":"2012-05-07T20:01:44.900Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: oh - I'm not going to delete it right afterwards","date":"2012-05-07T20:02:10.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay. about the only time you use placement new is when pooling memory","date":"2012-05-07T20:03:06.836Z","type":"message"}
+{"nick":"piscisaureus_","message":"memegenerator is down :-(","date":"2012-05-07T20:06:14.921Z","type":"message"}
+{"nick":"piscisaureus_","message":"I guess people started working on their nodeconf presentations","date":"2012-05-07T20:06:44.231Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 252 seconds","date":"2012-05-07T20:07:57.226Z","type":"quit"}
+{"nick":"bnoordhuis","message":"no, i preemptively striked","date":"2012-05-07T20:08:01.857Z","type":"message"}
+{"nick":"piscisaureus_","message":"too late","date":"2012-05-07T20:09:45.119Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis:","date":"2012-05-07T20:09:46.188Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://www.quickmeme.com/meme/3p66qt/","date":"2012-05-07T20:09:50.081Z","type":"message"}
+{"nick":"bnoordhuis","message":"ho ho","date":"2012-05-07T20:10:47.480Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-05-07T20:12:29.073Z","type":"join"}
+{"nick":"kohai","date":"2012-05-07T20:12:49.813Z","type":"join"}
+{"nick":"arlolra","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-05-07T20:24:15.927Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-05-07T20:26:28.391Z","type":"quit"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307v0.6\u000f * r\u000229232ee\u000f \u000310\u000f/ test/simple/test-http-client-timeout.js \u0002:\u000f ","date":"2012-05-07T20:50:59.855Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f test: add failing HTTP client timeout test","date":"2012-05-07T20:50:59.855Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f See #3231. - http://git.io/psWO2Q","date":"2012-05-07T20:50:59.855Z","type":"message"}
+{"nick":"piscisaureus_","message":"anyone - does test-child-process-fork2 fail for you guys 2","date":"2012-05-07T20:51:02.684Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm, maybe i should not have pushed that just yet","date":"2012-05-07T20:51:30.961Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i think so","date":"2012-05-07T20:51:41.952Z","type":"message"}
+{"nick":"piscisaureus_","message":"alright","date":"2012-05-07T20:51:47.973Z","type":"message"}
+{"nick":"piscisaureus_","message":"good to know","date":"2012-05-07T20:51:49.573Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you get a DNS error or an assertion error?","date":"2012-05-07T20:52:02.892Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307v0.6\u000f * r\u0002e02af94\u000f \u000310\u000f/ test/simple/test-http-client-timeout.js \u0002:\u000f ","date":"2012-05-07T20:54:27.100Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f test: add failing HTTP client timeout test","date":"2012-05-07T20:54:27.100Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f See #3231. - http://git.io/z-BwxA","date":"2012-05-07T20:54:27.100Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: oh wait, no - it passes","date":"2012-05-07T20:54:52.534Z","type":"message"}
+{"nick":"bnoordhuis","message":"there was a child-process-fork test failing last night though","date":"2012-05-07T20:55:09.717Z","type":"message"}
+{"nick":"bnoordhuis","message":"$ out/Release/node test/simple/test-child-process-fork3.js ","date":"2012-05-07T20:55:28.758Z","type":"message"}
+{"nick":"bnoordhuis","message":"(libev) epoll_wait: Bad file descriptor","date":"2012-05-07T20:55:29.161Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ bad","date":"2012-05-07T20:55:33.164Z","type":"message"}
+{"nick":"piscisaureus_","message":"aiiii","date":"2012-05-07T20:55:37.583Z","type":"message"}
+{"nick":"piscisaureus_","message":"I had fork2 failing tho","date":"2012-05-07T20:55:43.285Z","type":"message"}
+{"nick":"bnoordhuis","message":"seems to consistently pass for me","date":"2012-05-07T20:56:18.899Z","type":"message"}
+{"nick":"ira","date":"2012-05-07T20:56:54.933Z","type":"join"}
+{"nick":"ira","reason":"Client Quit","date":"2012-05-07T20:56:54.933Z","type":"quit"}
+{"nick":"piscisaureus_","message":"ok thanks","date":"2012-05-07T20:58:00.333Z","type":"message"}
+{"nick":"piscisaureus_","message":"vcbuild debug te","date":"2012-05-07T20:58:03.043Z","type":"message"}
+{"nick":"piscisaureus_","message":"er ECHAN","date":"2012-05-07T20:58:08.851Z","type":"message"}
+{"nick":"piscisaureus_","message":"test-cluster-worker-disconnect is failing consistently","date":"2012-05-07T21:00:21.767Z","type":"message"}
+{"nick":"piscisaureus_","message":"or rather, hanging","date":"2012-05-07T21:00:27.413Z","type":"message"}
+{"nick":"bnoordhuis","message":"ircretary: tell isaacs https://github.com/joyent/node/commit/e02af94 <- passes with 0.6.16, fails with v0.6.17","date":"2012-05-07T21:00:50.103Z","type":"message"}
+{"nick":"ircretary","message":"bnoordhuis: I'll be sure to tell isaacs","date":"2012-05-07T21:00:50.309Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: passes for me","date":"2012-05-07T21:01:25.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"test-cluster-worker-kill uses SIGHUP","date":"2012-05-07T21:02:30.861Z","type":"message"}
+{"nick":"piscisaureus_","message":"that aint gonna work...","date":"2012-05-07T21:02:36.931Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-05-07T21:02:48.468Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-05-07T21:03:29.546Z","type":"quit"}
+{"nick":"isaacs","date":"2012-05-07T21:04:18.493Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs is going to be busy","date":"2012-05-07T21:05:15.498Z","type":"message"}
+{"nick":"isaacs","message":"oh?","date":"2012-05-07T21:05:26.308Z","type":"message"}
+{"nick":"isaacs","message":"oh, i see.","date":"2012-05-07T21:06:12.475Z","type":"message"}
+{"nick":"isaacs","message":"grr.","date":"2012-05-07T21:06:13.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: node test\\simple\\test-domain-implicit-fs.js is failing for me. It throws \"ENOENT, d:\\\\node\\\\this file does not exist.\"","date":"2012-05-07T21:06:24.297Z","type":"message"}
+{"nick":"bnoordhuis","message":"$ python tools/test.py --mode=release simple","date":"2012-05-07T21:06:33.518Z","type":"message"}
+{"nick":"bnoordhuis","message":"[02:07|% 100|+ 400|-   0]: Done <- master","date":"2012-05-07T21:06:33.718Z","type":"message"}
+{"nick":"isaacs","message":"So: http req.setTimeout","date":"2012-05-07T21:08:13.096Z","type":"message"}
+{"nick":"isaacs","message":"do you ever want the socket after it times out?","date":"2012-05-07T21:08:18.568Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: well... the docs are incomplete in that regard, they don't mention that the req gets destroyed","date":"2012-05-07T21:09:29.738Z","type":"message"}
+{"nick":"isaacs","message":"oh, it's not just that it's destroyed.  it's that socket destruction sets the req variable to null.","date":"2012-05-07T21:09:50.999Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: on the server, we auto-destroy if the socket times out","date":"2012-05-07T21:11:09.654Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: this behavior was missing in the client","date":"2012-05-07T21:11:14.748Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: you added that in 0.6.17? that's a change in behavior","date":"2012-05-07T21:12:48.235Z","type":"message"}
+{"nick":"zz_jce","new_nick":"jce","date":"2012-05-07T21:12:51.602Z","type":"nick"}
+{"nick":"bnoordhuis","message":"right, i see it in c9be1d5f","date":"2012-05-07T21:13:44.874Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yes, but it also leads to leaking sockets if we don't","date":"2012-05-07T21:13:52.100Z","type":"message"}
+{"nick":"isaacs","message":"the only reason to add a timeout listener is typically to destroy it","date":"2012-05-07T21:14:14.508Z","type":"message"}
+{"nick":"isaacs","message":"(as seen in this bug)","date":"2012-05-07T21:14:21.991Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't know about that","date":"2012-05-07T21:14:34.978Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can see people uploading stuff in batches","date":"2012-05-07T21:14:57.646Z","type":"message"}
+{"nick":"bnoordhuis","message":"by which i mean: open a connection, upload some, wait some, upload some more, etc.","date":"2012-05-07T21:15:21.209Z","type":"message"}
+{"nick":"isaacs","message":"right, but the timed out socket is not going to be reused between batches","date":"2012-05-07T21:15:22.791Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so you'd set a timeout listener... why?","date":"2012-05-07T21:15:35.565Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so you only upload when you've got n seconds of no activity?","date":"2012-05-07T21:15:56.872Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-05-07T21:16:01.273Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm not saying that's how i would do it :)","date":"2012-05-07T21:16:07.997Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's something that used to work and now it doesn't","date":"2012-05-07T21:16:21.159Z","type":"message"}
+{"nick":"isaacs","message":"you can still do that by setting a timeout on the connection directly instead.","date":"2012-05-07T21:16:33.108Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure","date":"2012-05-07T21:16:43.802Z","type":"message"}
+{"nick":"bnoordhuis","message":"my point is that this is a behavioral change in a stable release","date":"2012-05-07T21:16:56.771Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is generally considered a no-no","date":"2012-05-07T21:17:08.578Z","type":"message"}
+{"nick":"isaacs","message":"yes, that's true","date":"2012-05-07T21:17:12.334Z","type":"message"}
+{"nick":"isaacs","message":"we can revert that, but we should not do so in such a way that leaks socket objects.","date":"2012-05-07T21:17:29.303Z","type":"message"}
+{"nick":"isaacs","message":"THAT bit of the behavior was changed on purpose.","date":"2012-05-07T21:17:38.950Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think we can all agree on that :)","date":"2012-05-07T21:17:39.265Z","type":"message"}
+{"nick":"piscisaureus_","message":"test\\simple\\test-tls-server-verify.js also fails on master for me. Not with 0.6 ...","date":"2012-05-07T21:18:02.830Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307reviewme\u000f * r\u0002b4fbf6d\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Fix #3231. Don't try to emit error on a null'ed req object (+203 more commits...) - http://git.io/VMkDEQ","date":"2012-05-07T21:18:52.183Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: ^","date":"2012-05-07T21:18:54.774Z","type":"message"}
+{"nick":"isaacs","message":"good news!  remove the self.destroy() call in emitTimeout doesn't break the gc tests.","date":"2012-05-07T21:20:29.513Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307reviewme\u000f * r\u00028c758e1\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Don't destroy on timeout - http://git.io/EDcAzg","date":"2012-05-07T21:21:12.186Z","type":"message"}
+{"nick":"isaacs","message":"running other tests now","date":"2012-05-07T21:21:26.001Z","type":"message"}
+{"nick":"bnoordhuis","message":"[01:05|% 100|+ 341|-   0]: Done <- seems to work okay","date":"2012-05-07T21:22:05.558Z","type":"message"}
+{"nick":"isaacs","message":"[01:28|% 100|+ 345|-   2]: Done                                                ","date":"2012-05-07T21:23:10.563Z","type":"message"}
+{"nick":"isaacs","message":"but those two are debugger tests.","date":"2012-05-07T21:23:20.894Z","type":"message"}
+{"nick":"isaacs","action":"shakes fist at the debugger","date":"2012-05-07T21:23:27.508Z","type":"action"}
+{"nick":"isaacs","message":"bnoordhuis: lgty?","date":"2012-05-07T21:24:46.101Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: lgtm","date":"2012-05-07T21:25:49.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, i guess TooTallNate has been hacking up my weakref module","date":"2012-05-07T21:27:22.077Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u00028c758e1\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Don't destroy on timeout - http://git.io/EDcAzg","date":"2012-05-07T21:27:22.785Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.6\u000f * r\u0002b4fbf6d\u000f \u000310\u000f/ lib/http.js \u0002:\u000f Fix #3231. Don't try to emit error on a null'ed req object - http://git.io/VMkDEQ","date":"2012-05-07T21:27:22.985Z","type":"message"}
+{"nick":"bnoordhuis","message":"that code doesn't look anything like i remember it :)","date":"2012-05-07T21:27:34.692Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: you only just now found that :p","date":"2012-05-07T21:27:39.963Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: i basically added the callback function part","date":"2012-05-07T21:27:54.398Z","type":"message"}
+{"nick":"TooTallNate","message":"which turns out to be really helpful in debugging memory leaks :)","date":"2012-05-07T21:28:39.314Z","type":"message"}
+{"nick":"bnoordhuis","message":"good :)","date":"2012-05-07T21:29:07.864Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: in retrospect i probably could have sent you pull requests, but since it looked more like a POC, i wasn't sure if you wanted to maintain it as a whole module","date":"2012-05-07T21:29:38.539Z","type":"message"}
+{"nick":"paddybyers","date":"2012-05-07T21:30:02.759Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2012-05-07T21:39:35.779Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-05-07T21:43:51.187Z","type":"join"}
+{"nick":"isaacs","message":"Yes, it's super handy for debugging memory leaks, but it's very easy to get the object trapped in the cb.","date":"2012-05-07T21:54:22.675Z","type":"message"}
+{"nick":"isaacs","message":"weak(obj, function () { neverGonnaLetYouGo() })","date":"2012-05-07T21:54:40.528Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-07T21:55:45.183Z","type":"join"}
+{"nick":"TooTallNate","message":"isaacs: ya i had to add a disclaimer to the README recently","date":"2012-05-07T21:56:38.660Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: true.","date":"2012-05-07T21:56:48.937Z","type":"message"}
+{"nick":"isaacs","message":"but we've gotten a few issues like, \"This and that leaks memory!\" when really it's just the weak usage that's leaking","date":"2012-05-07T21:57:10.611Z","type":"message"}
+{"nick":"TooTallNate","message":"yup, yup. i mean for a while i thought v8 was smart enough to know the anonymous function didn't touch the object","date":"2012-05-07T21:58:04.553Z","type":"message"}
+{"nick":"isaacs","message":"nope","date":"2012-05-07T21:58:20.151Z","type":"message"}
+{"nick":"TooTallNate","message":"but once i learned that wasn't the case it was a big eye opener","date":"2012-05-07T21:58:29.761Z","type":"message"}
+{"nick":"isaacs","message":"i also saw a case where someone actually referenced the object in the cb.","date":"2012-05-07T21:58:42.723Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: https://github.com/piscisaureus/node/compare/master...netwrite","date":"2012-05-07T21:58:51.726Z","type":"message"}
+{"nick":"isaacs","message":"weak(obj, function () { console.log('just released', obj) })","date":"2012-05-07T21:58:54.084Z","type":"message"}
+{"nick":"isaacs","message":"like... no.","date":"2012-05-07T21:58:56.341Z","type":"message"}
+{"nick":"isaacs","message":"that doesn't work","date":"2012-05-07T21:58:59.761Z","type":"message"}
+{"nick":"TooTallNate","message":"lol","date":"2012-05-07T21:59:06.997Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: any preliminary comments (benchmark it with string/xxx btw)","date":"2012-05-07T21:59:07.714Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: actually...","date":"2012-05-07T21:59:45.184Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I will fix comments and style later","date":"2012-05-07T22:00:19.860Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: you could set the cb as a member of the object or something, in some discrete way","date":"2012-05-07T22:00:52.807Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: then assign some other thing as the weakref callback.","date":"2012-05-07T22:01:05.721Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: and look at the hidden property to call their callback","date":"2012-05-07T22:01:22.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: looking","date":"2012-05-07T22:01:24.890Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: does it call into your thing before GC, or after it?","date":"2012-05-07T22:01:40.831Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: the MakeWeak callback gets invoked before GC","date":"2012-05-07T22:02:07.223Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: right","date":"2012-05-07T22:02:12.697Z","type":"message"}
+{"nick":"TooTallNate","message":"`this` inside the callback is actually the object, if you wanted a clean way to access it","date":"2012-05-07T22:02:27.780Z","type":"message"}
+{"nick":"TooTallNate","message":"log it, etc.","date":"2012-05-07T22:02:30.415Z","type":"message"}
+{"nick":"isaacs","message":"interesting","date":"2012-05-07T22:02:34.018Z","type":"message"}
+{"nick":"TooTallNate","message":"just dont make any new references to it...","date":"2012-05-07T22:02:47.256Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: buffer/10240 is rather nice for me. It bumps from 2288 to 3878 r/s","date":"2012-05-07T22:02:48.142Z","type":"message"}
+{"nick":"isaacs","message":"so, yeah, there's no reason why you couldn't make weak(obj, function () { no traps, please }) work","date":"2012-05-07T22:03:00.182Z","type":"message"}
+{"nick":"isaacs","message":"just have to not keep a persistent ref to the function.","date":"2012-05-07T22:03:11.318Z","type":"message"}
+{"nick":"isaacs","message":"hang the function off the object itself","date":"2012-05-07T22:03:17.833Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: void* operator new (size_t size) { assert(0); }; -> private: void* operator new(size_t); ?","date":"2012-05-07T22:03:31.389Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: iow, just don't implement it","date":"2012-05-07T22:03:44.543Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: hmm interesting idea","date":"2012-05-07T22:03:49.820Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: It's just defensive programming. I want to assure that people don't do \"new WriteWrap\"","date":"2012-05-07T22:04:18.160Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: so the goal would be to allow anonymous function as the weak callback?","date":"2012-05-07T22:04:28.222Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ... or \"delete writeWrap\"","date":"2012-05-07T22:04:29.977Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: yeah","date":"2012-05-07T22:04:42.205Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: right, but making the operator private and unimplemented will do that at compile-time instead of run-time","date":"2012-05-07T22:04:51.256Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: or any function that traps a reference to the object","date":"2012-05-07T22:04:53.985Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: anonymous or not","date":"2012-05-07T22:04:58.437Z","type":"message"}
+{"nick":"TooTallNate","message":"right","date":"2012-05-07T22:05:04.975Z","type":"message"}
+{"nick":"isaacs","message":"function foo () { } weak(obj, foo)","date":"2012-05-07T22:05:10.275Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: in your case, your ide will probably complain even before you compile it","date":"2012-05-07T22:05:15.953Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I tried that but for me it's the contrary. If I define but not implement msvc starts whining","date":"2012-05-07T22:05:37.221Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but I can try again","date":"2012-05-07T22:05:51.893Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: so right now it's a Persistent Array, with regular handles to the Functions inside","date":"2012-05-07T22:05:55.647Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: https://github.com/TooTallNate/node-weak/blob/master/src/weakref.cc#L30","date":"2012-05-07T22:05:56.874Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 244 seconds","date":"2012-05-07T22:12:43.018Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that placement new stuff is avoid an extra alloc, right?","date":"2012-05-07T22:16:06.015Z","type":"message"}
+{"nick":"bnoordhuis","message":"*to avoid","date":"2012-05-07T22:16:10.233Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yup","date":"2012-05-07T22:16:15.042Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: have you measured what the actual impact of that second alloc is?","date":"2012-05-07T22:16:32.763Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: nope","date":"2012-05-07T22:16:38.832Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, why don't you use a char data_[1] as the last field","date":"2012-05-07T22:16:43.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: *shrug* Didn't think of it","date":"2012-05-07T22:17:01.561Z","type":"message"}
+{"nick":"rendar","date":"2012-05-07T22:17:13.551Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: okay. alternatively, just do reinterpret_cast<char*>(wrap + 1)","date":"2012-05-07T22:17:46.044Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh, that works too","date":"2012-05-07T22:18:09.591Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep, you don't need data_offset","date":"2012-05-07T22:18:12.972Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you mean, to avoid the alignment stuff ?","date":"2012-05-07T22:18:17.585Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, mostly because it's simpler :)","date":"2012-05-07T22:18:37.542Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok, will do that","date":"2012-05-07T22:19:00.607Z","type":"message"}
+{"nick":"bnoordhuis","message":"having the buffer data aligned won't hurt though","date":"2012-05-07T22:19:03.618Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I assume (wrap + 1) will be aligned too ?","date":"2012-05-07T22:19:15.024Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-05-07T22:19:19.417Z","type":"message"}
+{"nick":"piscisaureus_","message":"so that works, then","date":"2012-05-07T22:19:23.317Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I agree that avoiding the extra malloc. But it just felt stupid not to do it.","date":"2012-05-07T22:20:34.968Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and the added complexity is not that bad","date":"2012-05-07T22:20:40.851Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, it's not too bad","date":"2012-05-07T22:21:44.212Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: regarding SlowBuffer's __proto__... that's not really something we want people creating instances of.","date":"2012-05-07T22:21:47.496Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: C++ should *get* a buffer from js land.","date":"2012-05-07T22:21:59.499Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: along with a start/end/length args.","date":"2012-05-07T22:22:11.573Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i agree, but there's really no way around it when using a Buffer around an external memory address","date":"2012-05-07T22:23:02.543Z","type":"message"}
+{"nick":"TooTallNate","message":"i.e. Buffer::New() with the callback function","date":"2012-05-07T22:23:13.160Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i mean `new Buffer()` (in C++), but maybe we should add a new Buffer::New() signature that accepts a callback function","date":"2012-05-07T22:24:29.941Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: that just creates the SlowBuffer like `new Buffer()` does, but then wraps it in a JS Buffer","date":"2012-05-07T22:24:46.047Z","type":"message"}
+{"nick":"TooTallNate","message":"before returning it","date":"2012-05-07T22:24:52.299Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the buf.len = (int) len; assert(buf.len == len) should be organized a little differently, and should probably be \"unsigned int\"","date":"2012-05-07T22:25:13.039Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: of course, that'd be new API for v0.8","date":"2012-05-07T22:25:48.731Z","type":"message"}
+{"nick":"c4milo","date":"2012-05-07T22:28:52.458Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: ../src/stream_wrap.h:68: error: use of enum ‘WriteEncoding’ without previous declaration","date":"2012-05-07T22:29:07.692Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: oh, that's fine as far as msvc is concerned :-)","date":"2012-05-07T22:29:28.835Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: should I move the entire enum to stream_wrap.h or just \"enum WriteEncoding;\"","date":"2012-05-07T22:29:48.710Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-05-07T22:34:18.398Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i'm seeing a 4-5% speedup, i think","date":"2012-05-07T22:35:56.078Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what value for xxx ?","date":"2012-05-07T22:36:11.073Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: bytes/10240","date":"2012-05-07T22:36:20.584Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, you mentioned string/xxx but that doesn't exist","date":"2012-05-07T22:36:33.798Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: oh that's rather disappointing. For me it was much higher","date":"2012-05-07T22:36:35.924Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think we've been over this. Replace xxx by any number.","date":"2012-05-07T22:36:54.932Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: try it yourself - you get the 404 page :)","date":"2012-05-07T22:37:22.462Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: orly","date":"2012-05-07T22:37:29.874Z","type":"message"}
+{"nick":"bnoordhuis","message":"rly","date":"2012-05-07T22:37:55.392Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I benchmarked with bytes/50, /1024 and /10240","date":"2012-05-07T22:37:55.590Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, bytes/xxx is okay","date":"2012-05-07T22:38:04.980Z","type":"message"}
+{"nick":"bnoordhuis","message":"just not string/xxx","date":"2012-05-07T22:38:07.826Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: oh - sure. Typo, sorry","date":"2012-05-07T22:38:23.451Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ah, maybe it's that I was comparing 0.6.17 to netwrite","date":"2012-05-07T22:39:14.018Z","type":"message"}
+{"nick":"piscisaureus_","message":"Lemme build master","date":"2012-05-07T22:39:25.717Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i'm seeing a 5-6% speedup on bytes/1024","date":"2012-05-07T22:40:48.141Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: the way around it is that you don't have bindings allocate arbitrary data on behalf of js programs.  the js program instead gives it an address and length, and says \"Here, use this\"","date":"2012-05-07T22:42:01.955Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: like we do with zlib","date":"2012-05-07T22:42:05.684Z","type":"message"}
+{"nick":"isaacs","message":"of course, that's leaking 2 kb on every object.  not sure why, yet.","date":"2012-05-07T22:42:32.487Z","type":"message"}
+{"nick":"isaacs","message":"it's nothing in js","date":"2012-05-07T22:42:36.269Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: for example, node-ffi has to expose the pointers to C functions","date":"2012-05-07T22:42:54.435Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: 4-5% on bytes/64","date":"2012-05-07T22:42:55.882Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: the rewrite i'm doing on node-ffi uses a 0-length Buffer for that","date":"2012-05-07T22:43:12.221Z","type":"message"}
+{"nick":"TooTallNate","message":"which gets returned from C++ as a SlowBuffer","date":"2012-05-07T22:43:20.201Z","type":"message"}
+{"nick":"TooTallNate","message":"i could do this http://sambro.is-super-awesome.com/2011/03/03/creating-a-proper-buffer-in-a-node-c-addon/","date":"2012-05-07T22:43:27.632Z","type":"message"}
+{"nick":"TooTallNate","message":"but there's not much point","date":"2012-05-07T22:43:31.912Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: yeah","date":"2012-05-07T22:43:58.655Z","type":"message"}
+{"nick":"isaacs","message":"i guess ffi is a pretty valid case.","date":"2012-05-07T22:44:07.855Z","type":"message"}
+{"nick":"TooTallNate","message":"my point is that SlowBuffer is a leaky abstraction currently","date":"2012-05-07T22:44:38.691Z","type":"message"}
+{"nick":"isaacs","message":"yeah, i tis","date":"2012-05-07T22:44:49.304Z","type":"message"}
+{"nick":"TooTallNate","message":"but that can be solved with a Buffer::New() function that handles the callback function case","date":"2012-05-07T22:44:58.828Z","type":"message"}
+{"nick":"isaacs","message":"i guess, whatever, go ahead and land the __proto__ thing, but put a comment explaining that this is frowned upon, and a rare exception.","date":"2012-05-07T22:45:12.727Z","type":"message"}
+{"nick":"TooTallNate","message":"there's already a Buffer::New() that returns a JS Buffer for a given length","date":"2012-05-07T22:45:14.193Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: that sounds good. but this Buffer::New() also sounds like a good idea. i mean i would use it if it were there","date":"2012-05-07T22:46:16.456Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: ^ thoughts?","date":"2012-05-07T22:46:20.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: i have many. what's the subject?","date":"2012-05-07T22:46:54.812Z","type":"message"}
+{"nick":"bnoordhuis","message":"hey, that sambro guy. you know i explained to him how to do that?","date":"2012-05-07T22:47:08.295Z","type":"message"}
+{"nick":"bnoordhuis","message":"but do i get attribution? of course not :/","date":"2012-05-07T22:47:14.446Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: a new Buffer::New() signature that handles the callback function case","date":"2012-05-07T22:47:21.595Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: where you want to return a Buffer around existing data","date":"2012-05-07T22:47:33.704Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: currently you can only do that with one of the `new Buffer()` signatures","date":"2012-05-07T22:47:51.175Z","type":"message"}
+{"nick":"TooTallNate","message":"but that returns a SlowBuffer","date":"2012-05-07T22:48:00.003Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-07T22:48:04.492Z","type":"quit"}
+{"nick":"TooTallNate","message":"which is supposed to be an implementation detail","date":"2012-05-07T22:48:10.712Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: what would that method look like?","date":"2012-05-07T22:48:39.116Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I am seeing about 8% speedup vs master for bytes/10240, about 5% for bytes/1024","date":"2012-05-07T22:48:48.767Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: Not really noticable for bytes/50","date":"2012-05-07T22:49:00.404Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: but this new Buffer::New() method would call the current `new Buffer()` that takes a callback function, and do the sambro (your) technique to return a JS Buffer","date":"2012-05-07T22:49:09.806Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the difference with 0.6 was much bigger, but I realize we already did a bunch of optimizations in the string encoder.","date":"2012-05-07T22:49:39.162Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but I think at least we can say we got faster again :-p","date":"2012-05-07T22:50:02.418Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: always a good thing :)","date":"2012-05-07T22:50:14.762Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: i guess we could add that. have people been complaining about it?","date":"2012-05-07T22:50:26.341Z","type":"message"}
+{"nick":"TooTallNate","message":"just isaacs :)","date":"2012-05-07T22:50:35.829Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but srsly, I as seeing like +50% for bytes/10240 for 0.6 .. netwrite","date":"2012-05-07T22:50:48.268Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: too bad I benchmarked teh wrong thing ...","date":"2012-05-07T22:50:59.966Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: bytes/10240 is pretty broken in 0.6","date":"2012-05-07T22:51:14.777Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-07T22:51:16.798Z","type":"join"}
+{"nick":"TooTallNate","message":"isaacs: but actually, i really like the \"all allocated memory through Buffers\" approach (zlib)","date":"2012-05-07T22:51:22.006Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: why?","date":"2012-05-07T22:51:25.729Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i'm doing the same thing whenever possible in the node-ffi rewrite :)","date":"2012-05-07T22:51:33.531Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i'm not sure actually","date":"2012-05-07T22:52:03.148Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think v8 is at least partially to blame","date":"2012-05-07T22:52:28.621Z","type":"message"}
+{"nick":"bnoordhuis","message":"or maybe v8 improved a whole lot between 3.6 and 3.9, that's a possibility too :)","date":"2012-05-07T22:52:46.145Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes, it's one of the things I worked on with erik corry","date":"2012-05-07T22:53:22.385Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and actually there's more gain possible","date":"2012-05-07T22:53:29.507Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: btw - you should put one unicode char in the bytes/10240 benchmark string","date":"2012-05-07T22:54:36.656Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if you want to see +45% :-p","date":"2012-05-07T22:54:46.946Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: heh, okay - i'll try that","date":"2012-05-07T22:55:12.128Z","type":"message"}
+{"nick":"piscisaureus_","message":"I just do `stored[n] = \"ü\";` @ line 50","date":"2012-05-07T22:55:43.458Z","type":"message"}
+{"nick":"piscisaureus_","message":"still pretty pathetic tho","date":"2012-05-07T22:56:03.047Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-07T22:57:39.896Z","type":"quit"}
+{"nick":"TooTallNate","message":":\\ so i can't overload by return type in C++?","date":"2012-05-07T23:08:09.097Z","type":"message"}
+{"nick":"piscisaureus_","message":"nope","date":"2012-05-07T23:09:54.950Z","type":"message"}
+{"nick":"TooTallNate","message":"welllll dammnnnn","date":"2012-05-07T23:11:49.307Z","type":"message"}
+{"nick":"TooTallNate","message":"we kinda screwed ourself there then","date":"2012-05-07T23:12:00.789Z","type":"message"}
+{"nick":"TooTallNate","message":"ideally, `new Buffer()` would return a SlowBuffer, and Buffer::New() would return a JS Buffer","date":"2012-05-07T23:12:39.642Z","type":"message"}
+{"nick":"TooTallNate","message":"but it's too late for that now :(","date":"2012-05-07T23:12:52.096Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: bytes/10240 spends 50% of it's time in WriteToFlat :-(","date":"2012-05-07T23:15:14.494Z","type":"message"}
+{"nick":"TheJH","reason":"Read error: Operation timed out","date":"2012-05-07T23:15:15.010Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: doesn't quite look right to me ...","date":"2012-05-07T23:16:34.097Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: sounds familiar, that's what it did in 0.6","date":"2012-05-07T23:17:27.729Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: somehow the string is not pre-flattened.","date":"2012-05-07T23:17:51.836Z","type":"message"}
+{"nick":"piscisaureus_","message":"and it's still slow","date":"2012-05-07T23:17:57.812Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah the string is definitely not pre-flattened","date":"2012-05-07T23:19:09.653Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's good that the benchmark stresses this but it's rather lame","date":"2012-05-07T23:19:21.028Z","type":"message"}
+{"nick":"bnoordhuis","message":"signing off for tonight","date":"2012-05-07T23:21:25.267Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok","date":"2012-05-07T23:21:32.214Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i'll test your patch some more tomorrow","date":"2012-05-07T23:21:32.419Z","type":"message"}
+{"nick":"piscisaureus_","message":"sleep well","date":"2012-05-07T23:21:36.325Z","type":"message"}
+{"nick":"bnoordhuis","message":"you too","date":"2012-05-07T23:21:38.966Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok, cool","date":"2012-05-07T23:21:42.391Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 250 seconds","date":"2012-05-07T23:25:13.418Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 245 seconds","date":"2012-05-07T23:26:11.120Z","type":"quit"}
+{"nick":"mjr_","reason":"Ping timeout: 260 seconds","date":"2012-05-07T23:37:42.030Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-05-07T23:42:20.573Z","type":"quit"}
+{"nick":"dap","date":"2012-05-07T23:46:48.824Z","type":"join"}
