@@ -433,3 +433,459 @@
 {"nick":"bnoordhuis","message":"open an issue so we don't forget about it","date":"2012-05-09T15:49:18.997Z","type":"message"}
 {"nick":"piscisaureus_","message":"bnoordhuis: we gotta fix it quickly","date":"2012-05-09T15:50:13.120Z","type":"message"}
 {"nick":"bnoordhuis","message":"yeah, but it's not like it's the only bug that needs fixing :/","date":"2012-05-09T15:51:00.157Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2012-05-09T16:03:58.126Z","type":"action"}
+{"nick":"bnoordhuis","message":"ps, i'm working on reproducing https://github.com/joyent/node/issues/3236","date":"2012-05-09T16:04:16.686Z","type":"message"}
+{"nick":"bnoordhuis","message":"input appreciated","date":"2012-05-09T16:04:32.423Z","type":"message"}
+{"nick":"loladiro","date":"2012-05-09T16:05:32.154Z","type":"join"}
+{"nick":"perezd","date":"2012-05-09T16:10:14.204Z","type":"join"}
+{"nick":"orlandovftw","date":"2012-05-09T16:17:12.872Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-05-09T16:20:08.607Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-05-09T16:23:10.698Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-05-09T16:25:06.644Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: reproduction would be good, but i think i have a fix forthat.","date":"2012-05-09T16:28:22.092Z","type":"message"}
+{"nick":"isaacs","message":"mjr_: any way you could test this out? https://github.com/isaacs/node/commit/d6d592ab101ca07a8b3a29ca3887621b46974529","date":"2012-05-09T16:31:48.869Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: http://vertxproject.wordpress.com/2012/05/09/vert-x-vs-node-js-simple-http-benchmarks/#comment-14","date":"2012-05-09T16:34:41.736Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: http://news.ycombinator.com/item?id=3949187","date":"2012-05-09T16:36:58.664Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but your comment is probably more effective","date":"2012-05-09T16:37:04.864Z","type":"message"}
+{"nick":"elijah-m_","date":"2012-05-09T16:37:28.201Z","type":"join"}
+{"nick":"isaacs","message":"i don't understand how vert.x can possibly be 10x more effecie.","date":"2012-05-09T16:37:28.773Z","type":"message"}
+{"nick":"isaacs","message":"*effective","date":"2012-05-09T16:37:31.553Z","type":"message"}
+{"nick":"isaacs","message":"it has to be caching the file.","date":"2012-05-09T16:37:38.321Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-09T16:38:48.132Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: even the \"binary\" vs buffers approach is not such a big deal on my machine","date":"2012-05-09T16:39:19.863Z","type":"message"}
+{"nick":"mmalecki","message":"wait, so that's the code for the benchmark? https://github.com/purplefox/vert.x/blob/master/src/examples/java/httpperf/nodejs-server.js","date":"2012-05-09T16:39:31.140Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: if you use createReadStream?","date":"2012-05-09T16:39:34.914Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: roughly the same","date":"2012-05-09T16:39:41.606Z","type":"message"}
+{"nick":"AvianFlu","message":"mmalecki, yes, lol","date":"2012-05-09T16:39:52.853Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the fastest is doing readFile up front, and sending the buffer as res.end(data)","date":"2012-05-09T16:39:53.071Z","type":"message"}
+{"nick":"elijah-m_","new_nick":"elijah-mbp_","date":"2012-05-09T16:40:07.575Z","type":"nick"}
+{"nick":"isaacs","message":"piscisaureus_: that yields about a 2x - 5x performance improvement.","date":"2012-05-09T16:40:12.072Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: and then, run using cluster?","date":"2012-05-09T16:40:24.916Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: this wasn't via cluster, hold on a sec...","date":"2012-05-09T16:40:35.318Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: does that actually saturate the cores","date":"2012-05-09T16:40:39.922Z","type":"message"}
+{"nick":"mmalecki","message":"I lol'd","date":"2012-05-09T16:40:44.405Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: because cluster load balancing is pretty poor","date":"2012-05-09T16:40:49.556Z","type":"message"}
+{"nick":"elijah-mbp","reason":"Ping timeout: 260 seconds","date":"2012-05-09T16:40:56.985Z","type":"quit"}
+{"nick":"isaacs","message":"yeah, the lb is shit","date":"2012-05-09T16:44:02.319Z","type":"message"}
+{"nick":"isaacs","message":"with cluster, it's still only maxing out 2 cores.","date":"2012-05-09T16:44:13.228Z","type":"message"}
+{"nick":"isaacs","message":"of course, this is ab on 127.0.0.1","date":"2012-05-09T16:44:21.528Z","type":"message"}
+{"nick":"isaacs","message":"so basically, what's happening is ab is taking one, the server is taking the other, and there's no load balancing happening","date":"2012-05-09T16:44:33.307Z","type":"message"}
+{"nick":"isaacs","message":"with ab -c50 -n10000, it was roughly the same performance","date":"2012-05-09T16:45:00.828Z","type":"message"}
+{"nick":"erickt","date":"2012-05-09T16:45:03.220Z","type":"join"}
+{"nick":"isaacs","message":"with ab -c50 -n100000, it was significantly worse","date":"2012-05-09T16:45:11.848Z","type":"message"}
+{"nick":"isaacs","message":"but this of course is not a rigorous benchmark, so don't read into it.","date":"2012-05-09T16:45:34.889Z","type":"message"}
+{"nick":"isaacs","message":"but i think the numbers speak for themselves.","date":"2012-05-09T16:45:42.218Z","type":"message"}
+{"nick":"indutny","message":"pong","date":"2012-05-09T16:51:35.774Z","type":"message"}
+{"nick":"indutny","message":"isaacs: ^","date":"2012-05-09T16:51:46.559Z","type":"message"}
+{"nick":"indutny","message":"aaah","date":"2012-05-09T16:52:01.106Z","type":"message"}
+{"nick":"indutny","message":"sorry, everything is fine now","date":"2012-05-09T16:52:22.333Z","type":"message"}
+{"nick":"indutny","message":"I wanted to ask you a few questions about stdio+spawn API","date":"2012-05-09T16:52:37.485Z","type":"message"}
+{"nick":"indutny","message":"but it's clear to me now","date":"2012-05-09T16:52:42.341Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-05-09T16:53:43.603Z","type":"message"}
+{"nick":"isaacs","message":"great!","date":"2012-05-09T16:56:50.631Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-05-09T16:56:51.596Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yt?","date":"2012-05-09T16:59:01.250Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: can you please tell me, what's the difference between pipe and socketpair?","date":"2012-05-09T16:59:19.642Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: one is half-duplex and other is full-duplex, right?","date":"2012-05-09T16:59:30.203Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: that's the difference","date":"2012-05-09T17:02:39.157Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ok then","date":"2012-05-09T17:02:47.124Z","type":"message"}
+{"nick":"indutny","message":"btw, does anyone see glamoruous boxes on github?","date":"2012-05-09T17:03:02.096Z","type":"message"}
+{"nick":"AvianFlu","message":"yes","date":"2012-05-09T17:03:08.697Z","type":"message"}
+{"nick":"indutny","message":"oh, their fonts are dead","date":"2012-05-09T17:03:17.805Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: but the catch is that it's not possible for the write end of the pipe to detect a pipe being closed","date":"2012-05-09T17:03:54.901Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yep, I know","date":"2012-05-09T17:04:06.108Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: how are things going with socketpair?","date":"2012-05-09T17:04:12.077Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so probably it's also okay to stick to socketpairs","date":"2012-05-09T17:04:12.335Z","type":"message"}
+{"nick":"indutny","message":"I mean, is there any close notification?","date":"2012-05-09T17:04:44.612Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: well you can just read","date":"2012-05-09T17:05:03.367Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: and then if the pipe is closed you'll get EPIPE or 0","date":"2012-05-09T17:05:17.429Z","type":"message"}
+{"nick":"indutny","message":"so it's exactly the same behaviour as pipes","date":"2012-05-09T17:05:31.488Z","type":"message"}
+{"nick":"indutny","message":"oh, boxes just fixed","date":"2012-05-09T17:06:27.663Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: well you can't read the write end of a pipe, so you can't know if it has been closed","date":"2012-05-09T17:06:50.621Z","type":"message"}
+{"nick":"indutny","message":"yep, but with socketpair both ends are writable","date":"2012-05-09T17:07:16.379Z","type":"message"}
+{"nick":"piscisaureus_","message":"yep, and readable, that's more important :-)","date":"2012-05-09T17:08:40.714Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2012-05-09T17:09:10.857Z","type":"message"}
+{"nick":"indutny","message":"socketcloak","date":"2012-05-09T17:09:21.039Z","type":"message"}
+{"nick":"indutny","message":"creates two identical indistinguishable sockets, which are both writeable, but not readable","date":"2012-05-09T17:09:40.615Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: hey. Will the new npm website track downloads?","date":"2012-05-09T17:12:57.852Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, i'm going to work with JasonSmith on that.","date":"2012-05-09T17:13:11.607Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: he's working on some new magic for downloads to be out of the couchdb itself","date":"2012-05-09T17:13:51.057Z","type":"message"}
+{"nick":"indutny","message":"wow","date":"2012-05-09T17:13:57.703Z","type":"message"}
+{"nick":"hij1nx","date":"2012-05-09T17:14:03.891Z","type":"join"}
+{"nick":"isaacs","message":"so that'll make replication WAAAAYYY faster","date":"2012-05-09T17:14:05.015Z","type":"message"}
+{"nick":"isaacs","message":"and the couch itself will go from being like 12gb down to a few hundred mb, maybe","date":"2012-05-09T17:14:22.841Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: hm, but how will people be able to replicat tarballs then?","date":"2012-05-09T17:14:57.021Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: we'll point the dist.tarball url to just point somewhere else.","date":"2012-05-09T17:15:14.623Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: so... you won't replicate the tarballs, you'll replicate teh metadata, including the tarball location and shasum","date":"2012-05-09T17:15:33.917Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-09T17:15:41.152Z","type":"join"}
+{"nick":"isaacs","message":"then you'll fetch the tarball from somewhere, compare the shasum, etc.","date":"2012-05-09T17:15:43.966Z","type":"message"}
+{"nick":"mmalecki","message":"that'll greatly increase complexity","date":"2012-05-09T17:15:47.766Z","type":"message"}
+{"nick":"indutny","message":"isaacs: well, that's not good","date":"2012-05-09T17:15:49.890Z","type":"message"}
+{"nick":"indutny","message":"more failure points","date":"2012-05-09T17:16:00.491Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: also, the actual tarball data will be edge-cached, and almost certainly faster, especially if you're many hops from the registry couchdb","date":"2012-05-09T17:16:15.859Z","type":"message"}
+{"nick":"isaacs","message":"CDN-style","date":"2012-05-09T17:16:29.718Z","type":"message"}
+{"nick":"isaacs","message":"at least, that's the vision.  we'll see how it works out :)","date":"2012-05-09T17:16:36.942Z","type":"message"}
+{"nick":"isaacs","message":"but it'll be transparent, i believe.","date":"2012-05-09T17:16:48.757Z","type":"message"}
+{"nick":"indutny","message":"isaacs: that may be good for npm itself","date":"2012-05-09T17:16:49.671Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it'll be good for the vast majority of npm users.","date":"2012-05-09T17:16:56.914Z","type":"message"}
+{"nick":"isaacs","message":"and for the majority of npm replicators as well.","date":"2012-05-09T17:17:06.640Z","type":"message"}
+{"nick":"isaacs","message":"we *will* have to have some way to replicate the full thing with attachments.","date":"2012-05-09T17:17:14.702Z","type":"message"}
+{"nick":"indutny","message":"what about private repos?","date":"2012-05-09T17:17:16.560Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it won't change the client.","date":"2012-05-09T17:17:23.447Z","type":"message"}
+{"nick":"isaacs","message":"it'll just be magic that moves the attachments out of the couchdb on the server-side.","date":"2012-05-09T17:17:31.307Z","type":"message"}
+{"nick":"isaacs","message":"if you dont do that to your couchdb, then it won't matter.","date":"2012-05-09T17:17:39.709Z","type":"message"}
+{"nick":"indutny","message":"ok, so the only real concern for me is a replication","date":"2012-05-09T17:17:47.650Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, same here","date":"2012-05-09T17:18:01.309Z","type":"message"}
+{"nick":"isaacs","message":"indutny: right, and replication is a huge pita right now, in large part because of the size of the db and the number of attachments.","date":"2012-05-09T17:18:03.035Z","type":"message"}
+{"nick":"isaacs","message":"so, we'll be making that work a lot better.","date":"2012-05-09T17:18:11.112Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: do we need UV_DUPLEX_PIPE option then?","date":"2012-05-09T17:18:34.982Z","type":"message"}
+{"nick":"mmalecki","message":"ok, so the world is safe","date":"2012-05-09T17:18:37.388Z","type":"message"}
+{"nick":"isaacs","message":"jason has some good stuff planned for npm registries.","date":"2012-05-09T17:18:39.263Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: it is essentially the same as socketpair or IPC","date":"2012-05-09T17:18:43.818Z","type":"message"}
+{"nick":"isaacs","message":"i'm really excited.","date":"2012-05-09T17:18:44.282Z","type":"message"}
+{"nick":"isaacs","message":"and it's gonna make iriscouch the (even more) obvious place to do your couchdb stuff.","date":"2012-05-09T17:18:59.002Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: yeah please hang on to the flag.","date":"2012-05-09T17:19:03.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: just ignore the flag for the moment","date":"2012-05-09T17:19:13.995Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ah, ok","date":"2012-05-09T17:19:19.564Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: should I keep IPC flag too?","date":"2012-05-09T17:19:32.709Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: yes. On windows IPC some special protocol is used that only libuv understands","date":"2012-05-09T17:19:54.084Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so if you are talking to non-node you dont want to set the IPC flag","date":"2012-05-09T17:20:09.765Z","type":"message"}
+{"nick":"indutny","message":"isaacs: I was really excited about couchdb 2 years ago, but after working for half of year with it","date":"2012-05-09T17:20:22.951Z","type":"message"}
+{"nick":"indutny","message":"isaacs: I got to say that it's quite retarded","date":"2012-05-09T17:20:30.138Z","type":"message"}
+{"nick":"theCole","date":"2012-05-09T17:20:32.199Z","type":"join"}
+{"nick":"indutny","message":"isaacs: especially when dealing with a lot of simultaneous requests and complex views","date":"2012-05-09T17:20:51.868Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: (windows whas the sole reason for having the ipc flag)","date":"2012-05-09T17:20:52.290Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: it saved my ass few times :)","date":"2012-05-09T17:20:53.859Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ok ok :)","date":"2012-05-09T17:21:01.675Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: cool","date":"2012-05-09T17:21:10.049Z","type":"message"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-05-09T17:23:45.440Z","type":"quit"}
+{"nick":"loladiro","date":"2012-05-09T17:24:05.996Z","type":"join"}
+{"nick":"mmalecki","new_nick":"mmalecki[away]","date":"2012-05-09T17:28:30.134Z","type":"nick"}
+{"nick":"loladiro","reason":"Remote host closed the connection","date":"2012-05-09T17:29:27.407Z","type":"quit"}
+{"nick":"loladiro","date":"2012-05-09T17:29:44.673Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-09T17:36:34.008Z","type":"quit"}
+{"nick":"loladiro_","date":"2012-05-09T17:37:57.995Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-05-09T17:40:12.540Z","type":"quit"}
+{"nick":"mikeal","date":"2012-05-09T17:41:57.198Z","type":"join"}
+{"nick":"loladiro","reason":"Ping timeout: 265 seconds","date":"2012-05-09T17:42:20.630Z","type":"quit"}
+{"nick":"loladiro_","new_nick":"loladiro","date":"2012-05-09T17:42:20.829Z","type":"nick"}
+{"nick":"dap","message":"bnoordhuis: hi :)","date":"2012-05-09T17:43:50.555Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-05-09T17:45:03.565Z","type":"quit"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-05-09T17:45:13.735Z","type":"quit"}
+{"nick":"mikeal","date":"2012-05-09T17:46:09.394Z","type":"join"}
+{"nick":"dap","message":"I just upgraded to 0.6.17, which includes the fix for the libuv bug you helped me with last week. Unfortunately, it just pushed the assertion failure here:","date":"2012-05-09T17:47:54.168Z","type":"message"}
+{"nick":"dap","message":"https://github.com/joyent/node/blob/master/src/pipe_wrap.cc#L207","date":"2012-05-09T17:47:54.964Z","type":"message"}
+{"nick":"avalanch_","date":"2012-05-09T17:50:08.013Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-05-09T17:51:48.897Z","type":"join"}
+{"nick":"elijah-mbp","date":"2012-05-09T17:53:23.194Z","type":"join"}
+{"nick":"avalanch_","new_nick":"avalanche123|w","date":"2012-05-09T17:53:36.647Z","type":"nick"}
+{"nick":"dap","message":"We may want to have libuv just swallow the \"accept\" error just like it does in uv__server_io. I don't think there's any point in propagating EAGAIN","date":"2012-05-09T17:53:53.202Z","type":"message"}
+{"nick":"paddybyers","reason":"Ping timeout: 255 seconds","date":"2012-05-09T17:54:24.720Z","type":"quit"}
+{"nick":"elijah-m_","date":"2012-05-09T17:54:49.196Z","type":"join"}
+{"nick":"elijah-mbp_","reason":"Ping timeout: 260 seconds","date":"2012-05-09T17:55:46.997Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-05-09T17:55:48.197Z","type":"join"}
+{"nick":"bnoordhuis","message":"dap: hey","date":"2012-05-09T17:55:53.508Z","type":"message"}
+{"nick":"bnoordhuis","message":"was it actually EAGAIN that you got?","date":"2012-05-09T17:56:38.358Z","type":"message"}
+{"nick":"elijah-__","date":"2012-05-09T17:56:47.478Z","type":"join"}
+{"nick":"bnoordhuis","message":"if so, i don't know why we pass that up :)","date":"2012-05-09T17:56:59.312Z","type":"message"}
+{"nick":"hij1nx","date":"2012-05-09T17:57:50.200Z","type":"join"}
+{"nick":"dap","message":"EAGAIN == EWOULDBLOCK, on illumos anyway","date":"2012-05-09T17:57:53.606Z","type":"message"}
+{"nick":"elijah-mbp","reason":"Ping timeout: 260 seconds","date":"2012-05-09T17:58:06.995Z","type":"quit"}
+{"nick":"piscisaureus_","message":"igorzi: are you still working on the symlink stuff or did you exceed your node quota for this week?","date":"2012-05-09T17:58:38.589Z","type":"message"}
+{"nick":"dap","message":"oh, I see. I'm rereading the code now.","date":"2012-05-09T17:58:43.000Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: hm, v0.6 works differently than master","date":"2012-05-09T17:59:11.684Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: still working","date":"2012-05-09T17:59:22.383Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: cool","date":"2012-05-09T17:59:30.600Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: should have another patch in a few hours","date":"2012-05-09T17:59:33.079Z","type":"message"}
+{"nick":"bnoordhuis","message":"but not that differently - EAGAIN isn't passed on to the cb","date":"2012-05-09T17:59:48.258Z","type":"message"}
+{"nick":"elijah-m_","reason":"Ping timeout: 260 seconds","date":"2012-05-09T18:00:26.996Z","type":"quit"}
+{"nick":"dap","message":"yeah, I'm trying to see what it actually is now.","date":"2012-05-09T18:00:34.638Z","type":"message"}
+{"nick":"dap","message":"oh, it was EINVAL","date":"2012-05-09T18:01:17.146Z","type":"message"}
+{"nick":"dap","message":"well, that's the current value, but that's not even documented to be returned by accept. Let me see if I can dig it out of the structure.","date":"2012-05-09T18:02:11.377Z","type":"message"}
+{"nick":"orlandovftw","reason":"Ping timeout: 245 seconds","date":"2012-05-09T18:03:59.739Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: do we have some sort of EALLOC error?","date":"2012-05-09T18:05:33.284Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ENOMEM","date":"2012-05-09T18:05:43.877Z","type":"message"}
+{"nick":"indutny","message":"nice","date":"2012-05-09T18:05:57.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: i guess you get EINVAL if you call accept() on a socket that's not listening","date":"2012-05-09T18:05:58.080Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least, that what accept() on linux does","date":"2012-05-09T18:06:41.457Z","type":"message"}
+{"nick":"bnoordhuis","action":"has been staring at the kernel impl of accept() a lot lately","date":"2012-05-09T18:06:52.623Z","type":"action"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-05-09T18:07:21.295Z","type":"quit"}
+{"nick":"theCole","reason":"Quit: theCole","date":"2012-05-09T18:08:14.668Z","type":"quit"}
+{"nick":"dap","message":"I'll see if I can reproduce it with a DTrace script that shows exactly what errno was so we can be sure.","date":"2012-05-09T18:08:41.500Z","type":"message"}
+{"nick":"avalanche123","reason":"Ping timeout: 240 seconds","date":"2012-05-09T18:11:15.266Z","type":"quit"}
+{"nick":"avalanche123|w","new_nick":"avalanche123","date":"2012-05-09T18:11:15.468Z","type":"nick"}
+{"nick":"dap","message":"yeah, it's definitely accept returning EINVAL","date":"2012-05-09T18:12:15.676Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: what kind of socket is it? tcp, udp?","date":"2012-05-09T18:14:06.489Z","type":"message"}
+{"nick":"dap","message":"I think it's UDS","date":"2012-05-09T18:14:19.350Z","type":"message"}
+{"nick":"bnoordhuis","message":"what does the code look like that creates/binds the socket?","date":"2012-05-09T18:15:06.413Z","type":"message"}
+{"nick":"bulatshakirzyano","date":"2012-05-09T18:15:12.983Z","type":"join"}
+{"nick":"dap","message":"https://github.com/mcavage/node-zsock/blob/master/lib/zsock.js","date":"2012-05-09T18:17:50.584Z","type":"message"}
+{"nick":"felixge","date":"2012-05-09T18:19:44.199Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-05-09T18:19:44.497Z","type":"quit"}
+{"nick":"felixge","date":"2012-05-09T18:19:44.699Z","type":"join"}
+{"nick":"bnoordhuis","message":"dap: you're using an awful lot of internals...","date":"2012-05-09T18:20:24.097Z","type":"message"}
+{"nick":"dap","message":"?","date":"2012-05-09T18:21:09.510Z","type":"message"}
+{"nick":"pietern","date":"2012-05-09T18:21:31.232Z","type":"join"}
+{"nick":"bnoordhuis","message":"dap: using pipe_wrap directly","date":"2012-05-09T18:22:00.430Z","type":"message"}
+{"nick":"felixge","message":"isaacs: hi","date":"2012-05-09T18:22:26.597Z","type":"message"}
+{"nick":"bnoordhuis","message":"+like that","date":"2012-05-09T18:22:26.793Z","type":"message"}
+{"nick":"bnoordhuis","message":"voids the warranty","date":"2012-05-09T18:22:31.413Z","type":"message"}
+{"nick":"dap","message":"what can we be doing instead?","date":"2012-05-09T18:22:42.199Z","type":"message"}
+{"nick":"dap","message":"and is that what's causing the core dump?","date":"2012-05-09T18:23:08.204Z","type":"message"}
+{"nick":"bnoordhuis","message":"probably yes","date":"2012-05-09T18:23:34.744Z","type":"message"}
+{"nick":"bnoordhuis","message":"what are you using listenFD for?","date":"2012-05-09T18:23:50.731Z","type":"message"}
+{"nick":"dap","message":"Can you tell which change caused the change in behavior? (This was working on 0.6.12, modulo the EAGAIN issues.)","date":"2012-05-09T18:24:18.105Z","type":"message"}
+{"nick":"bnoordhuis","message":"don't know, could be a number of things","date":"2012-05-09T18:24:35.611Z","type":"message"}
+{"nick":"dap","message":"Effectively, we have a UDS fd that has state associated with it, and we want to create an HTTP server on top of it.","date":"2012-05-09T18:25:21.326Z","type":"message"}
+{"nick":"felixge","message":"isaacs: ping me when you want to finish discussing the error reporting things","date":"2012-05-09T18:26:13.879Z","type":"message"}
+{"nick":"dap","message":"bnoordhuis: I think the history here is that we were using listenFD before it was ripped out, and isaacs suggested that we use a pipe to implement something that looks like listenFD but shuffles the data back and forth. But I wasn't actually there for those discussions.","date":"2012-05-09T18:27:26.736Z","type":"message"}
+{"nick":"isaacs","message":"felixge: yo","date":"2012-05-09T18:27:47.364Z","type":"message"}
+{"nick":"isaacs","message":"felixge: oh, right, you had another patch","date":"2012-05-09T18:27:55.184Z","type":"message"}
+{"nick":"isaacs","message":"lemme go review that ;)","date":"2012-05-09T18:28:00.695Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: piscisaureus_: https://github.com/joyent/libuv/pull/413 <- done","date":"2012-05-09T18:28:09.163Z","type":"message"}
+{"nick":"indutny","message":"I mean finished unix support","date":"2012-05-09T18:28:16.489Z","type":"message"}
+{"nick":"mjr_","message":"isaacs: I can try that. Is that patch already on the v0.6 branch?","date":"2012-05-09T18:28:52.237Z","type":"message"}
+{"nick":"isaacs","message":"mjr_: yeah","date":"2012-05-09T18:29:05.899Z","type":"message"}
+{"nick":"felixge","message":"isaacs: https://github.com/joyent/node/pull/3238/commits","date":"2012-05-09T18:29:14.866Z","type":"message"}
+{"nick":"isaacs","message":"felixge: yeah, reading it now","date":"2012-05-09T18:29:20.116Z","type":"message"}
+{"nick":"isaacs","message":"felixge: i actually prefer reading git diff","date":"2012-05-09T18:29:29.236Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: I'll definitely need your assistance for win support","date":"2012-05-09T18:29:30.274Z","type":"message"}
+{"nick":"isaacs","message":"git show, etc.","date":"2012-05-09T18:29:32.055Z","type":"message"}
+{"nick":"bnoordhuis","message":"dap: okay. it's not really supported right now (will be again in v0.8)","date":"2012-05-09T18:29:38.453Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's no good story except tread carefully","date":"2012-05-09T18:29:49.180Z","type":"message"}
+{"nick":"isaacs","message":"felixge: i freaking <3 this.","date":"2012-05-09T18:30:11.237Z","type":"message"}
+{"nick":"isaacs","message":"felixge: it's so much nicer.","date":"2012-05-09T18:30:14.973Z","type":"message"}
+{"nick":"dap","message":"Alright. I'll see if I can figure out which commit broke this behavior for us. Maybe that will shed some light on what we can do to avoid it.","date":"2012-05-09T18:30:15.414Z","type":"message"}
+{"nick":"felixge","message":"isaacs: I also think this patch looks interesting: https://github.com/joyent/node/commit/267c31f2a004444e7ff96430b74065e69b91d340","date":"2012-05-09T18:31:28.840Z","type":"message"}
+{"nick":"isaacs","message":"felixge: what's the point of that?  i don't get it.","date":"2012-05-09T18:32:09.998Z","type":"message"}
+{"nick":"Skomski","date":"2012-05-09T18:32:12.796Z","type":"join"}
+{"nick":"loladiro","date":"2012-05-09T18:32:13.993Z","type":"join"}
+{"nick":"isaacs","message":"felixge: so the name will be http_native instead of http.js?","date":"2012-05-09T18:32:42.479Z","type":"message"}
+{"nick":"felixge","message":"no","date":"2012-05-09T18:33:09.715Z","type":"message"}
+{"nick":"felixge","message":"it won't show the `throw` call site if the error is within a native module","date":"2012-05-09T18:33:24.351Z","type":"message"}
+{"nick":"felixge","message":"isaacs: https://github.com/joyent/node/pull/3238#issuecomment-5595217","date":"2012-05-09T18:33:35.439Z","type":"message"}
+{"nick":"isaacs","message":"oh, no, that's a bad idea.","date":"2012-05-09T18:33:39.593Z","type":"message"}
+{"nick":"felixge","message":"it's just meant to lessen the confusion for new users","date":"2012-05-09T18:33:51.876Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm not sure it achieves taht","date":"2012-05-09T18:34:13.160Z","type":"message"}
+{"nick":"felixge","message":"so is anybody going to comment on this HN benchmark thing?","date":"2012-05-09T18:34:31.217Z","type":"message"}
+{"nick":"bnoordhuis","message":"lots of people already did","date":"2012-05-09T18:35:06.291Z","type":"message"}
+{"nick":"isaacs","message":"felixge: i commented on the blog post itself","date":"2012-05-09T18:35:11.005Z","type":"message"}
+{"nick":"felixge","message":"isaacs: reading that","date":"2012-05-09T18:37:54.850Z","type":"message"}
+{"nick":"felixge","message":"I guess no point in further commenting, the people who don't look at the benchmark code are a lost case anyway","date":"2012-05-09T18:39:18.089Z","type":"message"}
+{"nick":"felixge","message":":)","date":"2012-05-09T18:39:19.026Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: piscisaureus_: do you have gtalk accounts?","date":"2012-05-09T18:39:27.638Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yes, but i never use it","date":"2012-05-09T18:39:50.168Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: i can give you windows support","date":"2012-05-09T18:39:59.692Z","type":"message"}
+{"nick":"felixge","message":"isaacs: let me know if you have more questions / concerns regarding my patches for 0.6.x","date":"2012-05-09T18:40:14.167Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: that would be nice","date":"2012-05-09T18:41:13.335Z","type":"message"}
+{"nick":"isaacs","message":"felixge: i'm probably going to land this.","date":"2012-05-09T18:42:59.273Z","type":"message"}
+{"nick":"isaacs","message":"felixge: sorry, bunch of parallel conversations :)","date":"2012-05-09T18:43:08.143Z","type":"message"}
+{"nick":"felixge","message":"isaacs: take your time, I'll be around for a while","date":"2012-05-09T18:43:18.450Z","type":"message"}
+{"nick":"isaacs","message":"felixge: just trying to work out what the effects will be.  changing semantics even slightly is very hazardous in the module system in general, especially in a stable branch.","date":"2012-05-09T18:43:36.301Z","type":"message"}
+{"nick":"isaacs","message":"felixge: but it looks like this has the same exact side effects of throwing, just without obscuring the source.","date":"2012-05-09T18:43:57.746Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: if you can make it work with 3 fds on windows I am already very proud","date":"2012-05-09T18:44:13.312Z","type":"message"}
+{"nick":"piscisaureus_","message":"getting it to work with >3 is umm, hairy :-)","date":"2012-05-09T18:44:26.309Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: hahahaha","date":"2012-05-09T18:44:31.270Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yep, w/o fork things get weird","date":"2012-05-09T18:44:40.318Z","type":"message"}
+{"nick":"piscisaureus_","message":"you have to use undocumented APIs for that","date":"2012-05-09T18:44:45.042Z","type":"message"}
+{"nick":"felixge","message":"isaacs: yeah, I agree, this needs careful review","date":"2012-05-09T18:44:46.313Z","type":"message"}
+{"nick":"felixge","message":"isaacs: but it shouldn't change any semantics at all","date":"2012-05-09T18:44:53.764Z","type":"message"}
+{"nick":"felixge","message":"at least that was the goal","date":"2012-05-09T18:44:57.251Z","type":"message"}
+{"nick":"felixge","message":":)","date":"2012-05-09T18:44:57.803Z","type":"message"}
+{"nick":"isaacs","message":"felixge: and i think we can probably do this patch, and then just modify it slightly for domains in master, and add the 'scrub the loading cache as well' so that piscisaureus_'s forfelix test does the right thing.","date":"2012-05-09T18:44:59.404Z","type":"message"}
+{"nick":"indutny","message":"btw, what if I've a lot of io requests hanging in uv","date":"2012-05-09T18:45:00.390Z","type":"message"}
+{"nick":"felixge","message":"yeah","date":"2012-05-09T18:45:11.175Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: all fds will be cloned to child process","date":"2012-05-09T18:45:11.664Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: and never will be closed","date":"2012-05-09T18:45:20.468Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: no, we sould set cloexec on all the FDs","date":"2012-05-09T18:45:25.722Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: all FDs?","date":"2012-05-09T18:45:32.549Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ah, I got it","date":"2012-05-09T18:45:39.774Z","type":"message"}
+{"nick":"isaacs","message":"felixge: also, i'm a bit afraid that domains may sometimes cause nextTick errors to be obscured.  my original rebase of your patch didn't preserve its intent properly, that's why i closed it.","date":"2012-05-09T18:45:40.921Z","type":"message"}
+{"nick":"indutny","message":"good","date":"2012-05-09T18:45:46.874Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: we set cloexec when a handle is opened","date":"2012-05-09T18:45:47.537Z","type":"message"}
+{"nick":"isaacs","message":"felixge: i'll look into that","date":"2012-05-09T18:45:56.073Z","type":"message"}
+{"nick":"felixge","message":"isaacs: hm, should be solvable so","date":"2012-05-09T18:46:02.742Z","type":"message"}
+{"nick":"indutny","message":"yep, got it","date":"2012-05-09T18:46:06.425Z","type":"message"}
+{"nick":"indutny","message":"nice","date":"2012-05-09T18:46:07.358Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: in windows, cloexec is set by default except for sockets, but we set it explicitly for sockets","date":"2012-05-09T18:46:22.500Z","type":"message"}
+{"nick":"indutny","message":"unix C apis are SO INTERESTING","date":"2012-05-09T18:46:48.766Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so on spawn() we should clear the cloexec flag for fds that are to be inherited","date":"2012-05-09T18:46:49.333Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yep, I got it","date":"2012-05-09T18:46:59.579Z","type":"message"}
+{"nick":"Skomski","reason":"Quit: Nettalk6 - www.ntalk.de","date":"2012-05-09T18:49:01.872Z","type":"quit"}
+{"nick":"Skomski","date":"2012-05-09T18:49:18.649Z","type":"join"}
+{"nick":"isaacs","reason":"Ping timeout: 248 seconds","date":"2012-05-09T18:50:34.465Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: piscisaureus_: so what about PR for unix side?","date":"2012-05-09T18:51:54.391Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: bnoordhuis : does it looks good to you?","date":"2012-05-09T18:52:05.098Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: I'll take a look. I have to run now","date":"2012-05-09T18:52:10.242Z","type":"message"}
+{"nick":"indutny","message":"k, np","date":"2012-05-09T18:52:16.885Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-05-09T18:54:07.334Z","type":"quit"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303Felix Geisendörfer\u000f \u000307v0.6\u000f * r\u00028140333\u000f \u000310\u000f/ (6 files in 2 dirs)\u0002:\u000f ","date":"2012-05-09T18:56:02.482Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f Fix process.nextTick throw call sites","date":"2012-05-09T18:56:02.482Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f  - http://git.io/9e-7Hw","date":"2012-05-09T18:56:02.482Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303Felix Geisendörfer\u000f \u000307v0.6\u000f * r\u0002bf9d8e9\u000f \u000310\u000f/ (5 files in 2 dirs)\u0002:\u000f ","date":"2012-05-09T18:56:02.879Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f Fix exception output for module load exceptions","date":"2012-05-09T18:56:02.879Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f  - http://git.io/eT3kUw","date":"2012-05-09T18:56:02.879Z","type":"message"}
+{"nick":"isaacs","date":"2012-05-09T18:56:58.200Z","type":"join"}
+{"nick":"isaacs","message":"felixge: ok, lgtm.  landed on v0.6","date":"2012-05-09T19:02:35.660Z","type":"message"}
+{"nick":"felixge","message":"isaacs: :) sweet!","date":"2012-05-09T19:02:52.688Z","type":"message"}
+{"nick":"brson","date":"2012-05-09T19:03:56.025Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-09T19:05:41.201Z","type":"quit"}
+{"nick":"mmalecki[away]","new_nick":"mmalecki","date":"2012-05-09T19:05:55.207Z","type":"nick"}
+{"nick":"indutny","message":":)","date":"2012-05-09T19:08:42.617Z","type":"message"}
+{"nick":"indutny","message":"felixge: ++","date":"2012-05-09T19:08:44.321Z","type":"message"}
+{"nick":"kohai","message":"felixge has 1 beer","date":"2012-05-09T19:08:44.826Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-09T19:14:52.194Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-05-09T19:15:23.954Z","type":"quit"}
+{"nick":"isaacs","message":"when will i learn that hacker news commenters are incapable of basic mathematics.","date":"2012-05-09T19:16:16.429Z","type":"message"}
+{"nick":"isaacs","message":"\"Herpdeederp! JVM is faster than V8, so it makes sense that a server serves 10x as many reqeusts!  I put ketchup on my bananas!  Where am I?\" -- typical hacker news commenter","date":"2012-05-09T19:17:34.856Z","type":"message"}
+{"nick":"mmalecki","message":"this will happen everywhere humans are involved","date":"2012-05-09T19:18:44.321Z","type":"message"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-05-09T19:18:54.196Z","type":"quit"}
+{"nick":"mmalecki","message":"but in some communities it's easier to notice","date":"2012-05-09T19:19:04.446Z","type":"message"}
+{"nick":"benvie","message":"lol ketchup on bananas, that one I'm going to use","date":"2012-05-09T19:19:11.510Z","type":"message"}
+{"nick":"benvie","message":"I have a french second cousin who puts ketchup on waffles","date":"2012-05-09T19:19:52.910Z","type":"message"}
+{"nick":"benvie","message":"that's fucked","date":"2012-05-09T19:19:55.182Z","type":"message"}
+{"nick":"isaacs","message":"to be fair, i suppose, it *does* take a bit of practice to get used to saying, \"Wait a second... these are numbers.  I should probably do math, rather than try to use instinct here.\"","date":"2012-05-09T19:21:16.020Z","type":"message"}
+{"nick":"mmalecki","message":"I mean, these guys are programmers","date":"2012-05-09T19:21:53.764Z","type":"message"}
+{"nick":"benvie","message":"and humans","date":"2012-05-09T19:22:00.155Z","type":"message"}
+{"nick":"benvie","message":"which means dumb","date":"2012-05-09T19:22:03.449Z","type":"message"}
+{"nick":"mmalecki","message":"fair enough.","date":"2012-05-09T19:22:09.839Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-05-09T19:22:15.221Z","type":"join"}
+{"nick":"mmalecki","message":"I'm wondering if someone posted it to r/programming already","date":"2012-05-09T19:22:35.700Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u00025979f09\u000f \u000310\u000f/ (doc/api/buffer.markdown lib/buffer.js src/node.cc)\u0002:\u000f Fix #3242 Actually deprecate 'binary' buffer encoding - http://git.io/xAJSRg","date":"2012-05-09T19:22:48.835Z","type":"message"}
+{"nick":"benvie","message":"hail to our incoming Artifical General Intelligence overlords in the next decade or two","date":"2012-05-09T19:22:51.131Z","type":"message"}
+{"nick":"mmalecki","message":"hey, these guys are going to write code for my wheelchair.","date":"2012-05-09T19:23:22.508Z","type":"message"}
+{"nick":"benvie","message":"a wheelchair coded in Java","date":"2012-05-09T19:23:41.701Z","type":"message"}
+{"nick":"mmalecki","message":"please no","date":"2012-05-09T19:23:48.566Z","type":"message"}
+{"nick":"benvie","message":"that makes an awesome mental picture","date":"2012-05-09T19:23:53.036Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, Java has memory problems too","date":"2012-05-09T19:24:11.789Z","type":"message"}
+{"nick":"benvie","message":"also adult diapers","date":"2012-05-09T19:24:50.119Z","type":"message"}
+{"nick":"pfox__","message":"hey guys.. where would i look for examples of using c-ares w/ libuv?","date":"2012-05-09T19:25:15.185Z","type":"message"}
+{"nick":"tjfontaine","message":"node/cares_wrap.cc?","date":"2012-05-09T19:27:02.961Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 240 seconds","date":"2012-05-09T19:27:45.145Z","type":"quit"}
+{"nick":"bnoordhuis","message":"pfox__: also, test/test-gethostbyname.c","date":"2012-05-09T19:29:54.657Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-05-09T19:30:00.040Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-05-09T19:31:14.843Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-05-09T19:31:50.110Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: review? https://github.com/joyent/libuv/pull/413","date":"2012-05-09T19:34:23.290Z","type":"message"}
+{"nick":"pfox__","message":"thanks","date":"2012-05-09T19:34:42.335Z","type":"message"}
+{"nick":"saghul","message":"pfox__ you may look here as well: https://github.com/saghul/pyuv/blob/master/src/dns.c","date":"2012-05-09T19:39:17.243Z","type":"message"}
+{"nick":"Skomski","reason":"Quit: Nettalk6 - www.ntalk.de","date":"2012-05-09T19:42:11.263Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-05-09T19:45:21.978Z","type":"quit"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-05-09T19:58:43.271Z","type":"quit"}
+{"nick":"creationix","message":"what causes a node stream to cancel?  Support I fs.createReadFile(\"mymovie.mp4\").pipe(httpResponse) and the browser cancels the download","date":"2012-05-09T19:59:51.026Z","type":"message"}
+{"nick":"creationix","message":"s/Support/Suppose/","date":"2012-05-09T19:59:58.663Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: fixed issues in that PR","date":"2012-05-09T20:00:27.642Z","type":"message"}
+{"nick":"mjr_","message":"error event, which should turn into a call to destroy()","date":"2012-05-09T20:00:28.160Z","type":"message"}
+{"nick":"creationix","message":"mjr_, what kind of error","date":"2012-05-09T20:01:47.736Z","type":"message"}
+{"nick":"creationix","message":"my issue is I have proxied streams and the cancel isn't propagating","date":"2012-05-09T20:02:24.668Z","type":"message"}
+{"nick":"creationix","action":"goes to look for error and destroy in pipe()'s code...","date":"2012-05-09T20:02:36.006Z","type":"action"}
+{"nick":"mjr_","message":"I dunno.  I never actually use pipe like that, because we always need to do other logic around cases like aborted, errors, back pressure, etc.","date":"2012-05-09T20:03:37.550Z","type":"message"}
+{"nick":"creationix","message":"hmm, doesn't seem to be part of pipe's logic","date":"2012-05-09T20:03:38.968Z","type":"message"}
+{"nick":"mjr_","message":"There's an \"aborted\" event on the response you can listen for, which you can explicitly convert into a destroy on the read stream.","date":"2012-05-09T20:04:10.938Z","type":"message"}
+{"nick":"creationix","message":"that's neat, I wonder why .pipe doesn't do that already","date":"2012-05-09T20:04:51.607Z","type":"message"}
+{"nick":"isaacs","message":"creationix: because it's a very inconsistent surface, unfortunately.","date":"2012-05-09T20:05:01.540Z","type":"message"}
+{"nick":"isaacs","message":"creationix: not all pipes have the same methods or events.","date":"2012-05-09T20:05:09.063Z","type":"message"}
+{"nick":"creationix","message":"my case I need to create a fake stream that can be piped to a http response","date":"2012-05-09T20:05:12.095Z","type":"message"}
+{"nick":"isaacs","message":"creationix: this is going ot be fixed in 0.9","date":"2012-05-09T20:05:14.651Z","type":"message"}
+{"nick":"creationix","message":"isaacs, sounds great","date":"2012-05-09T20:05:25.943Z","type":"message"}
+{"nick":"orlandovftw","date":"2012-05-09T20:05:40.413Z","type":"join"}
+{"nick":"mjr_","message":"Streams are great, but I find that anything interesting needs to deal with the events explicitly.","date":"2012-05-09T20:06:20.722Z","type":"message"}
+{"nick":"creationix","message":"indeed","date":"2012-05-09T20:06:52.789Z","type":"message"}
+{"nick":"mjr_","message":"It's really fun to stick stuff together with pipe though, especially if you can chain streams together.  Man, that's neat looking.","date":"2012-05-09T20:06:54.139Z","type":"message"}
+{"nick":"mjr_","message":"All that power in one line of code.","date":"2012-05-09T20:07:15.575Z","type":"message"}
+{"nick":"creationix","message":"hmm, looks like pipe doesn't do much at all other than check the return value of write and call pause https://github.com/joyent/node/blob/master/lib/stream.js#L36-42","date":"2012-05-09T20:07:22.014Z","type":"message"}
+{"nick":"creationix","message":"(for write calls)","date":"2012-05-09T20:07:28.573Z","type":"message"}
+{"nick":"creationix","message":"here, I'm creating my proxy stream https://github.com/c9/vfs/blob/master/socket/consumer.js#L29-41","date":"2012-05-09T20:08:44.173Z","type":"message"}
+{"nick":"creationix","message":"remote.send write a rpc command to the underlaying pipe","date":"2012-05-09T20:09:02.199Z","type":"message"}
+{"nick":"creationix","message":"so backpressure is working","date":"2012-05-09T20:09:17.492Z","type":"message"}
+{"nick":"creationix","message":"but I seem to keep on writing data after the browser cancels the download","date":"2012-05-09T20:09:33.153Z","type":"message"}
+{"nick":"creationix","message":"err, that's the wrong end, sorry","date":"2012-05-09T20:09:54.422Z","type":"message"}
+{"nick":"creationix","message":"that's for the browser uploading data to the server","date":"2012-05-09T20:10:01.635Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-05-09T20:10:08.588Z","type":"join"}
+{"nick":"creationix","message":"here is data going to the browser https://github.com/c9/vfs/blob/master/socket/worker.js#L33-43","date":"2012-05-09T20:10:40.744Z","type":"message"}
+{"nick":"creationix","message":"and then the other end does https://github.com/c9/vfs/blob/master/socket/consumer.js#L69-78","date":"2012-05-09T20:11:06.771Z","type":"message"}
+{"nick":"creationix","message":"that `stream.emit(\"data\", chunk);` is what stream.pipe(res) is picking up and sending to the browser.","date":"2012-05-09T20:11:39.986Z","type":"message"}
+{"nick":"indutny","message":"ok, I'm going to pass out","date":"2012-05-09T20:11:50.708Z","type":"message"}
+{"nick":"indutny","message":"ping me by email or on issue in any case","date":"2012-05-09T20:11:59.476Z","type":"message"}
+{"nick":"hij1nx","date":"2012-05-09T20:13:38.219Z","type":"join"}
+{"nick":"indutny","message":"ttyl guys, time to sleep","date":"2012-05-09T20:13:56.415Z","type":"message"}
+{"nick":"creationix","message":"g'night indutny ","date":"2012-05-09T20:14:25.467Z","type":"message"}
+{"nick":"mjr_","date":"2012-05-09T20:14:30.943Z","type":"part"}
+{"nick":"creationix","message":"hmm, I'm not sure I can use .pipe as is","date":"2012-05-09T20:15:09.107Z","type":"message"}
+{"nick":"mjr_","date":"2012-05-09T20:15:10.054Z","type":"join"}
+{"nick":"creationix","message":".pipe simply ignores data events if the dest is not .writable","date":"2012-05-09T20:15:26.246Z","type":"message"}
+{"nick":"creationix","message":"hmm, and .pipe doesn't destroy the source on error or close","date":"2012-05-09T20:17:50.643Z","type":"message"}
+{"nick":"creationix","message":"it just stops listening","date":"2012-05-09T20:17:55.333Z","type":"message"}
+{"nick":"hij1nx_","date":"2012-05-09T20:18:17.440Z","type":"join"}
+{"nick":"creationix","message":"isaacs, is there a document somewhere with the plans for streams on 0.9.x or is it still in various people's heads?","date":"2012-05-09T20:18:40.514Z","type":"message"}
+{"nick":"isaacs","message":"creationix: heads, mostluy.","date":"2012-05-09T20:18:56.094Z","type":"message"}
+{"nick":"isaacs","message":"creationix: the documented goal is \"make it good\"","date":"2012-05-09T20:19:02.093Z","type":"message"}
+{"nick":"isaacs","message":"but it's not much more fleshed out than that","date":"2012-05-09T20:19:13.765Z","type":"message"}
+{"nick":"indexzero","reason":"Ping timeout: 245 seconds","date":"2012-05-09T20:19:24.706Z","type":"quit"}
+{"nick":"creationix","message":"this will be hard","date":"2012-05-09T20:19:25.963Z","type":"message"}
+{"nick":"isaacs","message":"indeed.","date":"2012-05-09T20:19:31.089Z","type":"message"}
+{"nick":"rendar","date":"2012-05-09T20:19:38.838Z","type":"quit"}
+{"nick":"creationix","message":"I have lots of ideas and a few places where I disagree with mikeal","date":"2012-05-09T20:19:41.853Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-05-09T20:19:51.791Z","type":"message"}
+{"nick":"isaacs","message":"after we release 0.8, i'll be much more available to get down and dirty with that api.","date":"2012-05-09T20:20:15.806Z","type":"message"}
+{"nick":"creationix","message":"that's fine, get 0.8 out","date":"2012-05-09T20:20:26.492Z","type":"message"}
+{"nick":"isaacs","message":"but we have to get this done first.","date":"2012-05-09T20:20:27.310Z","type":"message"}
+{"nick":"creationix","message":"still, I need a way to make my code with with 0.6.x APis","date":"2012-05-09T20:20:40.295Z","type":"message"}
+{"nick":"creationix","message":"and I don't pipe gives me enough feedback","date":"2012-05-09T20:20:50.188Z","type":"message"}
+{"nick":"creationix","message":"*I don't think pipe...","date":"2012-05-09T20:20:56.315Z","type":"message"}
+{"nick":"hij1nx","reason":"Ping timeout: 244 seconds","date":"2012-05-09T20:21:31.953Z","type":"quit"}
+{"nick":"hij1nx_","new_nick":"hij1nx","date":"2012-05-09T20:21:32.116Z","type":"nick"}
+{"nick":"creationix","message":"mjr_, I'm starting to see what you mean about pipe not being powerful enough","date":"2012-05-09T20:21:34.621Z","type":"message"}
+{"nick":"elijah-mbp","date":"2012-05-09T20:25:45.920Z","type":"join"}
+{"nick":"indexzero","date":"2012-05-09T20:28:17.693Z","type":"join"}
+{"nick":"mjr_","message":"I'm still a big fan of how you can do buffering and back pressure with node. write returning false, stream.pause(), stream.resume(). It's a nice low level API.","date":"2012-05-09T20:28:25.711Z","type":"message"}
+{"nick":"orlandov1tw","date":"2012-05-09T20:29:14.369Z","type":"join"}
+{"nick":"brson_","date":"2012-05-09T20:29:34.266Z","type":"join"}
+{"nick":"felixge","message":"making pipe universally awesome may be impossible","date":"2012-05-09T20:30:48.574Z","type":"message"}
+{"nick":"mjr_","message":"I suspect this is true.  ","date":"2012-05-09T20:31:07.279Z","type":"message"}
+{"nick":"felixge","message":"but IMO we can do a lot of things to the rest of the Stream API that makes life better","date":"2012-05-09T20:31:07.677Z","type":"message"}
+{"nick":"felixge","message":"which may or may not allow us to think about pipe() more clearly","date":"2012-05-09T20:31:25.435Z","type":"message"}
+{"nick":"felixge","message":"without being distracted by API warts all the time","date":"2012-05-09T20:31:36.806Z","type":"message"}
+{"nick":"mjr_","message":"Having used it for a while now, I can imagine a few things that we could do to make it better in the common cases.","date":"2012-05-09T20:31:39.510Z","type":"message"}
+{"nick":"felixge","message":"yeah","date":"2012-05-09T20:31:46.258Z","type":"message"}
+{"nick":"felixge","message":"and we can also give it more options","date":"2012-05-09T20:31:52.694Z","type":"message"}
+{"nick":"felixge","message":"or make a pipe module","date":"2012-05-09T20:32:11.267Z","type":"message"}
+{"nick":"felixge","message":"with all kinds of utility functions","date":"2012-05-09T20:32:15.368Z","type":"message"}
+{"nick":"felixge","message":"that can be combined","date":"2012-05-09T20:32:18.538Z","type":"message"}
+{"nick":"felixge","message":"(really just thinking out loud here)","date":"2012-05-09T20:32:23.915Z","type":"message"}
+{"nick":"mjr_","message":"Explicitly allowing some amount of buffering is the biggest reason we don't use pipe.","date":"2012-05-09T20:33:23.178Z","type":"message"}
+{"nick":"mjr_","message":"So if we could do a high / low water mark threshold on pause/resume, that would be an obvious win.","date":"2012-05-09T20:34:01.820Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-05-09T20:34:20.215Z","type":"quit"}
+{"nick":"felixge","message":"mjr_: agreed, that seems like a no-brainer","date":"2012-05-09T20:34:24.569Z","type":"message"}
+{"nick":"mjr_","message":"Less obvious: number of buffered bytes, or number of buffered writes?","date":"2012-05-09T20:34:25.914Z","type":"message"}
+{"nick":"creationix","message":"hmm, I'm never getting aborted events","date":"2012-05-09T20:34:28.978Z","type":"message"}
+{"nick":"felixge","message":"it's just a performance optimization, right?","date":"2012-05-09T20:34:30.544Z","type":"message"}
+{"nick":"felixge","message":"mjr_: hmm, I'd say bytes","date":"2012-05-09T20:34:45.383Z","type":"message"}
+{"nick":"orlandovftw","reason":"*.net *.split","date":"2012-05-09T20:34:54.063Z","type":"quit"}
+{"nick":"brson","reason":"*.net *.split","date":"2012-05-09T20:34:54.063Z","type":"quit"}
+{"nick":"elijah-__","reason":"*.net *.split","date":"2012-05-09T20:34:54.262Z","type":"quit"}
+{"nick":"felixge","message":"but you deal with slow clients with lots of tiny data events sometimes, right?","date":"2012-05-09T20:34:55.872Z","type":"message"}
+{"nick":"mjr_","message":"felixge: you know, I thought that it was just an optimization too, but in our case the whole system wouldn't even work if we didn't tolerate at least some buffering.","date":"2012-05-09T20:35:07.020Z","type":"message"}
+{"nick":"felixge","message":"mjr_: I guess because you kill throughput if you apply back pressure too aggressively ?","date":"2012-05-09T20:35:41.013Z","type":"message"}
+{"nick":"felixge","message":"or can u explain/","date":"2012-05-09T20:36:06.994Z","type":"message"}
+{"nick":"mjr_","message":"Yes.  And also there are these diabolical feedback cycles that can get started if you don't tolerate a lot of \"slop\" in the system.","date":"2012-05-09T20:36:11.041Z","type":"message"}
+{"nick":"creationix","message":"Mmmm feedback cycles","date":"2012-05-09T20:36:29.404Z","type":"message"}
+{"nick":"mjr_","message":"And by adding hysteresis through some amount of output buffering, you can break those cycles and get the system stable again.","date":"2012-05-09T20:37:31.645Z","type":"message"}
+{"nick":"creationix","message":"I","date":"2012-05-09T20:38:50.761Z","type":"message"}
+{"nick":"creationix","message":"I'll bet the joyent graphs help in debugging those issues ;)","date":"2012-05-09T20:39:05.642Z","type":"message"}
+{"nick":"pquerna","message":"mmm. raw sockets on win32, reasonable?","date":"2012-05-09T20:40:30.186Z","type":"message"}
+{"nick":"chilts_","date":"2012-05-09T20:42:36.202Z","type":"join"}
+{"nick":"creationix","message":"mjr_, couldn't get aborted to work for me, but listening for \"close\" on the request worked great!","date":"2012-05-09T20:46:21.152Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/c9/vfs/compare/e87b570c58...e3b37749b7","date":"2012-05-09T20:46:42.297Z","type":"message"}
+{"nick":"chilts","reason":"Write error: Broken pipe","date":"2012-05-09T20:47:39.659Z","type":"quit"}
+{"nick":"mjr_","message":"But it also destroys throughput in some cases, particularly sending to mobile devices, if you don't allow data to buffer up a bit.","date":"2012-05-09T20:47:42.121Z","type":"message"}
+{"nick":"mjr_","message":"Also applies to wifi devices if you live in any kind of dense wifi environment.","date":"2012-05-09T20:47:42.324Z","type":"message"}
+{"nick":"mjr_","message":"Also also, why do I sound like pedantic IETF guy?","date":"2012-05-09T20:47:42.324Z","type":"message"}
+{"nick":"mjr_","message":"Sometimes, yes.","date":"2012-05-09T20:47:42.324Z","type":"message"}
+{"nick":"mjr_","message":"Honestly, node_pcap was the only way to figure most of them out.","date":"2012-05-09T20:47:43.682Z","type":"message"}
+{"nick":"mjr_","message":"But the Joyent graphs are amazing.","date":"2012-05-09T20:47:43.880Z","type":"message"}
+{"nick":"mjr_","message":"I hope so.  Somebody needs to write node ping already.","date":"2012-05-09T20:47:45.327Z","type":"message"}
+{"nick":"creationix","message":"yeah, node_pcap is very useful","date":"2012-05-09T20:48:33.329Z","type":"message"}
+{"nick":"creationix","message":"and pretty when used with http_tracer","date":"2012-05-09T20:48:39.623Z","type":"message"}
+{"nick":"creationix","message":"ok, tougher question, when I run a remote command using ssh, how do I ensure my remote process dies when I close the connection?","date":"2012-05-09T20:50:38.262Z","type":"message"}
+{"nick":"creationix","message":"`ssh creationix.com 'node server.js'`, then Control+C","date":"2012-05-09T20:51:00.474Z","type":"message"}
