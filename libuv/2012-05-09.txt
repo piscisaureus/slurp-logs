@@ -889,3 +889,75 @@
 {"nick":"creationix","message":"and pretty when used with http_tracer","date":"2012-05-09T20:48:39.623Z","type":"message"}
 {"nick":"creationix","message":"ok, tougher question, when I run a remote command using ssh, how do I ensure my remote process dies when I close the connection?","date":"2012-05-09T20:50:38.262Z","type":"message"}
 {"nick":"creationix","message":"`ssh creationix.com 'node server.js'`, then Control+C","date":"2012-05-09T20:51:00.474Z","type":"message"}
+{"nick":"piscisaureus_","message":"Slurp definitely needs better auto-reconnect logic","date":"2012-05-09T22:35:53.461Z","type":"message"}
+{"nick":"ira","reason":"Quit: Leaving...","date":"2012-05-09T22:39:16.592Z","type":"quit"}
+{"nick":"igorzi","message":"piscisaureus_: hey","date":"2012-05-09T22:42:43.919Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: https://github.com/igorzi/libuv/compare/junctions","date":"2012-05-09T22:42:50.293Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: looking at it","date":"2012-05-09T22:43:35.986Z","type":"message"}
+{"nick":"isaacs","message":"igorzi: ++","date":"2012-05-09T22:43:54.918Z","type":"message"}
+{"nick":"kohai","message":"igorzi has 6 beers","date":"2012-05-09T22:43:55.344Z","type":"message"}
+{"nick":"isaacs","message":"indutny: ++ also","date":"2012-05-09T22:44:12.132Z","type":"message"}
+{"nick":"kohai","message":"indutny has 23 beers","date":"2012-05-09T22:44:12.551Z","type":"message"}
+{"nick":"isaacs","message":"stdio and symlinks and refcount oh my!","date":"2012-05-09T22:44:19.808Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-09T22:45:24.441Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: yeah I am still working on the refcount","date":"2012-05-09T22:47:54.617Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: weird question, but, does it work?","date":"2012-05-09T22:48:07.063Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-09T22:48:09.861Z","type":"join"}
+{"nick":"piscisaureus_","message":"igorzi: esp. lstat","date":"2012-05-09T22:48:14.023Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: awesome","date":"2012-05-09T22:48:34.470Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: it depends on what you mean by \"work\" :)  did you look at the new test?  that test works","date":"2012-05-09T22:49:00.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ok so lstat() gives you the properties of the link and not the target, right?","date":"2012-05-09T22:49:42.706Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: correct","date":"2012-05-09T22:50:01.229Z","type":"message"}
+{"nick":"igorzi","message":"where st_size is the length of the target","date":"2012-05-09T22:50:32.972Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ^","date":"2012-05-09T22:50:38.171Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: so, that actually surprises me","date":"2012-05-09T22:51:00.294Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ah wait you do the size explicitly","date":"2012-05-09T22:51:08.577Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ok, that's nice","date":"2012-05-09T22:51:12.363Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: yep","date":"2012-05-09T22:51:21.681Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: so the thing is: you resolve the symlink target in get_symlink","date":"2012-05-09T22:51:26.744Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: then you do CreateFileW to open the stat path","date":"2012-05-09T22:51:39.481Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: but the the CreateFileW call doesn't include the FILE_FLAG_OPEN_REPARSE_POINT flag","date":"2012-05-09T22:51:58.922Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: so that means that you're effectively stat()ing the target and not the link","date":"2012-05-09T22:52:16.739Z","type":"message"}
+{"nick":"piscisaureus_","message":"except for the size since you special case for that","date":"2012-05-09T22:52:26.087Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: the link is a directory in this case though, so we get properties for the directory","date":"2012-05-09T22:53:00.077Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: i don't resolve the symlink for lstat","date":"2012-05-09T22:53:22.001Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: only for stat","date":"2012-05-09T22:53:25.446Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: for lstat stat_path just points to path","date":"2012-05-09T22:53:50.819Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: you don't need to resolve the symlink. CreateFileW *always* resolves symlinks automatically unless you explicitly tell it not to","date":"2012-05-09T22:53:53.369Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: hmm.. i didn't know that","date":"2012-05-09T22:54:24.359Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: the flag you specify to not follow a link is FILE_FLAG_OPEN_REPARSE_POINT","date":"2012-05-09T22:54:31.618Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: actually, that makes complete sense","date":"2012-05-09T22:54:47.209Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: otherwise none of the other fs operations would work on symlinks :)","date":"2012-05-09T22:55:05.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: yep. otherwise symlinks would never work unless programs delt with them explicitly","date":"2012-05-09T22:55:09.857Z","type":"message"}
+{"nick":"piscisaureus_","message":"indeed :-)","date":"2012-05-09T22:55:17.147Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: ok, so I'll add FILE_FLAG_OPEN_REPARSE_POINT for lstat","date":"2012-05-09T22:55:35.113Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: ok","date":"2012-05-09T22:55:42.360Z","type":"message"}
+{"nick":"bulatshakirzyano","reason":"Read error: Connection reset by peer","date":"2012-05-09T22:56:00.564Z","type":"quit"}
+{"nick":"piscisaureus_","message":"igorzi: thanks","date":"2012-05-09T22:56:05.779Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: it would be nice if you could play with it a little bit and see whether it behaves as expected :-)","date":"2012-05-09T22:56:33.567Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: any objections to floating http://codereview.chromium.org/download/issue8240004_1.diff ?","date":"2012-05-09T22:57:12.193Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: yeah.. will do","date":"2012-05-09T22:57:36.768Z","type":"message"}
+{"nick":"igorzi","message":"piscisaureus_: thanks","date":"2012-05-09T22:57:39.010Z","type":"message"}
+{"nick":"hij1nx","date":"2012-05-09T22:57:39.215Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it unbreaks =fibers and this other thing that shall not be named","date":"2012-05-09T22:57:41.476Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: (you know I don't care about this other thing that shall not be named)","date":"2012-05-09T22:57:57.499Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: I am heading out in a bit. Please send me an email if you get it done, then I'll know to look at it tomorrow","date":"2012-05-09T22:58:35.922Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: if I find nits then I will probably just fix them myself, unless you don't want that.","date":"2012-05-09T22:59:03.918Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: what does that patch do?","date":"2012-05-09T22:59:29.256Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: fix a v8 bug, lemme look it up","date":"2012-05-09T22:59:44.648Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: http://code.google.com/p/v8/issues/detail?id=1763","date":"2012-05-09T23:00:09.525Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-05-09T23:00:26.921Z","type":"quit"}
+{"nick":"bulatshakirzyano","date":"2012-05-09T23:00:41.609Z","type":"join"}
+{"nick":"igorzi","message":"piscisaureus_: nah that's fine.. let me know if you find any nits, and i'll fix them.","date":"2012-05-09T23:00:51.186Z","type":"message"}
+{"nick":"piscisaureus_","message":"igorzi: alright","date":"2012-05-09T23:01:17.833Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: looks okay to me","date":"2012-05-09T23:01:21.224Z","type":"message"}
+{"nick":"piscisaureus_","message":"to me too","date":"2012-05-09T23:01:29.004Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I am going to land it","date":"2012-05-09T23:01:33.490Z","type":"message"}
+{"nick":"mikeal","date":"2012-05-09T23:03:27.372Z","type":"join"}
+{"nick":"CIA-155","message":"\u0002node:\u000f \u000303vegorov@chromium.org\u000f \u000307v0.6\u000f * r\u000252f0c37\u000f \u000310\u000f/ (3 files)\u0002:\u000f ","date":"2012-05-09T23:05:58.196Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f Runtime_NotifyDeoptimized should search for function activation in all thread stacks.","date":"2012-05-09T23:05:58.196Z","type":"message"}
+{"nick":"CIA-155","message":"\u0002node:\u000f  - http://git.io/XUBrSA","date":"2012-05-09T23:05:58.196Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- there","date":"2012-05-09T23:06:02.679Z","type":"message"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-05-09T23:07:54.756Z","type":"quit"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-05-09T23:09:17.166Z","type":"quit"}
+{"nick":"chilts_","new_nick":"chilts","date":"2012-05-09T23:10:49.882Z","type":"nick"}
