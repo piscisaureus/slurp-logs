@@ -33,3 +33,108 @@
 {"nick":"kevwil","date":"2012-05-14T14:49:00.475Z","type":"join"}
 {"nick":"mmalecki","date":"2012-05-14T15:48:20.052Z","type":"join"}
 {"nick":"tsing","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-05-14T15:52:51.998Z","type":"quit"}
+{"nick":"creationix","message":"Good morning everyone","date":"2012-05-14T16:03:29.004Z","type":"message"}
+{"nick":"creationix","message":"rphillips, philips I finished a simple libuv mock database","date":"2012-05-14T16:04:29.283Z","type":"message"}
+{"nick":"creationix","message":"But my luvit/node clients are maxing out at ~30k queries/second","date":"2012-05-14T16:05:03.692Z","type":"message"}
+{"nick":"creationix","message":"seems really slow for something that just dumps a string on tcp and reads back a string","date":"2012-05-14T16:05:27.497Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/4b71912f266133c69506#file_db.c","date":"2012-05-14T16:05:34.426Z","type":"message"}
+{"nick":"creationix","message":"node and luvit max out 100% CPU and the db uses around 33% of another core","date":"2012-05-14T16:05:50.460Z","type":"message"}
+{"nick":"dvv","message":"hi! what's the size of data?","date":"2012-05-14T16:20:51.920Z","type":"message"}
+{"nick":"rphillips","message":"creationix: perhaps the timer code has a bug","date":"2012-05-14T16:21:48.557Z","type":"message"}
+{"nick":"rphillips","message":"does the C implemention peg at 100% cpu?","date":"2012-05-14T16:23:06.112Z","type":"message"}
+{"nick":"creationix","message":"no, the C side stays cool around 36%","date":"2012-05-14T16:27:21.487Z","type":"message"}
+{"nick":"dvv","reason":"Ping timeout: 250 seconds","date":"2012-05-14T16:27:22.667Z","type":"quit"}
+{"nick":"creationix","message":"the client is the bottleneck","date":"2012-05-14T16:27:28.037Z","type":"message"}
+{"nick":"creationix","message":"actually talking to the libuv guys they say that 30-40k/second on a single core isn't bad","date":"2012-05-14T16:28:05.992Z","type":"message"}
+{"nick":"creationix","message":"since I'm doing zero concurrency","date":"2012-05-14T16:28:13.593Z","type":"message"}
+{"nick":"creationix","message":"waiting for a response every time","date":"2012-05-14T16:28:18.238Z","type":"message"}
+{"nick":"rphillips","message":"gotcha","date":"2012-05-14T16:28:31.075Z","type":"message"}
+{"nick":"creationix","message":"hmm, no, if I add concurrency it doesn't speed up","date":"2012-05-14T16:28:43.724Z","type":"message"}
+{"nick":"creationix","message":"the client is still pegged at 100% cpu","date":"2012-05-14T16:28:51.504Z","type":"message"}
+{"nick":"creationix","message":"yeah, if I add 8 concurrent clients, it's only about 3% faster","date":"2012-05-14T16:29:38.927Z","type":"message"}
+{"nick":"rphillips","message":"the dns client may be getting calling all the time","date":"2012-05-14T16:31:51.357Z","type":"message"}
+{"nick":"rphillips","message":"called*","date":"2012-05-14T16:31:54.596Z","type":"message"}
+{"nick":"creationix","message":"dns?","date":"2012-05-14T16:32:31.566Z","type":"message"}
+{"nick":"creationix","message":"this is a long running tcp connection","date":"2012-05-14T16:32:37.112Z","type":"message"}
+{"nick":"creationix","message":"only connects once at startup for each worker","date":"2012-05-14T16:32:44.670Z","type":"message"}
+{"nick":"rphillips","message":"oh ok","date":"2012-05-14T16:32:54.795Z","type":"message"}
+{"nick":"rphillips","message":"perhaps we should profile the code and see what it is doing","date":"2012-05-14T16:33:46.668Z","type":"message"}
+{"nick":"creationix","message":"do you know how to profile linux code?","date":"2012-05-14T16:37:29.773Z","type":"message"}
+{"nick":"rphillips","message":"gprof is what you want","date":"2012-05-14T16:37:57.791Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i'm getting 100k requests/second","date":"2012-05-14T16:42:04.638Z","type":"message"}
+{"nick":"rphillips","message":"on osx","date":"2012-05-14T16:42:06.467Z","type":"message"}
+{"nick":"rphillips","message":"luvit is 100% cpu","date":"2012-05-14T16:42:56.081Z","type":"message"}
+{"nick":"dvv","date":"2012-05-14T16:43:30.030Z","type":"join"}
+{"nick":"creationix","message":"100k, nice","date":"2012-05-14T16:48:50.942Z","type":"message"}
+{"nick":"creationix","message":"I guess linux doesn't like this use-case","date":"2012-05-14T16:48:56.829Z","type":"message"}
+{"nick":"rphillips","message":"creationix: instruments on osx shows the client in select_nocancel/read_nocancel/write_nocancel","date":"2012-05-14T16:49:00.224Z","type":"message"}
+{"nick":"rphillips","message":"most of the time","date":"2012-05-14T16:49:08.190Z","type":"message"}
+{"nick":"creationix","message":"yeah, that's hard to avoid","date":"2012-05-14T16:49:14.661Z","type":"message"}
+{"nick":"creationix","message":"maybe we should pipeline more?","date":"2012-05-14T16:49:21.749Z","type":"message"}
+{"nick":"rphillips","message":"yeah, we could try","date":"2012-05-14T16:49:32.737Z","type":"message"}
+{"nick":"rphillips","message":"that","date":"2012-05-14T16:49:34.521Z","type":"message"}
+{"nick":"rphillips","message":"on osx with 4 cores, it's getting balanced between them pretty good","date":"2012-05-14T16:50:05.131Z","type":"message"}
+{"nick":"creationix","message":"bert says that libev isn't as good at this case","date":"2012-05-14T16:50:10.330Z","type":"message"}
+{"nick":"creationix","message":"libuv on windows has a new implementation made just for windows","date":"2012-05-14T16:50:22.965Z","type":"message"}
+{"nick":"creationix","message":"but libev is more generic","date":"2012-05-14T16:50:27.796Z","type":"message"}
+{"nick":"creationix","message":"ben is planning on making a linux-specific backend to libuv sometime","date":"2012-05-14T16:50:44.229Z","type":"message"}
+{"nick":"creationix","message":"using edge-triggered I/O","date":"2012-05-14T16:50:50.237Z","type":"message"}
+{"nick":"rphillips","message":"nice","date":"2012-05-14T16:51:31.887Z","type":"message"}
+{"nick":"luvit-bb","message":"build #848 of virgo-ubuntu10.04_x64 is complete: Failure [failed integration tests]  Build details are at https://virgo-bb.k1k.me/builders/virgo-ubuntu10.04_x64/builds/848","date":"2012-05-14T16:58:39.662Z","type":"message"}
+{"nick":"mmalecki","reason":"Ping timeout: 240 seconds","date":"2012-05-14T16:59:47.220Z","type":"quit"}
+{"nick":"rphillips","message":"hmm","date":"2012-05-14T17:00:42.260Z","type":"message"}
+{"nick":"dvv","reason":"Ping timeout: 245 seconds","date":"2012-05-14T17:52:03.155Z","type":"quit"}
+{"nick":"dvv","date":"2012-05-14T18:04:57.200Z","type":"join"}
+{"nick":"hij1nx","date":"2012-05-14T18:16:38.772Z","type":"join"}
+{"nick":"luvit-bb","message":"build #849 of virgo-ubuntu10.04_x64 is complete: Success [build successful]  Build details are at https://virgo-bb.k1k.me/builders/virgo-ubuntu10.04_x64/builds/849","date":"2012-05-14T18:29:55.844Z","type":"message"}
+{"nick":"luvit-bb","message":"build #516 of virgo-rhel6.1_x64 is complete: Success [build successful]  Build details are at https://virgo-bb.k1k.me/builders/virgo-rhel6.1_x64/builds/516","date":"2012-05-14T18:33:17.309Z","type":"message"}
+{"nick":"luvit-bb","message":"build #838 of virgo-windows2008_x64 is complete: Success [build successful]  Build details are at https://virgo-bb.k1k.me/builders/virgo-windows2008_x64/builds/838","date":"2012-05-14T18:35:56.642Z","type":"message"}
+{"nick":"xming","message":"dvv: are you using lua-buf with luvit?","date":"2012-05-14T18:45:33.490Z","type":"message"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-05-14T18:51:01.631Z","type":"quit"}
+{"nick":"dvv","message":"xming: hi! link, please","date":"2012-05-14T18:52:14.461Z","type":"message"}
+{"nick":"dvv","reason":"Ping timeout: 252 seconds","date":"2012-05-14T18:56:38.198Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-05-14T19:00:00.986Z","type":"join"}
+{"nick":"hij1nx","reason":"Remote host closed the connection","date":"2012-05-14T19:04:57.025Z","type":"quit"}
+{"nick":"hij1nx","date":"2012-05-14T19:05:21.458Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-05-14T19:14:15.954Z","type":"quit"}
+{"nick":"hij1nx","reason":"Ping timeout: 252 seconds","date":"2012-05-14T19:17:32.192Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-05-14T19:23:13.402Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-05-14T19:28:39.725Z","type":"join"}
+{"nick":"xming","message":"dvv: isn't that you? https://github.com/Neopallium/lua-buf/issues/1","date":"2012-05-14T19:31:49.646Z","type":"message"}
+{"nick":"ljackson","reason":"Read error: Operation timed out","date":"2012-05-14T19:32:49.122Z","type":"quit"}
+{"nick":"ljackson","date":"2012-05-14T19:33:13.051Z","type":"join"}
+{"nick":"xming","message":"dvv: https://github.com/Neopallium/lua-buf","date":"2012-05-14T19:36:49.507Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-05-14T19:52:29.813Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-05-14T19:54:07.434Z","type":"join"}
+{"nick":"bakins","reason":"Read error: Connection reset by peer","date":"2012-05-14T20:04:19.305Z","type":"quit"}
+{"nick":"bakins","date":"2012-05-14T20:07:01.107Z","type":"join"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-05-14T20:14:16.562Z","type":"quit"}
+{"nick":"bakins","reason":"Read error: Connection reset by peer","date":"2012-05-14T20:31:44.718Z","type":"quit"}
+{"nick":"bakins","date":"2012-05-14T20:32:17.475Z","type":"join"}
+{"nick":"CIA-43","message":"Brandon Philips\u000f add-exit-code\u000f * rf2d1ae8\u000f \u000f/ (lib/luvit/luvit.lua examples/exit-code.lua):\u000f luvit: add process.exitCode - http://git.io/uQy0mQ","date":"2012-05-14T20:37:53.055Z","type":"message"}
+{"nick":"philips","message":"https://github.com/luvit/luvit/pull/221","date":"2012-05-14T20:57:00.499Z","type":"message"}
+{"nick":"philips","message":"rphillips: I implemented the same API in virgo and it makes that scheduler bug return 1 now","date":"2012-05-14T20:57:18.259Z","type":"message"}
+{"nick":"philips","message":"rphillips: For the test cases","date":"2012-05-14T20:57:26.883Z","type":"message"}
+{"nick":"philips","message":"rphillips: I like this solution","date":"2012-05-14T20:57:30.505Z","type":"message"}
+{"nick":"rphillips","message":"philips: +1","date":"2012-05-14T21:08:28.901Z","type":"message"}
+{"nick":"rphillips","message":"nice","date":"2012-05-14T21:08:30.981Z","type":"message"}
+{"nick":"creationix","message":":)","date":"2012-05-14T21:08:54.059Z","type":"message"}
+{"nick":"philips","message":"rphillips: creationix: Mind if I merge?","date":"2012-05-14T21:15:27.713Z","type":"message"}
+{"nick":"creationix","message":"go for it","date":"2012-05-14T21:16:06.943Z","type":"message"}
+{"nick":"CIA-43","message":"Brandon Philips\u000f master\u000f * rf2d1ae8\u000f \u000f/ (lib/luvit/luvit.lua examples/exit-code.lua):\u000f luvit: add process.exitCode - http://git.io/uQy0mQ","date":"2012-05-14T21:16:15.369Z","type":"message"}
+{"nick":"CIA-43","message":"Brandon Philips\u000f master\u000f * r5befa91\u000f \u000f/ (lib/luvit/luvit.lua examples/exit-code.lua):\u000f Merge pull request #221 from luvit/add-exit-code - http://git.io/ufWLIg","date":"2012-05-14T21:16:15.580Z","type":"message"}
+{"nick":"mmalecki","date":"2012-05-14T21:29:54.344Z","type":"join"}
+{"nick":"bakins","reason":"Quit: bakins","date":"2012-05-14T21:30:32.398Z","type":"quit"}
+{"nick":"mmalecki_","date":"2012-05-14T22:43:37.144Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 245 seconds","date":"2012-05-14T22:46:31.649Z","type":"quit"}
+{"nick":"mmalecki_","reason":"Quit: Reconnecting","date":"2012-05-14T22:52:29.556Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-05-14T22:52:44.576Z","type":"join"}
+{"nick":"kevwil","reason":"Quit: WeeChat 0.3.7","date":"2012-05-14T22:58:28.630Z","type":"quit"}
+{"nick":"mmalecki_","date":"2012-05-14T23:37:08.826Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 244 seconds","date":"2012-05-14T23:40:44.979Z","type":"quit"}
+{"nick":"mmalecki_","reason":"Client Quit","date":"2012-05-14T23:41:04.613Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-05-14T23:41:18.592Z","type":"join"}
+{"nick":"mmalecki_","date":"2012-05-14T23:46:57.380Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 265 seconds","date":"2012-05-14T23:47:01.613Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-05-14T23:51:54.036Z","type":"join"}
+{"nick":"mmalecki_","reason":"Ping timeout: 260 seconds","date":"2012-05-14T23:53:45.044Z","type":"quit"}
