@@ -1,0 +1,242 @@
+{"nick":"piscisaureus_","message":"bnoordhuis: well, because the handles are inheritable, and the inheritable flag is never cleared","date":"2012-06-13T00:00:21.455Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: just like, on unix, you don't set the CLOEXEC flag on inherited FDs","date":"2012-06-13T00:00:38.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i think i'd make it explicit","date":"2012-06-13T00:01:12.712Z","type":"message"}
+{"nick":"piscisaureus_","message":"uv_make_stdio_noninheritable :-)","date":"2012-06-13T00:01:31.325Z","type":"message"}
+{"nick":"piscisaureus_","message":"that works","date":"2012-06-13T00:01:34.010Z","type":"message"}
+{"nick":"piscisaureus_","message":"would it be possible to implement this on unix at all ?","date":"2012-06-13T00:01:44.020Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: uv__nonblock(0)?","date":"2012-06-13T00:02:14.382Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I mean, eh, what?","date":"2012-06-13T00:02:28.508Z","type":"message"}
+{"nick":"bnoordhuis","message":"err, uv__cloexec(0)","date":"2012-06-13T00:02:33.553Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes, but which fds would you target?","date":"2012-06-13T00:02:42.595Z","type":"message"}
+{"nick":"bnoordhuis","message":"0-2","date":"2012-06-13T00:02:48.581Z","type":"message"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-06-13T00:02:58.772Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what if someone created a child with ['pipe', 'pipe', 'pipe', 'pipe'] ?","date":"2012-06-13T00:03:12.154Z","type":"message"}
+{"nick":"bnoordhuis","message":"sucks to be them","date":"2012-06-13T00:03:20.572Z","type":"message"}
+{"nick":"piscisaureus_","message":"btw - the api doesn't yet expose the 4th pipe","date":"2012-06-13T00:03:42.493Z","type":"message"}
+{"nick":"bnoordhuis","message":"i suppose we could scan for file descriptors","date":"2012-06-13T00:03:54.080Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that kind of sucks","date":"2012-06-13T00:04:01.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's ehm, ugly","date":"2012-06-13T00:04:03.358Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe readdir(/proc/<pid>/fd) ?","date":"2012-06-13T00:04:43.770Z","type":"message"}
+{"nick":"piscisaureus_","message":"is that portable ?","date":"2012-06-13T00:04:50.834Z","type":"message"}
+{"nick":"bnoordhuis","message":"no","date":"2012-06-13T00:05:09.860Z","type":"message"}
+{"nick":"bnoordhuis","message":"not reliable either","date":"2012-06-13T00:05:20.061Z","type":"message"}
+{"nick":"isaacs","date":"2012-06-13T00:05:30.241Z","type":"join"}
+{"nick":"piscisaureus_","message":"seems to work on sunos :-)","date":"2012-06-13T00:06:16.856Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: why not reliable ?","date":"2012-06-13T00:06:20.835Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: unreliable in the sense that there doesn't have to be a procfs","date":"2012-06-13T00:06:39.045Z","type":"message"}
+{"nick":"piscisaureus_","message":"like. on unix?","date":"2012-06-13T00:07:01.039Z","type":"message"}
+{"nick":"piscisaureus_","message":"er, on linux?","date":"2012-06-13T00:07:05.375Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, as in 'not mounted'","date":"2012-06-13T00:07:11.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"aah","date":"2012-06-13T00:07:17.617Z","type":"message"}
+{"nick":"isaacs","message":"what's the problem?","date":"2012-06-13T00:07:30.340Z","type":"message"}
+{"nick":"piscisaureus_","message":"unix y u so retarded","date":"2012-06-13T00:07:46.119Z","type":"message"}
+{"nick":"isaacs","message":"give it a break, it's like 40 years old","date":"2012-06-13T00:08:05.450Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok, fd 0-3 is fine then","date":"2012-06-13T00:08:31.759Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-06-13T00:08:37.720Z","type":"quit"}
+{"nick":"bnoordhuis","message":"0-3 or 0-2?","date":"2012-06-13T00:08:41.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"0 <= x < 3","date":"2012-06-13T00:09:03.684Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but, what if you really want to inherit an inherited stdio?","date":"2012-06-13T00:14:41.739Z","type":"message"}
+{"nick":"isaacs","message":"i dont' get the problem.","date":"2012-06-13T00:14:44.637Z","type":"message"}
+{"nick":"isaacs","message":"i've got these three cases working: https://gist.github.com/2920955","date":"2012-06-13T00:15:36.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you mean you *want* child stdio be inherited by the child of a child ?","date":"2012-06-13T00:16:32.009Z","type":"message"}
+{"nick":"isaacs","action":"shrug","date":"2012-06-13T00:16:44.957Z","type":"action"}
+{"nick":"isaacs","message":"maybe","date":"2012-06-13T00:16:45.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you should set that explicitly in uv_spawn_options_t then","date":"2012-06-13T00:17:07.494Z","type":"message"}
+{"nick":"isaacs","message":"maybe you want a few generations all sharing the same stdout or something","date":"2012-06-13T00:17:15.455Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: this doesn't make that impossible","date":"2012-06-13T00:17:31.583Z","type":"message"}
+{"nick":"isaacs","message":"it doesn't sound too crazy to me.  maybe i'm just not seeing the problem.","date":"2012-06-13T00:17:34.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it just makes sure that it doesn't happen accidentally","date":"2012-06-13T00:17:44.871Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i dsee.","date":"2012-06-13T00:17:49.210Z","type":"message"}
+{"nick":"isaacs","message":"so, just changing the default value from 'inherit' to 'pipe' or something?","date":"2012-06-13T00:17:59.744Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: huh, no","date":"2012-06-13T00:18:10.728Z","type":"message"}
+{"nick":"isaacs","message":"how would it happen accidentally?","date":"2012-06-13T00:18:24.000Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, you open fd 29 with a pipe","date":"2012-06-13T00:18:40.673Z","type":"message"}
+{"nick":"hij1nx","reason":"Ping timeout: 248 seconds","date":"2012-06-13T00:18:42.281Z","type":"quit"}
+{"nick":"piscisaureus_","message":"and then you spawn a child","date":"2012-06-13T00:18:46.737Z","type":"message"}
+{"nick":"piscisaureus_","message":"then the child spawns a grandchild","date":"2012-06-13T00:18:52.810Z","type":"message"}
+{"nick":"isaacs","message":"did i give 29 to the child?","date":"2012-06-13T00:19:00.559Z","type":"message"}
+{"nick":"piscisaureus_","message":"now the grandchild also has fd 29 open","date":"2012-06-13T00:19:01.639Z","type":"message"}
+{"nick":"hij1nx","date":"2012-06-13T00:19:03.878Z","type":"join"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-06-13T00:19:05.069Z","type":"message"}
+{"nick":"piscisaureus_","message":"welcome to the world of unix","date":"2012-06-13T00:19:11.713Z","type":"message"}
+{"nick":"isaacs","message":"as 29?  or as 3 or something?","date":"2012-06-13T00:19:13.032Z","type":"message"}
+{"nick":"piscisaureus_","message":"no 29 as 29","date":"2012-06-13T00:19:18.477Z","type":"message"}
+{"nick":"isaacs","message":"via a stdio or via ipc?","date":"2012-06-13T00:19:33.445Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: va stdio","date":"2012-06-13T00:19:39.835Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: welcome to the world of unix :-)","date":"2012-06-13T00:19:53.426Z","type":"message"}
+{"nick":"isaacs","message":"so, child_process.spawn(c,a,{stdio:[,,,,,,,,,,,,,,,,,,,,,,,,,,,,,29]}) or something?","date":"2012-06-13T00:19:59.513Z","type":"message"}
+{"nick":"isaacs","message":"you keep welcoming me, but i live here.... ;P","date":"2012-06-13T00:20:14.839Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yes, that would be the way if you want it","date":"2012-06-13T00:20:16.825Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-06-13T00:20:21.934Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but suppose this:","date":"2012-06-13T00:20:33.442Z","type":"message"}
+{"nick":"isaacs","message":"well, that's weird, but ok.","date":"2012-06-13T00:20:33.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"parent: spawn(child, {stdio:[,,,,,,,,,,,,,,,,29]})","date":"2012-06-13T00:20:51.655Z","type":"message"}
+{"nick":"piscisaureus_","message":"child: spawn(grandchild, stdio:defaults)","date":"2012-06-13T00:21:07.418Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the grandchild now inherits 29 too","date":"2012-06-13T00:21:20.327Z","type":"message"}
+{"nick":"piscisaureus_","message":"that is not desirable","date":"2012-06-13T00:21:32.605Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the problem is this","date":"2012-06-13T00:21:36.288Z","type":"message"}
+{"nick":"isaacs","message":"the default should be [0,1,2] or [-1,-1,-1], depending on whether you called spawn or exec","date":"2012-06-13T00:21:47.960Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-06-13T00:21:53.952Z","type":"message"}
+{"nick":"isaacs","message":"anything outside of 0-2 should default to 'ignore'","date":"2012-06-13T00:21:57.565Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yes, I agree","date":"2012-06-13T00:22:04.490Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-06-13T00:22:06.663Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: unfortunately, I have to welcome you to the world of unix and windows :-)","date":"2012-06-13T00:22:28.384Z","type":"message"}
+{"nick":"isaacs","message":"ok, so, the \"unix and windows\" world is not very welcoming.","date":"2012-06-13T00:22:38.329Z","type":"message"}
+{"nick":"piscisaureus_","message":"nope","date":"2012-06-13T00:22:42.705Z","type":"message"}
+{"nick":"isaacs","message":"unix = yes.  windows = hmm... maybe.","date":"2012-06-13T00:22:44.693Z","type":"message"}
+{"nick":"isaacs","message":"unix + windows = \"unpleasantness\"","date":"2012-06-13T00:22:49.746Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so on windows this problem is aggravated","date":"2012-06-13T00:23:04.696Z","type":"message"}
+{"nick":"isaacs","message":"so, what has to happen to make this dtrt on both nix and windows?","date":"2012-06-13T00:23:06.927Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, for (every stdio fd) { set_cloexec(fd) }","date":"2012-06-13T00:23:40.867Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the problem: on unix you cant get a list is of stdio fds","date":"2012-06-13T00:24:02.439Z","type":"message"}
+{"nick":"isaacs","message":"hm....","date":"2012-06-13T00:24:06.828Z","type":"message"}
+{"nick":"piscisaureus_","message":"because that is sort of an abstraction that we invented :-)","date":"2012-06-13T00:24:12.087Z","type":"message"}
+{"nick":"isaacs","message":"it's a NICE abstraction, i must say","date":"2012-06-13T00:24:25.183Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, I like it too","date":"2012-06-13T00:24:33.476Z","type":"message"}
+{"nick":"isaacs","message":"i'm using it a little in this test, adn it's SO nice.","date":"2012-06-13T00:24:33.476Z","type":"message"}
+{"nick":"isaacs","message":"it's like bash.","date":"2012-06-13T00:24:35.254Z","type":"message"}
+{"nick":"isaacs","message":"$ cmd &3< # boom, fd 3 is readable.","date":"2012-06-13T00:24:56.233Z","type":"message"}
+{"nick":"isaacs","message":"oh, i did that wrong","date":"2012-06-13T00:25:20.107Z","type":"message"}
+{"nick":"isaacs","message":"whatever, bash is ugly, i have to look up how to do it every time.","date":"2012-06-13T00:25:28.677Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: on windows the problem is aggravated, that's why I need to fix it now","date":"2012-06-13T00:25:40.213Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-06-13T00:26:10.706Z","type":"message"}
+{"nick":"isaacs","message":"you know what to do?","date":"2012-06-13T00:26:14.078Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: on unix if the child does spawn(grandchild, [], { stdio: [x, y, z] }) then atleast fd 0-2 are not accidentally inherited by the grandchild","date":"2012-06-13T00:26:30.446Z","type":"message"}
+{"nick":"piscisaureus_","message":"because they were overridden so to speak","date":"2012-06-13T00:26:39.664Z","type":"message"}
+{"nick":"piscisaureus_","message":"not on windows","date":"2012-06-13T00:26:42.011Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-06-13T00:26:44.903Z","type":"message"}
+{"nick":"piscisaureus_","message":"on windows everything is inherited","date":"2012-06-13T00:26:47.096Z","type":"message"}
+{"nick":"AvianFlu","message":"aha! now I get it.","date":"2012-06-13T00:26:50.199Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's just not accessible as a file descriptor","date":"2012-06-13T00:26:54.885Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's why test-spawn-detached hangs :-)","date":"2012-06-13T00:28:13.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"I will fix this tomorrow","date":"2012-06-13T00:35:43.012Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307master\u000f * r\u00025209dad\u000f \u000310\u000f/ test/gc/test-net-timeout.js \u0002:\u000f test-net-timeout: make it pass on Windows - http://git.io/SOtmSQ","date":"2012-06-13T00:50:31.934Z","type":"message"}
+{"nick":"piscisaureus_","message":"down to 15 failures","date":"2012-06-13T00:50:37.673Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-06-13T00:57:17.878Z","type":"quit"}
+{"nick":"piscisaureus_","message":"I also don't understand how the message tests work","date":"2012-06-13T00:57:40.613Z","type":"message"}
+{"nick":"erickt","reason":"Ping timeout: 245 seconds","date":"2012-06-13T00:57:43.109Z","type":"quit"}
+{"nick":"piscisaureus_","message":"they fail... but I can't see how they would not fail on unix","date":"2012-06-13T00:57:51.817Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: there's at least one of the message tests failing on unix right now","date":"2012-06-13T01:01:25.621Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307master\u000f * r\u00020dba4ad\u000f \u000310\u000f/ (3 files)\u0002:\u000f tests: make all message tests pass on Windows - http://git.io/8djuSA","date":"2012-06-13T01:03:53.432Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: no more, I think","date":"2012-06-13T01:03:55.316Z","type":"message"}
+{"nick":"piscisaureus_","message":"looking good guys","date":"2012-06-13T01:07:03.723Z","type":"message"}
+{"nick":"piscisaureus_","message":"afaict no really really serious bugs","date":"2012-06-13T01:07:18.228Z","type":"message"}
+{"nick":"piscisaureus_","message":"time to sleep now","date":"2012-06-13T01:07:29.142Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: are you coming to 020 any day this week?","date":"2012-06-13T01:07:53.402Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: maybe tomorrow, maybe thursday","date":"2012-06-13T01:08:26.645Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I suppose tomorrow is not going to happen :-)","date":"2012-06-13T01:08:40.673Z","type":"message"}
+{"nick":"piscisaureus_","message":"but you still could","date":"2012-06-13T01:08:47.226Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, it's only 3 am","date":"2012-06-13T01:08:47.427Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am going to check out now","date":"2012-06-13T01:08:53.018Z","type":"message"}
+{"nick":"piscisaureus_","message":"if you do that too, you might even ...","date":"2012-06-13T01:09:01.877Z","type":"message"}
+{"nick":"TooTallNate","message":"rape zombies?","date":"2012-06-13T01:09:16.385Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can make do with 5 hours of sleep, no problem","date":"2012-06-13T01:09:19.455Z","type":"message"}
+{"nick":"bnoordhuis","message":"sleep tight, bertje","date":"2012-06-13T01:09:22.374Z","type":"message"}
+{"nick":"piscisaureus_","message":"later","date":"2012-06-13T01:09:26.138Z","type":"message"}
+{"nick":"piscisaureus_","message":"fixing tests is rewarding and boring at the same time","date":"2012-06-13T01:09:34.627Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-06-13T01:13:36.756Z","type":"quit"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-06-13T01:17:51.858Z","type":"quit"}
+{"nick":"isaacs","message":"ircretary: tell piscisaureus_ Yes, the message tests have failed since the recent v8 changes.  been meaning to fix them.","date":"2012-06-13T01:23:35.019Z","type":"message"}
+{"nick":"ircretary","message":"isaacs: I'll be sure to tell piscisaureus_","date":"2012-06-13T01:23:35.215Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: so 37fd953378ecdfcbe8e3656e1827b17fdc4fd969 is what `git bisect` says broke /dev/tty (it used to work)","date":"2012-06-13T01:26:52.272Z","type":"message"}
+{"nick":"TooTallNate","message":"https://github.com/joyent/node/commit/37fd953378ecdfcbe8e3656e1827b17fdc4fd969 that is","date":"2012-06-13T01:26:54.768Z","type":"message"}
+{"nick":"TooTallNate","message":"hopefully that sets off some lightbulb :)","date":"2012-06-13T01:27:04.378Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: noted. remind me again tomorrow, i'm off to bed. :)","date":"2012-06-13T01:29:50.489Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: will do; sleep tight","date":"2012-06-13T01:29:59.917Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: thanks. you too, guys","date":"2012-06-13T01:32:47.568Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Quit: Leaving","date":"2012-06-13T01:33:08.905Z","type":"quit"}
+{"nick":"isaacs","message":"TooTallNate (or whoever's awake): How do you feel about moving ._handle to .handle","date":"2012-06-13T01:36:11.673Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i suppose that's in response to your gist ;)","date":"2012-06-13T01:36:34.178Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: well... it seems like more and more we're accessing this property, setting it, etc.","date":"2012-06-13T01:36:55.393Z","type":"message"}
+{"nick":"isaacs","message":"it's not quite public... but we're sort of expecting users to at some point have some understanding of what it is.","date":"2012-06-13T01:37:16.569Z","type":"message"}
+{"nick":"TooTallNate","message":"right, especially with the new stdio stuff","date":"2012-06-13T01:37:31.014Z","type":"message"}
+{"nick":"isaacs","message":"it's a bit like readStream.fd or something","date":"2012-06-13T01:37:34.444Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-06-13T01:37:37.417Z","type":"message"}
+{"nick":"TooTallNate","message":"do we still have readStream.fd?","date":"2012-06-13T01:37:51.196Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-06-13T01:37:53.360Z","type":"message"}
+{"nick":"isaacs","message":"file streams have an fd member","date":"2012-06-13T01:37:56.698Z","type":"message"}
+{"nick":"TooTallNate","message":"right. is it public API? do people get/set it?","date":"2012-06-13T01:38:28.156Z","type":"message"}
+{"nick":"isaacs","message":"i mean, the ._foo (to me at least) means \"This is super off limits.  pretend you can't see this.  definitely do not write it.\"","date":"2012-06-13T01:38:29.913Z","type":"message"}
+{"nick":"isaacs","message":".fd?  not really.","date":"2012-06-13T01:38:38.938Z","type":"message"}
+{"nick":"isaacs","message":"you're welcome to look at it.","date":"2012-06-13T01:38:43.994Z","type":"message"}
+{"nick":"TooTallNate","message":"ya definitely","date":"2012-06-13T01:38:51.042Z","type":"message"}
+{"nick":"isaacs","message":"but you shouldn't set it yourself, unless you sort of know what you' doing.","date":"2012-06-13T01:38:52.487Z","type":"message"}
+{"nick":"isaacs","message":"shoudl be the same with .handle, i'd think.","date":"2012-06-13T01:38:59.013Z","type":"message"}
+{"nick":"isaacs","message":"but like, i want to be able to do stuff like:  server.listen(otherServer)","date":"2012-06-13T01:39:12.291Z","type":"message"}
+{"nick":"TooTallNate","message":"i mean i agree","date":"2012-06-13T01:39:13.211Z","type":"message"}
+{"nick":"isaacs","message":"and have it just share the handle.","date":"2012-06-13T01:39:15.558Z","type":"message"}
+{"nick":"TooTallNate","message":"let's just document the assumed use-cases","date":"2012-06-13T01:39:20.513Z","type":"message"}
+{"nick":"isaacs","message":"i guess we should probably put it off until 0.9","date":"2012-06-13T01:39:34.273Z","type":"message"}
+{"nick":"TooTallNate","message":"is .fd documented?","date":"2012-06-13T01:39:36.402Z","type":"message"}
+{"nick":"isaacs","message":"it's api cleanup.","date":"2012-06-13T01:39:37.115Z","type":"message"}
+{"nick":"isaacs","action":"sigh.","date":"2012-06-13T01:39:40.908Z","type":"action"}
+{"nick":"isaacs","message":".fd?  yeah, should be.","date":"2012-06-13T01:39:48.506Z","type":"message"}
+{"nick":"isaacs","message":"hm.  no, it isn't.","date":"2012-06-13T01:40:45.810Z","type":"message"}
+{"nick":"isaacs","message":"meh.  we can do it later, i guess.","date":"2012-06-13T01:41:02.251Z","type":"message"}
+{"nick":"isaacs","message":"i'm just trying to document listen({fd:n}) and kind of noticing the inconsistency","date":"2012-06-13T01:41:17.350Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i mean it's pretty minor, we could probably squeeze it in","date":"2012-06-13T01:43:33.090Z","type":"message"}
+{"nick":"isaacs","message":"nah.","date":"2012-06-13T01:43:38.525Z","type":"message"}
+{"nick":"isaacs","message":"it's a LOT of lines.","date":"2012-06-13T01:43:42.886Z","type":"message"}
+{"nick":"isaacs","message":"we'll miss something.","date":"2012-06-13T01:43:48.670Z","type":"message"}
+{"nick":"isaacs","message":"gotta be saying no to more and more stuff.","date":"2012-06-13T01:44:05.857Z","type":"message"}
+{"nick":"isaacs","message":"basically anything that wasn't promised a month ago is out.","date":"2012-06-13T01:44:16.818Z","type":"message"}
+{"nick":"TooTallNate","message":"indeed","date":"2012-06-13T01:44:32.755Z","type":"message"}
+{"nick":"TooTallNate","message":"what about os.tempDir()?","date":"2012-06-13T01:44:36.600Z","type":"message"}
+{"nick":"hij1nx","reason":"Quit: hij1nx","date":"2012-06-13T01:44:37.236Z","type":"quit"}
+{"nick":"isaacs","message":"well... ryah's a vip.","date":"2012-06-13T01:45:10.949Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-06-13T01:45:12.400Z","type":"message"}
+{"nick":"isaacs","message":"plus we can land that right now.","date":"2012-06-13T01:45:20.731Z","type":"message"}
+{"nick":"isaacs","message":"one sec..","date":"2012-06-13T01:45:30.194Z","type":"message"}
+{"nick":"isaacs","message":"running tests with the listen-fd stuff","date":"2012-06-13T01:45:49.781Z","type":"message"}
+{"nick":"TooTallNate","message":"seems like a pretty easy pattern at least: $ grep -rn \"\\._handle\" lib/ src/","date":"2012-06-13T01:47:30.094Z","type":"message"}
+{"nick":"TooTallNate","message":"there's a few matches in test/ too","date":"2012-06-13T01:47:44.858Z","type":"message"}
+{"nick":"TooTallNate","message":"$ grep -rn \"\\._handle\" lib/ src/ test/","date":"2012-06-13T01:47:48.004Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: yeah","date":"2012-06-13T01:52:31.360Z","type":"message"}
+{"nick":"isaacs","message":"the fact that we dink around with it in tests sort of implies to me that it ought to just bite the bullet and expose it","date":"2012-06-13T01:53:56.232Z","type":"message"}
+{"nick":"TooTallNate","message":"ya, that's a good argument","date":"2012-06-13T01:54:30.476Z","type":"message"}
+{"nick":"abraxas","date":"2012-06-13T01:54:50.657Z","type":"join"}
+{"nick":"TooTallNate","message":"isaacs: do you think fs.ReadStream.fd should be .handle in that case also?","date":"2012-06-13T01:55:09.396Z","type":"message"}
+{"nick":"TooTallNate","message":"i mean, it's not an fd on windows right?","date":"2012-06-13T01:55:16.574Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: no, it is","date":"2012-06-13T01:55:22.603Z","type":"message"}
+{"nick":"isaacs","message":"windows HAS file descriptors.","date":"2012-06-13T01:55:43.635Z","type":"message"}
+{"nick":"isaacs","message":"they're just a bit less core than on unix.","date":"2012-06-13T01:55:55.263Z","type":"message"}
+{"nick":"TooTallNate","message":"noted","date":"2012-06-13T01:56:08.023Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-13T02:05:33.269Z","type":"quit"}
+{"nick":"isaacs","message":"TooTallNate: got a sec?","date":"2012-06-13T02:07:47.135Z","type":"message"}
+{"nick":"isaacs","message":"https://github.com/joyent/node/pull/3423","date":"2012-06-13T02:07:47.677Z","type":"message"}
+{"nick":"isaacs","message":"had to force-push a lint fix","date":"2012-06-13T02:09:59.607Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: ok, want me to push it to master?","date":"2012-06-13T02:11:03.742Z","type":"message"}
+{"nick":"isaacs","message":"nah, just say it's good so i can blame you when it breaks shit ;)","date":"2012-06-13T02:11:18.716Z","type":"message"}
+{"nick":"TooTallNate","message":"well there's a lint violation in the test as well","date":"2012-06-13T02:11:34.880Z","type":"message"}
+{"nick":"isaacs","message":"oh, tests can be linty","date":"2012-06-13T02:11:43.176Z","type":"message"}
+{"nick":"isaacs","message":"new rule :)","date":"2012-06-13T02:11:45.492Z","type":"message"}
+{"nick":"TooTallNate","message":"oh right, forgot","date":"2012-06-13T02:11:49.465Z","type":"message"}
+{"nick":"TooTallNate","message":":D","date":"2012-06-13T02:11:51.639Z","type":"message"}
+{"nick":"TooTallNate","message":"lgtm then!","date":"2012-06-13T02:11:54.890Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002a11bf99\u000f \u000310\u000f/ (doc/api/os.markdown lib/os.js test/simple/test-os.js)\u0002:\u000f Fix #3407 os.tmpDir() - http://git.io/7I_RDQ","date":"2012-06-13T02:12:19.631Z","type":"message"}
+{"nick":"isaacs","message":"thanks","date":"2012-06-13T02:12:22.837Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: np","date":"2012-06-13T02:14:04.865Z","type":"message"}
+{"nick":"TooTallNate","message":"and i'm out then :)","date":"2012-06-13T02:14:09.747Z","type":"message"}
+{"nick":"TooTallNate","message":"laterz","date":"2012-06-13T02:14:10.831Z","type":"message"}
+{"nick":"erickt","date":"2012-06-13T02:15:19.041Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2012-06-13T02:15:52.909Z","type":"quit"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-06-13T02:17:21.981Z","type":"quit"}
+{"nick":"isaacs","date":"2012-06-13T02:22:37.885Z","type":"join"}
+{"nick":"isaacs","reason":"Remote host closed the connection","date":"2012-06-13T02:23:03.895Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 265 seconds","date":"2012-06-13T02:47:24.447Z","type":"quit"}
+{"nick":"sh1mmer","date":"2012-06-13T02:50:29.273Z","type":"join"}
+{"nick":"brson","date":"2012-06-13T03:26:49.388Z","type":"join"}
+{"nick":"c4milo","date":"2012-06-13T03:46:03.518Z","type":"join"}
+{"nick":"ira","reason":"Quit: Leaving...","date":"2012-06-13T03:51:25.489Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-13T04:00:15.137Z","type":"quit"}
+{"nick":"avalanche123","reason":"Ping timeout: 244 seconds","date":"2012-06-13T04:57:41.768Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-06-13T04:58:40.894Z","type":"quit"}
+{"nick":"avalanche123","date":"2012-06-13T05:01:11.279Z","type":"join"}
+{"nick":"toothr","reason":"Ping timeout: 240 seconds","date":"2012-06-13T05:13:25.057Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-06-13T05:44:00.630Z","type":"join"}
+{"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-06-13T06:45:29.924Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-06-13T06:54:36.535Z","type":"quit"}
+{"nick":"mikeal","date":"2012-06-13T07:06:36.819Z","type":"join"}
+{"nick":"rendar","date":"2012-06-13T07:24:34.049Z","type":"join"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-06-13T07:40:42.071Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-06-13T07:55:43.269Z","type":"quit"}
