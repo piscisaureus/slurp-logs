@@ -1,0 +1,88 @@
+{"nick":"isaacs","message":"usually because of assumptions that you don't even know you have.","date":"2012-06-17T00:00:03.805Z","type":"message"}
+{"nick":"isaacs","message":"you can try as hard as possible to be completely honest and reasonable, and still fuck up.","date":"2012-06-17T00:00:13.335Z","type":"message"}
+{"nick":"isaacs","message":"in fact, it's almost impossible NOT to fuck up in that case.","date":"2012-06-17T00:00:22.874Z","type":"message"}
+{"nick":"einaros","message":"I'll be eagerly awaiting the results all the same, though. regardless of how ws matches up against the others, I'll have good reason to make further improvements.","date":"2012-06-17T00:01:04.561Z","type":"message"}
+{"nick":"isaacs","message":"yes","date":"2012-06-17T00:01:22.514Z","type":"message"}
+{"nick":"isaacs","message":"benchmarks are not for finding out how fast you are, they're for finding out where yor'e slow","date":"2012-06-17T00:01:32.215Z","type":"message"}
+{"nick":"einaros","message":"exactly","date":"2012-06-17T00:01:39.170Z","type":"message"}
+{"nick":"isaacs","message":"that's why bad benchmarks are so frustrating! they tell you nothing!","date":"2012-06-17T00:01:40.914Z","type":"message"}
+{"nick":"einaros","message":"I've already started rewriting bigger chunks of my websocket code to work against libuv directly .. which should improve memory handling perf","date":"2012-06-17T00:03:10.872Z","type":"message"}
+{"nick":"einaros","message":"but overall it feels like a bad idea","date":"2012-06-17T00:03:15.905Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-06-17T00:03:51.283Z","type":"quit"}
+{"nick":"isaacs","message":"hm","date":"2012-06-17T00:04:40.171Z","type":"message"}
+{"nick":"isaacs","message":"yeah, that sounds kind of suspect to me","date":"2012-06-17T00:04:49.731Z","type":"message"}
+{"nick":"isaacs","message":"i mean, unless you wantit to be portable to luvit and julia and whatnot","date":"2012-06-17T00:05:03.266Z","type":"message"}
+{"nick":"isaacs","message":"but if you want it to be specifically a node thing, then i usually find doing it in JS is best.","date":"2012-06-17T00:05:18.524Z","type":"message"}
+{"nick":"einaros","message":"what's killing websocket perf at the moment is 'new Buffer' and js<->native transition. so I'm just pushing as much as I can over to native to see if it improves anything which would make it be worth the extra work.","date":"2012-06-17T00:06:56.327Z","type":"message"}
+{"nick":"isaacs","topic":"4 more! https://github.com/joyent/node/issues?milestone=10&state=open","date":"2012-06-17T00:06:59.813Z","type":"topic"}
+{"nick":"einaros","message":"I don't think it will be, but doesn't hurt to give it a go","date":"2012-06-17T00:07:09.951Z","type":"message"}
+{"nick":"isaacs","message":"einaros: you're creating these buffers in C or JS?","date":"2012-06-17T00:08:09.459Z","type":"message"}
+{"nick":"einaros","message":"right now - js","date":"2012-06-17T00:09:01.520Z","type":"message"}
+{"nick":"Raynos","date":"2012-06-17T00:10:14.346Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 246 seconds","date":"2012-06-17T00:11:43.406Z","type":"quit"}
+{"nick":"isaacs","message":"i see","date":"2012-06-17T00:11:58.786Z","type":"message"}
+{"nick":"isaacs","message":"hm.  that shouldn't be terrible, then","date":"2012-06-17T00:12:04.446Z","type":"message"}
+{"nick":"einaros","message":"for a websocket.send(someBuffer) there are a few special cases where I can avoid making a buffer of size someBuffer.length, but in most instances I have to copy that data over to another buffer which is headerLength + someBuffer.length and then mask each byte of the payload by some value","date":"2012-06-17T00:12:36.190Z","type":"message"}
+{"nick":"einaros","message":"the masking I hand off to native code, that improves perf for larger payloads","date":"2012-06-17T00:13:04.736Z","type":"message"}
+{"nick":"einaros","message":"in cases where I do not have to touch the someBuffer data, I merely create a new buffer big enough to hold the header (typically 2-6 bytes long in that case), then do to separate socket writes of the header and payload","date":"2012-06-17T00:14:09.741Z","type":"message"}
+{"nick":"einaros","message":"since the nagle algo is off, that will most often result in two separate packets (with an added tcp header etc as overhead)","date":"2012-06-17T00:14:58.689Z","type":"message"}
+{"nick":"ryah","date":"2012-06-17T00:15:09.764Z","type":"join"}
+{"nick":"ryah","message":"meh, i really don't want to do this but this benchmark is annoying me","date":"2012-06-17T00:15:22.641Z","type":"message"}
+{"nick":"ryah","message":"has anyone gotten his load generator to run?","date":"2012-06-17T00:15:31.668Z","type":"message"}
+{"nick":"ryah","message":"i'm getting ","date":"2012-06-17T00:15:40.620Z","type":"message"}
+{"nick":"ryah","message":"~/src/wsdemo% erl -pa ebin deps/*/ebin -s wsdemo","date":"2012-06-17T00:15:42.606Z","type":"message"}
+{"nick":"ryah","message":"Erlang R14B04 (erts-5.8.5) [source] [64-bit] [smp:4:4] [rq:4] [async-threads:0] [kernel-poll:false]","date":"2012-06-17T00:15:42.811Z","type":"message"}
+{"nick":"ryah","message":"{\"init terminating in do_boot\",{undef,[{wsdemo,start,[]},{init,start_it,1},{init,start_em,1}]}}","date":"2012-06-17T00:15:45.620Z","type":"message"}
+{"nick":"ryah","message":"init terminating in do_boot ()","date":"2012-06-17T00:15:48.681Z","type":"message"}
+{"nick":"einaros","message":"everything runs fine here, but his websocket client is broken","date":"2012-06-17T00:16:02.178Z","type":"message"}
+{"nick":"ryah","message":"einaros: have you run the benchmark?","date":"2012-06-17T00:16:02.333Z","type":"message"}
+{"nick":"einaros","message":"I haven't bothered fixing it, since it's his thing to deal with","date":"2012-06-17T00:16:26.926Z","type":"message"}
+{"nick":"ryah","message":"sure, but i want to see if 'ws' is actually faster than 'websocket' or it's something else entirely","date":"2012-06-17T00:16:50.770Z","type":"message"}
+{"nick":"ryah","message":"einaros: have you done benchmarks between the two?","date":"2012-06-17T00:17:03.983Z","type":"message"}
+{"nick":"einaros","message":"well at the moment you can't run ws against it, since the benchmark's client code doesn't work with incomplete payloads (https://github.com/Weltschmerz/wsdemo/blob/master/src/websocket_client.erl#L170-190)","date":"2012-06-17T00:17:52.215Z","type":"message"}
+{"nick":"einaros","message":"in terms of ws vs websocket-node, ws is faster for all use cases .. how much, however, varies","date":"2012-06-17T00:18:19.624Z","type":"message"}
+{"nick":"ryah","message":"einaros: by an order of magnitude?","date":"2012-06-17T00:18:51.035Z","type":"message"}
+{"nick":"einaros","message":"added you to a repo at https://github.com/einaros/websocket-benchmark","date":"2012-06-17T00:19:44.305Z","type":"message"}
+{"nick":"einaros","message":"I've yet to do latency benchmarks, which would be more interesting here","date":"2012-06-17T00:19:56.989Z","type":"message"}
+{"nick":"sh1mmer","date":"2012-06-17T00:21:42.409Z","type":"join"}
+{"nick":"sh1mmer","reason":"Client Quit","date":"2012-06-17T00:21:42.409Z","type":"quit"}
+{"nick":"isaacs","message":"einaros: yeah, i recall","date":"2012-06-17T00:22:36.351Z","type":"message"}
+{"nick":"isaacs","message":"haven't had a chance to play with it yet","date":"2012-06-17T00:22:40.588Z","type":"message"}
+{"nick":"ryah","reason":"Quit: bbl","date":"2012-06-17T00:23:33.455Z","type":"quit"}
+{"nick":"loladiro","reason":"Ping timeout: 246 seconds","date":"2012-06-17T01:16:40.614Z","type":"quit"}
+{"nick":"sh1mmer","date":"2012-06-17T01:50:58.321Z","type":"join"}
+{"nick":"dshaw_","date":"2012-06-17T01:52:05.712Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-06-17T01:57:18.528Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-06-17T02:01:47.235Z","type":"quit"}
+{"nick":"sh1mmer","date":"2012-06-17T02:16:09.735Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2012-06-17T02:22:20.001Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-06-17T02:23:09.669Z","type":"quit"}
+{"nick":"AvianFlu","message":"man, these centOS failures are batshit weird","date":"2012-06-17T03:03:34.180Z","type":"message"}
+{"nick":"brson","date":"2012-06-17T03:25:33.105Z","type":"join"}
+{"nick":"dshaw_","date":"2012-06-17T03:58:09.813Z","type":"join"}
+{"nick":"isaacs","message":"AvianFlu: oh, you're looking at em?","date":"2012-06-17T04:05:16.325Z","type":"message"}
+{"nick":"isaacs","message":"AvianFlu: which ones, the dgrams?","date":"2012-06-17T04:05:21.875Z","type":"message"}
+{"nick":"mmalecki","date":"2012-06-17T04:23:28.099Z","type":"join"}
+{"nick":"AvianFlu","message":"isaacs, I got shanghai'd into devops for most of the day, but I've been poking at the dgram ones","date":"2012-06-17T04:24:12.665Z","type":"message"}
+{"nick":"AvianFlu","message":"they don't make any sense to me","date":"2012-06-17T04:24:15.922Z","type":"message"}
+{"nick":"AvianFlu","message":"the parent's send socket closes quickly, but I don't see a cause","date":"2012-06-17T04:24:52.541Z","type":"message"}
+{"nick":"mmalecki","message":"lol, shanghai'd","date":"2012-06-17T04:29:47.519Z","type":"message"}
+{"nick":"AvianFlu","message":"mmalecki: trying to statically link an outdated opencv version counts as shanghai'd.","date":"2012-06-17T04:34:32.159Z","type":"message"}
+{"nick":"mmalecki","message":"AvianFlu: yeah it does","date":"2012-06-17T04:36:03.651Z","type":"message"}
+{"nick":"mmalecki","message":"AvianFlu: also, I recall you telling me about it yesterday","date":"2012-06-17T04:36:13.671Z","type":"message"}
+{"nick":"mmalecki","message":"fuck yeah, I remember something from last night!","date":"2012-06-17T04:36:28.170Z","type":"message"}
+{"nick":"sh1mmer","date":"2012-06-17T05:16:51.849Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-06-17T05:29:24.585Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-06-17T05:36:12.273Z","type":"join"}
+{"nick":"rendar","date":"2012-06-17T05:47:31.051Z","type":"join"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-06-17T06:31:15.943Z","type":"quit"}
+{"nick":"logicalparadox","date":"2012-06-17T06:53:43.840Z","type":"join"}
+{"nick":"logicalparadox","reason":"Client Quit","date":"2012-06-17T06:54:16.437Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-06-17T07:05:18.134Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-06-17T07:21:06.785Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-06-17T07:28:22.034Z","type":"quit"}
+{"nick":"indutny","message":"isaacs: what stdio[2] stuff were you guys talking about? :)","date":"2012-06-17T07:32:11.630Z","type":"message"}
+{"nick":"indutny","message":"isaacs: looks I didn't get that on the call (because I don't seem to get it even now :P )","date":"2012-06-17T07:32:31.681Z","type":"message"}
+{"nick":"indutny","message":"isaacs: btw, forks do not have stdin atm","date":"2012-06-17T07:33:46.498Z","type":"message"}
+{"nick":"TheJH","date":"2012-06-17T07:44:39.613Z","type":"join"}
+{"nick":"bnoordhuis_","date":"2012-06-17T07:50:37.467Z","type":"join"}
