@@ -1,0 +1,176 @@
+{"nick":"tjfontaine","message":"TooTallNate: can you please make ref use bindings, it's breaking on my debug build and I always forget :)","date":"2012-06-22T00:04:42.529Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: ^ is there some \"official\" thing we can do about that?","date":"2012-06-22T00:10:38.717Z","type":"message"}
+{"nick":"TooTallNate","message":"it *is* unfortunate","date":"2012-06-22T00:10:43.816Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Joe Shaw\u000f \u000307master\u000f * r\u000238250f9\u000f \u000310\u000f/ AUTHORS \u0002:\u000f authors: update email address - http://git.io/hqzqhg","date":"2012-06-22T00:10:57.099Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: hmm? I was referring to this https://github.com/TooTallNate/ref/blob/master/lib/ref.js#L5","date":"2012-06-22T00:12:08.573Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i'm just saying node-bindings is more of a band-aid","date":"2012-06-22T00:12:25.762Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: if there was something in node-core we could do it might be nice...","date":"2012-06-22T00:12:38.129Z","type":"message"}
+{"nick":"TooTallNate","message":"but that implies touching the module loader, which is.. meh","date":"2012-06-22T00:12:48.602Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: right, and certainly not happening in 0.8 :)","date":"2012-06-22T00:12:58.840Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: the problem is that you can make a \"debug\" build of a module with node-gyp, and it gets built into \"build/Debug\" instead of \"build/Release\"","date":"2012-06-22T00:13:20.787Z","type":"message"}
+{"nick":"tjfontaine","message":"that part makes sense to me","date":"2012-06-22T00:13:33.124Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: out of curiosity, why are you doing a debug build?","date":"2012-06-22T00:13:33.499Z","type":"message"}
+{"nick":"tjfontaine","message":"because I want to gdb and get useful responess","date":"2012-06-22T00:13:50.614Z","type":"message"}
+{"nick":"TooTallNate","message":"cool","date":"2012-06-22T00:14:07.762Z","type":"message"}
+{"nick":"tjfontaine","message":"something just about every native module developer will want to be able to do","date":"2012-06-22T00:14:11.752Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: what's this?","date":"2012-06-22T00:15:03.723Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: any native module","date":"2012-06-22T00:15:22.260Z","type":"message"}
+{"nick":"TooTallNate","message":"node-gyp","date":"2012-06-22T00:15:23.850Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: right","date":"2012-06-22T00:15:26.032Z","type":"message"}
+{"nick":"TooTallNate","message":"$ node-gyp --debug rebuild","date":"2012-06-22T00:15:29.902Z","type":"message"}
+{"nick":"isaacs","message":"it always builds a debug build?","date":"2012-06-22T00:15:32.472Z","type":"message"}
+{"nick":"TooTallNate","message":"no, but they get built into different locations depending on the build type","date":"2012-06-22T00:15:49.087Z","type":"message"}
+{"nick":"TooTallNate","message":"which ends up breaking most modules since they require \"build/Release/x.node\"","date":"2012-06-22T00:16:00.739Z","type":"message"}
+{"nick":"isaacs","message":"oic","date":"2012-06-22T00:16:15.571Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: that's mostly the reason i wrote node-bindings https://github.com/TooTallNate/node-bindings","date":"2012-06-22T00:16:25.133Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: but you weren't too in love with that solution a while back","date":"2012-06-22T00:16:45.426Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-06-22T00:16:52.180Z","type":"message"}
+{"nick":"tjfontaine","message":"I have no problem with the output being two locations personally","date":"2012-06-22T00:17:00.580Z","type":"message"}
+{"nick":"tjfontaine","message":"but I like build systems","date":"2012-06-22T00:17:10.121Z","type":"message"}
+{"nick":"tjfontaine","message":"we used to solve this in waf with post build scripts that symlinked into somewhere sane","date":"2012-06-22T00:17:36.544Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: so then node-gyp could copy the resulting binary to just \"build\" maybe","date":"2012-06-22T00:17:54.569Z","type":"message"}
+{"nick":"TooTallNate","message":"then in your script, require('./build/binding.node')","date":"2012-06-22T00:18:09.731Z","type":"message"}
+{"nick":"tjfontaine","message":"I don't necessarily have a problem with that solution either","date":"2012-06-22T00:19:30.129Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: you have an opinion here? is this something core should deal with or no?","date":"2012-06-22T00:20:32.746Z","type":"message"}
+{"nick":"dap","message":"module.js:477","date":"2012-06-22T00:22:02.431Z","type":"message"}
+{"nick":"dap","message":"  process.dlopen(filename, module.exports);","date":"2012-06-22T00:22:02.770Z","type":"message"}
+{"nick":"dap","message":"          ^","date":"2012-06-22T00:22:02.861Z","type":"message"}
+{"nick":"dap","message":"Error: Unable to load shared library /root/node_modules/kstat/build/Release/kstat.node","date":"2012-06-22T00:22:02.861Z","type":"message"}
+{"nick":"dap","message":"Is there some way to get the actual dlopen error here?","date":"2012-06-22T00:22:11.391Z","type":"message"}
+{"nick":"dap","message":"Should Node be using dlerror() to print it out?","date":"2012-06-22T00:22:16.853Z","type":"message"}
+{"nick":"TooTallNate","message":"dap: use 0.7.12","date":"2012-06-22T00:22:17.869Z","type":"message"}
+{"nick":"TooTallNate","message":"dap: at some point during the 0.7.x releases we *did* start returning the dlerror()","date":"2012-06-22T00:22:49.120Z","type":"message"}
+{"nick":"dap","message":"TooTallNate: because 0.7.12 prints out the complete error message?","date":"2012-06-22T00:22:49.320Z","type":"message"}
+{"nick":"dap","message":"Ah, excellent. Thanks.","date":"2012-06-22T00:22:54.091Z","type":"message"}
+{"nick":"mikeal","date":"2012-06-22T00:23:01.690Z","type":"join"}
+{"nick":"tjfontaine","message":"I bet an ldd on that file will tell you","date":"2012-06-22T00:23:01.690Z","type":"message"}
+{"nick":"dap","message":"tjfontaine: tried that. looks normal.","date":"2012-06-22T00:23:10.911Z","type":"message"}
+{"nick":"tjfontaine","message":"dap: and no missing libraries?","date":"2012-06-22T00:23:25.993Z","type":"message"}
+{"nick":"dap","message":"tjfontaine: correct.","date":"2012-06-22T00:23:31.634Z","type":"message"}
+{"nick":"dap","message":"Isn't my system though. It's https://github.com/bcantrill/node-kstat/issues/4#issuecomment-6497703","date":"2012-06-22T00:23:33.862Z","type":"message"}
+{"nick":"tjfontaine","message":"dap: and no seemingly wrong arch?","date":"2012-06-22T00:23:36.107Z","type":"message"}
+{"nick":"dap","message":"err, ignore the #","date":"2012-06-22T00:23:37.931Z","type":"message"}
+{"nick":"tjfontaine","message":"hm","date":"2012-06-22T00:24:18.024Z","type":"message"}
+{"nick":"dap","message":"I've suggested the bug submitter use 0.7.12 (and gave him a few other avenues) so that's fine for now. Thanks, guys!","date":"2012-06-22T00:25:15.035Z","type":"message"}
+{"nick":"pietern","reason":"Quit: pietern","date":"2012-06-22T00:30:38.193Z","type":"quit"}
+{"nick":"TooTallNate","message":"dap: converted to node-gyp for ya :D https://github.com/bcantrill/node-kstat/pull/5","date":"2012-06-22T00:38:27.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: can I actually see the new blog somewhere?","date":"2012-06-22T00:39:04.458Z","type":"message"}
+{"nick":"dap","message":"TooTallNate: thanks!","date":"2012-06-22T00:39:10.416Z","type":"message"}
+{"nick":"dap","message":"did you test that?","date":"2012-06-22T00:39:18.782Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, i can't figure out who has the keys to the DNS","date":"2012-06-22T00:39:23.815Z","type":"message"}
+{"nick":"TooTallNate","message":"dap: ya mang","date":"2012-06-22T00:39:30.374Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 248 seconds","date":"2012-06-22T00:39:31.878Z","type":"quit"}
+{"nick":"dap","message":"cool.","date":"2012-06-22T00:39:36.531Z","type":"message"}
+{"nick":"TooTallNate","message":"dap: well, it compiled and loaded properly","date":"2012-06-22T00:39:38.199Z","type":"message"}
+{"nick":"dap","message":"that's probably fine.","date":"2012-06-22T00:39:44.108Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: in the meantime, you can add 8.12.44.238 blog.nodejs.org to your /etc/hosts file","date":"2012-06-22T00:39:46.049Z","type":"message"}
+{"nick":"TooTallNate","message":"dap: whether it runs properly, you'll have to let me know :p","date":"2012-06-22T00:39:52.150Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: or C:\\Windows32\\etc\\hosts.txt or whatever it is ;)","date":"2012-06-22T00:40:02.444Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: haha","date":"2012-06-22T00:40:11.455Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you know, I am not kidding you","date":"2012-06-22T00:40:18.023Z","type":"message"}
+{"nick":"piscisaureus_","message":"I created a symlink on my system to make it c:\\etc\\hosts","date":"2012-06-22T00:40:29.406Z","type":"message"}
+{"nick":"isaacs","message":"hehe","date":"2012-06-22T00:40:35.025Z","type":"message"}
+{"nick":"isaacs","message":"good move!","date":"2012-06-22T00:40:38.040Z","type":"message"}
+{"nick":"isaacs","message":"isn't it sometthing like %windir%\\config\\internal\\net\\etc\\hosts.txt or something?","date":"2012-06-22T00:41:00.059Z","type":"message"}
+{"nick":"isaacs","action":"having flashbacks","date":"2012-06-22T00:41:05.091Z","type":"action"}
+{"nick":"brson","date":"2012-06-22T00:41:31.388Z","type":"join"}
+{"nick":"TooTallNate","message":"i think it's %windir%/system32/drivers/etc/hosts :D","date":"2012-06-22T00:42:22.960Z","type":"message"}
+{"nick":"TooTallNate","message":"damn; unix slashes :p","date":"2012-06-22T00:42:35.364Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: looks good!","date":"2012-06-22T00:45:49.769Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: thanks","date":"2012-06-22T00:45:53.688Z","type":"message"}
+{"nick":"isaacs","message":"should look pretty familiar :)","date":"2012-06-22T00:46:00.010Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2012-06-22T00:46:16.388Z","type":"quit"}
+{"nick":"brson","date":"2012-06-22T00:46:31.632Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-22T00:51:07.066Z","type":"quit"}
+{"nick":"erickt","reason":"Read error: Operation timed out","date":"2012-06-22T00:51:15.413Z","type":"quit"}
+{"nick":"piscisaureus_","message":"the old blog was terrible","date":"2012-06-22T00:51:47.355Z","type":"message"}
+{"nick":"piscisaureus_","message":"there is one thing that I am slightly concerned about","date":"2012-06-22T00:51:56.929Z","type":"message"}
+{"nick":"c4milo","date":"2012-06-22T00:51:59.669Z","type":"join"}
+{"nick":"piscisaureus_","message":"who reads this blog?","date":"2012-06-22T00:52:03.075Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-22T00:52:10.100Z","type":"quit"}
+{"nick":"piscisaureus_","message":"Do people like, go there every once in a while?","date":"2012-06-22T00:52:12.573Z","type":"message"}
+{"nick":"piscisaureus_","message":"Or are people using RSS readers <-- ouch","date":"2012-06-22T00:52:32.689Z","type":"message"}
+{"nick":"piscisaureus_","message":"Or does nobody read it at all?","date":"2012-06-22T00:52:40.345Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Read error: Connection reset by peer","date":"2012-06-22T01:02:12.741Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-06-22T01:02:53.874Z","type":"join"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-06-22T01:04:20.935Z","type":"quit"}
+{"nick":"abraxas","date":"2012-06-22T01:05:37.477Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: well, that's aprt of the reason for the rewrite","date":"2012-06-22T01:09:29.873Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i have no clue.","date":"2012-06-22T01:09:33.281Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: judging from the comments, though, yes, people do read it","date":"2012-06-22T01:09:41.574Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: and they post comments that just break my heart.","date":"2012-06-22T01:09:54.660Z","type":"message"}
+{"nick":"isaacs","message":"not because the comments are bad, but because they are asking for help in the worst possible place.","date":"2012-06-22T01:10:06.520Z","type":"message"}
+{"nick":"isaacs","message":"like, stuff that *really* belongs in the mailing list, or on some github repo issues page somewhere","date":"2012-06-22T01:10:21.045Z","type":"message"}
+{"nick":"mikeal","reason":"Ping timeout: 276 seconds","date":"2012-06-22T01:11:35.486Z","type":"quit"}
+{"nick":"mikeal","date":"2012-06-22T01:14:38.010Z","type":"join"}
+{"nick":"TooTallNate","message":"isaacs: so are comments now removed?","date":"2012-06-22T01:14:43.651Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: so i think i'll try to implement a final \"copy\" of the resulting binary in node-gyp","date":"2012-06-22T01:15:09.280Z","type":"message"}
+{"nick":"TooTallNate","message":"that should eliminate most of the need for node-bindings","date":"2012-06-22T01:15:18.254Z","type":"message"}
+{"nick":"TooTallNate","message":"i just can't think of any other reasonable solution","date":"2012-06-22T01:15:39.686Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2012-06-22T01:16:20.513Z","type":"quit"}
+{"nick":"tjfontaine","message":"TooTallNate: I'd love a symlink personally, but I don't know how that will go on the other-os","date":"2012-06-22T01:16:24.467Z","type":"message"}
+{"nick":"erickt","date":"2012-06-22T01:16:28.057Z","type":"join"}
+{"nick":"isaacs","message":"TooTallNate: yes!!","date":"2012-06-22T01:16:43.498Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: ya, that might be an option. just need to do some node version sniffing :)","date":"2012-06-22T01:16:45.749Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: replaced with a link to the google group","date":"2012-06-22T01:16:51.158Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: oh, right, rss.  hrm.","date":"2012-06-22T01:17:11.476Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am going to sleep now","date":"2012-06-22T01:17:42.241Z","type":"message"}
+{"nick":"piscisaureus_","message":"bye all","date":"2012-06-22T01:22:26.838Z","type":"message"}
+{"nick":"brson","date":"2012-06-22T01:23:11.842Z","type":"join"}
+{"nick":"tjfontaine","message":"sleep well","date":"2012-06-22T01:23:13.567Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 240 seconds","date":"2012-06-22T01:26:54.507Z","type":"quit"}
+{"nick":"erickt","reason":"Ping timeout: 272 seconds","date":"2012-06-22T01:27:04.058Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-06-22T01:28:38.729Z","type":"join"}
+{"nick":"isaacs","message":"g'nite piscisaureus_ ","date":"2012-06-22T01:31:41.318Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: quick question: 0182 tomorrow, or 020?","date":"2012-06-22T01:32:43.632Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: 0182","date":"2012-06-22T01:37:02.234Z","type":"message"}
+{"nick":"bnoordhuis","message":"mother-in-law is coming over","date":"2012-06-22T01:37:10.768Z","type":"message"}
+{"nick":"bnoordhuis","message":"some would say that's a good time to come over to 020, of course","date":"2012-06-22T01:37:29.368Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-06-22T01:39:59.273Z","type":"quit"}
+{"nick":"c4milo","date":"2012-06-22T01:45:02.701Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-22T01:46:15.813Z","type":"quit"}
+{"nick":"piscisaureus_","message":"some would","date":"2012-06-22T01:47:20.055Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-06-22T01:47:25.094Z","type":"quit"}
+{"nick":"abraxas","message":"I love how you guys use your phone numbers to alias your hometowns :) Is everyone in Holland doing that these days, or just you guys?","date":"2012-06-22T02:03:14.219Z","type":"message"}
+{"nick":"isaacs","message":"comments? https://gist.github.com/2969721","date":"2012-06-22T02:05:35.824Z","type":"message"}
+{"nick":"TooTallNate","reason":"Ping timeout: 248 seconds","date":"2012-06-22T02:05:55.907Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-06-22T02:12:31.581Z","type":"quit"}
+{"nick":"abraxas","message":"isaacs: in those benchmarks, would loooove to see how it compares against node 0.4.12 as well :) just to see where it's coming from","date":"2012-06-22T02:15:52.069Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002ff2a1b8\u000f \u000310\u000f/ (3 files in 3 dirs)\u0002:\u000f blog: Minor tweaks to style and some data conversion cleanup - http://git.io/5xLjJQ","date":"2012-06-22T02:15:59.593Z","type":"message"}
+{"nick":"abraxas","message":"for those still stuck to 0.4, it could be a good argument when \"convincing your manager\"","date":"2012-06-22T02:17:13.621Z","type":"message"}
+{"nick":"erickt","date":"2012-06-22T02:19:02.269Z","type":"join"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u00026014a62\u000f \u000310\u000f/ doc/blog.html \u0002:\u000f blog: Missing title tag - http://git.io/lG2OvQ","date":"2012-06-22T02:21:05.019Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.8.0-release\u000f * r\u000246c3fa0\u000f \u000310\u000f/ (102 files in 8 dirs)\u0002:\u000f npm: Upgrade to 1.1.31 - http://git.io/j9E7zw","date":"2012-06-22T02:21:30.155Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.8.0-release\u000f * r\u0002cfc4b54\u000f \u000310\u000f/ (ChangeLog src/node_version.h)\u0002:\u000f wip 0.8.0 RC - http://git.io/bJii7g","date":"2012-06-22T02:21:30.354Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.8.0-release\u000f * r\u0002a884087\u000f \u000310\u000f/ (ChangeLog src/node_version.h)\u0002:\u000f 2012.06.25, Version 0.8.0 (stable) - http://git.io/bG7Qag","date":"2012-06-22T02:22:17.241Z","type":"message"}
+{"nick":"c4milo","date":"2012-06-22T02:24:02.011Z","type":"join"}
+{"nick":"sh1mmer","date":"2012-06-22T02:30:49.275Z","type":"join"}
+{"nick":"isaacs","message":"abraxas: good idea.","date":"2012-06-22T02:32:17.602Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-06-22T02:32:20.508Z","type":"quit"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002441e792\u000f \u000310\u000f/ src/node.js \u0002:\u000f stdin.pipe: Replace forgotten opts member - http://git.io/SMogRw","date":"2012-06-22T02:37:14.717Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.8.0-release\u000f * r\u00025f24f09\u000f \u000310\u000f/ (102 files in 8 dirs)\u0002:\u000f npm: Upgrade to 1.1.31 - http://git.io/loOQ3w","date":"2012-06-22T02:37:34.804Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307v0.8.0-release\u000f * r\u00027076980\u000f \u000310\u000f/ (ChangeLog src/node_version.h)\u0002:\u000f 2012.06.25, Version 0.8.0 (stable) - http://git.io/B1o3Zg","date":"2012-06-22T02:37:35.002Z","type":"message"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-06-22T02:41:20.707Z","type":"quit"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303isaacs\u000f \u000307master\u000f * r\u0002de89bbb\u000f \u000310\u000f/ doc/blog.html \u0002:\u000f blog: Show category in post metadata - http://git.io/wQxEIg","date":"2012-06-22T02:46:17.518Z","type":"message"}
+{"nick":"isaacs","topic":"Comment, please: https://gist.github.com/2969721","date":"2012-06-22T02:58:08.609Z","type":"topic"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 248 seconds","date":"2012-06-22T02:58:11.841Z","type":"quit"}
+{"nick":"abraxas","message":"isaacs: something else that seems missing is the mention of GYP","date":"2012-06-22T03:00:30.937Z","type":"message"}
+{"nick":"brson","date":"2012-06-22T03:12:10.385Z","type":"join"}
+{"nick":"brson","reason":"Client Quit","date":"2012-06-22T03:12:23.167Z","type":"quit"}
+{"nick":"brson","date":"2012-06-22T03:12:39.870Z","type":"join"}
+{"nick":"benvie","date":"2012-06-22T03:45:09.568Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-06-22T04:06:30.622Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-06-22T04:12:42.212Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-06-22T04:36:38.007Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-06-22T05:17:23.194Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-06-22T05:36:56.548Z","type":"join"}
+{"nick":"brson","reason":"Read error: Connection reset by peer","date":"2012-06-22T06:37:58.960Z","type":"quit"}
+{"nick":"brson","date":"2012-06-22T06:38:53.206Z","type":"join"}
+{"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-06-22T06:50:17.619Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-06-22T07:30:16.213Z","type":"join"}
+{"nick":"`3rdEden","reason":"Client Quit","date":"2012-06-22T07:30:36.077Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-06-22T07:40:04.571Z","type":"join"}
+{"nick":"saghul","reason":"Read error: Operation timed out","date":"2012-06-22T07:47:23.099Z","type":"quit"}
+{"nick":"saghul","date":"2012-06-22T07:49:15.593Z","type":"join"}
+{"nick":"rendar","date":"2012-06-22T07:52:56.489Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-06-22T07:57:56.820Z","type":"quit"}
