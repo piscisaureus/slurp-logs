@@ -1,0 +1,247 @@
+{"nick":"levi","message":"Nice.","date":"2012-06-24T00:43:30.002Z","type":"message"}
+{"nick":"xming","reason":"Ping timeout: 248 seconds","date":"2012-06-24T01:03:41.069Z","type":"quit"}
+{"nick":"spionL","date":"2012-06-24T01:04:27.872Z","type":"join"}
+{"nick":"creationix","message":"so did anyone have any comments for https://gist.github.com/2962615","date":"2012-06-24T01:17:06.799Z","type":"message"}
+{"nick":"creationix","message":"levi: ^","date":"2012-06-24T01:17:13.169Z","type":"message"}
+{"nick":"dvv","date":"2012-06-24T01:21:59.745Z","type":"join"}
+{"nick":"TheJH","reason":"Read error: Operation timed out","date":"2012-06-24T01:23:12.920Z","type":"quit"}
+{"nick":"levi","message":"I have looked at it, but thinking about it sent me off chasing a white rabbit down a very deep hole.","date":"2012-06-24T01:24:16.128Z","type":"message"}
+{"nick":"creationix","message":"hmm, I should use coroutine.wrap","date":"2012-06-24T01:24:20.863Z","type":"message"}
+{"nick":"creationix","message":"better error handling","date":"2012-06-24T01:24:25.214Z","type":"message"}
+{"nick":"creationix","message":"currently any errors in the coroutine have no stack trace","date":"2012-06-24T01:24:34.757Z","type":"message"}
+{"nick":"levi","message":"I was pondering the relationship between evented IO, Enumerator/Iteratee-based IO, actors, and coroutines.","date":"2012-06-24T01:26:31.467Z","type":"message"}
+{"nick":"creationix","message":"what do you mean by \"evented\" IO","date":"2012-06-24T01:26:52.967Z","type":"message"}
+{"nick":"creationix","message":"just non-blocking","date":"2012-06-24T01:26:58.843Z","type":"message"}
+{"nick":"levi","message":"Node-style, where layers communicate via events.","date":"2012-06-24T01:27:12.197Z","type":"message"}
+{"nick":"levi","message":"In some ways, it's similar to the Enumerator/Iteratee IO.","date":"2012-06-24T01:31:37.955Z","type":"message"}
+{"nick":"creationix","message":"I guess so","date":"2012-06-24T01:35:29.562Z","type":"message"}
+{"nick":"creationix","message":"events are like signals and slots from QT","date":"2012-06-24T01:35:40.668Z","type":"message"}
+{"nick":"creationix","message":"hmm, using coroutine.wrap I still can't get any stack trace lines within the coroutine","date":"2012-06-24T01:36:02.648Z","type":"message"}
+{"nick":"levi","message":"Sure, the event model is easy to understand; it's the Enumerator/Iteratee model that's difficult.","date":"2012-06-24T01:36:15.156Z","type":"message"}
+{"nick":"creationix","message":"I guess I need to xpcall within the coroutine and format the error myself?","date":"2012-06-24T01:36:34.612Z","type":"message"}
+{"nick":"levi","message":"I guess it's probably unwinding the stack too far before it gets handled?","date":"2012-06-24T01:37:26.175Z","type":"message"}
+{"nick":"creationix","message":"it's showing the stack before the coroutine was created","date":"2012-06-24T01:38:09.701Z","type":"message"}
+{"nick":"creationix","message":"the coro has it's own stack","date":"2012-06-24T01:38:24.564Z","type":"message"}
+{"nick":"levi","message":"Interesting.","date":"2012-06-24T01:39:34.338Z","type":"message"}
+{"nick":"creationix","message":"ok, I have to xpcall the block before turning it into a coro (thus xpcalling within the coroutine)","date":"2012-06-24T01:44:03.865Z","type":"message"}
+{"nick":"creationix","message":"oh, or pass in the co to debug.traceback","date":"2012-06-24T01:45:23.400Z","type":"message"}
+{"nick":"creationix","message":"lua sure is interesting","date":"2012-06-24T01:45:36.184Z","type":"message"}
+{"nick":"creationix","message":"hmm, how do I call the callback *in* the main \"thread\" from the error handler *in* the coroutine","date":"2012-06-24T01:54:33.187Z","type":"message"}
+{"nick":"creationix","message":"maybe xpcall within the coroutine is a bad idea afterall","date":"2012-06-24T01:54:46.842Z","type":"message"}
+{"nick":"levi","message":"Anyway, I've played with the interface a bit, and I think it's a nice fit with the rest of the system, and definitely looks like it will be useful for getting rid of nested callback logic.","date":"2012-06-24T01:56:40.787Z","type":"message"}
+{"nick":"levi","message":"The only kind of awkward bit is that your async calls don't look at all like function calls, but that does make it obvious that they're not normal calls and there's not a straightforward way around it anyway.","date":"2012-06-24T01:59:48.607Z","type":"message"}
+{"nick":"levi","message":"Actually, hmmm... let me try something.","date":"2012-06-24T02:00:56.685Z","type":"message"}
+{"nick":"tim_smart|away","new_nick":"tim_smart","date":"2012-06-24T02:05:33.019Z","type":"nick"}
+{"nick":"levi","message":"https://gist.github.com/2981028","date":"2012-06-24T02:07:16.502Z","type":"message"}
+{"nick":"levi","message":"Now the function calls look like function calls, but you still have to explicitly 'wrap' them first.","date":"2012-06-24T02:08:17.469Z","type":"message"}
+{"nick":"creationix","message":"hmm","date":"2012-06-24T02:16:30.180Z","type":"message"}
+{"nick":"creationix","message":"I don't think assert is good here","date":"2012-06-24T02:17:03.147Z","type":"message"}
+{"nick":"aliem","reason":"Remote host closed the connection","date":"2012-06-24T02:17:12.114Z","type":"quit"}
+{"nick":"creationix","message":"assert requires a truth value on success","date":"2012-06-24T02:17:21.621Z","type":"message"}
+{"nick":"creationix","message":"what about callbacks with no result","date":"2012-06-24T02:17:38.138Z","type":"message"}
+{"nick":"creationix","message":"assert will get nil and throw","date":"2012-06-24T02:17:49.874Z","type":"message"}
+{"nick":"levi","message":"I just left it there because you had it there.","date":"2012-06-24T02:18:42.286Z","type":"message"}
+{"nick":"creationix","message":"I know","date":"2012-06-24T02:19:05.551Z","type":"message"}
+{"nick":"creationix","message":"I'm just thinking","date":"2012-06-24T02:19:11.139Z","type":"message"}
+{"nick":"levi","message":"If you refresh my gist, I made another change in the fiber example that makes the wrapping thing a little clearer.","date":"2012-06-24T02:19:17.058Z","type":"message"}
+{"nick":"creationix","message":"yep, wrapped to look sync","date":"2012-06-24T02:19:58.381Z","type":"message"}
+{"nick":"creationix","message":"question is, is that good","date":"2012-06-24T02:20:09.292Z","type":"message"}
+{"nick":"creationix","message":"well, you have to wrap it within the fiber","date":"2012-06-24T02:20:45.095Z","type":"message"}
+{"nick":"creationix","message":"so I guess it's not bad","date":"2012-06-24T02:20:54.885Z","type":"message"}
+{"nick":"creationix","message":"so maybe just return all args as-is?","date":"2012-06-24T02:23:29.261Z","type":"message"}
+{"nick":"creationix","message":"local err, fd = open(\"file\", …)","date":"2012-06-24T02:23:54.476Z","type":"message"}
+{"nick":"levi","message":"That would be nice.","date":"2012-06-24T02:24:05.587Z","type":"message"}
+{"nick":"creationix","message":"that would be easier","date":"2012-06-24T02:24:11.673Z","type":"message"}
+{"nick":"creationix","message":"I can't call the callback with (err) from the coroutine's thread","date":"2012-06-24T02:24:23.089Z","type":"message"}
+{"nick":"creationix","message":"bad stuff happens","date":"2012-06-24T02:24:26.398Z","type":"message"}
+{"nick":"creationix","message":"so the question is should it return a wrap function or a wait function?","date":"2012-06-24T02:25:05.005Z","type":"message"}
+{"nick":"creationix","message":"s/return/provide/","date":"2012-06-24T02:25:16.701Z","type":"message"}
+{"nick":"levi","message":"Well, I definitely prefer the wrap function.  You can get from one to the other fairly easily either way, though.","date":"2012-06-24T02:29:30.214Z","type":"message"}
+{"nick":"creationix","message":"right, but I don't really want to provide both","date":"2012-06-24T02:30:12.641Z","type":"message"}
+{"nick":"creationix","message":"I guess code both and see which feels better","date":"2012-06-24T02:30:25.108Z","type":"message"}
+{"nick":"creationix","message":"I'm still ironing out the error reporting","date":"2012-06-24T02:30:37.640Z","type":"message"}
+{"nick":"creationix","message":"I want thrown errors in the coroutine to go to the callback with a proper stack trace","date":"2012-06-24T02:30:52.648Z","type":"message"}
+{"nick":"creationix","message":"levi: ok, pushed much better error reporting to the gist","date":"2012-06-24T02:54:11.843Z","type":"message"}
+{"nick":"creationix","message":"I decided to assume node-style callbacks","date":"2012-06-24T02:54:21.198Z","type":"message"}
+{"nick":"creationix","message":"and route errors to the fiber's callback","date":"2012-06-24T02:54:26.970Z","type":"message"}
+{"nick":"creationix","message":"so the return value is just the data part of the callback","date":"2012-06-24T02:54:36.672Z","type":"message"}
+{"nick":"creationix","message":"it means you can't handle errors within a fiber's body","date":"2012-06-24T02:54:55.463Z","type":"message"}
+{"nick":"creationix","message":"but I think that's worth the convenience of no error handling","date":"2012-06-24T02:55:06.478Z","type":"message"}
+{"nick":"creationix","message":"though some sort of \"finally\" mechanism might be nice","date":"2012-06-24T02:55:42.499Z","type":"message"}
+{"nick":"creationix","message":"to close file descriptors and stuff like that in case of error","date":"2012-06-24T02:55:50.671Z","type":"message"}
+{"nick":"levi","message":"That would be good.","date":"2012-06-24T02:56:35.791Z","type":"message"}
+{"nick":"creationix","message":"currently, there is the callback","date":"2012-06-24T02:56:48.030Z","type":"message"}
+{"nick":"creationix","message":"if you store flags in a place the callback can see them, it can check the flags and close things","date":"2012-06-24T02:57:06.688Z","type":"message"}
+{"nick":"creationix","message":"or outside the fiber store an array of cleanup functions","date":"2012-06-24T02:57:31.706Z","type":"message"}
+{"nick":"levi","message":"function curry1(func, arg1) return function(...) return func(arg1, ...) end end","date":"2012-06-24T02:57:34.710Z","type":"message"}
+{"nick":"creationix","message":"and run them all in case of error","date":"2012-06-24T02:57:37.660Z","type":"message"}
+{"nick":"levi","message":"^- turns a wait into a wrap","date":"2012-06-24T02:57:47.864Z","type":"message"}
+{"nick":"creationix","message":"wrap(wait, fn) -> w","date":"2012-06-24T02:58:19.875Z","type":"message"}
+{"nick":"creationix","message":"then I could provide just wait, but it would be easy to wrap","date":"2012-06-24T02:58:34.163Z","type":"message"}
+{"nick":"levi","message":"Yeah.","date":"2012-06-24T02:59:11.127Z","type":"message"}
+{"nick":"creationix","message":"I guess your curry1 == wrap in that case","date":"2012-06-24T02:59:13.379Z","type":"message"}
+{"nick":"levi","message":"Exactly.","date":"2012-06-24T02:59:20.638Z","type":"message"}
+{"nick":"xming","date":"2012-06-24T02:59:56.076Z","type":"join"}
+{"nick":"creationix","message":"combine wrap with the implicit error handling","date":"2012-06-24T02:59:56.935Z","type":"message"}
+{"nick":"creationix","message":"and it's just as easy as sync programming","date":"2012-06-24T03:00:07.606Z","type":"message"}
+{"nick":"creationix","message":"both uncaught sync errors and errors in the callbacks get routed to the same place saftely","date":"2012-06-24T03:00:22.373Z","type":"message"}
+{"nick":"creationix","message":"only downside is you can't do inline handling of the errors","date":"2012-06-24T03:00:46.510Z","type":"message"}
+{"nick":"creationix","message":"so APIs need to not treat errors as data","date":"2012-06-24T03:00:57.670Z","type":"message"}
+{"nick":"creationix","message":"I'm guilty of that sometims","date":"2012-06-24T03:01:08.500Z","type":"message"}
+{"nick":"creationix","message":"since node errors are objects with the .code property","date":"2012-06-24T03:01:21.473Z","type":"message"}
+{"nick":"creationix","message":"fs.stat(\"badfile\", function (err, stat) { if (err && err.code === \"ENOENT\") { /* send 404 page */ } })","date":"2012-06-24T03:02:05.236Z","type":"message"}
+{"nick":"creationix","message":"instead it would need to return null as the stat if the file didn't exist","date":"2012-06-24T03:02:26.981Z","type":"message"}
+{"nick":"creationix","message":"since that's often not a real error","date":"2012-06-24T03:02:37.538Z","type":"message"}
+{"nick":"creationix","message":"just a missing file","date":"2012-06-24T03:02:41.403Z","type":"message"}
+{"nick":"creationix","message":"local stat = stat(\"bad file\"); if not stat then --[[ send 404 page ]] end","date":"2012-06-24T03:03:28.537Z","type":"message"}
+{"nick":"ljackson","reason":"Quit: Leaving","date":"2012-06-24T03:03:46.002Z","type":"quit"}
+{"nick":"creationix","message":"I don't know","date":"2012-06-24T03:05:28.221Z","type":"message"}
+{"nick":"levi","message":"Sounds good to me.","date":"2012-06-24T03:05:34.334Z","type":"message"}
+{"nick":"creationix","message":"the other option is to make the user use a helper like assert","date":"2012-06-24T03:05:51.368Z","type":"message"}
+{"nick":"creationix","message":"function checker(err, …) if err then error(err) else return … end","date":"2012-06-24T03:06:33.709Z","type":"message"}
+{"nick":"creationix","message":"check(open(\"bad file\"))","date":"2012-06-24T03:06:47.479Z","type":"message"}
+{"nick":"creationix","message":"that's less magical","date":"2012-06-24T03:07:06.912Z","type":"message"}
+{"nick":"creationix","message":"and the wrapper could do that built-in","date":"2012-06-24T03:07:21.137Z","type":"message"}
+{"nick":"creationix","message":"wrap(wait, fn, true) where true means auto-check for errors","date":"2012-06-24T03:07:39.609Z","type":"message"}
+{"nick":"creationix","message":"the problem with baking in auto error handling is there is no way to check the error for the cases where you do want to","date":"2012-06-24T03:08:13.571Z","type":"message"}
+{"nick":"spionL","reason":"Ping timeout: 246 seconds","date":"2012-06-24T03:14:26.790Z","type":"quit"}
+{"nick":"creationix","message":"hmm, can't do","date":"2012-06-24T03:24:39.927Z","type":"message"}
+{"nick":"creationix","message":"local err, … = fn()","date":"2012-06-24T03:24:49.708Z","type":"message"}
+{"nick":"creationix","message":"how can I grab the rest of the return values?","date":"2012-06-24T03:24:59.415Z","type":"message"}
+{"nick":"creationix","message":"local args = {fn()}","date":"2012-06-24T03:26:37.270Z","type":"message"}
+{"nick":"creationix","message":"local err = args[1]","date":"2012-06-24T03:26:41.041Z","type":"message"}
+{"nick":"creationix","message":"return unpack(args, 2) -- for no error case","date":"2012-06-24T03:42:52.916Z","type":"message"}
+{"nick":"creationix","message":":)","date":"2012-06-24T03:42:53.979Z","type":"message"}
+{"nick":"rphillips","message":"our agent is using the new http/https library... working great!","date":"2012-06-24T03:45:29.429Z","type":"message"}
+{"nick":"levi","message":"Cool, it looks like you've put a lot of work into it.","date":"2012-06-24T03:45:51.770Z","type":"message"}
+{"nick":"rphillips","message":"thanks","date":"2012-06-24T03:46:05.117Z","type":"message"}
+{"nick":"rphillips","message":"still need to write the http server functionality","date":"2012-06-24T03:46:20.467Z","type":"message"}
+{"nick":"rphillips","message":"unit tests","date":"2012-06-24T03:46:24.816Z","type":"message"}
+{"nick":"rphillips","message":"and unit tests*","date":"2012-06-24T03:46:31.716Z","type":"message"}
+{"nick":"levi","message":"Ahh, unit tests. :)","date":"2012-06-24T03:48:00.438Z","type":"message"}
+{"nick":"levi","message":"creationix: You could make a special object type for wrapped return values that could be used to check for success and failure and get the return values.","date":"2012-06-24T03:51:17.404Z","type":"message"}
+{"nick":"creationix","message":"levi: I think I got it","date":"2012-06-24T03:51:39.499Z","type":"message"}
+{"nick":"creationix","message":"pushing as soon as I tidy the code","date":"2012-06-24T03:51:44.854Z","type":"message"}
+{"nick":"creationix","message":"it's pretty elegant I think","date":"2012-06-24T03:51:52.899Z","type":"message"}
+{"nick":"creationix","message":"levi: what do you think of this https://gist.github.com/2962615","date":"2012-06-24T03:57:02.180Z","type":"message"}
+{"nick":"creationix","message":"levi, we should make a wrap helper that wraps all the functions on a table and returns a new table","date":"2012-06-24T03:57:56.198Z","type":"message"}
+{"nick":"creationix","message":"local fs = wrapTable(wait, fs, true)","date":"2012-06-24T03:58:16.789Z","type":"message"}
+{"nick":"rphillips","message":"+1","date":"2012-06-24T03:58:33.210Z","type":"message"}
+{"nick":"rphillips","message":"could call it wrap and check to see if a table is passed in","date":"2012-06-24T03:58:57.037Z","type":"message"}
+{"nick":"creationix","message":"good idea","date":"2012-06-24T03:59:05.557Z","type":"message"}
+{"nick":"levi","message":"It could just set __index on the metatable of a new table that wraps and calls the original table's entries.","date":"2012-06-24T03:59:12.314Z","type":"message"}
+{"nick":"creationix","message":"levi: nice","date":"2012-06-24T03:59:23.418Z","type":"message"}
+{"nick":"creationix","message":"levi, would it cache the wrapped functions as they are called?","date":"2012-06-24T03:59:58.637Z","type":"message"}
+{"nick":"creationix","message":"or create a new one on every call?","date":"2012-06-24T04:00:06.731Z","type":"message"}
+{"nick":"levi","message":"No reason it couldn't cache them.","date":"2012-06-24T04:00:21.905Z","type":"message"}
+{"nick":"creationix","message":"right, but do we want to?","date":"2012-06-24T04:00:32.410Z","type":"message"}
+{"nick":"creationix","message":"rawest is a great way to cache","date":"2012-06-24T04:00:46.959Z","type":"message"}
+{"nick":"creationix","message":"*rawset","date":"2012-06-24T04:00:52.370Z","type":"message"}
+{"nick":"levi","message":"The only downside would be if you updated the original table's entries at runtime.","date":"2012-06-24T04:02:05.532Z","type":"message"}
+{"nick":"creationix","message":"right","date":"2012-06-24T04:02:24.224Z","type":"message"}
+{"nick":"creationix","message":"how expensive is not caching the wrapping","date":"2012-06-24T04:02:35.551Z","type":"message"}
+{"nick":"creationix","message":"it's just a closure right?","date":"2012-06-24T04:02:39.239Z","type":"message"}
+{"nick":"creationix","message":"compared to the actual async work it should be cheap","date":"2012-06-24T04:02:50.762Z","type":"message"}
+{"nick":"levi","message":"Yeah, should be.","date":"2012-06-24T04:04:08.770Z","type":"message"}
+{"nick":"creationix","message":"ok, let me add that","date":"2012-06-24T04:05:02.201Z","type":"message"}
+{"nick":"levi","message":"If it proves to a performance issue for someone, you can always manually save the wrappers.","date":"2012-06-24T04:06:03.533Z","type":"message"}
+{"nick":"creationix","message":"alright pushed","date":"2012-06-24T04:11:38.716Z","type":"message"}
+{"nick":"creationix","message":"lua is fun","date":"2012-06-24T04:11:40.843Z","type":"message"}
+{"nick":"creationix","message":"I wonder how much of this I can do with generators in JS","date":"2012-06-24T04:15:13.573Z","type":"message"}
+{"nick":"creationix","message":"I need to work on my luvmonkey project for nodeconf too","date":"2012-06-24T04:15:24.197Z","type":"message"}
+{"nick":"creationix","message":"levi: we could add magical self-invalidating cache functions if it proves to be a performance issue","date":"2012-06-24T04:15:57.056Z","type":"message"}
+{"nick":"creationix","message":"or they could cache it manually","date":"2012-06-24T04:16:03.116Z","type":"message"}
+{"nick":"creationix","message":"that's probably best","date":"2012-06-24T04:16:08.579Z","type":"message"}
+{"nick":"creationix","message":"keep things simple","date":"2012-06-24T04:16:13.405Z","type":"message"}
+{"nick":"creationix","message":"ok, I think I'm going to put this code in luvit as fiber.new and fiber.wrap","date":"2012-06-24T04:17:57.449Z","type":"message"}
+{"nick":"creationix","message":"any objections?","date":"2012-06-24T04:17:59.845Z","type":"message"}
+{"nick":"creationix","message":"what we have currently is too painful","date":"2012-06-24T04:18:21.831Z","type":"message"}
+{"nick":"levi","message":"Sounds good to me.","date":"2012-06-24T04:19:38.921Z","type":"message"}
+{"nick":"creationix","message":"hmm, I never use wait in the example","date":"2012-06-24T04:20:14.886Z","type":"message"}
+{"nick":"creationix","message":"just feed it to wrap","date":"2012-06-24T04:20:18.729Z","type":"message"}
+{"nick":"creationix","message":"it would be simpler to have wrap in the parameter like your gist","date":"2012-06-24T04:20:29.523Z","type":"message"}
+{"nick":"creationix","message":"we could pass wait as a second param for people wanting direct access?","date":"2012-06-24T04:20:42.523Z","type":"message"}
+{"nick":"creationix","message":"which do you think will be used more?","date":"2012-06-24T04:20:48.906Z","type":"message"}
+{"nick":"creationix","message":"even for one-off calls, wrap is about the same syntax","date":"2012-06-24T04:20:59.818Z","type":"message"}
+{"nick":"creationix","message":"wrap(fs.open)(…) vs wait(fs.open, …)","date":"2012-06-24T04:21:40.183Z","type":"message"}
+{"nick":"creationix","message":"wrap is more code under the covers","date":"2012-06-24T04:21:48.927Z","type":"message"}
+{"nick":"creationix","message":"and I wonder if I can optimize wrap if it's internal and not based on wait","date":"2012-06-24T04:22:51.628Z","type":"message"}
+{"nick":"creationix","message":"ok, baked wrap into the fiber","date":"2012-06-24T04:27:12.639Z","type":"message"}
+{"nick":"levi","message":"Very nice.","date":"2012-06-24T04:29:57.820Z","type":"message"}
+{"nick":"creationix","message":"I like it","date":"2012-06-24T04:32:20.537Z","type":"message"}
+{"nick":"creationix","message":"and with the callback, it fits nicely inside async code","date":"2012-06-24T04:32:34.872Z","type":"message"}
+{"nick":"creationix","message":"so now, how would I do things in parallel?","date":"2012-06-24T04:32:47.450Z","type":"message"}
+{"nick":"creationix","message":"I was careful to handle multiple results everywhere","date":"2012-06-24T04:33:54.680Z","type":"message"}
+{"nick":"levi","message":"So, it turns out you can set __call on a metatable and invoke a table like a function.  You can also set __index on _G's metatable and it can dispatch any functions you call that don't actually exist.","date":"2012-06-24T04:33:57.264Z","type":"message"}
+{"nick":"rphillips","message":"creationix: return a promise","date":"2012-06-24T04:34:13.755Z","type":"message"}
+{"nick":"rphillips","message":"then call promise:wait()","date":"2012-06-24T04:34:21.265Z","type":"message"}
+{"nick":"creationix","message":"rphillips: noooooo!","date":"2012-06-24T04:34:31.176Z","type":"message"}
+{"nick":"rphillips","message":":)","date":"2012-06-24T04:34:34.035Z","type":"message"}
+{"nick":"creationix","message":"rphillips: you remember those?","date":"2012-06-24T04:34:48.189Z","type":"message"}
+{"nick":"levi","message":"promises are where it's at.","date":"2012-06-24T04:34:53.533Z","type":"message"}
+{"nick":"rphillips","message":"were they in luvit?","date":"2012-06-24T04:34:56.105Z","type":"message"}
+{"nick":"creationix","message":"no, they were in luvit","date":"2012-06-24T04:35:03.686Z","type":"message"}
+{"nick":"creationix","message":"err, node","date":"2012-06-24T04:35:06.140Z","type":"message"}
+{"nick":"creationix","message":"before node had the callback(err, value) pattern, it returned promises","date":"2012-06-24T04:35:25.030Z","type":"message"}
+{"nick":"levi","message":"I hear rumors there's a possibility that promises could make a return to node at some point.","date":"2012-06-24T04:35:25.231Z","type":"message"}
+{"nick":"creationix","message":"levi: maybe, but it's a ways off","date":"2012-06-24T04:36:09.272Z","type":"message"}
+{"nick":"creationix","message":"most the core people love callbacks and hate promises","date":"2012-06-24T04:36:17.308Z","type":"message"}
+{"nick":"creationix","message":"partly due to the fact that node's promises were so terrible","date":"2012-06-24T04:36:33.090Z","type":"message"}
+{"nick":"rphillips","message":"i lean towards callbacks myself","date":"2012-06-24T04:36:34.076Z","type":"message"}
+{"nick":"creationix","message":"rphillips: the problem with promise:wait() is it allow suspending the main thread","date":"2012-06-24T04:37:21.074Z","type":"message"}
+{"nick":"creationix","message":"in this proposal, only fiber blocks can suspend themselves","date":"2012-06-24T04:37:37.622Z","type":"message"}
+{"nick":"rphillips","message":"ah","date":"2012-06-24T04:37:46.046Z","type":"message"}
+{"nick":"creationix","message":"and luvit is very careful to call all callbacks in the main thread","date":"2012-06-24T04:37:48.913Z","type":"message"}
+{"nick":"creationix","message":"so that the callback can tell the coroutine to resume","date":"2012-06-24T04:38:01.727Z","type":"message"}
+{"nick":"creationix","message":"(can't resume from a suspended coroutine, can you)","date":"2012-06-24T04:38:18.412Z","type":"message"}
+{"nick":"creationix","message":"this fiber sugar is still 100% based on node-style callbacks","date":"2012-06-24T04:39:06.754Z","type":"message"}
+{"nick":"creationix","message":"and even exports a node style callback for the fiber itself","date":"2012-06-24T04:39:18.349Z","type":"message"}
+{"nick":"creationix","message":"but within the fiber, it appears quite sync and simple","date":"2012-06-24T04:39:38.437Z","type":"message"}
+{"nick":"rphillips","message":"did you commit it to the repo?","date":"2012-06-24T04:39:59.156Z","type":"message"}
+{"nick":"creationix","message":"if foo() and bar() then baz() else bom() end","date":"2012-06-24T04:40:05.125Z","type":"message"}
+{"nick":"creationix","message":"rphillips: not yet, I can though","date":"2012-06-24T04:40:14.813Z","type":"message"}
+{"nick":"creationix","message":"try doing that conditional logic using all async functions","date":"2012-06-24T04:40:33.682Z","type":"message"}
+{"nick":"rphillips","message":"just trying to find the latest gist","date":"2012-06-24T04:40:34.405Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/2962615","date":"2012-06-24T04:40:42.626Z","type":"message"}
+{"nick":"creationix","message":"the gist should be up to date","date":"2012-06-24T04:40:50.779Z","type":"message"}
+{"nick":"rphillips","message":"coo","date":"2012-06-24T04:41:12.565Z","type":"message"}
+{"nick":"rphillips","message":"this is exactly the style of reconnoiter's lua module","date":"2012-06-24T04:41:26.386Z","type":"message"}
+{"nick":"creationix","message":"really?","date":"2012-06-24T04:41:40.439Z","type":"message"}
+{"nick":"rphillips","message":"async I/O in the background, but a blocking lua plugin system","date":"2012-06-24T04:41:44.175Z","type":"message"}
+{"nick":"rphillips","message":"blocking-like lua plugin system*","date":"2012-06-24T04:41:53.845Z","type":"message"}
+{"nick":"creationix","message":"ahh","date":"2012-06-24T04:41:56.841Z","type":"message"}
+{"nick":"creationix","message":"yeah, for most things, that works fine","date":"2012-06-24T04:42:04.068Z","type":"message"}
+{"nick":"creationix","message":"especially of threads don't share state","date":"2012-06-24T04:42:12.230Z","type":"message"}
+{"nick":"creationix","message":"but even if they do, it's no worse than true multi-threading","date":"2012-06-24T04:42:28.879Z","type":"message"}
+{"nick":"creationix","message":"stuff can only change while waiting for an async function to return","date":"2012-06-24T04:42:47.007Z","type":"message"}
+{"nick":"rphillips","message":"http://labs.omniti.com/labs/reconnoiter/browser/src/modules-lua/noit/module/tcp.lua#L142","date":"2012-06-24T04:42:48.237Z","type":"message"}
+{"nick":"creationix","message":"I see, that is similair","date":"2012-06-24T04:43:30.628Z","type":"message"}
+{"nick":"creationix","message":"looks like assert() friendly return values","date":"2012-06-24T04:43:40.158Z","type":"message"}
+{"nick":"creationix","message":"I couldn't get assert to play nice with node-style functions","date":"2012-06-24T04:43:51.981Z","type":"message"}
+{"nick":"creationix","message":"since it requires a truth value for all successes","date":"2012-06-24T04:44:03.948Z","type":"message"}
+{"nick":"rphillips","message":"really slick... it didn't take too much code","date":"2012-06-24T04:45:08.036Z","type":"message"}
+{"nick":"rphillips","message":"heading to bed. g'night","date":"2012-06-24T04:48:48.435Z","type":"message"}
+{"nick":"creationix","message":"'night","date":"2012-06-24T04:50:36.085Z","type":"message"}
+{"nick":"CIA-113","message":"Tim Caswell\u000f coro-sugar\u000f * r417f36f\u000f \u000f/ (examples/fs-coroutines.lua lib/luvit/fiber.lua):\u000f Make fiber sugar more useful. - http://git.io/LjejJA","date":"2012-06-24T04:57:15.370Z","type":"message"}
+{"nick":"creationix","message":"levi: still around?","date":"2012-06-24T04:57:37.064Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luvit/pull/257","date":"2012-06-24T04:58:42.120Z","type":"message"}
+{"nick":"creationix","action":"actually used a branch and pull request instead of just pushing to master :)","date":"2012-06-24T04:58:59.900Z","type":"action"}
+{"nick":"tim_smart","new_nick":"tim_smart|away","date":"2012-06-24T05:08:53.898Z","type":"nick"}
+{"nick":"levi","message":"Cool. :)","date":"2012-06-24T05:18:19.183Z","type":"message"}
+{"nick":"creationix","message":"it appears this can be done in JS as well","date":"2012-06-24T05:19:09.463Z","type":"message"}
+{"nick":"creationix","message":"I'll have to try this with luvmonkey http://tobyho.com/2010/12/10/trampolines-in-javascript-and/","date":"2012-06-24T05:19:16.372Z","type":"message"}
+{"nick":"tokyodan","date":"2012-06-24T05:28:19.216Z","type":"join"}
+{"nick":"ljackson","date":"2012-06-24T05:42:01.483Z","type":"join"}
+{"nick":"levi","message":"That's not quite the use that I'd typically heard of for trampolines, but it does turn out to be pretty much the same thing.","date":"2012-06-24T05:51:15.832Z","type":"message"}
+{"nick":"levi","message":"I was trying to figure out how you were going to do that in node, but I guess luvmonkey is spidermonkey. :)","date":"2012-06-24T05:59:53.982Z","type":"message"}
+{"nick":"levi","message":"Anyway, I mostly learned about trampolines in the context of C programs implementing language runtimes.","date":"2012-06-24T06:01:53.064Z","type":"message"}
+{"nick":"mmalecki","date":"2012-06-24T06:32:21.189Z","type":"join"}
+{"nick":"tokyodan","reason":"Quit: tokyodan","date":"2012-06-24T06:41:32.875Z","type":"quit"}
+{"nick":"dvv-android","date":"2012-06-24T06:52:28.794Z","type":"join"}
+{"nick":"dvv-android","reason":"Remote host closed the connection","date":"2012-06-24T07:09:19.103Z","type":"quit"}
+{"nick":"dvv-android","date":"2012-06-24T07:09:35.781Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-06-24T07:13:57.420Z","type":"join"}
+{"nick":"dvv-android","reason":"Remote host closed the connection","date":"2012-06-24T07:18:38.672Z","type":"quit"}
+{"nick":"dvv-android","date":"2012-06-24T07:18:54.783Z","type":"join"}
+{"nick":"dvv-android","reason":"Remote host closed the connection","date":"2012-06-24T07:41:50.957Z","type":"quit"}
+{"nick":"dvv-android","date":"2012-06-24T07:42:07.777Z","type":"join"}
