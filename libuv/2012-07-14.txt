@@ -1,0 +1,134 @@
+{"nick":"beachdog","reason":"Ping timeout: 246 seconds","date":"2012-07-14T00:00:20.561Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: i can make test-nexttick-loop-starvation still pass","date":"2012-07-14T00:03:01.196Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: because it only processes the tick queue 10 times before taking a break, and then the TickSpinnner gets it later","date":"2012-07-14T00:03:41.048Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: uhh, but doesn't it test exactly the opposite behaviour ?","date":"2012-07-14T00:03:49.935Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it tests that you dont' starve it forever.","date":"2012-07-14T00:03:58.452Z","type":"message"}
+{"nick":"isaacs","message":"we just want to starve it a little bit","date":"2012-07-14T00:04:02.608Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-07-14T00:04:06.226Z","type":"message"}
+{"nick":"piscisaureus_","message":"um","date":"2012-07-14T00:04:12.584Z","type":"message"}
+{"nick":"piscisaureus_","action":"is confused","date":"2012-07-14T00:04:19.879Z","type":"action"}
+{"nick":"piscisaureus_","new_nick":"piscisaureus","date":"2012-07-14T00:04:25.893Z","type":"nick"}
+{"nick":"piscisaureus","message":"isaacs: send it for review before you land it (!)","date":"2012-07-14T00:04:34.597Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-07-14T00:04:36.143Z","type":"quit"}
+{"nick":"isaacs","message":"haah","date":"2012-07-14T00:04:46.616Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-07-14T00:04:50.302Z","type":"message"}
+{"nick":"isaacs","message":"this is shaping up to be a pretty minimal change, though","date":"2012-07-14T00:05:28.146Z","type":"message"}
+{"nick":"isaacs","message":"just writing the test for it now","date":"2012-07-14T00:05:39.717Z","type":"message"}
+{"nick":"isaacs","message":"so, i don't know if this is a bug or a feature...","date":"2012-07-14T00:07:16.835Z","type":"message"}
+{"nick":"isaacs","message":"but it changes the stacks interestingly.","date":"2012-07-14T00:07:22.120Z","type":"message"}
+{"nick":"isaacs","message":"    at repeat (/Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:33:12)","date":"2012-07-14T00:07:50.142Z","type":"message"}
+{"nick":"isaacs","message":"    at /Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:42:5","date":"2012-07-14T00:07:53.174Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processNextTick.process._tickCallback (node.js:273:9)","date":"2012-07-14T00:07:55.704Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processNextTick.process._tickCallback (node.js:283:17)","date":"2012-07-14T00:07:58.261Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processNextTick.process._tickCallback (node.js:283:17)","date":"2012-07-14T00:08:00.807Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processNextTick.process._tickCallback (node.js:283:17)","date":"2012-07-14T00:08:03.243Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processNextTick.process._tickCallback (node.js:283:17)","date":"2012-07-14T00:08:05.769Z","type":"message"}
+{"nick":"isaacs","message":"    at process.startup.processMakeCallback.process._makeCallback (node.js:244:15)","date":"2012-07-14T00:08:08.284Z","type":"message"}
+{"nick":"hz","date":"2012-07-14T00:08:36.792Z","type":"join"}
+{"nick":"piscisaureus","message":"ghe","date":"2012-07-14T00:09:07.906Z","type":"message"}
+{"nick":"piscisaureus","message":"looks like recursion isaacs","date":"2012-07-14T00:09:13.303Z","type":"message"}
+{"nick":"isaacs","message":"and that process.startup.processMakeCallback.process._makeCallback will be at the root of basically every stack.","date":"2012-07-14T00:09:21.019Z","type":"message"}
+{"nick":"hz","reason":"Client Quit","date":"2012-07-14T00:09:21.822Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus: well, yes, it is.","date":"2012-07-14T00:09:29.942Z","type":"message"}
+{"nick":"piscisaureus","message":"what, why?","date":"2012-07-14T00:09:46.224Z","type":"message"}
+{"nick":"isaacs","message":"because it's the easiest way to keep track of how many nextTicks you are at.","date":"2012-07-14T00:10:51.993Z","type":"message"}
+{"nick":"isaacs","message":"      if (tickDepth < process.maxTickDepth && nextTickQueue.length > 0) {","date":"2012-07-14T00:11:13.102Z","type":"message"}
+{"nick":"isaacs","message":"        process._tickCallback();","date":"2012-07-14T00:11:13.353Z","type":"message"}
+{"nick":"isaacs","message":"      }","date":"2012-07-14T00:11:13.353Z","type":"message"}
+{"nick":"piscisaureus","message":"hm","date":"2012-07-14T00:11:21.064Z","type":"message"}
+{"nick":"isaacs","message":"then it does       tickDepth--;","date":"2012-07-14T00:11:32.141Z","type":"message"}
+{"nick":"piscisaureus","message":"meh","date":"2012-07-14T00:11:40.759Z","type":"message"}
+{"nick":"piscisaureus","message":"arbitrary stack inflation","date":"2012-07-14T00:12:16.490Z","type":"message"}
+{"nick":"isaacs","message":"i mean, it can be done with a loop, so sayeth turing.  but it's ugly.","date":"2012-07-14T00:12:21.091Z","type":"message"}
+{"nick":"piscisaureus","message":"these stack traces are ugly","date":"2012-07-14T00:12:58.182Z","type":"message"}
+{"nick":"isaacs","message":"is it arbitrary?  it's exposing the nextTick recursion as recursion.","date":"2012-07-14T00:13:00.053Z","type":"message"}
+{"nick":"piscisaureus","message":"besides, I don't like this arbitrary stack inflation","date":"2012-07-14T00:13:06.705Z","type":"message"}
+{"nick":"isaacs","message":"calling process.nextTick() in a tickCallback is ugly.","date":"2012-07-14T00:13:13.530Z","type":"message"}
+{"nick":"isaacs","message":"that's a fair complaint, though","date":"2012-07-14T00:13:38.545Z","type":"message"}
+{"nick":"isaacs","message":"like i said, i'm not sure if it's a bug or a feature.","date":"2012-07-14T00:13:43.827Z","type":"message"}
+{"nick":"isaacs","message":"my kingdom for a tail call :)","date":"2012-07-14T00:14:01.795Z","type":"message"}
+{"nick":"isaacs","message":"ok, this look better?","date":"2012-07-14T00:15:39.910Z","type":"message"}
+{"nick":"isaacs","message":"AssertionError: false == true at repeat (/Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:33:12) at /Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:42:5 at process.startup.processNextTick.process._tickCallback (node.js:274:11) at process.startup.processMakeCallback.process._makeCallback (node.js:244:15)","date":"2012-07-14T00:15:41.802Z","type":"message"}
+{"nick":"isaacs","message":"AssertionError: false == true at repeat (/Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:33:12) at /Users/isaacs/dev/js/node-master/test/simple/test-eio-limit.js:42:5 at process.startup.processNextTick.process._tickCallback (node.js:274:11) at process.startup.processMakeCallback.process._makeCallback (node.js:244:15)","date":"2012-07-14T00:15:49.708Z","type":"message"}
+{"nick":"isaacs","message":"weird, irssi isn't pasting the lines.  whatever.","date":"2012-07-14T00:15:57.200Z","type":"message"}
+{"nick":"isaacs","message":"https://gist.github.com/3108389","date":"2012-07-14T00:16:03.160Z","type":"message"}
+{"nick":"piscisaureus","message":"That'll do I supose","date":"2012-07-14T00:17:46.467Z","type":"message"}
+{"nick":"piscisaureus","message":"looks beter","date":"2012-07-14T00:17:49.909Z","type":"message"}
+{"nick":"piscisaureus","message":"process.startup.processMakeCallback.process._makeCallback","date":"2012-07-14T00:17:52.077Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- I am sorta confused where that comes from :-)","date":"2012-07-14T00:18:05.929Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: oh, that's a new V8 feature","date":"2012-07-14T00:19:46.162Z","type":"message"}
+{"nick":"isaacs","message":"it now names functions with the ful path to where it was defined and as what","date":"2012-07-14T00:19:56.784Z","type":"message"}
+{"nick":"tjfontaine","message":"ya it's cute, I enjoy it","date":"2012-07-14T00:21:02.348Z","type":"message"}
+{"nick":"piscisaureus","message":"Object.keys(process).filter(/./.test.bind(/^_/))","date":"2012-07-14T00:23:01.276Z","type":"message"}
+{"nick":"piscisaureus","message":"Regex methods should be auto bound","date":"2012-07-14T00:24:20.723Z","type":"message"}
+{"nick":"piscisaureus","message":"that would be nice","date":"2012-07-14T00:24:23.402Z","type":"message"}
+{"nick":"piscisaureus","message":"array.filter(/^bla/.test)","date":"2012-07-14T00:24:43.045Z","type":"message"}
+{"nick":"chobi_e_","new_nick":"chobi_e","date":"2012-07-14T00:25:31.446Z","type":"nick"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-07-14T00:29:17.151Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus: you need arrow functions!","date":"2012-07-14T00:30:43.806Z","type":"message"}
+{"nick":"piscisaureus","message":"maybe","date":"2012-07-14T00:31:05.129Z","type":"message"}
+{"nick":"isaacs","message":"Object.keys(process).filter((s) => s.match(/^_/))","date":"2012-07-14T00:31:05.533Z","type":"message"}
+{"nick":"isaacs","message":"not *quite* as short, but nice","date":"2012-07-14T00:31:14.443Z","type":"message"}
+{"nick":"piscisaureus","message":"That also works","date":"2012-07-14T00:31:17.955Z","type":"message"}
+{"nick":"piscisaureus","message":":-)","date":"2012-07-14T00:31:21.432Z","type":"message"}
+{"nick":"isaacs","message":"really, it'd be good if regexps were still callables","date":"2012-07-14T00:31:25.373Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-07-14T00:31:26.091Z","type":"join"}
+{"nick":"isaacs","message":"Object.keys(process).filter(/^_/)","date":"2012-07-14T00:31:34.442Z","type":"message"}
+{"nick":"isaacs","message":"that was nice","date":"2012-07-14T00:31:36.374Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah, that would work well with filter","date":"2012-07-14T00:32:05.228Z","type":"message"}
+{"nick":"isaacs","message":"used to.","date":"2012-07-14T00:32:09.412Z","type":"message"}
+{"nick":"isaacs","message":"before V8 had to go and get all correct to the stupid spec that took away our candy.","date":"2012-07-14T00:32:23.389Z","type":"message"}
+{"nick":"isaacs","message":"like, it had tons of bugs and stuff, and was super slow, but i still really think pretty much every JS language innovation in MSIE (except for the activex stuff) was awesome.","date":"2012-07-14T00:33:03.774Z","type":"message"}
+{"nick":"isaacs","message":"like all the stuff that showed up in IE 5","date":"2012-07-14T00:33:16.042Z","type":"message"}
+{"nick":"isaacs","message":"innerHTML, innerText, regexp callables, it's all great stuff.","date":"2012-07-14T00:33:30.686Z","type":"message"}
+{"nick":"piscisaureus","message":"XMLHttpRequest :-)","date":"2012-07-14T00:33:50.326Z","type":"message"}
+{"nick":"piscisaureus","message":"Awkward name but the idea was quite powerful","date":"2012-07-14T00:34:08.232Z","type":"message"}
+{"nick":"piscisaureus","message":"^-- <3 understatements","date":"2012-07-14T00:34:23.015Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2012-07-14T00:36:46.755Z","type":"message"}
+{"nick":"Benvie","date":"2012-07-14T00:47:55.913Z","type":"join"}
+{"nick":"isaacs","message":"yep :)","date":"2012-07-14T00:48:26.044Z","type":"message"}
+{"nick":"isaacs","message":"awkwarder api, too","date":"2012-07-14T00:48:59.201Z","type":"message"}
+{"nick":"isaacs","message":"requires buffering the entire thing","date":"2012-07-14T00:49:09.884Z","type":"message"}
+{"nick":"isaacs","message":"it was a time before streams.","date":"2012-07-14T00:49:12.853Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-14T00:49:15.580Z","type":"quit"}
+{"nick":"isaacs","message":"this patch is like speeding up just *half* of a car.","date":"2012-07-14T00:50:03.223Z","type":"message"}
+{"nick":"isaacs","message":"just spent the last several minutes trying to figure out how to make simple/test-process-active-wraps to pass.","date":"2012-07-14T00:50:41.501Z","type":"message"}
+{"nick":"isaacs","message":"just had to ad more nextTicks","date":"2012-07-14T00:50:44.765Z","type":"message"}
+{"nick":"isaacs","message":"they were happening too fast :)","date":"2012-07-14T00:50:48.242Z","type":"message"}
+{"nick":"mikeal","date":"2012-07-14T00:51:29.688Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 246 seconds","date":"2012-07-14T00:55:47.311Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Ping timeout: 246 seconds","date":"2012-07-14T00:57:23.593Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-14T00:58:37.278Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-07-14T01:05:10.959Z","type":"quit"}
+{"nick":"pfox__","reason":"Ping timeout: 252 seconds","date":"2012-07-14T01:16:12.261Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-07-14T01:17:09.853Z","type":"join"}
+{"nick":"pfox__","date":"2012-07-14T01:18:08.364Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Client Quit","date":"2012-07-14T01:18:16.614Z","type":"quit"}
+{"nick":"Aria","date":"2012-07-14T01:26:42.724Z","type":"join"}
+{"nick":"EhevuTov","date":"2012-07-14T01:44:46.266Z","type":"join"}
+{"nick":"joeandaverde","date":"2012-07-14T01:53:13.511Z","type":"join"}
+{"nick":"EhevuTov","reason":"Quit: Leaving","date":"2012-07-14T01:56:45.428Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-07-14T02:17:31.505Z","type":"join"}
+{"nick":"erickt","date":"2012-07-14T02:20:24.717Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-14T02:22:46.930Z","type":"quit"}
+{"nick":"mmalecki","reason":"Ping timeout: 246 seconds","date":"2012-07-14T02:23:16.619Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-07-14T02:26:22.355Z","type":"quit"}
+{"nick":"Benvie","date":"2012-07-14T02:33:07.128Z","type":"quit"}
+{"nick":"joeandaverde","reason":"Quit: joeandaverde","date":"2012-07-14T02:47:23.281Z","type":"quit"}
+{"nick":"dap","date":"2012-07-14T02:56:02.633Z","type":"join"}
+{"nick":"dap","reason":"Client Quit","date":"2012-07-14T03:00:12.805Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-07-14T03:30:13.394Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 252 seconds","date":"2012-07-14T03:34:48.284Z","type":"quit"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-07-14T03:41:26.460Z","type":"quit"}
+{"nick":"Aria","date":"2012-07-14T03:41:54.220Z","type":"join"}
+{"nick":"joeandaverde","date":"2012-07-14T04:11:02.622Z","type":"join"}
+{"nick":"joeandaverde","reason":"Quit: joeandaverde","date":"2012-07-14T04:28:35.446Z","type":"quit"}
+{"nick":"c4milo","date":"2012-07-14T04:29:17.423Z","type":"join"}
+{"nick":"mmalecki","date":"2012-07-14T04:46:13.798Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-07-14T05:20:24.183Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2012-07-14T05:36:12.429Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-07-14T06:19:56.573Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-14T07:06:31.256Z","type":"join"}
+{"nick":"rendar","date":"2012-07-14T07:09:49.281Z","type":"join"}
+{"nick":"sh1mmer","date":"2012-07-14T07:52:27.739Z","type":"join"}
+{"nick":"sh1mmer","reason":"Ping timeout: 248 seconds","date":"2012-07-14T07:56:56.483Z","type":"quit"}
