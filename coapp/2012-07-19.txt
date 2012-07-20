@@ -59,3 +59,106 @@
 {"nick":"auroraeosrose","message":"mysqld.lib?","date":"2012-07-19T15:58:52.914Z","type":"message"}
 {"nick":"virmitio","message":"yep","date":"2012-07-19T15:59:32.775Z","type":"message"}
 {"nick":"virmitio","message":"which as far as I can tell shouldn't exist in the first place","date":"2012-07-19T15:59:48.542Z","type":"message"}
+{"nick":"virmitio","message":"thus why it's my current problem","date":"2012-07-19T16:00:03.873Z","type":"message"}
+{"nick":"virmitio","message":"need to find the cmake section that generates whatever is asking for mysqld.lib and see if that's what needs fixing or if it's some other section of cmake that's causing the issue","date":"2012-07-19T16:01:02.856Z","type":"message"}
+{"nick":"auroraeosrose","message":"The main reason it doesn't do this is that MySQL 5.0 doesn't include the embedded server version of the library.  It was in 4.1, they took it out in 5.0, then put it back in in 5.1 due to user demand.  As long as we want to support 5.0 out of the box, we can't go depending on the embedded server.  We can't make it optional, either, at least on Windows where you are.  The VS2008 C++ build system doesn't have the flexibility to detect pla","date":"2012-07-19T16:02:39.843Z","type":"message"}
+{"nick":"auroraeosrose","message":"something here to do with it?","date":"2012-07-19T16:02:44.800Z","type":"message"}
+{"nick":"auroraeosrose","message":"http://comments.gmane.org/gmane.comp.db.mysql.c%2B%2B/7493","date":"2012-07-19T16:02:59.571Z","type":"message"}
+{"nick":"auroraeosrose","message":"mysqld.lib links to mysqld right?","date":"2012-07-19T16:03:16.423Z","type":"message"}
+{"nick":"auroraeosrose","message":"http://forge.mysql.com/worklog/task.php?id=3653","date":"2012-07-19T16:04:57.501Z","type":"message"}
+{"nick":"auroraeosrose","message":"ewwww","date":"2012-07-19T16:04:59.529Z","type":"message"}
+{"nick":"auroraeosrose","message":"http://forge.mysql.com/worklog/task.php?id=3653 - ah ah here virmitio!!!","date":"2012-07-19T16:06:42.446Z","type":"message"}
+{"nick":"auroraeosrose","message":"click on \"low level design\"","date":"2012-07-19T16:06:48.734Z","type":"message"}
+{"nick":"auroraeosrose","message":"1.  Create a pre-link step that will run a script file after compilation of the","date":"2012-07-19T16:07:02.559Z","type":"message"}
+{"nick":"auroraeosrose","message":"server files but before the link step.","date":"2012-07-19T16:07:02.795Z","type":"message"}
+{"nick":"auroraeosrose","message":"2.  This script is a jscript file that runs the dumpbin utility on all server","date":"2012-07-19T16:07:02.796Z","type":"message"}
+{"nick":"auroraeosrose","message":"object files and some of the libs that get linked in statically. The script","date":"2012-07-19T16:07:02.796Z","type":"message"}
+{"nick":"auroraeosrose","message":"needs to tell data from function and export data as \"symbol_name DATA\"","date":"2012-07-19T16:07:02.796Z","type":"message"}
+{"nick":"auroraeosrose","message":"3.  Step 2 above produces a module definition file that is used as input to the","date":"2012-07-19T16:07:03.035Z","type":"message"}
+{"nick":"auroraeosrose","message":"link phase for mysqld.","date":"2012-07-19T16:07:03.035Z","type":"message"}
+{"nick":"auroraeosrose","message":"4.  The linker will now produce an import library for the server.  This import","date":"2012-07-19T16:07:03.852Z","type":"message"}
+{"nick":"auroraeosrose","message":"library is then used as input for all pluggable storage engines.","date":"2012-07-19T16:07:04.095Z","type":"message"}
+{"nick":"auroraeosrose","message":"that is how it's supposed to make mysqld.lib","date":"2012-07-19T16:07:10.689Z","type":"message"}
+{"nick":"auroraeosrose","message":"virmitio: does that help at all?","date":"2012-07-19T16:07:49.424Z","type":"message"}
+{"nick":"auroraeosrose","message":"should tell you where to look and what is going \"wrong\"","date":"2012-07-19T16:07:56.243Z","type":"message"}
+{"nick":"auroraeosrose","message":"in their cmake stuff yes?","date":"2012-07-19T16:08:02.182Z","type":"message"}
+{"nick":"virmitio","message":"stand by while I read","date":"2012-07-19T16:08:31.527Z","type":"message"}
+{"nick":"virmitio","message":"that's actually not terribly helpful for the current situation","date":"2012-07-19T16:32:26.853Z","type":"message"}
+{"nick":"virmitio","message":"at least not directly applicable","date":"2012-07-19T16:32:33.506Z","type":"message"}
+{"nick":"virmitio","message":"currently looking for a couple switches in the cmake config that maybe I missed flipping after adding the various community edition componenets","date":"2012-07-19T16:33:10.128Z","type":"message"}
+{"nick":"auroraeosrose","message":"that bug says those switches might not be there yet","date":"2012-07-19T16:59:15.384Z","type":"message"}
+{"nick":"auroraeosrose","message":"so you may have to manually make a defs file to get the mysqld.lib generated","date":"2012-07-19T16:59:34.384Z","type":"message"}
+{"nick":"virmitio","message":"I'm seeing the def file get made, the issue seems to be that it's not generating anything with it","date":"2012-07-19T17:00:04.357Z","type":"message"}
+{"nick":"virmitio","message":"I think?","date":"2012-07-19T17:00:13.396Z","type":"message"}
+{"nick":"virmitio","message":"I'm also finding that there's a large number of cmake defines that aren't listed, cached, or even generated until some other define has already been set","date":"2012-07-19T17:00:56.229Z","type":"message"}
+{"nick":"auroraeosrose","message":"the defs file got made","date":"2012-07-19T17:01:16.926Z","type":"message"}
+{"nick":"auroraeosrose","message":"was the argument passed to the linker to generate the lib then?","date":"2012-07-19T17:01:29.828Z","type":"message"}
+{"nick":"auroraeosrose","message":"if you have a defs file doing a lib is mucho simple","date":"2012-07-19T17:01:40.952Z","type":"message"}
+{"nick":"virmitio","message":"if I were doing it by hand, I'd agree with you","date":"2012-07-19T17:01:59.346Z","type":"message"}
+{"nick":"virmitio","message":"I'm trying to affect it via the pre-config cmake files, though, which puts me at adjusting the generator for the generator of build commands","date":"2012-07-19T17:02:34.374Z","type":"message"}
+{"nick":"auroraeosrose","message":"yeah, well if worse comes to worse just drop in a link somewhere to do the link /def file ;)","date":"2012-07-19T17:03:19.764Z","type":"message"}
+{"nick":"FearTheCowboy","reason":"Ping timeout: 245 seconds","date":"2012-07-19T17:03:22.159Z","type":"quit"}
+{"nick":"auroraeosrose","message":"errr- command","date":"2012-07-19T17:03:23.443Z","type":"message"}
+{"nick":"virmitio","message":"I'm starting to seriously debate that option","date":"2012-07-19T17:03:49.540Z","type":"message"}
+{"nick":"virmitio","message":"I'm not sure I'm really a fan of how they did \"convenience libraries\" in this build setup","date":"2012-07-19T17:29:19.889Z","type":"message"}
+{"nick":"virmitio","message":"making progress, it's dying in different places now","date":"2012-07-19T17:48:38.300Z","type":"message"}
+{"nick":"auroraeosrose","message":"hah","date":"2012-07-19T17:48:59.299Z","type":"message"}
+{"nick":"virmitio","message":"hey, by the cmake percentage listed during the build, I'm 30% further along in the build","date":"2012-07-19T17:49:40.419Z","type":"message"}
+{"nick":"virmitio","message":"and according to folks on #mysql-dev, I seem to be the first person to try building mysql on windows who also wants to use the \"system\" zlib and openssl library instead of the bundled one","date":"2012-07-19T18:00:21.554Z","type":"message"}
+{"nick":"auroraeosrose","message":"yeah","date":"2012-07-19T18:03:49.358Z","type":"message"}
+{"nick":"auroraeosrose","message":"exactly","date":"2012-07-19T18:03:51.610Z","type":"message"}
+{"nick":"auroraeosrose","message":"everyone on windows bundles everything","date":"2012-07-19T18:03:59.218Z","type":"message"}
+{"nick":"virmitio","message":"kinda how I feel sometimes:  http://bit.ly/LAphM5","date":"2012-07-19T18:07:44.614Z","type":"message"}
+{"nick":"virmitio","message":"got x86 building from a cold start, all tests pass","date":"2012-07-19T18:13:38.956Z","type":"message"}
+{"nick":"virmitio","message":"x64 is in progress","date":"2012-07-19T18:13:46.547Z","type":"message"}
+{"nick":"virmitio","message":"next stop:  autopkg files!","date":"2012-07-19T18:14:14.065Z","type":"message"}
+{"nick":"auroraeosrose","message":"woot","date":"2012-07-19T18:16:14.282Z","type":"message"}
+{"nick":"virmitio","action":"is predicting doom","date":"2012-07-19T18:22:04.041Z","type":"action"}
+{"nick":"virmitio","message":"ok, silly question time","date":"2012-07-19T18:23:15.500Z","type":"message"}
+{"nick":"virmitio","message":"does libmysqld depend on libmysql?","date":"2012-07-19T18:23:25.988Z","type":"message"}
+{"nick":"auroraeosrose","message":"not that I know of","date":"2012-07-19T18:24:34.121Z","type":"message"}
+{"nick":"auroraeosrose","message":"libmysql is the client library","date":"2012-07-19T18:24:38.788Z","type":"message"}
+{"nick":"virmitio","message":"k","date":"2012-07-19T18:24:42.992Z","type":"message"}
+{"nick":"auroraeosrose","message":"libmysqld is the actual mysql server","date":"2012-07-19T18:24:50.041Z","type":"message"}
+{"nick":"virmitio","message":"trying to work out what bits go in which packages","date":"2012-07-19T18:24:55.575Z","type":"message"}
+{"nick":"virmitio","message":"my understanding was that libmysqld was an embedded/embeddable mysql that could be used by an application without needing a separate installation of mysql","date":"2012-07-19T18:26:25.908Z","type":"message"}
+{"nick":"auroraeosrose","message":"perhaps","date":"2012-07-19T18:26:39.875Z","type":"message"}
+{"nick":"auroraeosrose","message":"dunno","date":"2012-07-19T18:26:40.964Z","type":"message"}
+{"nick":"auroraeosrose","message":"either way - libmysql is purely the C client library for talking to embedded/server mysql","date":"2012-07-19T18:26:57.589Z","type":"message"}
+{"nick":"jgmdev","date":"2012-07-19T18:28:09.530Z","type":"join"}
+{"nick":"virmitio","message":"works","date":"2012-07-19T18:30:41.273Z","type":"message"}
+{"nick":"TReKiE","date":"2012-07-19T19:57:53.686Z","type":"quit"}
+{"nick":"TReKiE","date":"2012-07-19T20:09:03.608Z","type":"join"}
+{"nick":"jgmdev","reason":"Remote host closed the connection","date":"2012-07-19T20:25:45.638Z","type":"quit"}
+{"nick":"ender|","message":"http://www.networkworld.com/community/blog/microsoft-code-contains-phrase-big-boobs-yes-really","date":"2012-07-19T20:48:52.038Z","type":"message"}
+{"nick":"virmitio","message":"well, that's likely to end badly for somebody","date":"2012-07-19T21:11:40.237Z","type":"message"}
+{"nick":"Jonny5","reason":"Quit: Leaving.","date":"2012-07-19T21:20:10.420Z","type":"quit"}
+{"nick":"vpovirk","reason":"Remote host closed the connection","date":"2012-07-19T21:34:50.465Z","type":"quit"}
+{"nick":"madewokherd","date":"2012-07-19T22:12:35.535Z","type":"join"}
+{"nick":"virmitio","message":"anybody want to play guinea pig for trying to use a mysql package in ~ 25-30 minutes?","date":"2012-07-19T22:49:46.784Z","type":"message"}
+{"nick":"virmitio","message":"don't all volunteer at once","date":"2012-07-19T22:56:11.517Z","type":"message"}
+{"nick":"ender`","message":"i'd volunteer, but i'm going to bed in ~15 minutes (it's 0:55 here)","date":"2012-07-19T22:56:46.215Z","type":"message"}
+{"nick":"virmitio","message":"bah, sleep","date":"2012-07-19T22:56:55.902Z","type":"message"}
+{"nick":"virmitio","message":"a likely excuse","date":"2012-07-19T22:57:01.654Z","type":"message"}
+{"nick":"ender|","message":"if i didn't have work tomorrow...","date":"2012-07-19T22:57:11.013Z","type":"message"}
+{"nick":"ender|","message":"http://eternallybored.org/imgs/cats/P1040623.jpg","date":"2012-07-19T22:57:16.456Z","type":"message"}
+{"nick":"virmitio","message":"I've felt like that before","date":"2012-07-19T22:57:39.548Z","type":"message"}
+{"nick":"auroraeosrose","message":"pat will be back tomorrow","date":"2012-07-19T22:58:43.037Z","type":"message"}
+{"nick":"auroraeosrose","message":"he can be guinea pig again on monday - he has my \"I break stuff\" skill","date":"2012-07-19T22:58:57.922Z","type":"message"}
+{"nick":"virmitio","message":"good to know","date":"2012-07-19T22:59:17.661Z","type":"message"}
+{"nick":"virmitio","message":"but can he figure out /why/ it broke?","date":"2012-07-19T22:59:31.703Z","type":"message"}
+{"nick":"auroraeosrose","message":"so you can turn him into \"install this and break it\" test boy","date":"2012-07-19T22:59:35.884Z","type":"message"}
+{"nick":"auroraeosrose","message":"probably","date":"2012-07-19T22:59:38.430Z","type":"message"}
+{"nick":"auroraeosrose","message":"he learns fast ;0","date":"2012-07-19T22:59:41.760Z","type":"message"}
+{"nick":"virmitio","message":"I can work with this","date":"2012-07-19T22:59:49.032Z","type":"message"}
+{"nick":"auroraeosrose","message":"did you see the bat I caught today?","date":"2012-07-19T23:01:08.016Z","type":"message"}
+{"nick":"auroraeosrose","message":"why it was hanging in my kitchen no one knows","date":"2012-07-19T23:01:16.664Z","type":"message"}
+{"nick":"auroraeosrose","message":"don't know HOW it got in","date":"2012-07-19T23:01:19.924Z","type":"message"}
+{"nick":"auroraeosrose","message":"but Ed was like \"mom, there's a bat hanging in the kitchen\"","date":"2012-07-19T23:01:30.901Z","type":"message"}
+{"nick":"virmitio","message":"because that's always what you want to hear","date":"2012-07-19T23:02:05.136Z","type":"message"}
+{"nick":"ender`","reason":"Quit:  How does Moses make his tea? HEBREWS IT. Then he sells it for prophet.\u000f","date":"2012-07-19T23:04:02.804Z","type":"quit"}
+{"nick":"virmitio","message":"gonna go take a walk while this compiles","date":"2012-07-19T23:09:03.066Z","type":"message"}
+{"nick":"virmitio","message":"still building on the official box","date":"2012-07-19T23:17:24.162Z","type":"message"}
+{"nick":"virmitio","message":"going to go home and tell it to upload in a bit","date":"2012-07-19T23:17:40.616Z","type":"message"}
+{"nick":"virmitio","message":"seeya tomorrow folks","date":"2012-07-19T23:17:46.484Z","type":"message"}
+{"nick":"virmitio","reason":"Quit: Leaving.","date":"2012-07-19T23:17:53.119Z","type":"quit"}
