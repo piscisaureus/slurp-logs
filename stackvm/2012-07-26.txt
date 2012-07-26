@@ -1,0 +1,385 @@
+{"nick":"isaacs","message":"mikeal: yeah, fuck that.","date":"2012-07-26T00:00:01.876Z","type":"message"}
+{"nick":"mikeal","message":"yeah, i agree","date":"2012-07-26T00:00:05.758Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: well... actualy, maybe, i dunno.","date":"2012-07-26T00:00:15.631Z","type":"message"}
+{"nick":"mikeal","message":"pipe(x); then later: pipe(x) again should reset the reference","date":"2012-07-26T00:00:20.351Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: we'd break the idea of using the built in .pipe() to send multiple things to one thing","date":"2012-07-26T00:00:27.717Z","type":"message"}
+{"nick":"dominictarr","message":"what if you check whether ('function' == typeof source.read) on pipe()?","date":"2012-07-26T00:00:30.389Z","type":"message"}
+{"nick":"isaacs","message":"but you could still create a joiner stream that can do it","date":"2012-07-26T00:00:40.905Z","type":"message"}
+{"nick":"mikeal","message":"there is also some concern with streams getting accidentally dumped and left open too long","date":"2012-07-26T00:00:49.937Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: yeah, we'd have something like that","date":"2012-07-26T00:00:50.371Z","type":"message"}
+{"nick":"isaacs","message":"but first we should explore how this would work if this was just the way the world works","date":"2012-07-26T00:01:02.670Z","type":"message"}
+{"nick":"mikeal","message":"rightnow","date":"2012-07-26T00:01:09.444Z","type":"message"}
+{"nick":"dominictarr","message":"multiple readable streams to one writable stream isn't very useful.","date":"2012-07-26T00:01:12.345Z","type":"message"}
+{"nick":"mikeal","message":"i will pipe again to the same stream","date":"2012-07-26T00:01:17.550Z","type":"message"}
+{"nick":"dominictarr","message":"so it's no big deal.","date":"2012-07-26T00:01:19.612Z","type":"message"}
+{"nick":"mikeal","message":"but i'm never emitting from the first one again","date":"2012-07-26T00:01:31.389Z","type":"message"}
+{"nick":"mikeal","message":"basically, i'm resetting the reference","date":"2012-07-26T00:01:42.684Z","type":"message"}
+{"nick":"dominictarr","message":"mikeal, your piping to the same stream twice?","date":"2012-07-26T00:02:22.496Z","type":"message"}
+{"nick":"mikeal","message":"yeah","date":"2012-07-26T00:02:28.874Z","type":"message"}
+{"nick":"mikeal","message":"this is what happens","date":"2012-07-26T00:02:31.195Z","type":"message"}
+{"nick":"dominictarr","message":"what is your usecase?","date":"2012-07-26T00:02:40.486Z","type":"message"}
+{"nick":"mikeal","message":"filed('./some.txt').pipe(request.put(url))","date":"2012-07-26T00:02:45.406Z","type":"message"}
+{"nick":"dominictarr","message":"ok","date":"2012-07-26T00:02:54.838Z","type":"message"}
+{"nick":"mikeal","message":"in the future, after stat, filed actually creates a new readStream and pipes it to the request","date":"2012-07-26T00:03:03.480Z","type":"message"}
+{"nick":"dominictarr","message":"sure","date":"2012-07-26T00:03:12.416Z","type":"message"}
+{"nick":"mikeal","message":"that filed object never emits data","date":"2012-07-26T00:03:16.519Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: well, filed's .pipe(0 method isn't strictly stream.pipe()","date":"2012-07-26T00:03:20.806Z","type":"message"}
+{"nick":"isaacs","message":"it's \"eventually call stream.pipe()\"","date":"2012-07-26T00:03:28.811Z","type":"message"}
+{"nick":"mikeal","message":"well….","date":"2012-07-26T00:03:36.127Z","type":"message"}
+{"nick":"mikeal","message":"it emits a pipe event on the destination at the point you pipe it","date":"2012-07-26T00:03:45.347Z","type":"message"}
+{"nick":"mikeal","message":"or else things get horribly broken","date":"2012-07-26T00:03:51.530Z","type":"message"}
+{"nick":"isaacs","message":"oic, so the request gets 2 pipe events?","date":"2012-07-26T00:04:08.232Z","type":"message"}
+{"nick":"mikeal","message":"yup","date":"2012-07-26T00:04:14.256Z","type":"message"}
+{"nick":"dominictarr","message":"hang on, where is the 2nd pipe event?","date":"2012-07-26T00:04:32.946Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: what if filed emitted a 'stat' event that the request knew to listen to or whatever, and then just proxied the fs readable streams' 'readable' events, and .read() method?","date":"2012-07-26T00:04:55.340Z","type":"message"}
+{"nick":"isaacs","message":"this._x.on('readable', this.emit.bind(this, 'readable')); this.read = this._x.read.bind(this._x)","date":"2012-07-26T00:05:23.454Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-07-26T00:05:51.596Z","type":"quit"}
+{"nick":"isaacs","message":"readable streams don't need .pause() and .resume() in this model.","date":"2012-07-26T00:05:52.169Z","type":"message"}
+{"nick":"mikeal","message":"filed already *does* emit a stat event that request listens for :)","date":"2012-07-26T00:06:00.306Z","type":"message"}
+{"nick":"isaacs","message":"or any state other than 'readable'","date":"2012-07-26T00:06:02.378Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: ok :)","date":"2012-07-26T00:06:08.408Z","type":"message"}
+{"nick":"mikeal","message":"the problem is that","date":"2012-07-26T00:06:12.334Z","type":"message"}
+{"nick":"mikeal","message":"request objects don't require end() be called on them like core","date":"2012-07-26T00:06:26.865Z","type":"message"}
+{"nick":"isaacs","message":"(where this === filed thing, and _x === the fs stream)","date":"2012-07-26T00:06:28.939Z","type":"message"}
+{"nick":"mikeal","message":"so it sits on nextTick and if it's gotten a pipe() event it waits until there is a write() before it kicks off the real request","date":"2012-07-26T00:06:47.162Z","type":"message"}
+{"nick":"isaacs","message":"\"sits on nextTick\" <-- ?","date":"2012-07-26T00:07:04.608Z","type":"message"}
+{"nick":"isaacs","message":"what's that mean, exactly?","date":"2012-07-26T00:07:07.998Z","type":"message"}
+{"nick":"isaacs","message":"just one nextTick, or loopin gon it?","date":"2012-07-26T00:07:20.387Z","type":"message"}
+{"nick":"mikeal","message":"self.on('pipe', function (src) {self.src = src}","date":"2012-07-26T00:07:27.131Z","type":"message"}
+{"nick":"isaacs","message":"ok, right","date":"2012-07-26T00:07:35.638Z","type":"message"}
+{"nick":"mikeal","message":"nextTick(function () { if (!self.src) self.start() })","date":"2012-07-26T00:07:54.366Z","type":"message"}
+{"nick":"isaacs","message":"i've seen request/main.js a few times.  i think i'm familiar with that :)","date":"2012-07-26T00:08:02.150Z","type":"message"}
+{"nick":"mikeal","message":"and in the write() method there is code that calls start() if it hasn't been started","date":"2012-07-26T00:08:15.083Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-07-26T00:08:20.695Z","type":"message"}
+{"nick":"mikeal","message":"getting two pipe events should be considred an \"upgrade\"","date":"2012-07-26T00:08:47.525Z","type":"message"}
+{"nick":"mikeal","message":"this is my source now","date":"2012-07-26T00:08:53.840Z","type":"message"}
+{"nick":"dominictarr","message":"what does start() do?","date":"2012-07-26T00:08:57.277Z","type":"message"}
+{"nick":"dominictarr","message":"starts 'data'?","date":"2012-07-26T00:09:05.242Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: it calls .end() on the underlying http.request() object","date":"2012-07-26T00:09:14.268Z","type":"message"}
+{"nick":"mikeal","message":"no, it creates the underlying http.request() object","date":"2012-07-26T00:09:18.221Z","type":"message"}
+{"nick":"isaacs","message":"oh, right","date":"2012-07-26T00:09:23.556Z","type":"message"}
+{"nick":"mikeal","message":"and calls end","date":"2012-07-26T00:09:25.455Z","type":"message"}
+{"nick":"isaacs","message":"you don't create it event","date":"2012-07-26T00:09:32.507Z","type":"message"}
+{"nick":"dominictarr","message":"it mean's \"I'm ready, when ever you are\"?","date":"2012-07-26T00:09:45.665Z","type":"message"}
+{"nick":"isaacs","message":"i mean, creating it is just a JS object until you .end() it anyway","date":"2012-07-26T00:09:46.526Z","type":"message"}
+{"nick":"mikeal","message":"there's other shit too in start()","date":"2012-07-26T00:10:08.513Z","type":"message"}
+{"nick":"isaacs","message":"so, multiple piping is still just a kinda weird edge case anyhow","date":"2012-07-26T00:10:11.968Z","type":"message"}
+{"nick":"mikeal","message":"like doing all the auth signing","date":"2012-07-26T00:10:13.473Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: right, and all that proxy mumbo jumbo","date":"2012-07-26T00:10:20.639Z","type":"message"}
+{"nick":"mikeal","message":"which needs to happen as late as possible","date":"2012-07-26T00:10:20.837Z","type":"message"}
+{"nick":"mikeal","message":"yeah","date":"2012-07-26T00:10:42.467Z","type":"message"}
+{"nick":"mikeal","message":"this is all i'm saying","date":"2012-07-26T00:10:45.365Z","type":"message"}
+{"nick":"mikeal","message":"with this read() refactor","date":"2012-07-26T00:10:48.801Z","type":"message"}
+{"nick":"mikeal","message":"if you pipe twice to one object, it's not parallel, it's an \"upgrade\"","date":"2012-07-26T00:11:04.114Z","type":"message"}
+{"nick":"mikeal","message":"and there is only ever one source stream","date":"2012-07-26T00:11:12.936Z","type":"message"}
+{"nick":"mikeal","message":"unless you write your own crazy shit","date":"2012-07-26T00:11:19.962Z","type":"message"}
+{"nick":"dominictarr","message":"there is nearly never any need to pipe twice to one object.","date":"2012-07-26T00:11:39.359Z","type":"message"}
+{"nick":"isaacs","message":"hm... i think we could make it work as a merge, as well.","date":"2012-07-26T00:11:43.985Z","type":"message"}
+{"nick":"isaacs","message":"but it's a matter of which choice is best, not dictated by this refactor necessarily","date":"2012-07-26T00:11:58.285Z","type":"message"}
+{"nick":"dominictarr","message":"pipeing from one to many streams is useful though","date":"2012-07-26T00:12:06.988Z","type":"message"}
+{"nick":"dominictarr","message":"piping many to one is already broken, I think,","date":"2012-07-26T00:12:33.789Z","type":"message"}
+{"nick":"mikeal","message":"it shouldn't be","date":"2012-07-26T00:12:41.229Z","type":"message"}
+{"nick":"dominictarr","message":"because of removing _pipeCount","date":"2012-07-26T00:12:47.903Z","type":"message"}
+{"nick":"isaacs","message":"however, piping from one to many IS a bit trickier with the .read() method","date":"2012-07-26T00:12:57.643Z","type":"message"}
+{"nick":"mikeal","message":"we're going to just have to break it","date":"2012-07-26T00:13:06.190Z","type":"message"}
+{"nick":"mikeal","message":"the truth is, anyone doing it at scale had to write their own objects","date":"2012-07-26T00:13:41.531Z","type":"message"}
+{"nick":"dominictarr","message":"either way, with read() the stream must implement read() so it's defacto optional.","date":"2012-07-26T00:13:44.723Z","type":"message"}
+{"nick":"mikeal","message":"this does make it a little harder to write","date":"2012-07-26T00:14:11.786Z","type":"message"}
+{"nick":"isaacs","message":"here's the thing: if you create a new sort of userland writable stream, you have to implement .write() and .end(), and tha'ts basically it.","date":"2012-07-26T00:14:14.143Z","type":"message"}
+{"nick":"isaacs","message":".write() has to return false if you want to take a break, in which case you have to implement \"drain\" event","date":"2012-07-26T00:14:30.803Z","type":"message"}
+{"nick":"isaacs","message":"but that's all pretty straightforward","date":"2012-07-26T00:14:36.692Z","type":"message"}
+{"nick":"dominictarr","message":"you can implement read() interms of on('data',...","date":"2012-07-26T00:14:40.353Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: other way around.","date":"2012-07-26T00:14:48.192Z","type":"message"}
+{"nick":"dominictarr","message":"it could event be in Stream@...","date":"2012-07-26T00:14:50.372Z","type":"message"}
+{"nick":"isaacs","message":"currently, readable streams are much hard.","date":"2012-07-26T00:15:01.402Z","type":"message"}
+{"nick":"isaacs","message":"*much harder.","date":"2012-07-26T00:15:03.812Z","type":"message"}
+{"nick":"mikeal","message":"most people fuck up write()","date":"2012-07-26T00:15:05.694Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: not as bad as they fuck up .pause() and .resume()","date":"2012-07-26T00:15:19.072Z","type":"message"}
+{"nick":"dominictarr","message":"I've been working on base classes that are easy to extend","date":"2012-07-26T00:15:31.545Z","type":"message"}
+{"nick":"mikeal","message":"yeah, stream.Stream needs to be an extendable base class","date":"2012-07-26T00:15:46.255Z","type":"message"}
+{"nick":"mikeal","message":"and we need createFilter()","date":"2012-07-26T00:15:53.015Z","type":"message"}
+{"nick":"isaacs","message":"the extnesion should be: inherits(MyThing, stream.Readable); MyThing.prototype.read = function (n) { return n bytes, or null }","date":"2012-07-26T00:16:03.233Z","type":"message"}
+{"nick":"isaacs","message":"and that's it","date":"2012-07-26T00:16:06.266Z","type":"message"}
+{"nick":"dominictarr","message":"there are multiple types of stream.","date":"2012-07-26T00:16:06.464Z","type":"message"}
+{"nick":"mikeal","message":"if we do that, people will just write this stuff themselves less and we can get it right in one place","date":"2012-07-26T00:16:08.332Z","type":"message"}
+{"nick":"dominictarr","message":"a filter for example, should pass pause state straight through to the writer.","date":"2012-07-26T00:16:40.576Z","type":"message"}
+{"nick":"mikeal","message":"does stream.Stream not have a read() method by default and a listen is put on \"pipe\" in the constructor to pass it through to the src","date":"2012-07-26T00:17:05.363Z","type":"message"}
+{"nick":"dominictarr","message":"but a duplex stream shouldn't do that.","date":"2012-07-26T00:17:23.215Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: i'm not sure about stream.Stream being a pass-through by default.","date":"2012-07-26T00:17:32.613Z","type":"message"}
+{"nick":"mikeal","message":"once we add pause() buffering, it needs to be","date":"2012-07-26T00:17:45.353Z","type":"message"}
+{"nick":"mikeal","message":"writes and reads get way more complicated","date":"2012-07-26T00:17:58.778Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: i'm saying, let's get rid of pause()","date":"2012-07-26T00:18:01.137Z","type":"message"}
+{"nick":"dominictarr","message":"how the readable stream is coupled to the writable side is it's own business.","date":"2012-07-26T00:18:02.563Z","type":"message"}
+{"nick":"isaacs","message":"and duplexes are almost never even remotely passthrough","date":"2012-07-26T00:18:16.310Z","type":"message"}
+{"nick":"dominictarr","message":"no, usually they are not.","date":"2012-07-26T00:18:33.447Z","type":"message"}
+{"nick":"isaacs","message":"any more than when i say \"hello\" to you on the phone, i'd expect to then hear my own voice.","date":"2012-07-26T00:18:37.343Z","type":"message"}
+{"nick":"dominictarr","message":"exactly","date":"2012-07-26T00:18:49.170Z","type":"message"}
+{"nick":"mikeal","message":"ok","date":"2012-07-26T00:18:59.425Z","type":"message"}
+{"nick":"mikeal","message":"so....","date":"2012-07-26T00:19:04.265Z","type":"message"}
+{"nick":"mikeal","message":"i write a socket server","date":"2012-07-26T00:19:13.756Z","type":"message"}
+{"nick":"mikeal","message":"i accept a connection","date":"2012-07-26T00:19:19.374Z","type":"message"}
+{"nick":"dominictarr","message":"there are useful passthrough/filter","date":"2012-07-26T00:19:21.325Z","type":"message"}
+{"nick":"mikeal","message":"i forget to do anything with the data","date":"2012-07-26T00:19:23.573Z","type":"message"}
+{"nick":"dominictarr","message":"streams though","date":"2012-07-26T00:19:24.465Z","type":"message"}
+{"nick":"mikeal","message":"that just fills up available memory?","date":"2012-07-26T00:19:32.110Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: no, it never pulls it out of the tcp buffer","date":"2012-07-26T00:19:42.878Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: so that fills up the tcp buffer in the networking layer, which stops receiving from the wire.","date":"2012-07-26T00:19:58.679Z","type":"message"}
+{"nick":"mikeal","message":"ok","date":"2012-07-26T00:20:01.070Z","type":"message"}
+{"nick":"mikeal","message":"i write a socket server","date":"2012-07-26T00:20:05.483Z","type":"message"}
+{"nick":"mikeal","message":"i go talk to my database after a new connection and then i pipe it","date":"2012-07-26T00:20:14.232Z","type":"message"}
+{"nick":"isaacs","message":"Socket.read() would call an underlying uv_tcp_read()","date":"2012-07-26T00:20:19.420Z","type":"message"}
+{"nick":"mikeal","message":"how does the object i'm piping it to know that the \"readable\" event already happened","date":"2012-07-26T00:20:29.259Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: it doesn't.","date":"2012-07-26T00:20:35.278Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: it just starts calling .read() and then passing the contents downstream","date":"2012-07-26T00:20:47.317Z","type":"message"}
+{"nick":"mikeal","message":"so, the default is to just always try to read","date":"2012-07-26T00:20:49.844Z","type":"message"}
+{"nick":"mikeal","message":"well","date":"2012-07-26T00:20:56.355Z","type":"message"}
+{"nick":"isaacs","message":"when .read() returns null, it says, \"Ok, I'm over\" and waits for \"readable\"","date":"2012-07-26T00:20:56.928Z","type":"message"}
+{"nick":"mikeal","message":"if read() returns null it should wait for a \"readable\" event","date":"2012-07-26T00:21:07.038Z","type":"message"}
+{"nick":"isaacs","message":"yes","date":"2012-07-26T00:21:15.441Z","type":"message"}
+{"nick":"dominictarr","message":"read() === null means over? or pause?","date":"2012-07-26T00:21:21.364Z","type":"message"}
+{"nick":"isaacs","message":"means pause","date":"2012-07-26T00:21:27.288Z","type":"message"}
+{"nick":"isaacs","message":"(conceptually)","date":"2012-07-26T00:21:30.951Z","type":"message"}
+{"nick":"isaacs","message":"\"end\" event means \"no more coming\"","date":"2012-07-26T00:21:37.367Z","type":"message"}
+{"nick":"dominictarr","message":"so what means end?","date":"2012-07-26T00:21:42.195Z","type":"message"}
+{"nick":"mikeal","message":"hrm…..","date":"2012-07-26T00:21:44.589Z","type":"message"}
+{"nick":"isaacs","message":"read() == null -> wait for \"end\" or \"readable\"","date":"2012-07-26T00:21:49.137Z","type":"message"}
+{"nick":"isaacs","message":"write() === false -> wait for \"drain\"","date":"2012-07-26T00:21:55.073Z","type":"message"}
+{"nick":"mikeal","message":"i don't like that the first thing new socket connections do is pause their input","date":"2012-07-26T00:21:57.381Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: nothing is paused.","date":"2012-07-26T00:22:03.732Z","type":"message"}
+{"nick":"dominictarr","message":"what if there is a valid message that is \"end\"","date":"2012-07-26T00:22:04.721Z","type":"message"}
+{"nick":"dominictarr","message":"?","date":"2012-07-26T00:22:07.123Z","type":"message"}
+{"nick":"isaacs","message":"if you .read() it right away, you'll get the data out.","date":"2012-07-26T00:22:09.837Z","type":"message"}
+{"nick":"mikeal","message":"that means that every new connection accepted will suffer a roundtrip","date":"2012-07-26T00:22:11.222Z","type":"message"}
+{"nick":"mikeal","message":"i'm talking about at the network layer","date":"2012-07-26T00:22:19.502Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: the thing is, we are just doing this for you now.","date":"2012-07-26T00:22:20.226Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: yeah, but that's no different than what we do now","date":"2012-07-26T00:22:31.427Z","type":"message"}
+{"nick":"mikeal","message":"if we aren't putting data in to memory then that means we aren't taking it off the network","date":"2012-07-26T00:22:35.943Z","type":"message"}
+{"nick":"isaacs","message":"if you just call .read() right away, then that's excatly the same as what we have now","date":"2012-07-26T00:22:52.436Z","type":"message"}
+{"nick":"mikeal","message":"no we aren't, or at least we shouldn't be, the first TCP message we send should not be \"stop sending me data\"","date":"2012-07-26T00:23:02.534Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: no, we never send a \"stop sending me data\" message","date":"2012-07-26T00:23:15.366Z","type":"message"}
+{"nick":"mikeal","message":"but i don't want to read, i want you to buffer some data while i talk to redis instead of eating a roundtrip :)","date":"2012-07-26T00:23:28.783Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: yeah","date":"2012-07-26T00:23:35.885Z","type":"message"}
+{"nick":"mikeal","message":"so which is it?","date":"2012-07-26T00:24:10.569Z","type":"message"}
+{"nick":"isaacs","message":"today:  sock.on(\"readable\", function () { var c; while ((c = this.read()) !== null) { this.emit('data', c) })","date":"2012-07-26T00:24:11.596Z","type":"message"}
+{"nick":"mikeal","message":"ok","date":"2012-07-26T00:24:30.179Z","type":"message"}
+{"nick":"isaacs","message":"missed a } sorry","date":"2012-07-26T00:24:31.145Z","type":"message"}
+{"nick":"isaacs","message":"so, we're always pulling all of the data we can out of hte networking layer as fast as we can","date":"2012-07-26T00:24:42.795Z","type":"message"}
+{"nick":"mikeal","message":"right","date":"2012-07-26T00:24:48.421Z","type":"message"}
+{"nick":"mikeal","message":"we're moving away from that now","date":"2012-07-26T00:24:53.013Z","type":"message"}
+{"nick":"isaacs","message":"with a .read() method, you don't need to explicitly pause","date":"2012-07-26T00:24:54.761Z","type":"message"}
+{"nick":"isaacs","message":"you just read() what you can once you can","date":"2012-07-26T00:25:01.401Z","type":"message"}
+{"nick":"isaacs","message":"but not before","date":"2012-07-26T00:25:02.982Z","type":"message"}
+{"nick":"isaacs","message":"so, the TCP buffer in your networking layer can keep filling up while you talk ot redis","date":"2012-07-26T00:25:18.893Z","type":"message"}
+{"nick":"mikeal","message":"right, but we pull everything off in the same tick","date":"2012-07-26T00:25:23.453Z","type":"message"}
+{"nick":"isaacs","message":"if that takes too long, then yeah, it'll push back on the router etc","date":"2012-07-26T00:25:29.832Z","type":"message"}
+{"nick":"mikeal","message":"wait","date":"2012-07-26T00:25:40.625Z","type":"message"}
+{"nick":"dominictarr","message":"isaacs, I think you should do that the other way","date":"2012-07-26T00:25:50.314Z","type":"message"}
+{"nick":"mikeal","message":"do i get a socket object before the TCP buffer is full?","date":"2012-07-26T00:25:58.460Z","type":"message"}
+{"nick":"dominictarr","message":"on('data', function (d) { buffer.push(d) })","date":"2012-07-26T00:26:09.514Z","type":"message"}
+{"nick":"dominictarr","message":"and then","date":"2012-07-26T00:26:14.326Z","type":"message"}
+{"nick":"mikeal","message":"and readable is then called when it's full","date":"2012-07-26T00:26:15.333Z","type":"message"}
+{"nick":"dominictarr","message":"read = function () { return buffer.shift() }","date":"2012-07-26T00:26:34.618Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: that's an extra copy, though","date":"2012-07-26T00:26:35.211Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: also, an extra userland buffer","date":"2012-07-26T00:26:47.263Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: you get a socket object as soon as the connection is established, before any bytes are in.","date":"2012-07-26T00:26:57.604Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: in fact, it's probably not readable yet","date":"2012-07-26T00:27:03.007Z","type":"message"}
+{"nick":"mikeal","message":"ok","date":"2012-07-26T00:27:03.896Z","type":"message"}
+{"nick":"dominictarr","message":"yeah, but it's not as slow as net work io.","date":"2012-07-26T00:27:05.201Z","type":"message"}
+{"nick":"mikeal","message":"ok","date":"2012-07-26T00:27:16.259Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: \"readable\" emits whenever there are some bytes to consume","date":"2012-07-26T00:27:17.290Z","type":"message"}
+{"nick":"dominictarr","message":"if you don't want to buffer","date":"2012-07-26T00:27:21.149Z","type":"message"}
+{"nick":"isaacs","message":"you can then consume up to n bytes by doing read(n)","date":"2012-07-26T00:27:29.383Z","type":"message"}
+{"nick":"dominictarr","message":"stream.read = false","date":"2012-07-26T00:27:32.570Z","type":"message"}
+{"nick":"isaacs","message":"or just read() to say \"give me what you've got\"","date":"2012-07-26T00:27:35.283Z","type":"message"}
+{"nick":"mikeal","message":"this will be slow if we don't implement a pasthrough by default that is just a big pointer list back to the origin","date":"2012-07-26T00:27:37.864Z","type":"message"}
+{"nick":"mikeal","message":"because we have the same number of events emitted and listened to","date":"2012-07-26T00:28:00.489Z","type":"message"}
+{"nick":"isaacs","message":"\"pointer list back to the origin\"?","date":"2012-07-26T00:28:02.834Z","type":"message"}
+{"nick":"mikeal","message":"as we did for \"data\"","date":"2012-07-26T00:28:04.838Z","type":"message"}
+{"nick":"dominictarr","message":"and then pipe checks if read is a function, else pipes off 'data'","date":"2012-07-26T00:28:12.762Z","type":"message"}
+{"nick":"mikeal","message":"and then we're *also* doing a function call","date":"2012-07-26T00:28:12.961Z","type":"message"}
+{"nick":"mikeal","message":"if it's a function call for every stream in the pipe chain even when they aren't mutating, that's gonna be slow","date":"2012-07-26T00:28:30.299Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: i don't believe that'll be slow.","date":"2012-07-26T00:28:47.672Z","type":"message"}
+{"nick":"isaacs","message":"in fact, i have a feeling it'll be very fast.","date":"2012-07-26T00:28:55.910Z","type":"message"}
+{"nick":"isaacs","message":"and we won't be calling .pause() every time a write isn't flushable, but still getting the benefits of tcp backpressure","date":"2012-07-26T00:29:18.806Z","type":"message"}
+{"nick":"mikeal","message":"so","date":"2012-07-26T00:29:24.824Z","type":"message"}
+{"nick":"mikeal","message":"\"readable\" gets emitted and nobody calls read()","date":"2012-07-26T00:29:34.334Z","type":"message"}
+{"nick":"mikeal","message":"in a socket, we pause the network input?","date":"2012-07-26T00:29:45.626Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: effectively.","date":"2012-07-26T00:30:07.245Z","type":"message"}
+{"nick":"isaacs","message":"but remember, *this is already how it works under the hood*","date":"2012-07-26T00:30:13.653Z","type":"message"}
+{"nick":"isaacs","message":".pause() is just our way to tell libuv to stop calilng read() every time the thing is readable","date":"2012-07-26T00:30:29.131Z","type":"message"}
+{"nick":"mikeal","message":"yeah, i was just trying to think if there was any performance increase we might see in filling up the window more","date":"2012-07-26T00:30:42.468Z","type":"message"}
+{"nick":"isaacs","message":"then the underlying network system buffer fills up, and stops consuming the input from the hardware","date":"2012-07-26T00:30:48.385Z","type":"message"}
+{"nick":"mikeal","message":"yeah, i get it","date":"2012-07-26T00:30:51.215Z","type":"message"}
+{"nick":"dominictarr","message":"it actually sends a NAK packet, though right?","date":"2012-07-26T00:31:00.447Z","type":"message"}
+{"nick":"mikeal","message":"fuck, this will break all the codes :)","date":"2012-07-26T00:31:12.859Z","type":"message"}
+{"nick":"mikeal","message":"but i think i'm for it","date":"2012-07-26T00:31:17.962Z","type":"message"}
+{"nick":"isaacs","message":"yes, this will break all the codes :)","date":"2012-07-26T00:31:19.334Z","type":"message"}
+{"nick":"isaacs","message":"it's fairly easy to add some kludges to support \"data\" events if anyone listens to them, thoguh","date":"2012-07-26T00:31:39.726Z","type":"message"}
+{"nick":"isaacs","message":"Stream.prototype.on = function (ev, fn) { if (ev === \"data\") { this._emitDataEvents(); } EventEmitte.rprorotype.on.call(this, ev, fn) }","date":"2012-07-26T00:32:09.757Z","type":"message"}
+{"nick":"dominictarr","message":"but wont read's buffer get enormous?","date":"2012-07-26T00:32:14.797Z","type":"message"}
+{"nick":"mikeal","message":"i can't think of a way to polyfill for people who just listen to \"data\"","date":"2012-07-26T00:32:20.164Z","type":"message"}
+{"nick":"mikeal","message":"which is most people","date":"2012-07-26T00:32:23.005Z","type":"message"}
+{"nick":"isaacs","message":"it's a simple polyfill","date":"2012-07-26T00:32:29.313Z","type":"message"}
+{"nick":"isaacs","message":"you just listen to readable, and read() everything, and then emit \"data\" with the results","date":"2012-07-26T00:32:37.485Z","type":"message"}
+{"nick":"isaacs","message":"and we can just polyfill when a \"data\" listener is added","date":"2012-07-26T00:32:47.337Z","type":"message"}
+{"nick":"mikeal","message":"so we're going to call that function that checks for listeners by name on every read","date":"2012-07-26T00:33:34.046Z","type":"message"}
+{"nick":"dominictarr","message":"I have an idea how we could do both apis","date":"2012-07-26T00:33:42.570Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: nono, just polyfill the addListener method","date":"2012-07-26T00:33:52.193Z","type":"message"}
+{"nick":"isaacs","message":"i mean, it's either/or","date":"2012-07-26T00:34:06.182Z","type":"message"}
+{"nick":"mikeal","message":"oh god, that's so gross","date":"2012-07-26T00:34:06.379Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-26T00:34:08.428Z","type":"message"}
+{"nick":"mikeal","message":"why can't we just break node","date":"2012-07-26T00:34:09.882Z","type":"message"}
+{"nick":"isaacs","message":"it sucks :)","date":"2012-07-26T00:34:10.382Z","type":"message"}
+{"nick":"mikeal","message":"like in the good old days","date":"2012-07-26T00:34:12.484Z","type":"message"}
+{"nick":"isaacs","message":"if only","date":"2012-07-26T00:34:15.713Z","type":"message"}
+{"nick":"mikeal","message":":)","date":"2012-07-26T00:34:15.909Z","type":"message"}
+{"nick":"dominictarr","message":"ryah would break it.","date":"2012-07-26T00:34:23.610Z","type":"message"}
+{"nick":"mikeal","message":"for 1.0 we're going to kill this polyfill","date":"2012-07-26T00:34:27.406Z","type":"message"}
+{"nick":"mikeal","message":"that's what 1.0 should mean","date":"2012-07-26T00:34:38.233Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: 2.0","date":"2012-07-26T00:34:39.511Z","type":"message"}
+{"nick":"mikeal","message":":)","date":"2012-07-26T00:34:40.007Z","type":"message"}
+{"nick":"isaacs","message":"1.9 maybe, i dunno","date":"2012-07-26T00:34:56.221Z","type":"message"}
+{"nick":"mikeal","message":"i think this is gonna break a lot","date":"2012-07-26T00:35:03.205Z","type":"message"}
+{"nick":"dominictarr","message":"I mean, 0.9 does not imply 1.0 is next","date":"2012-07-26T00:35:06.728Z","type":"message"}
+{"nick":"mikeal","message":"because we don't get out of pause/resume","date":"2012-07-26T00:35:15.264Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: no, but what we have in node js today will be in 1.0","date":"2012-07-26T00:35:31.021Z","type":"message"}
+{"nick":"mikeal","message":"because we have to do it in the polyfill","date":"2012-07-26T00:35:32.588Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: we're just going to get libuv equivalently stable, and unfuck http","date":"2012-07-26T00:35:46.811Z","type":"message"}
+{"nick":"dominictarr","message":"this buffering thing is pretty much a side issue for me, I want a consistent terminal state.","date":"2012-07-26T00:36:13.925Z","type":"message"}
+{"nick":"dominictarr","message":"that is my most important issue.","date":"2012-07-26T00:36:21.287Z","type":"message"}
+{"nick":"dominictarr","message":"you can always pipe to a buffering stream.","date":"2012-07-26T00:36:42.957Z","type":"message"}
+{"nick":"isaacs","message":"i've gotta run","date":"2012-07-26T00:37:23.150Z","type":"message"}
+{"nick":"dominictarr","message":"okay, as long as you realize that I'm gonna keep hassling you about this.","date":"2012-07-26T00:38:06.315Z","type":"message"}
+{"nick":"isaacs","message":":D","date":"2012-07-26T00:38:11.579Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: yeah","date":"2012-07-26T00:38:17.528Z","type":"message"}
+{"nick":"isaacs","message":"this is what we're going to do for 0.9","date":"2012-07-26T00:38:21.379Z","type":"message"}
+{"nick":"isaacs","message":"but to support it, we need to get this interface into libuv","date":"2012-07-26T00:38:36.389Z","type":"message"}
+{"nick":"isaacs","message":"i know that piscisaureus wants to do some libuv cleanup stuff.","date":"2012-07-26T00:38:47.019Z","type":"message"}
+{"nick":"dominictarr","message":"https://gist.github.com/3117184","date":"2012-07-26T00:38:59.841Z","type":"message"}
+{"nick":"isaacs","message":"right now, libuv is very similar to our \"emit a data event with whatever you have\" interface.","date":"2012-07-26T00:39:06.305Z","type":"message"}
+{"nick":"mikeal","message":"i like that we're getting rid of pause","date":"2012-07-26T00:39:07.956Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: yeah, pause is so hard.","date":"2012-07-26T00:39:14.671Z","type":"message"}
+{"nick":"dominictarr","message":"these are my thoughts for streams from a userland perspective","date":"2012-07-26T00:39:20.380Z","type":"message"}
+{"nick":"mikeal","message":"this works more easily","date":"2012-07-26T00:39:26.867Z","type":"message"}
+{"nick":"mikeal","message":"less application code","date":"2012-07-26T00:39:34.770Z","type":"message"}
+{"nick":"mikeal","message":"and node just figures out what you want to do","date":"2012-07-26T00:39:42.016Z","type":"message"}
+{"nick":"isaacs","message":"yep","date":"2012-07-26T00:40:14.837Z","type":"message"}
+{"nick":"isaacs","message":"i like the symmetry, also","date":"2012-07-26T00:40:20.692Z","type":"message"}
+{"nick":"dominictarr","message":"what do you mean, getting rid of pause?","date":"2012-07-26T00:40:27.644Z","type":"message"}
+{"nick":"isaacs","message":"you implement read()/\"readable\"/\"end\" for readable streams, and you implement write()/end()/\"drain\" for writable streams","date":"2012-07-26T00:40:48.009Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: you don't pause(), you just fail to read() and it's the same effect","date":"2012-07-26T00:41:13.811Z","type":"message"}
+{"nick":"dominictarr","message":"hmm, I'll have to thing about that.","date":"2012-07-26T00:41:29.154Z","type":"message"}
+{"nick":"dominictarr","message":"s/g/k","date":"2012-07-26T00:41:39.378Z","type":"message"}
+{"nick":"isaacs","message":"ok, i'm out.  have a nice day :)","date":"2012-07-26T00:41:42.718Z","type":"message"}
+{"nick":"isaacs","action":"away","date":"2012-07-26T00:41:45.583Z","type":"action"}
+{"nick":"dominictarr","message":"mikeal, I didn't mean that unpipe is part of the API,","date":"2012-07-26T00:44:41.070Z","type":"message"}
+{"nick":"dominictarr","message":"I just meant that it's possible to unpipe","date":"2012-07-26T00:44:53.132Z","type":"message"}
+{"nick":"mikeal","message":"we need and unpipe","date":"2012-07-26T00:45:18.064Z","type":"message"}
+{"nick":"mikeal","message":"er an","date":"2012-07-26T00:45:20.629Z","type":"message"}
+{"nick":"dominictarr","message":"yeah, at the moment destroy() functions like an unpipe","date":"2012-07-26T00:46:16.968Z","type":"message"}
+{"nick":"dominictarr","message":"because 'close' is not propagated sourcewards.","date":"2012-07-26T00:46:38.673Z","type":"message"}
+{"nick":"dominictarr","message":"also, 'error'.","date":"2012-07-26T00:46:55.596Z","type":"message"}
+{"nick":"dominictarr","message":"just leaves the pipline hanging","date":"2012-07-26T00:47:04.673Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T00:58:51.605Z","type":"message"}
+{"nick":"dominictarr","message":"mikeal, I think the important thing here is to propagate the termination of the stream.","date":"2012-07-26T00:59:24.159Z","type":"message"}
+{"nick":"dominictarr","message":"'error' should trigger destroy()","date":"2012-07-26T00:59:50.270Z","type":"message"}
+{"nick":"dominictarr","message":"and so should 'close'","date":"2012-07-26T00:59:58.830Z","type":"message"}
+{"nick":"mikeal","message":"right","date":"2012-07-26T01:03:32.520Z","type":"message"}
+{"nick":"mikeal","message":"'close' event should never come before 'end'","date":"2012-07-26T01:03:50.109Z","type":"message"}
+{"nick":"mikeal","message":"so either 'end' or 'error' should always happen","date":"2012-07-26T01:03:58.359Z","type":"message"}
+{"nick":"dominictarr","message":"yeah.","date":"2012-07-26T01:04:19.921Z","type":"message"}
+{"nick":"dominictarr","message":"that is what I've found works best with the current pipe()","date":"2012-07-26T01:04:41.020Z","type":"message"}
+{"nick":"dominictarr","message":"semantically, 'close' just means end() && 'end'","date":"2012-07-26T01:05:15.263Z","type":"message"}
+{"nick":"dominictarr","message":"from the perspective of pipe()","date":"2012-07-26T01:05:29.282Z","type":"message"}
+{"nick":"dominictarr","message":"you could separate 'close' into two events, one for the readable, and one for the writable side...","date":"2012-07-26T01:06:22.070Z","type":"message"}
+{"nick":"dominictarr","message":"but that seems quite complex to me right now, and the use-case seems minimal.","date":"2012-07-26T01:06:57.523Z","type":"message"}
+{"nick":"SubStack","message":"it's like all this guy does is spam people about x-tag https://twitter.com/csuwldcat","date":"2012-07-26T01:07:18.139Z","type":"message"}
+{"nick":"SubStack","message":"considering clicking \"report for spam\"","date":"2012-07-26T01:07:56.117Z","type":"message"}
+{"nick":"dominictarr","message":"SubStack, he likes the seahawks, what do you expect?","date":"2012-07-26T01:08:21.361Z","type":"message"}
+{"nick":"SubStack","message":"what is that even, some kind of sports?","date":"2012-07-26T01:08:41.156Z","type":"message"}
+{"nick":"jesusabdullah","message":"he looks like a wldcat from here","date":"2012-07-26T01:08:55.002Z","type":"message"}
+{"nick":"jesusabdullah","message":"SubStack: Yeah, the Seattle Seahawks","date":"2012-07-26T01:09:09.248Z","type":"message"}
+{"nick":"jesusabdullah","message":"I forget which sports they play honestly, I think it's football","date":"2012-07-26T01:09:25.881Z","type":"message"}
+{"nick":"chapel","message":"not fooseball?","date":"2012-07-26T01:09:51.081Z","type":"message"}
+{"nick":"dominictarr","message":"It sound like a \"dad rock\" band","date":"2012-07-26T01:10:06.158Z","type":"message"}
+{"nick":"dominictarr","message":"as my friend distateradio says.","date":"2012-07-26T01:10:27.267Z","type":"message"}
+{"nick":"jesusabdullah","message":"Oh, no, they couldn't even HANDLE real rock n' roll, kid","date":"2012-07-26T01:10:46.613Z","type":"message"}
+{"nick":"jesusabdullah","message":"\"Seahawks\" sounds closest to a mash-up between Great White and The Scorpions","date":"2012-07-26T01:11:19.446Z","type":"message"}
+{"nick":"jesusabdullah","message":"maybe a dash of Meatloaf","date":"2012-07-26T01:11:30.241Z","type":"message"}
+{"nick":"dominictarr","message":"or it could be a $CITYNAME $SPORTSTEAM","date":"2012-07-26T01:11:37.845Z","type":"message"}
+{"nick":"dominictarr","message":"who knows","date":"2012-07-26T01:11:44.645Z","type":"message"}
+{"nick":"dominictarr","message":"?","date":"2012-07-26T01:11:45.933Z","type":"message"}
+{"nick":"jesusabdullah","message":"It's definitely a $CITYNAME $TEAMNAME","date":"2012-07-26T01:12:04.779Z","type":"message"}
+{"nick":"jesusabdullah","message":"$SPORTSTEAM is the better variable name","date":"2012-07-26T01:12:25.025Z","type":"message"}
+{"nick":"dominictarr","message":"whatever","date":"2012-07-26T01:13:10.360Z","type":"message"}
+{"nick":"dominictarr","message":"I mean \"I STAND CORRECTED\"","date":"2012-07-26T01:13:27.178Z","type":"message"}
+{"nick":"jesusabdullah","message":"oho","date":"2012-07-26T01:13:49.003Z","type":"message"}
+{"nick":"dominictarr","message":"it would be a great dad rock band name.","date":"2012-07-26T01:15:17.870Z","type":"message"}
+{"nick":"SubStack","message":"HOW ABOUT THAT LOCAL SPORTS TEAM? I AM TRYING TO MAKE SMALLTALK HERE. IT IS VERY DIFFICULT>","date":"2012-07-26T01:15:26.903Z","type":"message"}
+{"nick":"LOUDBOT","message":"DONT PANIC","date":"2012-07-26T01:15:27.566Z","type":"message"}
+{"nick":"dominictarr","message":"only problem is that no one is starting new dad rock bands","date":"2012-07-26T01:15:36.967Z","type":"message"}
+{"nick":"dominictarr","message":"they are all founded in the 70's","date":"2012-07-26T01:15:52.459Z","type":"message"}
+{"nick":"dominictarr","message":"next person to start a band your dad likes === \"big hit\"","date":"2012-07-26T01:16:41.058Z","type":"message"}
+{"nick":"jesusabdullah","message":"What about Kid Rock","date":"2012-07-26T01:41:58.998Z","type":"message"}
+{"nick":"jesusabdullah","message":"that \"ride free\" album or whatever's totally a lynard skynard style album","date":"2012-07-26T01:42:17.551Z","type":"message"}
+{"nick":"captain_morgan","date":"2012-07-26T01:44:22.195Z","type":"join"}
+{"nick":"dominictarr","message":"sure, if you dad can get over the hip hop thing.","date":"2012-07-26T01:45:04.240Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T01:58:51.660Z","type":"message"}
+{"nick":"jesusabdullah","message":"dominictarr: Yeah, you just ignore the early albums XD","date":"2012-07-26T02:25:57.143Z","type":"message"}
+{"nick":"AvianFlu","message":"I NEVER MAKE SMALL TALK IN SUCH LARGE LETTERS","date":"2012-07-26T02:26:38.100Z","type":"message"}
+{"nick":"LOUDBOT","message":"YOU DO NOT FLOW, YOU ARE NOT THERE, YOU DON'T EXIST TO THE WORLD","date":"2012-07-26T02:26:40.249Z","type":"message"}
+{"nick":"dominictarr","message":"FUTURE CLASSIC","date":"2012-07-26T02:32:18.495Z","type":"message"}
+{"nick":"LOUDBOT","message":"ACHIEVEMENT UNLOCKED: RUTHLESS REFACTOR","date":"2012-07-26T02:32:19.059Z","type":"message"}
+{"nick":"isaacs","message":"mikeal: https://gist.github.com/3179964","date":"2012-07-26T02:49:17.495Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: ^","date":"2012-07-26T02:50:21.917Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T02:58:51.682Z","type":"message"}
+{"nick":"AvianFlu","message":"LOUDBOT: twitlast","date":"2012-07-26T02:59:36.296Z","type":"message"}
+{"nick":"LOUDBOT","message":"AvianFlu: http://twitter.com/loudbot/status/228323434193620992 (HighBit/##church-of-loudbot)","date":"2012-07-26T02:59:36.666Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr, mikeal: another bonus about this approach: no need for a random readable/writable flag.","date":"2012-07-26T03:05:13.061Z","type":"message"}
+{"nick":"isaacs","message":"DONT ASK PERMISSION, JUST DO IT!","date":"2012-07-26T03:05:20.685Z","type":"message"}
+{"nick":"LOUDBOT","message":"HE IS NOT VERSION 2","date":"2012-07-26T03:05:21.326Z","type":"message"}
+{"nick":"isaacs","message":"if it has a read function, it's readable.  if it has a write method, it's writable.","date":"2012-07-26T03:05:38.211Z","type":"message"}
+{"nick":"ryan_stevens","reason":"Quit: Leaving.","date":"2012-07-26T03:07:42.915Z","type":"quit"}
+{"nick":"SubStack","message":"YES","date":"2012-07-26T03:07:50.941Z","type":"message"}
+{"nick":"SubStack","message":"isaacs: I like this idea of dropping readable/writable in favor of feature detecting write/read greatly.","date":"2012-07-26T03:08:14.327Z","type":"message"}
+{"nick":"isaacs","message":"SubStack: also, there's way less state to maintain here.","date":"2012-07-26T03:08:32.168Z","type":"message"}
+{"nick":"isaacs","message":"https://github.com/isaacs/readable-stream","date":"2012-07-26T03:09:59.277Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-26T03:17:05.389Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-26T03:21:39.363Z","type":"join"}
+{"nick":"timoxley","date":"2012-07-26T03:28:57.359Z","type":"join"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2012-07-26T03:48:28.842Z","type":"quit"}
+{"nick":"ryan_stevens","date":"2012-07-26T03:52:33.177Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T03:58:51.653Z","type":"message"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.226.209(free4)","date":"2012-07-26T04:00:55.869Z","type":"message"}
+{"nick":"Raynos","message":"I finally got round to buying a bike","date":"2012-07-26T04:14:09.376Z","type":"message"}
+{"nick":"Raynos","message":"I wonder whether It will be good","date":"2012-07-26T04:14:14.539Z","type":"message"}
+{"nick":"timoxley","date":"2012-07-26T04:17:21.711Z","type":"join"}
+{"nick":"ryan_stevens","reason":"Quit: Leaving.","date":"2012-07-26T04:49:40.800Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-26T04:56:55.397Z","type":"quit"}
+{"nick":"ryan_stevens","date":"2012-07-26T04:57:58.575Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T04:58:51.585Z","type":"message"}
+{"nick":"captain_morgan","reason":"Remote host closed the connection","date":"2012-07-26T05:15:26.975Z","type":"quit"}
+{"nick":"captain_morgan","date":"2012-07-26T05:22:02.353Z","type":"join"}
+{"nick":"AvianFlu","new_nick":"AvianusAsleepus","date":"2012-07-26T05:24:03.575Z","type":"nick"}
+{"nick":"captain_morgan","reason":"Ping timeout: 276 seconds","date":"2012-07-26T05:29:41.420Z","type":"quit"}
+{"nick":"SubStack","message":"Raynos: excellent!","date":"2012-07-26T05:30:13.526Z","type":"message"}
+{"nick":"captain_morgan","date":"2012-07-26T05:30:31.339Z","type":"join"}
+{"nick":"captain_morgan","reason":"Ping timeout: 276 seconds","date":"2012-07-26T05:35:32.361Z","type":"quit"}
+{"nick":"captain_morgan","date":"2012-07-26T05:53:59.411Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T05:58:51.605Z","type":"message"}
+{"nick":"captain_morgan","reason":"Ping timeout: 255 seconds","date":"2012-07-26T06:00:28.041Z","type":"quit"}
+{"nick":"captain_morgan","date":"2012-07-26T06:01:39.465Z","type":"join"}
+{"nick":"captain_morgan","reason":"Ping timeout: 252 seconds","date":"2012-07-26T06:14:57.465Z","type":"quit"}
+{"nick":"captain_morgan","date":"2012-07-26T06:16:45.286Z","type":"join"}
+{"nick":"saijanai_","reason":"Quit: saijanai_","date":"2012-07-26T06:34:36.479Z","type":"quit"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2012-07-26T06:35:03.296Z","type":"quit"}
+{"nick":"timoxley","date":"2012-07-26T06:41:28.976Z","type":"join"}
+{"nick":"captain_morgan","reason":"Ping timeout: 276 seconds","date":"2012-07-26T06:44:26.452Z","type":"quit"}
+{"nick":"captain_morgan","date":"2012-07-26T06:51:52.293Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T06:58:51.734Z","type":"message"}
+{"nick":"wiwillia","date":"2012-07-26T07:01:45.797Z","type":"join"}
+{"nick":"dominictarr","message":"isaacs, isn't it gonna be slower to _always_ buffer?","date":"2012-07-26T07:13:40.072Z","type":"message"}
+{"nick":"dominictarr","message":"you only really need that on a subset of streams","date":"2012-07-26T07:13:52.701Z","type":"message"}
+{"nick":"dominictarr","reason":"Ping timeout: 255 seconds","date":"2012-07-26T07:45:48.349Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-26T07:56:39.480Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-26T07:58:51.658Z","type":"message"}
