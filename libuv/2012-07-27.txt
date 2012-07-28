@@ -317,3 +317,684 @@
 {"nick":"indutny","message":"btw, I've just created joyent smartmachine","date":"2012-07-27T15:50:38.790Z","type":"message"}
 {"nick":"indutny","message":"isaacs: can I provision machine without apache and etc? :)","date":"2012-07-27T15:52:13.101Z","type":"message"}
 {"nick":"dap","date":"2012-07-27T15:59:35.141Z","type":"join"}
+{"nick":"isaacs","message":"indutny: yeah, just use the plain old smartos image, not smartos-plus or whatever.","date":"2012-07-27T16:00:57.159Z","type":"message"}
+{"nick":"isaacs","message":"indutny: you can also pkgin uninstall whatever","date":"2012-07-27T16:01:05.828Z","type":"message"}
+{"nick":"chobi_e_","new_nick":"chobi_e","date":"2012-07-27T16:02:04.484Z","type":"nick"}
+{"nick":"chobi_e","new_nick":"chobi_e_","date":"2012-07-27T16:13:33.110Z","type":"nick"}
+{"nick":"isaacs","message":"piscisaureus: what happens if you call stream.read(cb) and it ends before the read() comes back?","date":"2012-07-27T16:22:06.974Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: interface-wise?","date":"2012-07-27T16:22:13.814Z","type":"message"}
+{"nick":"isaacs","message":"say, there's no data available, and we haven't received the end yet.  you call read(cb), and then we get the end.","date":"2012-07-27T16:22:54.552Z","type":"message"}
+{"nick":"isaacs","message":"does the cb() get called with null?","date":"2012-07-27T16:22:58.656Z","type":"message"}
+{"nick":"isaacs","message":"or does it just go off into the ether?","date":"2012-07-27T16:25:42.335Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: you'd get null for a buffer","date":"2012-07-27T16:26:40.871Z","type":"message"}
+{"nick":"isaacs","message":"hm... ok.","date":"2012-07-27T16:26:50.983Z","type":"message"}
+{"nick":"isaacs","message":"so stream.read(cb) has to assign an 'end' cb as well?","date":"2012-07-27T16:27:08.593Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: ah, so you want to bolt it onto the current api?","date":"2012-07-27T16:27:26.049Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: in libuv, \"end\"  is also reported to the read callback","date":"2012-07-27T16:27:39.726Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: yes, i need to be able to shim it in both directions.","date":"2012-07-27T16:27:42.643Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: because that's how it works in c. If you get an EOF then read() returns 0","date":"2012-07-27T16:27:58.384Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: part of the requirement of a solution here is that we make it interoperate with existing stream programs.","date":"2012-07-27T16:28:21.018Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: we can bolt the current system pretty easily onto this read() thing","date":"2012-07-27T16:28:53.655Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: and the read thing is not hard to do in libuv","date":"2012-07-27T16:29:05.233Z","type":"message"}
+{"nick":"piscisaureus","message":"plus it would work nicely with files being made streams","date":"2012-07-27T16:29:15.807Z","type":"message"}
+{"nick":"isaacs","message":"well, i'm not so sure it'd be any better, actually.","date":"2012-07-27T16:29:29.701Z","type":"message"}
+{"nick":"isaacs","message":"because we still probably want to buffer a lot for fs read streams.","date":"2012-07-27T16:29:39.681Z","type":"message"}
+{"nick":"isaacs","message":"if you're doing fstream.read(1) over and over again, we don't want to make each one of those have to hit the disk.","date":"2012-07-27T16:29:54.872Z","type":"message"}
+{"nick":"isaacs","message":"(or the fs subsystem, which is only the actual disk every 4096 bytes or whatever)","date":"2012-07-27T16:30:16.901Z","type":"message"}
+{"nick":"piscisaureus","message":"haha, yeah that won't happen anyway","date":"2012-07-27T16:30:19.397Z","type":"message"}
+{"nick":"piscisaureus","message":"but it'd be very slow","date":"2012-07-27T16:30:24.406Z","type":"message"}
+{"nick":"piscisaureus","message":"because of the thread pool synchronization overhead","date":"2012-07-27T16:30:35.531Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-07-27T16:30:38.810Z","type":"message"}
+{"nick":"isaacs","message":"we want to read in 16kb or something to memory, then feed you that.","date":"2012-07-27T16:30:50.383Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-27T16:30:54.419Z","type":"quit"}
+{"nick":"tjfontaine","message":"he didn't like you conversation :)","date":"2012-07-27T16:31:06.379Z","type":"message"}
+{"nick":"isaacs","message":"so doing read() --> data|null is actually pretty easy, and read(cb) gets a little more complicated in this case.","date":"2012-07-27T16:31:20.527Z","type":"message"}
+{"nick":"isaacs","message":"since we have it in memory already","date":"2012-07-27T16:31:27.715Z","type":"message"}
+{"nick":"isaacs","message":"and we can fetch another block whenever the buffer is smaller than the specified size.","date":"2012-07-27T16:31:44.295Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: you might want to wait until he rejoins","date":"2012-07-27T16:31:45.770Z","type":"message"}
+{"nick":"isaacs","message":"oh, i ignore /joins and /parts.","date":"2012-07-27T16:31:54.991Z","type":"message"}
+{"nick":"isaacs","message":"should probably turn that off in here.","date":"2012-07-27T16:32:00.871Z","type":"message"}
+{"nick":"piscisaureus","message":"I'm still here","date":"2012-07-27T16:32:06.837Z","type":"message"}
+{"nick":"tjfontaine","message":"ack, duplicates","date":"2012-07-27T16:32:12.217Z","type":"message"}
+{"nick":"isaacs","message":"the many faces and phases of the mysterious bert belder.","date":"2012-07-27T16:32:54.082Z","type":"message"}
+{"nick":"isaacs","message":"so many dino fish","date":"2012-07-27T16:33:01.540Z","type":"message"}
+{"nick":"joeandaverde","date":"2012-07-27T16:33:12.754Z","type":"join"}
+{"nick":"piscisaureus","message":"isaacs: so what I don't like about the readable event is that it's not so much of an improvement","date":"2012-07-27T16:35:59.530Z","type":"message"}
+{"nick":"isaacs","message":"howso?","date":"2012-07-27T16:36:28.717Z","type":"message"}
+{"nick":"isaacs","message":"(or, \"improvement over what?\")","date":"2012-07-27T16:36:44.864Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: wel, you still get an event, you just respond slightly differently","date":"2012-07-27T16:36:47.074Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: because it doesn't give you the data,but you have to call some function to get it ...","date":"2012-07-27T16:37:31.041Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-07-27T16:37:43.495Z","type":"message"}
+{"nick":"isaacs","message":"that's important.","date":"2012-07-27T16:37:57.779Z","type":"message"}
+{"nick":"isaacs","message":"there are 2 problems that it addresses, which are chewing on me daily:","date":"2012-07-27T16:38:13.949Z","type":"message"}
+{"nick":"isaacs","message":"1. it's extremely difficult to only consume *some* of the bytes in a stream, and leave the rest for later.","date":"2012-07-27T16:38:33.781Z","type":"message"}
+{"nick":"isaacs","message":"2. if you don't assign a listener right away, you lose data.","date":"2012-07-27T16:38:57.341Z","type":"message"}
+{"nick":"piscisaureus","message":"yes. so stream.read(cb, bytes) solves that, too :-)","date":"2012-07-27T16:38:57.534Z","type":"message"}
+{"nick":"piscisaureus","message":"ditto","date":"2012-07-27T16:39:02.824Z","type":"message"}
+{"nick":"erickt","date":"2012-07-27T16:39:06.735Z","type":"join"}
+{"nick":"isaacs","message":"right, but it's a bit weird.","date":"2012-07-27T16:39:11.389Z","type":"message"}
+{"nick":"piscisaureus","message":"why?","date":"2012-07-27T16:39:24.408Z","type":"message"}
+{"nick":"isaacs","message":"now we have two event-queue dips in pipe, instead of one","date":"2012-07-27T16:39:24.949Z","type":"message"}
+{"nick":"creationix","message":"isaacs, so you want read(bytes, callback) and not call the callback till you have that many bytes?","date":"2012-07-27T16:39:30.040Z","type":"message"}
+{"nick":"isaacs","message":"and, we have this end thing","date":"2012-07-27T16:39:36.817Z","type":"message"}
+{"nick":"isaacs","message":"creationix: no, the bytes are a maximum","date":"2012-07-27T16:39:42.072Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: no, that's what I want :-)","date":"2012-07-27T16:39:47.391Z","type":"message"}
+{"nick":"creationix","message":"for parsing protocols it's great","date":"2012-07-27T16:40:00.099Z","type":"message"}
+{"nick":"isaacs","message":"creationix: i want read(n) ===> buffer of no more than n bytes, or null","date":"2012-07-27T16:40:03.225Z","type":"message"}
+{"nick":"creationix","message":"read 4 bytes, get length header, read n bytes, parse message","date":"2012-07-27T16:40:10.424Z","type":"message"}
+{"nick":"isaacs","message":"creationix: right","date":"2012-07-27T16:40:16.415Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: what isaacs want is a nonblocking read() function and an event when data is available","date":"2012-07-27T16:40:16.616Z","type":"message"}
+{"nick":"isaacs","message":"i want epoll/read(2)/EWOULDBLOCK, but in js","date":"2012-07-27T16:40:32.781Z","type":"message"}
+{"nick":"creationix","message":"so just add a non-blocking flag","date":"2012-07-27T16:40:48.717Z","type":"message"}
+{"nick":"creationix","message":"hmm, but it's not the same thing at all","date":"2012-07-27T16:41:41.041Z","type":"message"}
+{"nick":"creationix","message":"for protocol parsing I want exactly n bytes","date":"2012-07-27T16:41:58.415Z","type":"message"}
+{"nick":"creationix","message":"it's higher level","date":"2012-07-27T16:42:00.451Z","type":"message"}
+{"nick":"creationix","message":"I want packets re-combined","date":"2012-07-27T16:42:04.572Z","type":"message"}
+{"nick":"isaacs","message":"creationix: that's easy to layer on top of this.","date":"2012-07-27T16:42:33.978Z","type":"message"}
+{"nick":"creationix","message":"true","date":"2012-07-27T16:43:31.113Z","type":"message"}
+{"nick":"isaacs","message":"on top of either one, really","date":"2012-07-27T16:43:39.754Z","type":"message"}
+{"nick":"creationix","message":"read up-to 4 bytes, call callback on first data","date":"2012-07-27T16:43:54.236Z","type":"message"}
+{"nick":"creationix","message":"then if it's just 3, read again asking for 1","date":"2012-07-27T16:44:01.562Z","type":"message"}
+{"nick":"creationix","message":"and much easier to implement to.  It's low-level","date":"2012-07-27T16:44:39.195Z","type":"message"}
+{"nick":"creationix","message":"what about buffering data if read hasn't been called yet?","date":"2012-07-27T16:44:53.040Z","type":"message"}
+{"nick":"dshaw_","date":"2012-07-27T16:45:01.793Z","type":"join"}
+{"nick":"isaacs","message":"creationix: that's just the thing, i want the data to not even be read into libuv until you call read()","date":"2012-07-27T16:45:10.224Z","type":"message"}
+{"nick":"creationix","message":"ok, now that's cool","date":"2012-07-27T16:45:22.356Z","type":"message"}
+{"nick":"creationix","message":"I approve","date":"2012-07-27T16:45:31.613Z","type":"message"}
+{"nick":"isaacs","message":"at least, for sockets","date":"2012-07-27T16:45:32.923Z","type":"message"}
+{"nick":"isaacs","message":"so the OS does the backpressure, instead of dealing with pause/resume bullshit","date":"2012-07-27T16:45:42.509Z","type":"message"}
+{"nick":"creationix","message":"what about syntethetic streams?","date":"2012-07-27T16:45:52.307Z","type":"message"}
+{"nick":"isaacs","message":"*some* userland streams will have to maintain some kind of buffer, yes.","date":"2012-07-27T16:45:55.248Z","type":"message"}
+{"nick":"creationix","message":"ok, so they just emulate the behavior","date":"2012-07-27T16:46:04.247Z","type":"message"}
+{"nick":"isaacs","message":"but we should provide adapters in both directions.","date":"2012-07-27T16:46:04.773Z","type":"message"}
+{"nick":"creationix","message":"that shouldn't be too hard","date":"2012-07-27T16:46:07.440Z","type":"message"}
+{"nick":"isaacs","message":"creationix: no, it's not too hard: https://github.com/isaacs/readable-stream","date":"2012-07-27T16:47:44.162Z","type":"message"}
+{"nick":"creationix","action":"should read the actual proposal","date":"2012-07-27T16:48:03.669Z","type":"action"}
+{"nick":"creationix","message":"isaacs, so youre read function is blocking?","date":"2012-07-27T16:49:55.871Z","type":"message"}
+{"nick":"creationix","message":"or will it usually have 0 bytes on the first call?","date":"2012-07-27T16:50:04.074Z","type":"message"}
+{"nick":"isaacs","message":"creationix: well, it's \"blocking\" in the sense that it returns immediately wiht a result.","date":"2012-07-27T16:50:26.781Z","type":"message"}
+{"nick":"isaacs","message":"creationix: but it should return null if there are not bytes that can be immediately returned.","date":"2012-07-27T16:50:39.080Z","type":"message"}
+{"nick":"isaacs","message":"it's like setting the NONBLOCK flag on a socket","date":"2012-07-27T16:51:01.441Z","type":"message"}
+{"nick":"creationix","message":"right, but if getting the data from the OS or whatever is slow, you'll have to return a 0-byte buffer and then emit ready when there is more","date":"2012-07-27T16:51:05.922Z","type":"message"}
+{"nick":"isaacs","message":"creationix: if you don't have data, then you return null","date":"2012-07-27T16:51:22.755Z","type":"message"}
+{"nick":"creationix","message":"sure, null is better than empty buffer","date":"2012-07-27T16:51:35.791Z","type":"message"}
+{"nick":"creationix","message":"but same problem","date":"2012-07-27T16:51:37.611Z","type":"message"}
+{"nick":"creationix","message":"I guess what this gives over a read callback is I know if there was data waiting or not","date":"2012-07-27T16:52:05.094Z","type":"message"}
+{"nick":"creationix","message":"I can think of many synthetic sources where the data is fetched lazily and will always have nothing on the first call","date":"2012-07-27T16:52:41.848Z","type":"message"}
+{"nick":"isaacs","message":"and if you don't know, you can just start reading until you hit hull","date":"2012-07-27T16:52:43.497Z","type":"message"}
+{"nick":"isaacs","message":"*null","date":"2012-07-27T16:52:45.612Z","type":"message"}
+{"nick":"isaacs","message":"creationix: sure, but it's a question of how lazily","date":"2012-07-27T16:53:07.099Z","type":"message"}
+{"nick":"isaacs","message":"eg, a fs read stream could start right away, but something else where reads are much more expensive (and might not be performed at all) could just start the first time you call stream.read()","date":"2012-07-27T16:53:38.739Z","type":"message"}
+{"nick":"piscisaureus","message":"meh, I am actually getting less convinced that this solves any real problems ...","date":"2012-07-27T16:53:41.151Z","type":"message"}
+{"nick":"creationix","message":"piscisaureus, compared to 0.x.8 streams?","date":"2012-07-27T16:53:57.325Z","type":"message"}
+{"nick":"piscisaureus","message":"except maybe the fact that people want to read data in small chunks","date":"2012-07-27T16:53:57.834Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: yeah","date":"2012-07-27T16:54:07.461Z","type":"message"}
+{"nick":"creationix","message":"buffering, pause, resume are all nightmares","date":"2012-07-27T16:54:09.872Z","type":"message"}
+{"nick":"creationix","message":"isaac's proposal or callback based are both way better","date":"2012-07-27T16:54:22.174Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: the problem it solves is pause behavior, which is very difficult to get right","date":"2012-07-27T16:54:22.375Z","type":"message"}
+{"nick":"isaacs","message":"i mean, if you're doing hello world, or downloading a file, it's about the same.","date":"2012-07-27T16:54:58.586Z","type":"message"}
+{"nick":"creationix","message":"isaacs, so my initial thought was .read(numBytes, callback(data) {})","date":"2012-07-27T16:55:02.605Z","type":"message"}
+{"nick":"isaacs","message":"except that this way, pipe() is like 10 lines instead of 80","date":"2012-07-27T16:55:07.422Z","type":"message"}
+{"nick":"creationix","message":"and if there is no data, don't call the callback right away","date":"2012-07-27T16:55:11.462Z","type":"message"}
+{"nick":"creationix","message":"only call with no data on end","date":"2012-07-27T16:55:15.421Z","type":"message"}
+{"nick":"creationix","message":"or callback(err, data)","date":"2012-07-27T16:55:22.608Z","type":"message"}
+{"nick":"creationix","message":"so errors can be handled too","date":"2012-07-27T16:55:26.468Z","type":"message"}
+{"nick":"isaacs","message":"creationix: right, but what if there are only ever 5 bytes, and you do read(10, cb)?","date":"2012-07-27T16:55:33.766Z","type":"message"}
+{"nick":"creationix","message":"(non event emitter version)","date":"2012-07-27T16:55:34.027Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah","date":"2012-07-27T16:55:34.550Z","type":"message"}
+{"nick":"creationix","message":"isaacs, right, the num is the max","date":"2012-07-27T16:55:43.429Z","type":"message"}
+{"nick":"creationix","message":"call on the first event","date":"2012-07-27T16:55:46.997Z","type":"message"}
+{"nick":"isaacs","message":"creationix: k","date":"2012-07-27T16:55:48.720Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: I was also thinking about that api… seems more consistent to me","date":"2012-07-27T16:56:04.138Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-07-27T16:56:07.889Z","type":"quit"}
+{"nick":"creationix","message":"building a version that waits for n bytes or times out should be on top","date":"2012-07-27T16:56:11.567Z","type":"message"}
+{"nick":"piscisaureus","message":"we should say numbytes is the max, or maybe make that optional","date":"2012-07-27T16:56:15.680Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: yes, it should be optional, and a maximum","date":"2012-07-27T16:56:26.897Z","type":"message"}
+{"nick":"creationix","message":"agreed","date":"2012-07-27T16:56:33.368Z","type":"message"}
+{"nick":"isaacs","message":"if i'ts 0 or undefined, then you just read as many as you have.","date":"2012-07-27T16:56:34.902Z","type":"message"}
+{"nick":"creationix","message":"max or optional","date":"2012-07-27T16:56:36.164Z","type":"message"}
+{"nick":"creationix","message":"or Infinity","date":"2012-07-27T16:56:41.502Z","type":"message"}
+{"nick":"creationix","message":"JS is so cool ;)","date":"2012-07-27T16:56:46.694Z","type":"message"}
+{"nick":"isaacs","message":"sure, whatever.","date":"2012-07-27T16:56:47.337Z","type":"message"}
+{"nick":"creationix","message":"what about read(callback)","date":"2012-07-27T16:56:55.652Z","type":"message"}
+{"nick":"isaacs","message":"<=0 || > max || isNaN()","date":"2012-07-27T16:57:06.242Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: well in that case the max is undefined, but it's obviously implementation dependent. Right now the actual max chunk size is 64k","date":"2012-07-27T16:57:11.895Z","type":"message"}
+{"nick":"creationix","message":"or are we trying to avoid optional arguments before the callback","date":"2012-07-27T16:57:14.045Z","type":"message"}
+{"nick":"piscisaureus","message":"(for tcp streams)","date":"2012-07-27T16:57:19.561Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: sure, the point is, it should be up to the stream to say \"This is what i have, and you said you want it, so here you go\"","date":"2012-07-27T16:57:36.132Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: it should not wait around for that much, or give you more than that.","date":"2012-07-27T16:57:46.961Z","type":"message"}
+{"nick":"piscisaureus","message":"no, sure","date":"2012-07-27T16:57:51.516Z","type":"message"}
+{"nick":"isaacs","message":"and the max should be optional and default to Infinity","date":"2012-07-27T16:57:56.331Z","type":"message"}
+{"nick":"creationix","message":"read([byteLimit], callback)","date":"2012-07-27T16:57:56.837Z","type":"message"}
+{"nick":"isaacs","message":"yep","date":"2012-07-27T16:57:59.499Z","type":"message"}
+{"nick":"isaacs","message":"the debate is not over byteLimit behavior that we all agree on :)","date":"2012-07-27T16:58:09.501Z","type":"message"}
+{"nick":"creationix","message":"that's the most elegant API for callback based","date":"2012-07-27T16:58:11.176Z","type":"message"}
+{"nick":"isaacs","message":"creationix: yes.","date":"2012-07-27T16:58:16.229Z","type":"message"}
+{"nick":"creationix","message":"and callback would be (err, data)?","date":"2012-07-27T16:58:25.394Z","type":"message"}
+{"nick":"isaacs","message":"the debate right now is over read(n, cb) or read(n)/on('readable')","date":"2012-07-27T16:58:27.310Z","type":"message"}
+{"nick":"creationix","message":"are there other events besides error, readable, and end","date":"2012-07-27T16:58:44.800Z","type":"message"}
+{"nick":"isaacs","message":"creationix: i guess.  though that's a bit odd.  wouldn't you want errors to just emit an error event on the stream?","date":"2012-07-27T16:58:49.950Z","type":"message"}
+{"nick":"creationix","message":"because that's all the callback can handle","date":"2012-07-27T16:58:51.517Z","type":"message"}
+{"nick":"creationix","message":"isaacs, what about be callback based at the core, but make it easy to wrap in a full emitter","date":"2012-07-27T16:59:14.649Z","type":"message"}
+{"nick":"creationix","message":"callbacks would be easier to implement I think","date":"2012-07-27T16:59:23.862Z","type":"message"}
+{"nick":"piscisaureus","message":"I think errors emitted on a stream is sort of the way we do it so we'd have to stick to it","date":"2012-07-27T16:59:46.444Z","type":"message"}
+{"nick":"creationix","message":"people like to extend streams and add custom events","date":"2012-07-27T16:59:48.181Z","type":"message"}
+{"nick":"piscisaureus","message":"but I like passing errors to callbacks much better","date":"2012-07-27T16:59:53.165Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: I'm trying my hand at a JS http parser. How's yours going?","date":"2012-07-27T17:00:05.232Z","type":"message"}
+{"nick":"creationix","message":"joeandaverde, haven't had much time","date":"2012-07-27T17:00:15.435Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: i see you've been busy in many other repos","date":"2012-07-27T17:00:30.043Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: right, so, the symmetry to fs.read() is kind of lost, actually","date":"2012-07-27T17:00:36.830Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: is that your job or fun?","date":"2012-07-27T17:00:37.188Z","type":"message"}
+{"nick":"creationix","message":"joeandaverde, well, it's more piscisaureus, isaacs, and bnoordhuis job","date":"2012-07-27T17:01:01.647Z","type":"message"}
+{"nick":"creationix","message":"but I do work with piscisaureus  and bnoordhuis ","date":"2012-07-27T17:01:06.932Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: if we do s.read(n, function(data) {})","date":"2012-07-27T17:01:09.758Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: so s.read(n, function(err, data) { ?","date":"2012-07-27T17:01:45.730Z","type":"message"}
+{"nick":"isaacs","message":"s.read(n, (data) => {})","date":"2012-07-27T17:01:47.540Z","type":"message"}
+{"nick":"isaacs","message":";)","date":"2012-07-27T17:01:49.464Z","type":"message"}
+{"nick":"piscisaureus","message":"haha","date":"2012-07-27T17:01:53.282Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: but why pass the err to the read cb?  why not just emit it?","date":"2012-07-27T17:02:02.928Z","type":"message"}
+{"nick":"isaacs","message":"read errors are basically teh only reason you'd ever emit an error on a readable stream","date":"2012-07-27T17:02:25.441Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: right…. that's why they might just as well be passed to the read() function :-)","date":"2012-07-27T17:02:55.490Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: it makes it much more obvious ...","date":"2012-07-27T17:03:08.722Z","type":"message"}
+{"nick":"isaacs","message":"then do we still emit 'error'?","date":"2012-07-27T17:03:13.829Z","type":"message"}
+{"nick":"creationix","message":"I think if you use events, isaacs proposal is best","date":"2012-07-27T17:03:15.160Z","type":"message"}
+{"nick":"creationix","message":"either use pure callback or pure events","date":"2012-07-27T17:03:22.329Z","type":"message"}
+{"nick":"creationix","message":"no mixing","date":"2012-07-27T17:03:23.749Z","type":"message"}
+{"nick":"isaacs","message":"yeah, this is kind of confusing.","date":"2012-07-27T17:03:40.049Z","type":"message"}
+{"nick":"joeandaverde","message":"check it out. this is a picture from a recent meetup of @nodekc. It's a group I started in Kansas City to do fun node talks. You may recognize some of the faces in the photo. http://www.bizjournals.com/kansascity/print-edition/2012/07/27/kansas-city-tech-group-works-to-create.html","date":"2012-07-27T17:03:49.252Z","type":"message"}
+{"nick":"creationix","message":"but what about using pure callback at the core but wrapping in events for the official stream implementation","date":"2012-07-27T17:03:58.910Z","type":"message"}
+{"nick":"isaacs","message":"i mean, there's no reason why libuv can't give us some \"lowlevel socket\" interface that does read(cb)","date":"2012-07-27T17:04:07.237Z","type":"message"}
+{"nick":"isaacs","message":"and then in JS we wrap it.","date":"2012-07-27T17:04:13.187Z","type":"message"}
+{"nick":"creationix","message":"so one way to make a readable stream would be to supply it a callback-based read function","date":"2012-07-27T17:04:13.773Z","type":"message"}
+{"nick":"creationix","message":"isaacs, exactly","date":"2012-07-27T17:04:25.000Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: yeah, libuv can do that easily","date":"2012-07-27T17:04:32.410Z","type":"message"}
+{"nick":"creationix","message":"I think for the public Stream interface, events is best","date":"2012-07-27T17:04:33.661Z","type":"message"}
+{"nick":"joeandaverde","message":"i'm the fat guy with his back to the camera","date":"2012-07-27T17:04:34.225Z","type":"message"}
+{"nick":"isaacs","message":"but it feels a bit silly, since we'd be converting it in unix from the 'readable' pattern to the read(cb) pattern, then back to the 'readable' pattern.","date":"2012-07-27T17:04:51.506Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: providing a \"readable\" event in libuv however is hairy on this particular platform, if we care about performance","date":"2012-07-27T17:04:57.678Z","type":"message"}
+{"nick":"isaacs","message":"grr.  windows.","date":"2012-07-27T17:05:23.925Z","type":"message"}
+{"nick":"isaacs","message":"THIS IS WHY WE CANT HAVE NICE THINGS.","date":"2012-07-27T17:05:28.550Z","type":"message"}
+{"nick":"piscisaureus","message":"this is why libev couldn't be ported to windows :-)","date":"2012-07-27T17:05:41.017Z","type":"message"}
+{"nick":"creationix","message":"so the one thing that read(cb) can't do is poll for no data and return immedietly","date":"2012-07-27T17:05:42.285Z","type":"message"}
+{"nick":"creationix","message":"is that valuable","date":"2012-07-27T17:05:49.720Z","type":"message"}
+{"nick":"brson","date":"2012-07-27T17:05:51.093Z","type":"join"}
+{"nick":"piscisaureus","message":"you can write your own wrapper for that :-p","date":"2012-07-27T17:06:08.679Z","type":"message"}
+{"nick":"creationix","message":"true","date":"2012-07-27T17:06:26.867Z","type":"message"}
+{"nick":"piscisaureus","message":"pretty easily even","date":"2012-07-27T17:06:33.481Z","type":"message"}
+{"nick":"creationix","message":"the read in the event emitter would just return whatever was last called back","date":"2012-07-27T17:06:38.997Z","type":"message"}
+{"nick":"isaacs","message":"the sucky thing, though, is that we're back to the \"buffer it all in js, and manage pausing\"","date":"2012-07-27T17:06:42.426Z","type":"message"}
+{"nick":"creationix","message":"isaacs, how so?","date":"2012-07-27T17:06:53.579Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-07-27T17:07:19.354Z","type":"join"}
+{"nick":"isaacs","message":"creationix: well, if libuv does read(cb), and node does on('readable'), then in js, we have to keep some buffer, and re-fill it when it gets low.","date":"2012-07-27T17:07:28.138Z","type":"message"}
+{"nick":"creationix","action":"goes off to prototype, code is best for thinking clearly","date":"2012-07-27T17:07:45.131Z","type":"action"}
+{"nick":"piscisaureus","message":"isaacs: yes","date":"2012-07-27T17:07:47.871Z","type":"message"}
+{"nick":"creationix","message":"isaacs, no, if the callback gets called before read returns we can detect that","date":"2012-07-27T17:08:04.407Z","type":"message"}
+{"nick":"creationix","message":"and return it","date":"2012-07-27T17:08:05.974Z","type":"message"}
+{"nick":"creationix","message":"we'd only buffer one chunk at most","date":"2012-07-27T17:08:13.926Z","type":"message"}
+{"nick":"creationix","message":"is one too much?","date":"2012-07-27T17:08:30.011Z","type":"message"}
+{"nick":"piscisaureus","message":"and read() could return a slice of that buffer","date":"2012-07-27T17:08:38.193Z","type":"message"}
+{"nick":"isaacs","message":"creationix: well, memory is pretty cheap","date":"2012-07-27T17:08:43.598Z","type":"message"}
+{"nick":"piscisaureus","message":"you have to buffer anyway","date":"2012-07-27T17:08:45.962Z","type":"message"}
+{"nick":"isaacs","message":"and i already did this for my FSReadable class.","date":"2012-07-27T17:08:57.364Z","type":"message"}
+{"nick":"piscisaureus","message":"reading 4 bytes at a time is pretty stupid","date":"2012-07-27T17:09:01.331Z","type":"message"}
+{"nick":"isaacs","message":"the logic is not particualrly tricky","date":"2012-07-27T17:09:03.072Z","type":"message"}
+{"nick":"piscisaureus","message":"if you make a syscall for it every time\\","date":"2012-07-27T17:09:07.696Z","type":"message"}
+{"nick":"isaacs","message":"yeah, that's a good point.","date":"2012-07-27T17:09:16.196Z","type":"message"}
+{"nick":"isaacs","message":"the real question is about the responsiveness of your backpressure.","date":"2012-07-27T17:09:39.022Z","type":"message"}
+{"nick":"creationix","message":"ok, so for performance, we read in full chunks","date":"2012-07-27T17:09:42.582Z","type":"message"}
+{"nick":"creationix","message":"but the user can read slices","date":"2012-07-27T17:09:47.108Z","type":"message"}
+{"nick":"isaacs","message":"ie, there's information there: i've only consumed n bytes, and that sort of pushes back on the upstream sender","date":"2012-07-27T17:09:59.977Z","type":"message"}
+{"nick":"isaacs","message":"but we can blur that a little of course.  everyone actually does.","date":"2012-07-27T17:10:10.413Z","type":"message"}
+{"nick":"isaacs","message":"i mean, there's a thousand little hardware buffers between my keyboard and your screen right now.","date":"2012-07-27T17:10:26.579Z","type":"message"}
+{"nick":"isaacs","message":"probably more than that :)","date":"2012-07-27T17:10:32.165Z","type":"message"}
+{"nick":"creationix","message":"internet!","date":"2012-07-27T17:10:40.483Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: how would you feel about read(cb) in libuv, and on('readable') in node?","date":"2012-07-27T17:11:02.711Z","type":"message"}
+{"nick":"creationix","message":"so libuv would handle the buffering?","date":"2012-07-27T17:11:20.585Z","type":"message"}
+{"nick":"isaacs","message":"creationix: no, lib/net.js would","date":"2012-07-27T17:11:27.030Z","type":"message"}
+{"nick":"creationix","message":"could a node user configure the chunk size, the low-water mark?","date":"2012-07-27T17:11:31.955Z","type":"message"}
+{"nick":"isaacs","message":"creationix: yeah","date":"2012-07-27T17:11:36.649Z","type":"message"}
+{"nick":"isaacs","message":"which is something that mjr has been asking for forever.","date":"2012-07-27T17:11:44.942Z","type":"message"}
+{"nick":"creationix","message":"ok, so the libuv interface would be just read(cb) not read([maxBytes], callback) ?","date":"2012-07-27T17:12:20.332Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: ^?","date":"2012-07-27T17:12:28.159Z","type":"message"}
+{"nick":"creationix","message":"and a SlowBuffer in the callback","date":"2012-07-27T17:12:36.328Z","type":"message"}
+{"nick":"isaacs","message":"creationix: well, i mean, we'd do some kind of slab allocator deal like we do already.","date":"2012-07-27T17:13:02.500Z","type":"message"}
+{"nick":"arlolra","date":"2012-07-27T17:13:02.733Z","type":"join"}
+{"nick":"creationix","message":"where would be configure the chunk-size and low-water mark","date":"2012-07-27T17:13:05.390Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: the libuv interface would get max bytes","date":"2012-07-27T17:13:06.708Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: in fact libuv can already do that, but it's not obvious and an abuse of the api","date":"2012-07-27T17:13:51.729Z","type":"message"}
+{"nick":"saghul_","date":"2012-07-27T17:13:59.759Z","type":"join"}
+{"nick":"creationix","message":"piscisaureus, for streams?","date":"2012-07-27T17:14:11.403Z","type":"message"}
+{"nick":"creationix","message":"you're right, it's not obvious","date":"2012-07-27T17:14:28.266Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: just alloc a small uv_buf_t in alloc_cb :-_)","date":"2012-07-27T17:15:10.892Z","type":"message"}
+{"nick":"piscisaureus","message":"but the api should be nicer","date":"2012-07-27T17:15:15.605Z","type":"message"}
+{"nick":"creationix","message":"piscisaureus, ok, sure, but what about auto-pausing","date":"2012-07-27T17:15:48.508Z","type":"message"}
+{"nick":"creationix","message":"not emit events till I call read","date":"2012-07-27T17:15:57.324Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus: so, it seems like we kind of have some agreement here.","date":"2012-07-27T17:16:03.588Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-07-27T17:16:36.880Z","type":"join"}
+{"nick":"isaacs","message":"libuv, and in tern node's (TCP|Pipe)_Wrap, implements read(n, cb)","date":"2012-07-27T17:16:52.259Z","type":"message"}
+{"nick":"isaacs","message":"then net.Socket et al implement on('readable') on top of that with configurable buffering.","date":"2012-07-27T17:17:13.754Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2012-07-27T17:17:31.184Z","type":"message"}
+{"nick":"piscisaureus","message":"haha","date":"2012-07-27T17:17:32.952Z","type":"message"}
+{"nick":"piscisaureus","message":"I am still not super convinced about on('readable')","date":"2012-07-27T17:17:46.618Z","type":"message"}
+{"nick":"isaacs","message":"well, it should be called on('data') but that ship sailed a lotng time aago","date":"2012-07-27T17:18:05.773Z","type":"message"}
+{"nick":"creationix","message":"readable is like \"drain\" on writable streams","date":"2012-07-27T17:18:16.866Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-27T17:18:21.475Z","type":"message"}
+{"nick":"isaacs","message":"there's kind of a nice symmetry to it","date":"2012-07-27T17:18:31.410Z","type":"message"}
+{"nick":"isaacs","message":"read() --> data or null; write() --> false or not-false","date":"2012-07-27T17:18:55.187Z","type":"message"}
+{"nick":"isaacs","message":"on('readable', readMore); on('drain', writeMore)","date":"2012-07-27T17:19:08.388Z","type":"message"}
+{"nick":"creationix","message":"what about the simple case where people want to just buffer their http body and json.parse it","date":"2012-07-27T17:19:12.207Z","type":"message"}
+{"nick":"creationix","message":"currently it's about 10 lines with a data listener and an end listener","date":"2012-07-27T17:19:23.743Z","type":"message"}
+{"nick":"`3rdEden","reason":"Client Quit","date":"2012-07-27T17:19:35.150Z","type":"quit"}
+{"nick":"isaacs","message":"creationix: body = ''; res.on('readable', function () { var chunk; while (null !== (chunk = res.read()) body += chunk }); res.on('end', function () { JSON.parse(body) })","date":"2012-07-27T17:20:47.195Z","type":"message"}
+{"nick":"isaacs","message":"(not unicode safe^)","date":"2012-07-27T17:21:33.906Z","type":"message"}
+{"nick":"isaacs","message":"but still, pretty easy","date":"2012-07-27T17:21:38.324Z","type":"message"}
+{"nick":"isaacs","message":"also, you probably don't even need the loop","date":"2012-07-27T17:21:49.123Z","type":"message"}
+{"nick":"isaacs","message":"since read() will tend to return the whole thing","date":"2012-07-27T17:21:55.681Z","type":"message"}
+{"nick":"isaacs","message":"but we may want to optimize it to prevent having to call Buffer.concat() in some cases, since that's potentially a copy","date":"2012-07-27T17:22:24.605Z","type":"message"}
+{"nick":"creationix","message":"hmm, so read could return data two times in a row?","date":"2012-07-27T17:22:33.990Z","type":"message"}
+{"nick":"isaacs","message":"creationix: yes.","date":"2012-07-27T17:22:41.132Z","type":"message"}
+{"nick":"creationix","message":"that should be defined one way or the other","date":"2012-07-27T17:22:43.234Z","type":"message"}
+{"nick":"isaacs","message":"or it should be explicitly undefined :)","date":"2012-07-27T17:22:52.421Z","type":"message"}
+{"nick":"creationix","message":"well, I mean we should tell people if it's a posibility","date":"2012-07-27T17:23:19.565Z","type":"message"}
+{"nick":"isaacs","message":"like, let's say you get a chunk from libuv, then you read not a full chunk, but enough to get below the low-water mark.","date":"2012-07-27T17:23:30.010Z","type":"message"}
+{"nick":"creationix","message":"I don't want code that \"usually\" works right","date":"2012-07-27T17:23:33.569Z","type":"message"}
+{"nick":"isaacs","message":"so we fetch another chunk from libuv","date":"2012-07-27T17:23:34.429Z","type":"message"}
+{"nick":"isaacs","message":"then you have two chunks sitting in the buffer.","date":"2012-07-27T17:23:43.522Z","type":"message"}
+{"nick":"isaacs","message":"say, one is 100 bytes, and the other is 1024","date":"2012-07-27T17:23:57.155Z","type":"message"}
+{"nick":"isaacs","message":"if you do read(<=100) it's easy, just slice off (or return) the first buffer.","date":"2012-07-27T17:24:14.192Z","type":"message"}
+{"nick":"creationix","message":"I think node should concat them for you","date":"2012-07-27T17:24:30.480Z","type":"message"}
+{"nick":"isaacs","message":"if you do read(200), though, or read(Infinity), then what?","date":"2012-07-27T17:24:33.776Z","type":"message"}
+{"nick":"isaacs","message":"concat them?","date":"2012-07-27T17:24:35.961Z","type":"message"}
+{"nick":"creationix","message":"or is that too expensive","date":"2012-07-27T17:24:38.202Z","type":"message"}
+{"nick":"isaacs","message":"well, it's more expensive than not doing it :)","date":"2012-07-27T17:24:44.851Z","type":"message"}
+{"nick":"isaacs","message":"maybe read() should just return the first 100 byte buffer, then read() again should return the 1024 byte buffer.","date":"2012-07-27T17:25:01.242Z","type":"message"}
+{"nick":"creationix","message":"I mean, if I want 200 bytes, I'm going to concat them anyway most likely","date":"2012-07-27T17:25:10.206Z","type":"message"}
+{"nick":"creationix","message":"unless I'm feeding it to a streaming parser and I happen to know the message is exactly 200 bytes","date":"2012-07-27T17:25:29.716Z","type":"message"}
+{"nick":"creationix","message":"yes, when in doubt do less, I agree","date":"2012-07-27T17:26:07.305Z","type":"message"}
+{"nick":"creationix","message":"but we don't want to make this too painful to use","date":"2012-07-27T17:26:13.948Z","type":"message"}
+{"nick":"isaacs","message":"maybe we should say that read() will give you whatever is most convenient, but read(1000) will try very hard to get the first 1000 bytes if it has them?","date":"2012-07-27T17:26:53.130Z","type":"message"}
+{"nick":"isaacs","message":"or is that too iffy?","date":"2012-07-27T17:27:02.375Z","type":"message"}
+{"nick":"creationix","message":"if there is any chance the user needs a while loop, then they need a while loop","date":"2012-07-27T17:27:32.988Z","type":"message"}
+{"nick":"creationix","message":"edge cases are annoying like that","date":"2012-07-27T17:27:43.731Z","type":"message"}
+{"nick":"creationix","message":"how about combine them if the user asks for a  length","date":"2012-07-27T17:28:22.336Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: so when coroutines happen, how are we going to bolt it onto that","date":"2012-07-27T17:28:23.230Z","type":"message"}
+{"nick":"isaacs","message":"lol","date":"2012-07-27T17:28:30.994Z","type":"message"}
+{"nick":"creationix","message":"hey, I have coroutines","date":"2012-07-27T17:28:40.931Z","type":"message"}
+{"nick":"creationix","message":"I use libuv","date":"2012-07-27T17:28:43.207Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: how do you do read() with coros?","date":"2012-07-27T17:29:06.883Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luvit/blob/master/examples/fs-coroutines.lua#L18-23","date":"2012-07-27T17:29:37.328Z","type":"message"}
+{"nick":"creationix","message":"this would be the same, except no offset","date":"2012-07-27T17:30:35.642Z","type":"message"}
+{"nick":"piscisaureus","message":"creationix: so what's the api you expose for reading with coros.","date":"2012-07-27T17:30:42.044Z","type":"message"}
+{"nick":"creationix","message":"it's the normal fs.read(fd, offset, maxBytes, callback)","date":"2012-07-27T17:31:01.669Z","type":"message"}
+{"nick":"creationix","message":"but I suspend the thread on call and resume when callback is called","date":"2012-07-27T17:31:13.659Z","type":"message"}
+{"nick":"creationix","message":"the wrap() function at the top does that","date":"2012-07-27T17:31:22.880Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-07-27T17:32:17.093Z","type":"quit"}
+{"nick":"creationix","message":"js won't have multiple return values though","date":"2012-07-27T17:33:05.890Z","type":"message"}
+{"nick":"creationix","message":"but it might get destructuring about the same time generators land in v8","date":"2012-07-27T17:33:15.983Z","type":"message"}
+{"nick":"wavded","date":"2012-07-27T17:33:58.224Z","type":"join"}
+{"nick":"creationix","message":"anyway, I see coroutines as suger, the base is all callback based","date":"2012-07-27T17:34:13.650Z","type":"message"}
+{"nick":"creationix","message":"node should probably stay callback-based as well when generators land","date":"2012-07-27T17:34:21.833Z","type":"message"}
+{"nick":"mmalecki","date":"2012-07-27T17:34:43.261Z","type":"join"}
+{"nick":"c4milo","date":"2012-07-27T17:34:45.906Z","type":"join"}
+{"nick":"creationix","message":"full coro based APIs are very different","date":"2012-07-27T17:34:48.870Z","type":"message"}
+{"nick":"creationix","message":"see copas for an example","date":"2012-07-27T17:34:52.957Z","type":"message"}
+{"nick":"isaacs","message":"we can look at how coros and generators can be used for this later.","date":"2012-07-27T17:37:49.923Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2012-07-27T17:37:59.461Z","type":"message"}
+{"nick":"isaacs","message":"i don't think any of ths on(readable) or read(cb) stuff actually makes that any harder or easier","date":"2012-07-27T17:38:10.282Z","type":"message"}
+{"nick":"isaacs","message":"it *might* make it more easy to do read(cb) as if it was a blocking read that returns null or a buffer","date":"2012-07-27T17:38:31.976Z","type":"message"}
+{"nick":"isaacs","message":"but that's a bigass tbd","date":"2012-07-27T17:38:40.813Z","type":"message"}
+{"nick":"isaacs","topic":"Libert. Unit. Velocit.  http://piscisaureus.no.de/libuv/latest","date":"2012-07-27T17:40:08.652Z","type":"topic"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-07-27T17:45:55.547Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T17:46:48.947Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-07-27T17:47:42.361Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-07-27T17:48:04.889Z","type":"quit"}
+{"nick":"piscisaureus","message":"https://gist.github.com/3189343 <— isaacs, it's very easy to shim this api anyway. Why would we need to change libuv at all?","date":"2012-07-27T17:51:23.112Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus: ++","date":"2012-07-27T17:53:45.736Z","type":"message"}
+{"nick":"kohai","message":"piscisaureus has 4 beers","date":"2012-07-27T17:53:46.396Z","type":"message"}
+{"nick":"indutny","message":"I love libuv's APIs","date":"2012-07-27T17:54:17.959Z","type":"message"}
+{"nick":"indutny","message":"mostly","date":"2012-07-27T17:54:25.884Z","type":"message"}
+{"nick":"AlbireoX`Away","new_nick":"AlbireoX","date":"2012-07-27T17:54:51.610Z","type":"nick"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-07-27T17:56:11.438Z","type":"quit"}
+{"nick":"lohkey","date":"2012-07-27T17:56:38.331Z","type":"join"}
+{"nick":"indutny","message":"wow","date":"2012-07-27T17:57:47.817Z","type":"message"}
+{"nick":"indutny","message":"node segfaulted on smartos","date":"2012-07-27T17:57:51.976Z","type":"message"}
+{"nick":"indutny","message":"0.9.1","date":"2012-07-27T17:57:53.207Z","type":"message"}
+{"nick":"indutny","message":"how can I read core dumps there?","date":"2012-07-27T17:58:01.776Z","type":"message"}
+{"nick":"indutny","message":"isaacs: ^","date":"2012-07-27T17:58:09.365Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: ulimit -c unlimited, it should be dumped to the current directory","date":"2012-07-27T17:58:38.704Z","type":"message"}
+{"nick":"indutny","message":"oh, ulimit fixed things","date":"2012-07-27T17:59:06.274Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2012-07-27T17:59:16.312Z","type":"message"}
+{"nick":"indutny","message":"no","date":"2012-07-27T17:59:17.605Z","type":"message"}
+{"nick":"indutny","message":"that's just ulimit","date":"2012-07-27T17:59:21.030Z","type":"message"}
+{"nick":"indutny","message":"well, I see core file","date":"2012-07-27T17:59:24.844Z","type":"message"}
+{"nick":"indutny","message":"but how can I get stacktrace from it?","date":"2012-07-27T17:59:31.422Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: you have to use mdb","date":"2012-07-27T18:00:07.168Z","type":"message"}
+{"nick":"tjfontaine","message":"mdb or something","date":"2012-07-27T18:00:09.286Z","type":"message"}
+{"nick":"tjfontaine","message":"bizzaro land :)","date":"2012-07-27T18:00:16.590Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-07-27T18:00:17.137Z","type":"message"}
+{"nick":"indutny","message":"I'll figure out","date":"2012-07-27T18:00:20.328Z","type":"message"}
+{"nick":"indutny","message":"thanks","date":"2012-07-27T18:00:21.025Z","type":"message"}
+{"nick":"tjfontaine","message":"dap linked before an mdb for gdb'rs cheat sheet not long ago","date":"2012-07-27T18:00:43.902Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: actually, `mdb <core-file>` should work","date":"2012-07-27T18:00:45.821Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-07-27T18:01:23.826Z","type":"join"}
+{"nick":"dap","message":"Indutny: we do also have gdb in pkgsrc, I believe. The blog post is: https://blogs.oracle.com/eschrock/entry/gdb_to_mdb","date":"2012-07-27T18:02:14.795Z","type":"message"}
+{"nick":"indutny","message":"uv__fs_event_read+0x2d()","date":"2012-07-27T18:02:17.308Z","type":"message"}
+{"nick":"indutny","message":"ev_invoke_pending+0x8b()","date":"2012-07-27T18:02:17.507Z","type":"message"}
+{"nick":"indutny","message":"uv__run+0x85()","date":"2012-07-27T18:02:17.507Z","type":"message"}
+{"nick":"indutny","message":"uv_run+0x18()","date":"2012-07-27T18:02:17.507Z","type":"message"}
+{"nick":"indutny","message":"_ZN4node5StartEiPPc+0x196()","date":"2012-07-27T18:02:17.507Z","type":"message"}
+{"nick":"indutny","message":"_start+0x6c()","date":"2012-07-27T18:02:17.927Z","type":"message"}
+{"nick":"indutny","message":"well, I would like to learn how to use mdb anyway :P","date":"2012-07-27T18:02:31.818Z","type":"message"}
+{"nick":"dap","message":"Cool.","date":"2012-07-27T18:02:39.959Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: hey, yt?","date":"2012-07-27T18:03:04.035Z","type":"message"}
+{"nick":"indutny","message":"so how can I get the reason of segfault?","date":"2012-07-27T18:03:05.275Z","type":"message"}
+{"nick":"dap","message":"::status","date":"2012-07-27T18:03:25.596Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: ih","date":"2012-07-27T18:03:27.735Z","type":"message"}
+{"nick":"indutny","message":"oh, great","date":"2012-07-27T18:03:39.736Z","type":"message"}
+{"nick":"indutny","message":"dap: thank you","date":"2012-07-27T18:03:41.818Z","type":"message"}
+{"nick":"indutny","message":"dap: and what should I load to get line numbers in stack trace?","date":"2012-07-27T18:04:19.082Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: does SO_RCVLOWAT affect when epoll() says when a socket is readable?","date":"2012-07-27T18:04:38.506Z","type":"message"}
+{"nick":"dap","message":"indutny: I don't know what issue you're looking at, but bcantrill root caused https://github.com/joyent/node/issues/3768 this morning, which has also been known to produce memory corruption and therefore SIGSEGV.","date":"2012-07-27T18:04:53.952Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Trent Mick\u000f \u000307v0.8\u000f * r\u0002f70b138\u000f \u000310\u000f/ node.gyp \u0002:\u000f always link sunos builds with libumem - http://git.io/Eq0AKA","date":"2012-07-27T18:04:54.711Z","type":"message"}
+{"nick":"dap","message":"indutny: you want JS info, or C info?","date":"2012-07-27T18:05:04.859Z","type":"message"}
+{"nick":"dap","message":"indutny: MDB doesn't have any source information for C.  For JS, you want \"::load v8\" and then \"::jsstack\"","date":"2012-07-27T18:05:26.480Z","type":"message"}
+{"nick":"indutny","message":"dap: C","date":"2012-07-27T18:05:32.913Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: in non-blocking mode? don't think so","date":"2012-07-27T18:05:35.582Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-07-27T18:05:37.178Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-07-27T18:05:39.579Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: hmm, sad :-)","date":"2012-07-27T18:05:52.702Z","type":"message"}
+{"nick":"bnoordhuis","message":"why?","date":"2012-07-27T18:05:56.182Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: well, I noticed something funny","date":"2012-07-27T18:06:17.705Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I was using node as a fancy netcat, over wifi first at 18 MB/s and later over gbit ethernet at 80 MB/s","date":"2012-07-27T18:06:45.533Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: but node always uses about the same amount of memory","date":"2012-07-27T18:06:55.778Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: er, CPU (!!)","date":"2012-07-27T18:07:03.256Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that good or bad?","date":"2012-07-27T18:07:40.115Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: which is probably because when the data rate is lower it reads more often in smaller chunks so effectively it becomes less efficient","date":"2012-07-27T18:07:45.093Z","type":"message"}
+{"nick":"piscisaureus","message":"(so in that regard, node is very scalable :-p)","date":"2012-07-27T18:07:57.787Z","type":"message"}
+{"nick":"erickt","date":"2012-07-27T18:08:13.722Z","type":"join"}
+{"nick":"piscisaureus","message":"bnoordhuis: but for many purposes it would be good to set a low water mark","date":"2012-07-27T18:08:15.533Z","type":"message"}
+{"nick":"isaacs","message":"indutny: yes, mdb is your friend","date":"2012-07-27T18:08:25.193Z","type":"message"}
+{"nick":"indutny","message":"https://github.com/joyent/node/issues/3783","date":"2012-07-27T18:08:33.210Z","type":"message"}
+{"nick":"indutny","message":"isaacs: ^","date":"2012-07-27T18:08:34.562Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-27T18:08:37.685Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus: btw, did a quick kernel source grep. i get the impression that SO_RCVLOWAT doesn't actually do anything","date":"2012-07-27T18:09:30.482Z","type":"message"}
+{"nick":"isaacs","message":"well, that's bizarre.","date":"2012-07-27T18:10:26.356Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-07-27T18:10:41.379Z","type":"join"}
+{"nick":"tjfontaine","message":"indutny: it happens on any npm install?","date":"2012-07-27T18:10:50.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"same for SO_SNDLOWAT","date":"2012-07-27T18:10:50.319Z","type":"message"}
+{"nick":"EhevuTov","date":"2012-07-27T18:10:51.319Z","type":"join"}
+{"nick":"isaacs","message":"indutny: do you have the package.json file available that you were npm-installing?","date":"2012-07-27T18:11:24.458Z","type":"message"}
+{"nick":"indutny","message":"isaacs: yes, I'll share project with you","date":"2012-07-27T18:13:22.771Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: yes","date":"2012-07-27T18:13:25.640Z","type":"message"}
+{"nick":"indutny","message":"oh, no","date":"2012-07-27T18:13:28.777Z","type":"message"}
+{"nick":"indutny","message":"only one time","date":"2012-07-27T18:13:31.354Z","type":"message"}
+{"nick":"micheil","reason":"Quit: micheil","date":"2012-07-27T18:14:03.189Z","type":"quit"}
+{"nick":"piscisaureus","message":"bnoordhuis: that would be very surprising to me","date":"2012-07-27T18:14:41.051Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: oh wait, i take that back - the missing link is in include/","date":"2012-07-27T18:16:22.071Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/search?q=SO_RCVLOWAT+repo%3Amirrors%2Flinux-2.6&repo=&langOverride=&start_value=1&type=Code&language=C","date":"2012-07-27T18:16:40.914Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: but i  was right about it not doing anything in non-blocking mode","date":"2012-07-27T18:17:13.628Z","type":"message"}
+{"nick":"mikeal","date":"2012-07-27T18:17:21.134Z","type":"join"}
+{"nick":"bnoordhuis","message":"or in poll-with-epoll mode for that matter","date":"2012-07-27T18:17:25.171Z","type":"message"}
+{"nick":"tjfontaine","message":"that is depressingly not as nice as codesearch.google.com","date":"2012-07-27T18:17:25.368Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: lame","date":"2012-07-27T18:17:35.386Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i miss codesearch :(","date":"2012-07-27T18:17:36.427Z","type":"message"}
+{"nick":"piscisaureus","message":"google code search, yeah why did they drop that","date":"2012-07-27T18:17:52.423Z","type":"message"}
+{"nick":"piscisaureus","message":"bnoordhuis: I think github has it tho","date":"2012-07-27T18:18:00.543Z","type":"message"}
+{"nick":"indutny","message":"isaacs: added you to the repo","date":"2012-07-27T18:18:11.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: github search can't hold a candle to codesearch","date":"2012-07-27T18:18:30.282Z","type":"message"}
+{"nick":"isaacs","message":"indutny: works for me","date":"2012-07-27T18:20:22.580Z","type":"message"}
+{"nick":"indutny","message":"odd","date":"2012-07-27T18:20:29.551Z","type":"message"}
+{"nick":"indutny","message":"are you using node 0.9.1-pre?","date":"2012-07-27T18:20:34.046Z","type":"message"}
+{"nick":"indutny","message":"btw, it worked when I run npm install second time","date":"2012-07-27T18:20:51.400Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i'm on e2c556fde02ef104b3482813b6b0503fd9329ef4","date":"2012-07-27T18:21:18.407Z","type":"message"}
+{"nick":"indutny","message":"I'm on HEAD","date":"2012-07-27T18:21:28.018Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-27T18:21:31.620Z","type":"message"}
+{"nick":"indutny","message":"dunno exact commit","date":"2012-07-27T18:21:37.855Z","type":"message"}
+{"nick":"indutny","message":"actually, I'm too excited to test anything","date":"2012-07-27T18:21:45.846Z","type":"message"}
+{"nick":"indutny","message":"deploying vock server atm","date":"2012-07-27T18:21:49.134Z","type":"message"}
+{"nick":"indutny","message":"IT WORKS!!","date":"2012-07-27T18:21:55.124Z","type":"message"}
+{"nick":"isaacs","message":"* e2c556f Fedor Indutny (HEAD, origin/master, origin/HEAD, master) server: fix error (9 minutes ago)","date":"2012-07-27T18:21:55.324Z","type":"message"}
+{"nick":"indutny","message":"laggy, but works","date":"2012-07-27T18:21:57.536Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-07-27T18:22:05.860Z","type":"message"}
+{"nick":"isaacs","message":"indutny: btw, you can log in as root on 165.225.128.184","date":"2012-07-27T18:22:10.959Z","type":"message"}
+{"nick":"isaacs","message":"that's where i was testing it","date":"2012-07-27T18:22:15.648Z","type":"message"}
+{"nick":"beachdog","date":"2012-07-27T18:22:22.865Z","type":"join"}
+{"nick":"indutny","message":"ok","date":"2012-07-27T18:22:27.124Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: Do you also use chrome canary?","date":"2012-07-27T18:23:01.507Z","type":"message"}
+{"nick":"dominictarr","date":"2012-07-27T18:23:06.086Z","type":"join"}
+{"nick":"beachdog","reason":"Client Quit","date":"2012-07-27T18:23:32.366Z","type":"quit"}
+{"nick":"isaacs","message":"ok, i'm going to make the Readable class have a way to plug in a generic _read(n, cb) thing, and support buffer size and low water mark setting.","date":"2012-07-27T18:24:09.248Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: On the MBP retina i'm getting a strange fluttering of the rendered page. It happens when i scroll and even move my mouse anywhere.","date":"2012-07-27T18:24:20.705Z","type":"message"}
+{"nick":"beachdog","date":"2012-07-27T18:24:21.022Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus: how hard would it be to implement read(n, cb) in libuv?  in terms of days/weeks of work, etc.?","date":"2012-07-27T18:24:56.650Z","type":"message"}
+{"nick":"isaacs","message":"any rough guess?","date":"2012-07-27T18:25:02.187Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-07-27T18:27:30.341Z","type":"quit"}
+{"nick":"c4milo","date":"2012-07-27T18:28:31.856Z","type":"join"}
+{"nick":"arlolra","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-07-27T18:28:51.035Z","type":"quit"}
+{"nick":"piscisaureus","message":"isaacs: *shrug*, not much I suppose","date":"2012-07-27T18:30:08.089Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: it'd be uv_read_start, basically, but without queuing a new read after reading","date":"2012-07-27T18:30:30.193Z","type":"message"}
+{"nick":"isaacs","message":"does uv_read_start let you set the size to read?","date":"2012-07-27T18:30:54.183Z","type":"message"}
+{"nick":"isaacs","message":"i guess so","date":"2012-07-27T18:30:56.031Z","type":"message"}
+{"nick":"isaacs","message":"since you pass in a buffer?","date":"2012-07-27T18:31:00.913Z","type":"message"}
+{"nick":"piscisaureus","message":"you'd have to ask bnoordhuis for the unix details, but I think we would have to remove the socket fd from the poll set after a read returns. Which is also not that hard.","date":"2012-07-27T18:31:04.059Z","type":"message"}
+{"nick":"isaacs","message":"kewl, I'll post an issue.","date":"2012-07-27T18:31:26.212Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: you don't pass in a buffer - but you can control it from the alloc cb","date":"2012-07-27T18:31:33.286Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: that is kind of hacky though","date":"2012-07-27T18:31:39.621Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok","date":"2012-07-27T18:31:40.021Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-27T18:31:43.091Z","type":"message"}
+{"nick":"isaacs","message":"i'll happily leave it up to you guys how to make the C api as nice as possible.","date":"2012-07-27T18:32:00.678Z","type":"message"}
+{"nick":"creationix","message":"sorry, on a call","date":"2012-07-27T18:32:06.408Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_read(uv_handle_t*, uv_req_t*, size_t n, uv_alloc_cb on_alloc, uv_read_cb on_read)","date":"2012-07-27T18:32:58.359Z","type":"message"}
+{"nick":"piscisaureus","message":"^— indutny ?","date":"2012-07-27T18:33:03.088Z","type":"message"}
+{"nick":"piscisaureus","message":"^— other libuv users?","date":"2012-07-27T18:33:11.628Z","type":"message"}
+{"nick":"dshaw_","date":"2012-07-27T18:33:43.042Z","type":"join"}
+{"nick":"isaacs","message":"https://github.com/joyent/libuv/issues/505","date":"2012-07-27T18:37:12.203Z","type":"message"}
+{"nick":"isaacs","message":"oh, check this out: http://nikhilm.github.com/uvbook/","date":"2012-07-27T18:39:17.437Z","type":"message"}
+{"nick":"bnoordhuis","message":"nice, isn't it?","date":"2012-07-27T18:41:50.810Z","type":"message"}
+{"nick":"bnoordhuis","message":"the bit about libuv being an abstraction over iocp and libev is kind of dated","date":"2012-07-27T18:42:32.443Z","type":"message"}
+{"nick":"isaacs","message":"heh, true","date":"2012-07-27T18:43:00.324Z","type":"message"}
+{"nick":"isaacs","message":"libuv talks directly to kqueue and friends now, right?","date":"2012-07-27T18:43:18.433Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, almost - once i have multi-loop signal handling going, libev is gone","date":"2012-07-27T18:44:02.513Z","type":"message"}
+{"nick":"piscisaureus","message":"isaacs: was already there: https://github.com/joyent/libuv/issues/495","date":"2012-07-27T18:45:08.027Z","type":"message"}
+{"nick":"isaacs","message":"oh, lol","date":"2012-07-27T18:45:37.481Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-07-27T18:45:38.312Z","type":"message"}
+{"nick":"isaacs","message":"i'll merge :)","date":"2012-07-27T18:45:42.391Z","type":"message"}
+{"nick":"isaacs","message":"oh, you already merged.","date":"2012-07-27T18:45:56.848Z","type":"message"}
+{"nick":"isaacs","message":"hahah","date":"2012-07-27T18:45:58.043Z","type":"message"}
+{"nick":"isaacs","message":"parallelism is hard!","date":"2012-07-27T18:46:24.166Z","type":"message"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Joe Andaverde\u000f \u000307master\u000f * r\u000220e12e4\u000f \u000310\u000f/ (3 files in 3 dirs)\u0002:\u000f events: make .listeners() return a copy - http://git.io/CKiynQ","date":"2012-07-27T18:48:29.536Z","type":"message"}
+{"nick":"tjfontaine","message":"trying to debug what seem to be travis only failures are hard","date":"2012-07-27T18:49:26.016Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes. and annoying","date":"2012-07-27T18:50:49.202Z","type":"message"}
+{"nick":"indutny","message":"TooTallNate: hey","date":"2012-07-27T18:57:24.155Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: hey","date":"2012-07-27T18:57:32.188Z","type":"message"}
+{"nick":"indutny","message":"can node-gyp put .node file in build/Debug ?","date":"2012-07-27T18:57:32.382Z","type":"message"}
+{"nick":"indutny","message":"how can I figure that out?","date":"2012-07-27T18:57:41.148Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: ya, node-gyp rebuild --debug","date":"2012-07-27T18:57:44.856Z","type":"message"}
+{"nick":"indutny","message":"what file should I require","date":"2012-07-27T18:57:49.362Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: well, you can use node-bindings for that","date":"2012-07-27T18:58:01.089Z","type":"message"}
+{"nick":"indutny","message":"node bindings?","date":"2012-07-27T18:58:14.158Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: https://github.com/TooTallNate/node-bindings","date":"2012-07-27T18:58:14.353Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-07-27T18:58:21.144Z","type":"message"}
+{"nick":"TooTallNate","message":"it's not a perfect solution but it gets the job done","date":"2012-07-27T18:58:33.502Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-07-27T18:58:34.281Z","type":"message"}
+{"nick":"indutny","message":"that's very nice","date":"2012-07-27T18:58:36.950Z","type":"message"}
+{"nick":"indutny","message":"thanks","date":"2012-07-27T18:58:38.752Z","type":"message"}
+{"nick":"TooTallNate","message":"and it's only load-time so who cares","date":"2012-07-27T18:58:38.954Z","type":"message"}
+{"nick":"TooTallNate","message":"boot-up time that is","date":"2012-07-27T18:58:49.858Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: np :)","date":"2012-07-27T18:58:53.721Z","type":"message"}
+{"nick":"TooTallNate","message":"indutny: did you see my response to your github issue?","date":"2012-07-27T18:59:04.349Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-07-27T18:59:09.320Z","type":"message"}
+{"nick":"indutny","message":"sorry, still busy","date":"2012-07-27T18:59:11.802Z","type":"message"}
+{"nick":"TooTallNate","message":"cool, no prob, me too :)","date":"2012-07-27T18:59:18.165Z","type":"message"}
+{"nick":"mordy___","message":"hi, while trying to debug an issue of a socket hanging around the event loop after a failed connect, i realized that the uv-provided libev callback for connect does not call ev_io_stop.. must i manually call ev_read_stop to remove the socket from libev?","date":"2012-07-27T19:02:22.340Z","type":"message"}
+{"nick":"mordy___","message":"err.. uv_read_stop","date":"2012-07-27T19:02:42.533Z","type":"message"}
+{"nick":"bnoordhuis","message":"mordy___: more details please?","date":"2012-07-27T19:03:00.927Z","type":"message"}
+{"nick":"piscisaureus","message":"I wonder where all this interest in libuv comes from, suddenly","date":"2012-07-27T19:03:40.203Z","type":"message"}
+{"nick":"piscisaureus","message":"but a libuv book, that's pretty awesome :-)","date":"2012-07-27T19:03:45.913Z","type":"message"}
+{"nick":"piscisaureus","message":"the docs that we should have written but never did","date":"2012-07-27T19:04:05.670Z","type":"message"}
+{"nick":"bnoordhuis","message":"mordy___: at a guess, are you forgetting to close the handle?","date":"2012-07-27T19:04:20.471Z","type":"message"}
+{"nick":"joeandaverde","message":"well, the header file had a good level of detail.","date":"2012-07-27T19:04:25.862Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: the beauty of open source","date":"2012-07-27T19:04:27.252Z","type":"message"}
+{"nick":"piscisaureus","message":"yeah, it's making me happy :-)","date":"2012-07-27T19:04:46.340Z","type":"message"}
+{"nick":"mordy___","message":"d'oh","date":"2012-07-27T19:04:48.256Z","type":"message"}
+{"nick":"mordy___","message":"yes, i was","date":"2012-07-27T19:04:51.225Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-27T19:05:15.139Z","type":"quit"}
+{"nick":"mordy___","message":"but that makes me wonder.. i don't see any fd leaks and i'm seeing 'close' showing up in strace as well.. ","date":"2012-07-27T19:05:56.065Z","type":"message"}
+{"nick":"bnoordhuis","message":"mordy___: same fd that did the connect()?","date":"2012-07-27T19:06:37.018Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-07-27T19:08:59.518Z","type":"join"}
+{"nick":"mordy___","message":"yep, gonna see what's calling close here in a sec","date":"2012-07-27T19:09:32.951Z","type":"message"}
+{"nick":"mordy___","message":"as for my using libuv, i'm doing some plumbing so a C library can be wrapped in node and use its event loop","date":"2012-07-27T19:10:34.255Z","type":"message"}
+{"nick":"piscisaureus__","date":"2012-07-27T19:10:55.614Z","type":"join"}
+{"nick":"tjfontaine","message":"he's multiplying","date":"2012-07-27T19:11:03.092Z","type":"message"}
+{"nick":"piscisaureus__","reason":"Client Quit","date":"2012-07-27T19:11:05.491Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 255 seconds","date":"2012-07-27T19:14:11.432Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-07-27T19:15:05.316Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Remote host closed the connection","date":"2012-07-27T19:15:10.642Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-07-27T19:15:44.017Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T19:19:52.287Z","type":"quit"}
+{"nick":"ryah","message":"piscisaureus_: re on('readable') i thought you do zero reads in iocp?","date":"2012-07-27T19:21:01.571Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: as a stopgap, measure, I do","date":"2012-07-27T19:21:22.981Z","type":"message"}
+{"nick":"ryah","message":"i guess once you're readable, you loop trying to do real reads","date":"2012-07-27T19:21:43.426Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: but it doesn't work for e.g. pipes (in fact it does, but it has problems, and I'll have to revisit that)","date":"2012-07-27T19:21:51.629Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I sort of like to keep the api a bit flexible and not tie it to one particular (and hacky) implementation","date":"2012-07-27T19:22:33.517Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I remember that we discussed read_start vs read. But I never realized that you wanted this thing where you get an event when data is available.","date":"2012-07-27T19:23:36.512Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus: no, that was a separate idea","date":"2012-07-27T19:24:26.782Z","type":"message"}
+{"nick":"ryah","message":"after seeing dart's stream api","date":"2012-07-27T19:24:40.847Z","type":"message"}
+{"nick":"ryah","message":"so what about overlapped uv_read() ","date":"2012-07-27T19:24:54.616Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: are you very much into","date":"2012-07-27T19:25:32.792Z","type":"message"}
+{"nick":"piscisaureus","message":"er","date":"2012-07-27T19:25:35.386Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: dart has onData and readInto","date":"2012-07-27T19:25:50.660Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: readInto looks like \"overlapped read\" and onData looks like the unix model","date":"2012-07-27T19:26:10.903Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: I am +1 with overlapped uv_read, although we have to figure out a nice api for it","date":"2012-07-27T19:26:30.902Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: it would be nice to keep this \"late\" allocation with alloc_cb around","date":"2012-07-27T19:26:57.128Z","type":"message"}
+{"nick":"piscisaureus","message":"atleast optionally","date":"2012-07-27T19:27:23.859Z","type":"message"}
+{"nick":"piscisaureus","message":"the Dart guys have looked closedly at node and learned from it :-)","date":"2012-07-27T19:27:39.924Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-27T19:28:23.026Z","type":"quit"}
+{"nick":"piscisaureus","message":"^— I am not gone :-)","date":"2012-07-27T19:28:29.851Z","type":"message"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-07-27T19:28:30.344Z","type":"quit"}
+{"nick":"ryah","message":"uv_read() could still have a late alloc","date":"2012-07-27T19:31:23.677Z","type":"message"}
+{"nick":"ryah","message":"we dont want to tie up a buffer for that whole time","date":"2012-07-27T19:31:35.620Z","type":"message"}
+{"nick":"piscisaureus","message":"exactly","date":"2012-07-27T19:32:25.553Z","type":"message"}
+{"nick":"piscisaureus","message":"I have to run","date":"2012-07-27T19:32:42.033Z","type":"message"}
+{"nick":"piscisaureus","message":"ryah: comment @ https://github.com/joyent/libuv/issues/505 if you have ideas / comments","date":"2012-07-27T19:32:54.702Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-07-27T19:33:20.261Z","type":"join"}
+{"nick":"piscisaureus","reason":"Quit: Leaving.","date":"2012-07-27T19:34:13.330Z","type":"quit"}
+{"nick":"indutny","message":"isaacs: yt?","date":"2012-07-27T19:34:51.809Z","type":"message"}
+{"nick":"indutny","message":"how can I restart services on smartos?","date":"2012-07-27T19:35:32.693Z","type":"message"}
+{"nick":"indutny","message":"like restart redis","date":"2012-07-27T19:35:35.659Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-07-27T19:37:37.871Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Client Quit","date":"2012-07-27T19:37:59.858Z","type":"quit"}
+{"nick":"mmalecki","message":"indutny: use svcadm","date":"2012-07-27T19:38:58.198Z","type":"message"}
+{"nick":"mmalecki","message":"svcadm restart <thing>","date":"2012-07-27T19:39:10.640Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-07-27T19:39:34.772Z","type":"message"}
+{"nick":"indutny","message":"thanks","date":"2012-07-27T19:39:37.190Z","type":"message"}
+{"nick":"indutny","message":"https://github.com/indutny/vock","date":"2012-07-27T19:39:41.485Z","type":"message"}
+{"nick":"indutny","message":"so we're there %","date":"2012-07-27T19:39:44.426Z","type":"message"}
+{"nick":"mmalecki","message":"woot","date":"2012-07-27T19:39:46.549Z","type":"message"}
+{"nick":"indutny","message":"^^","date":"2012-07-27T19:39:48.207Z","type":"message"}
+{"nick":"indutny","message":"npm install -g vock","date":"2012-07-27T19:40:12.154Z","type":"message"}
+{"nick":"indutny","message":"anyone wants to test?","date":"2012-07-27T19:40:16.895Z","type":"message"}
+{"nick":"ryah","message":"http://nikhilm.github.com/uvbook <-- did you see this?","date":"2012-07-27T19:43:18.691Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-07-27T19:43:26.204Z","type":"message"}
+{"nick":"hz","date":"2012-07-27T19:43:28.848Z","type":"join"}
+{"nick":"indutny","message":"ryah: want to vock with me?","date":"2012-07-27T19:43:35.241Z","type":"message"}
+{"nick":"indutny","message":"ryah: are you on osx?","date":"2012-07-27T19:43:37.600Z","type":"message"}
+{"nick":"ryah","message":"vock?","date":"2012-07-27T19:43:53.850Z","type":"message"}
+{"nick":"indutny","message":"ryah: npm install -g vock if you're on os","date":"2012-07-27T19:44:03.949Z","type":"message"}
+{"nick":"indutny","message":"s/os/osx","date":"2012-07-27T19:44:06.634Z","type":"message"}
+{"nick":"indutny","message":"VoIP on node.js","date":"2012-07-27T19:44:10.940Z","type":"message"}
+{"nick":"ryah","message":"sorry, im on linux","date":"2012-07-27T19:44:11.135Z","type":"message"}
+{"nick":"indutny","message":"ok, np","date":"2012-07-27T19:44:56.659Z","type":"message"}
+{"nick":"saghul_","message":"indutny what do you use for signaling?","date":"2012-07-27T19:50:17.164Z","type":"message"}
+{"nick":"indutny","message":"signaling?","date":"2012-07-27T19:50:31.457Z","type":"message"}
+{"nick":"saghul_","message":"yes, XMPP, SIP, custom?","date":"2012-07-27T19:51:15.663Z","type":"message"}
+{"nick":"indutny","message":"custom","date":"2012-07-27T19:51:34.930Z","type":"message"}
+{"nick":"indutny","message":"msgpack","date":"2012-07-27T19:51:36.421Z","type":"message"}
+{"nick":"indutny","message":"w/o encryption so far","date":"2012-07-27T19:51:42.889Z","type":"message"}
+{"nick":"indutny","message":"and w/o many features","date":"2012-07-27T19:51:47.753Z","type":"message"}
+{"nick":"indutny","message":"but yay, it's VoIP + javascript","date":"2012-07-27T19:51:59.831Z","type":"message"}
+{"nick":"creationix","message":"indutny, make a linux version!","date":"2012-07-27T19:52:13.677Z","type":"message"}
+{"nick":"mikeal","date":"2012-07-27T19:52:16.093Z","type":"join"}
+{"nick":"creationix","message":"'cause you like pain","date":"2012-07-27T19:52:21.087Z","type":"message"}
+{"nick":"indutny","message":"creationix: hahaha","date":"2012-07-27T19:52:26.675Z","type":"message"}
+{"nick":"saghul_","message":"nice","date":"2012-07-27T19:52:29.037Z","type":"message"}
+{"nick":"indutny","message":"creationix: I don't have any linux machine atm","date":"2012-07-27T19:52:32.930Z","type":"message"}
+{"nick":"indutny","message":"only if bnoordhuis will help me :D","date":"2012-07-27T19:52:46.011Z","type":"message"}
+{"nick":"saghul_","message":"i'm a voip guy myself, that's why i asked ;-)","date":"2012-07-27T19:52:53.605Z","type":"message"}
+{"nick":"creationix","message":"any machine is a linux machine","date":"2012-07-27T19:52:57.326Z","type":"message"}
+{"nick":"indutny","message":"saghul_: oh, nice!","date":"2012-07-27T19:52:59.341Z","type":"message"}
+{"nick":"indutny","message":"creationix: hahaha","date":"2012-07-27T19:53:02.105Z","type":"message"}
+{"nick":"indutny","message":"creationix: I can't install pulse audio on osx","date":"2012-07-27T19:53:08.094Z","type":"message"}
+{"nick":"indutny","message":"I suppose","date":"2012-07-27T19:53:09.837Z","type":"message"}
+{"nick":"tjfontaine","message":"jack is cross platform","date":"2012-07-27T19:53:28.280Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-07-27T19:53:34.726Z","type":"message"}
+{"nick":"indutny","message":"is jack the thing that is installed by default on ubuntu?","date":"2012-07-27T19:53:51.814Z","type":"message"}
+{"nick":"tjfontaine","message":"no that's pulseaudio more than likely","date":"2012-07-27T19:54:07.246Z","type":"message"}
+{"nick":"tjfontaine","message":"jack is the low latency audio kit","date":"2012-07-27T19:54:20.739Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: well, probably I'll use jack too","date":"2012-07-27T19:54:36.797Z","type":"message"}
+{"nick":"indutny","message":"since I'm using AudioUnits on OSX","date":"2012-07-27T19:54:41.751Z","type":"message"}
+{"nick":"indutny","message":"for low latency stuff","date":"2012-07-27T19:54:44.400Z","type":"message"}
+{"nick":"tjfontaine","message":"ya it just wraps AU stuff on OSX","date":"2012-07-27T19:54:59.575Z","type":"message"}
+{"nick":"indutny","message":"so, does anyone wants to vock with me?","date":"2012-07-27T19:55:02.113Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: heh, my regrets to it's authors","date":"2012-07-27T19:55:14.459Z","type":"message"}
+{"nick":"indutny","message":"AU is a bunch of junk","date":"2012-07-27T19:55:20.964Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2012-07-27T19:55:22.590Z","type":"message"}
+{"nick":"indutny","message":"well, it's good","date":"2012-07-27T19:55:30.499Z","type":"message"}
+{"nick":"indutny","message":"but documentation sucks","date":"2012-07-27T19:55:34.377Z","type":"message"}
+{"nick":"indutny","message":"I figured out most of the things by trying different combinations of configurations","date":"2012-07-27T19:55:50.561Z","type":"message"}
+{"nick":"beachdog","reason":"Remote host closed the connection","date":"2012-07-27T19:57:43.294Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: trololol","date":"2012-07-27T19:59:05.982Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T20:03:52.619Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-07-27T20:13:24.483Z","type":"quit"}
+{"nick":"beachdog","date":"2012-07-27T20:15:19.146Z","type":"join"}
+{"nick":"loladiro","date":"2012-07-27T20:19:04.423Z","type":"join"}
+{"nick":"loladiro","date":"2012-07-27T20:19:12.180Z","type":"part"}
+{"nick":"mmalecki","reason":"Ping timeout: 255 seconds","date":"2012-07-27T20:19:27.941Z","type":"quit"}
+{"nick":"saghul_","reason":"Quit: Computer has gone to sleep.","date":"2012-07-27T20:29:08.009Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-07-27T20:29:43.137Z","type":"join"}
+{"nick":"mikeal","date":"2012-07-27T20:30:14.028Z","type":"join"}
+{"nick":"joeandaverde","reason":"Quit: Leaving","date":"2012-07-27T20:33:06.185Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-07-27T20:40:23.600Z","type":"quit"}
+{"nick":"joe__","date":"2012-07-27T20:55:10.802Z","type":"join"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-07-27T20:59:10.099Z","type":"quit"}
+{"nick":"stagas","date":"2012-07-27T21:00:04.508Z","type":"join"}
+{"nick":"loladiro","date":"2012-07-27T21:08:26.400Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-07-27T21:08:26.599Z","type":"quit"}
+{"nick":"arlolra","date":"2012-07-27T21:11:56.772Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 252 seconds","date":"2012-07-27T21:14:39.340Z","type":"quit"}
+{"nick":"hz","reason":"Disconnected by services","date":"2012-07-27T21:32:33.308Z","type":"quit"}
+{"nick":"hz","date":"2012-07-27T21:32:36.809Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T21:33:09.531Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-07-27T21:34:30.215Z","type":"join"}
+{"nick":"paddybyers","date":"2012-07-27T21:37:38.344Z","type":"join"}
+{"nick":"hz","date":"2012-07-27T21:43:03.044Z","type":"quit"}
+{"nick":"piscisaureu","date":"2012-07-27T21:43:27.976Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-07-27T21:43:52.719Z","type":"quit"}
+{"nick":"piscisaureu","reason":"Client Quit","date":"2012-07-27T21:47:15.085Z","type":"quit"}
+{"nick":"piscisaureus_","message":"I'm not here","date":"2012-07-27T21:48:27.021Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-27T21:48:33.248Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-07-27T21:51:56.948Z","type":"join"}
+{"nick":"rendar","date":"2012-07-27T22:08:50.164Z","type":"quit"}
+{"nick":"EhevuTov_","date":"2012-07-27T22:14:16.408Z","type":"join"}
+{"nick":"EhevuTov","reason":"Ping timeout: 250 seconds","date":"2012-07-27T22:17:25.094Z","type":"quit"}
+{"nick":"EhevuTov__","date":"2012-07-27T22:30:10.184Z","type":"join"}
+{"nick":"EhevuTov_","reason":"Ping timeout: 246 seconds","date":"2012-07-27T22:33:16.099Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-07-27T22:41:35.535Z","type":"join"}
+{"nick":"EhevuTov__","reason":"Ping timeout: 264 seconds","date":"2012-07-27T22:45:22.981Z","type":"quit"}
+{"nick":"joe__","new_nick":"joeandaverde","date":"2012-07-27T22:46:18.686Z","type":"nick"}
+{"nick":"mikeal","date":"2012-07-27T23:07:31.209Z","type":"join"}
+{"nick":"hij1nx","date":"2012-07-27T23:14:29.221Z","type":"join"}
+{"nick":"EhevuTov_","date":"2012-07-27T23:22:39.881Z","type":"join"}
+{"nick":"EhevuTov","reason":"Ping timeout: 252 seconds","date":"2012-07-27T23:25:33.335Z","type":"quit"}
+{"nick":"hij1nx","reason":"Ping timeout: 264 seconds","date":"2012-07-27T23:26:11.022Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-07-27T23:27:37.066Z","type":"quit"}
+{"nick":"xaq","date":"2012-07-27T23:28:03.735Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T23:28:08.693Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-27T23:28:56.836Z","type":"join"}
+{"nick":"stagas","reason":"Quit: ChatZilla 0.9.88-rdmsoft [XULRunner 1.9.0.17/2009122204]","date":"2012-07-27T23:30:45.901Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-07-27T23:37:51.396Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-07-27T23:42:53.051Z","type":"join"}
+{"nick":"xaq_","date":"2012-07-27T23:46:20.835Z","type":"join"}
+{"nick":"xaq_","reason":"Remote host closed the connection","date":"2012-07-27T23:46:25.341Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-07-27T23:47:48.577Z","type":"quit"}
+{"nick":"xaq","reason":"Ping timeout: 250 seconds","date":"2012-07-27T23:49:16.548Z","type":"quit"}

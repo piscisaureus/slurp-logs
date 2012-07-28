@@ -204,3 +204,256 @@
 {"nick":"dominictarr","message":"pipe doesn't care, I mean.","date":"2012-07-27T15:51:14.572Z","type":"message"}
 {"nick":"dominictarr","message":"isaacs, is there a pull request of the previous attempt, or something?","date":"2012-07-27T15:54:29.921Z","type":"message"}
 {"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T15:58:51.624Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: i don't know","date":"2012-07-27T16:01:41.131Z","type":"message"}
+{"nick":"isaacs","message":"it would have been about a year ago","date":"2012-07-27T16:01:46.583Z","type":"message"}
+{"nick":"isaacs","message":"honestly, though, i'm not interested in any stream interface changes that (a) make 'destroy' or 'close' events even more of a first-class citizen in the interface, or (b) add things to pipe in a way that does not address the fundamental problems, or (c) have any chance of breaking existing programs.","date":"2012-07-27T16:02:37.502Z","type":"message"}
+{"nick":"isaacs","message":"this does all three ;)","date":"2012-07-27T16:02:44.846Z","type":"message"}
+{"nick":"dominictarr","message":"may I beg to differ about (b) ?","date":"2012-07-27T16:04:33.058Z","type":"message"}
+{"nick":"dominictarr","message":"my view is that the value of Stream is in the abstraction. it's the original garden hose interface from unix, but much more flexible.","date":"2012-07-27T16:06:18.191Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: it does not make readable streams easier to implement.","date":"2012-07-27T16:06:31.298Z","type":"message"}
+{"nick":"isaacs","message":"it's *not* the garden hose interface from unix, and it's not more flexible.","date":"2012-07-27T16:06:44.237Z","type":"message"}
+{"nick":"isaacs","message":"it's *less* flexible","date":"2012-07-27T16:06:46.937Z","type":"message"}
+{"nick":"dominictarr","message":"*less* flexible?","date":"2012-07-27T16:07:02.389Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-07-27T16:07:48.877Z","type":"message"}
+{"nick":"dominictarr","message":"how do you figure?","date":"2012-07-27T16:07:56.579Z","type":"message"}
+{"nick":"isaacs","message":"what we need is the epoll/read(2)/EWOULDBLOCK style interface.","date":"2012-07-27T16:08:09.999Z","type":"message"}
+{"nick":"isaacs","message":"ie, get an event when you can read, then read() to consume some bytes, or get some notification that reading is not possible right now.","date":"2012-07-27T16:08:30.797Z","type":"message"}
+{"nick":"isaacs","message":"if not consumed, then bytes sit there exerting backpressure on the underlying system.","date":"2012-07-27T16:08:40.602Z","type":"message"}
+{"nick":"isaacs","message":"filling up some OS buffer","date":"2012-07-27T16:08:45.671Z","type":"message"}
+{"nick":"isaacs","message":"this makes it easier to write parsers that consume n bytes at a time, or routers that read the headers and then decide what to do with the data, or session things that handle uploads based on the results of a redis fetch, etc.","date":"2012-07-27T16:09:26.387Z","type":"message"}
+{"nick":"isaacs","message":"without all the pausing and userland buffering we do now","date":"2012-07-27T16:09:43.102Z","type":"message"}
+{"nick":"dominictarr","message":"I'm not against your read() able stream.","date":"2012-07-27T16:09:51.220Z","type":"message"}
+{"nick":"isaacs","message":"so, if we do readable streams like that, we're going to basically ditch Stream.pipe anyway.","date":"2012-07-27T16:10:07.167Z","type":"message"}
+{"nick":"isaacs","message":"changing it can only make hazards, and doesn't address the underlying problem.","date":"2012-07-27T16:10:18.985Z","type":"message"}
+{"nick":"isaacs","message":"now, readable/read()/(return data || null) streams might not work.","date":"2012-07-27T16:10:34.827Z","type":"message"}
+{"nick":"dominictarr","message":"what will it be called then? won't that break loads of stuff?","date":"2012-07-27T16:10:40.424Z","type":"message"}
+{"nick":"isaacs","message":"bert tells me that that's going to be very very difficult to do in libuv for windows.","date":"2012-07-27T16:10:50.112Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: i already have a shim that's working now and interoperable with other streams","date":"2012-07-27T16:11:16.259Z","type":"message"}
+{"nick":"isaacs","message":"and implemented fs.readstrem with it.  it totally works.","date":"2012-07-27T16:11:31.874Z","type":"message"}
+{"nick":"dominictarr","message":"I saw it.","date":"2012-07-27T16:11:42.824Z","type":"message"}
+{"nick":"isaacs","message":"i'm trying a new approach now just to see if it's feasible, to do stream.read(n, cb)","date":"2012-07-27T16:11:48.706Z","type":"message"}
+{"nick":"isaacs","message":"rather than a readable event","date":"2012-07-27T16:11:55.683Z","type":"message"}
+{"nick":"isaacs","message":"i'm not as in love with it","date":"2012-07-27T16:12:01.355Z","type":"message"}
+{"nick":"isaacs","message":"but we'll see","date":"2012-07-27T16:12:04.126Z","type":"message"}
+{"nick":"dominictarr","message":"right, me too. but I'm just coming from a different angle.","date":"2012-07-27T16:12:11.583Z","type":"message"}
+{"nick":"dominictarr","message":"I'm coming from looking at the Stream as an abstraction.","date":"2012-07-27T16:12:27.895Z","type":"message"}
+{"nick":"isaacs","message":"so: any change that does not fix readable streams, in a deep way, that is easy to interoperate with existing programs without breaking them, is not going to happen.","date":"2012-07-27T16:12:52.224Z","type":"message"}
+{"nick":"isaacs","message":"er, that is not easy to interoperate","date":"2012-07-27T16:13:05.656Z","type":"message"}
+{"nick":"isaacs","action":"gets confused easily by booleans in english","date":"2012-07-27T16:13:15.297Z","type":"action"}
+{"nick":"dominictarr","message":"right, so you see that as the only problem?","date":"2012-07-27T16:13:15.903Z","type":"message"}
+{"nick":"isaacs","message":"i see that as the biggest problem.","date":"2012-07-27T16:13:22.002Z","type":"message"}
+{"nick":"isaacs","message":"it makes backpressure a userland problem, when it should be a system problem.","date":"2012-07-27T16:13:31.410Z","type":"message"}
+{"nick":"dominictarr","message":"back pressure is complex","date":"2012-07-27T16:13:48.053Z","type":"message"}
+{"nick":"dominictarr","message":"it's a control system.","date":"2012-07-27T16:13:55.059Z","type":"message"}
+{"nick":"isaacs","message":"it's like, don't order 10 hamburgers if you're only going to eat 2","date":"2012-07-27T16:13:55.345Z","type":"message"}
+{"nick":"isaacs","message":"just order 2","date":"2012-07-27T16:13:56.843Z","type":"message"}
+{"nick":"isaacs","message":"in our current system, we order all the hamburgers, then make it your job to decide what to do with them","date":"2012-07-27T16:14:18.426Z","type":"message"}
+{"nick":"isaacs","message":"there's no way to *just* consume the first 10 bytes of a stream, and leave the rest there.","date":"2012-07-27T16:14:32.812Z","type":"message"}
+{"nick":"dominictarr","message":"well, the chunk that you read from the disk is still in memory, though right?","date":"2012-07-27T16:14:56.087Z","type":"message"}
+{"nick":"isaacs","message":"forget disks.","date":"2012-07-27T16:15:02.486Z","type":"message"}
+{"nick":"dominictarr","message":"well wherever,","date":"2012-07-27T16:15:09.190Z","type":"message"}
+{"nick":"isaacs","message":"files are bullshit.  we have to read huge chunks and buffer them, no matter what we do.","date":"2012-07-27T16:15:15.690Z","type":"message"}
+{"nick":"isaacs","message":"think about tcp, http, that sort of thing","date":"2012-07-27T16:15:24.961Z","type":"message"}
+{"nick":"dominictarr","message":"you don't tell a tcp stream to only send you 10 bytes","date":"2012-07-27T16:15:33.072Z","type":"message"}
+{"nick":"isaacs","message":"well, it sits there trying to push, and it can't push more through until you take it out","date":"2012-07-27T16:15:51.503Z","type":"message"}
+{"nick":"isaacs","message":"in libev and libuv, yes, that's exactly what we're doing.  we're waiting for the fd to be readable, then calling read() to get all the data until we get an EWOULDBLOCK, then waiting for it to be readable again.","date":"2012-07-27T16:16:37.411Z","type":"message"}
+{"nick":"isaacs","message":"on windows, it's different.  you just call read() and give it a callback.","date":"2012-07-27T16:16:57.512Z","type":"message"}
+{"nick":"isaacs","message":"so, i'm trying out that model in js, see how it is","date":"2012-07-27T16:17:05.774Z","type":"message"}
+{"nick":"dominictarr","message":"right, so leaving the buffer full physically stops the upstream from sending anything.","date":"2012-07-27T16:17:46.416Z","type":"message"}
+{"nick":"dominictarr","message":"it's like implicitly calling pause()","date":"2012-07-27T16:18:12.701Z","type":"message"}
+{"nick":"dominictarr","message":"but pause() doesn't exist in this case.","date":"2012-07-27T16:18:22.051Z","type":"message"}
+{"nick":"isaacs","message":"yep","date":"2012-07-27T16:20:13.547Z","type":"message"}
+{"nick":"isaacs","message":"no pause(), no resume()","date":"2012-07-27T16:20:19.237Z","type":"message"}
+{"nick":"isaacs","message":"let tcp do that","date":"2012-07-27T16:20:24.535Z","type":"message"}
+{"nick":"isaacs","message":"that is almost 100% of the hard parts of getting streams right","date":"2012-07-27T16:20:46.558Z","type":"message"}
+{"nick":"dominictarr","message":"hmm, I'm gonna have to thing about how this would work interms of userland streams.","date":"2012-07-27T16:22:29.564Z","type":"message"}
+{"nick":"dominictarr","message":"see if they would be simpler with buffers that worked like that.","date":"2012-07-27T16:22:48.464Z","type":"message"}
+{"nick":"isaacs","message":"it does make the fs readable a lot easier.","date":"2012-07-27T16:23:33.316Z","type":"message"}
+{"nick":"isaacs","message":"there's a bug in my passthrough stream, which i need to figure out","date":"2012-07-27T16:23:51.848Z","type":"message"}
+{"nick":"dominictarr","message":"I also have a thing like that","date":"2012-07-27T16:24:09.507Z","type":"message"}
+{"nick":"isaacs","message":"i also want to see how it affects zlib streams.","date":"2012-07-27T16:24:10.785Z","type":"message"}
+{"nick":"dominictarr","message":"what is the bug in the passthrough stream?","date":"2012-07-27T16:24:34.891Z","type":"message"}
+{"nick":"dominictarr","message":"https://github.com/dominictarr/fs-reverse","date":"2012-07-27T16:24:51.870Z","type":"message"}
+{"nick":"isaacs","message":"fs and zlib are my go-to userland streams, since i'm most familiar with them and they are two cases where we've taken something decidedly un-tcp-ish and made it look like tcp","date":"2012-07-27T16:25:00.108Z","type":"message"}
+{"nick":"dominictarr","message":"(reads a file by lines in reverse)","date":"2012-07-27T16:25:05.095Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: well, the passthrough stream works, but it's not shimming properly to 'data' events.","date":"2012-07-27T16:25:17.778Z","type":"message"}
+{"nick":"dominictarr","message":"mased on this https://github.com/dominictarr/from","date":"2012-07-27T16:25:25.727Z","type":"message"}
+{"nick":"dominictarr","message":"s/mased/based","date":"2012-07-27T16:25:36.670Z","type":"message"}
+{"nick":"dominictarr","message":"passthrough streams are probably simpler the old way.","date":"2012-07-27T16:26:23.102Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: so my mute-stream thing broke when i tried to make it use that, even though that should be simpler.","date":"2012-07-27T16:26:28.770Z","type":"message"}
+{"nick":"isaacs","message":"it's actually really easy","date":"2012-07-27T16:26:33.936Z","type":"message"}
+{"nick":"isaacs","message":".write() drops it in a buffer, .read() pulls it back out","date":"2012-07-27T16:26:42.343Z","type":"message"}
+{"nick":"dominictarr","message":"mute-stream is the one with the bug?","date":"2012-07-27T16:27:59.499Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: yeah","date":"2012-07-27T16:32:25.510Z","type":"message"}
+{"nick":"isaacs","message":"it's not pushed to gh yet","date":"2012-07-27T16:32:31.308Z","type":"message"}
+{"nick":"dominictarr","message":"okay, I'll be interested to see how this turns out.","date":"2012-07-27T16:33:52.755Z","type":"message"}
+{"nick":"dominictarr","message":"one more question","date":"2012-07-27T16:33:56.317Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-07-27T16:34:05.386Z","type":"message"}
+{"nick":"dominictarr","message":"what would it take for my PR to get considered, theoretically?","date":"2012-07-27T16:34:27.690Z","type":"message"}
+{"nick":"ryan_stevens","date":"2012-07-27T16:35:27.892Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T16:58:51.711Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: send it back in time a year or two ;)","date":"2012-07-27T17:13:30.569Z","type":"message"}
+{"nick":"isaacs","message":"sorry, i don't mean to be harsh.","date":"2012-07-27T17:13:53.305Z","type":"message"}
+{"nick":"isaacs","message":"but like, destroy() and close() need to be more application-specific, not part of the official \"MUST\" interface, which they are now.","date":"2012-07-27T17:15:31.478Z","type":"message"}
+{"nick":"dominictarr","message":"right, so I do check if destroy is defined before calling it.","date":"2012-07-27T17:17:33.209Z","type":"message"}
+{"nick":"dominictarr","message":"that pretty much moves it from must -> should","date":"2012-07-27T17:17:43.125Z","type":"message"}
+{"nick":"dominictarr","message":"I just found it breaks some tests. there is a test for silently cleaning up on dest.emit('close')","date":"2012-07-27T17:21:25.164Z","type":"message"}
+{"nick":"dominictarr","message":"so this would break this api.","date":"2012-07-27T17:21:35.710Z","type":"message"}
+{"nick":"isaacs","message":"i'd really *really* rather not even touch the current Stream.pipe","date":"2012-07-27T17:25:30.904Z","type":"message"}
+{"nick":"isaacs","message":"just kinda leave it as-is, and move past it to something better.","date":"2012-07-27T17:25:46.232Z","type":"message"}
+{"nick":"isaacs","message":"shim to the that API, and from it.","date":"2012-07-27T17:25:51.170Z","type":"message"}
+{"nick":"isaacs","message":"but NewReadableThing.pipe should be a new function, not Stream.pipe","date":"2012-07-27T17:26:04.530Z","type":"message"}
+{"nick":"dominictarr","message":"hmm, but won't much of the functionality be the same?","date":"2012-07-27T17:34:31.380Z","type":"message"}
+{"nick":"dominictarr","message":"okay okay, I've just thought of a new approach that is way less invasive.","date":"2012-07-27T17:35:01.178Z","type":"message"}
+{"nick":"isaacs","message":"btw, we're hashing out some of the lowlevel changes in #libuv","date":"2012-07-27T17:39:07.970Z","type":"message"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2012-07-27T17:45:55.547Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T17:46:48.948Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-07-27T17:47:42.361Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T17:58:51.515Z","type":"message"}
+{"nick":"mikeal","date":"2012-07-27T18:17:21.328Z","type":"join"}
+{"nick":"_sorensen","date":"2012-07-27T18:17:40.350Z","type":"join"}
+{"nick":"captain_morgan","date":"2012-07-27T18:43:51.100Z","type":"join"}
+{"nick":"captain__","reason":"Ping timeout: 255 seconds","date":"2012-07-27T18:46:16.970Z","type":"quit"}
+{"nick":"dominictarr","message":"isaacs, here is a way less unreasonable pull request. just two lines. https://github.com/joyent/node/pull/3785","date":"2012-07-27T18:50:22.190Z","type":"message"}
+{"nick":"blakmatrix","reason":"Ping timeout: 260 seconds","date":"2012-07-27T18:52:42.516Z","type":"quit"}
+{"nick":"blakmatrix","date":"2012-07-27T18:54:12.533Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T18:58:51.531Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: i don't know.","date":"2012-07-27T19:13:16.149Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: it's new API, so it can't go in 0.8.","date":"2012-07-27T19:13:23.591Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: and it's probably not relevant in 0.9","date":"2012-07-27T19:13:32.851Z","type":"message"}
+{"nick":"isaacs","message":"but, this is a much smaller change.","date":"2012-07-27T19:14:22.180Z","type":"message"}
+{"nick":"isaacs","message":"lower impact","date":"2012-07-27T19:14:34.003Z","type":"message"}
+{"nick":"isaacs","message":"so that's nice :)","date":"2012-07-27T19:14:44.250Z","type":"message"}
+{"nick":"chapel","message":"isaacs the dream crusher","date":"2012-07-27T19:15:10.836Z","type":"message"}
+{"nick":"isaacs","message":"i know, it's tough.","date":"2012-07-27T19:15:16.661Z","type":"message"}
+{"nick":"isaacs","action":"is haunted at night by the souls of all the crushed dreams.","date":"2012-07-27T19:15:30.430Z","type":"action"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T19:19:52.287Z","type":"quit"}
+{"nick":"zz_shykes","new_nick":"shykes","date":"2012-07-27T19:31:47.461Z","type":"nick"}
+{"nick":"dominictarr","message":"isaacs, well, lets just leave it on the table for a bit, things might change with the ongoing stream discussion.","date":"2012-07-27T19:34:43.168Z","type":"message"}
+{"nick":"dominictarr","message":"WTF is sports doing in here?","date":"2012-07-27T19:35:50.205Z","type":"message"}
+{"nick":"dominictarr","message":"LOUDBOT be -groupcat-","date":"2012-07-27T19:44:43.225Z","type":"message"}
+{"nick":"dominictarr","message":"FFS LOUDBOT","date":"2012-07-27T19:45:04.405Z","type":"message"}
+{"nick":"LOUDBOT","message":"Ｉ　ＴＨＯＵＧＨＴ　ＷＥ　ＧＯＴ　ＴＨＩＳ　ＷＯＲＫＩＮＧ　ＤＡＭＮ　ＩＴ","date":"2012-07-27T19:45:04.991Z","type":"message"}
+{"nick":"AvianFlu","message":"WHERE THE HELL DID THAT WEIRD FONT COME FROM","date":"2012-07-27T19:49:23.887Z","type":"message"}
+{"nick":"LOUDBOT","message":"GOOGLE WILL NEVER GIVE YOU UP HTTP://TINYURL.COM/LESPAULTRIBUTE","date":"2012-07-27T19:49:24.353Z","type":"message"}
+{"nick":"yhuang","reason":"Quit: ChatZilla 0.9.88.2 [Firefox 14.0.1/20120713134347]","date":"2012-07-27T19:49:29.992Z","type":"quit"}
+{"nick":"dominictarr","message":"I T H I N K T H A T I S J U S T W H I T E S P A C E","date":"2012-07-27T19:50:01.262Z","type":"message"}
+{"nick":"jesusabdullah","message":"No, that's a different font","date":"2012-07-27T19:51:06.863Z","type":"message"}
+{"nick":"jesusabdullah","message":"definitely","date":"2012-07-27T19:51:08.685Z","type":"message"}
+{"nick":"jesusabdullah","message":"Look at it, it's serif'd","date":"2012-07-27T19:51:12.431Z","type":"message"}
+{"nick":"mikeal","date":"2012-07-27T19:52:16.286Z","type":"join"}
+{"nick":"dominictarr","message":"not on my client.","date":"2012-07-27T19:54:01.587Z","type":"message"}
+{"nick":"jesusabdullah","message":"That's cause your client sucks","date":"2012-07-27T19:54:28.315Z","type":"message"}
+{"nick":"dominictarr","message":"jesusabdullah, I have auto complete for people with too long names","date":"2012-07-27T19:55:21.211Z","type":"message"}
+{"nick":"dominictarr","message":"what more do you need?","date":"2012-07-27T19:55:25.153Z","type":"message"}
+{"nick":"blakmatrix1","date":"2012-07-27T19:56:31.114Z","type":"join"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) paid account successfully upgraded /!\\","date":"2012-07-27T19:57:12.739Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) tylermenezes@... successfully signed up for developer browserling plan ($20). Cash money! /!\\","date":"2012-07-27T19:57:12.933Z","type":"message"}
+{"nick":"blakmatrix1","reason":"Client Quit","date":"2012-07-27T19:57:13.133Z","type":"quit"}
+{"nick":"blakmatrix1","date":"2012-07-27T19:57:40.029Z","type":"join"}
+{"nick":"blakmatrix","reason":"Ping timeout: 240 seconds","date":"2012-07-27T19:57:57.469Z","type":"quit"}
+{"nick":"jesusabdullah","message":"dominictarr: bizarre serif'd fonts in your cli","date":"2012-07-27T19:57:59.633Z","type":"message"}
+{"nick":"blakmatrix1","reason":"Client Quit","date":"2012-07-27T19:58:43.426Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T19:58:51.576Z","type":"message"}
+{"nick":"rowbit","message":"Daily usage stats: []","date":"2012-07-27T19:58:51.777Z","type":"message"}
+{"nick":"blakmatrix","date":"2012-07-27T19:59:01.365Z","type":"join"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.226.209(free4)","date":"2012-07-27T19:59:25.864Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T20:03:52.620Z","type":"quit"}
+{"nick":"dominictarr","message":"jesusabdullah, you've been hacked.","date":"2012-07-27T20:04:43.987Z","type":"message"}
+{"nick":"jesusabdullah","message":"pffsht","date":"2012-07-27T20:05:00.050Z","type":"message"}
+{"nick":"dominictarr","message":"it was probably a stray escape character or something.","date":"2012-07-27T20:05:33.452Z","type":"message"}
+{"nick":"jesusabdullah","message":"Yeah probably","date":"2012-07-27T20:06:11.544Z","type":"message"}
+{"nick":"jesusabdullah","message":"I'm cool with a serif-ing escape character.","date":"2012-07-27T20:06:26.415Z","type":"message"}
+{"nick":"jesusabdullah","message":"What client are you using anyway?","date":"2012-07-27T20:06:46.472Z","type":"message"}
+{"nick":"ik","message":"it's not a 'font'","date":"2012-07-27T20:09:51.911Z","type":"message"}
+{"nick":"ik","message":"re: the loudbot thing","date":"2012-07-27T20:09:53.972Z","type":"message"}
+{"nick":"ik","message":"those were just the fullwidth characters","date":"2012-07-27T20:10:25.882Z","type":"message"}
+{"nick":"ik","message":"16:09:14 < perlbot> ik: U+FF34 (ef bc b4): FULLWIDTH LATIN CAPITAL LETTER T [Ｔ ]","date":"2012-07-27T20:10:36.406Z","type":"message"}
+{"nick":"jesusabdullah","message":"YEAH SEE that \"fullwidth latin capital letter T\" has serifs","date":"2012-07-27T20:10:59.535Z","type":"message"}
+{"nick":"jesusabdullah","message":"in MY font anyway!","date":"2012-07-27T20:11:04.056Z","type":"message"}
+{"nick":"tblobaum__","reason":"Ping timeout: 252 seconds","date":"2012-07-27T20:11:35.343Z","type":"quit"}
+{"nick":"ik","message":"yea and that's all about your font","date":"2012-07-27T20:12:03.711Z","type":"message"}
+{"nick":"ik","message":"but the fact that it's different from T is because they're different characters","date":"2012-07-27T20:12:13.675Z","type":"message"}
+{"nick":"jesusabdullah","message":"HMMPH","date":"2012-07-27T20:12:24.809Z","type":"message"}
+{"nick":"ik","message":"your font could draw it as a pooping dolphin or something","date":"2012-07-27T20:12:26.061Z","type":"message"}
+{"nick":"ik","message":"but regular T would still be a T","date":"2012-07-27T20:12:34.645Z","type":"message"}
+{"nick":"jesusabdullah","message":"A pooping dolphin?","date":"2012-07-27T20:12:35.876Z","type":"message"}
+{"nick":"ik","message":"sure","date":"2012-07-27T20:12:38.358Z","type":"message"}
+{"nick":"jesusabdullah","message":"What font is this??","date":"2012-07-27T20:12:39.090Z","type":"message"}
+{"nick":"ik","message":"I don't know but I hope to find out","date":"2012-07-27T20:12:45.448Z","type":"message"}
+{"nick":"jesusabdullah","message":"Please let me know if you ever find a font with pooping dolphin glypgs.","date":"2012-07-27T20:12:59.077Z","type":"message"}
+{"nick":"jesusabdullah","message":"glyphs*","date":"2012-07-27T20:13:03.798Z","type":"message"}
+{"nick":"ik","message":"sometimes you have to do for yourself what others won't, jesusabdullah","date":"2012-07-27T20:13:50.682Z","type":"message"}
+{"nick":"ik","message":"SubStack: HI HELLO","date":"2012-07-27T20:13:58.589Z","type":"message"}
+{"nick":"ik","message":"SubStack: we have an art request it is sort of off your regular 'whimsical robot' line of work but I believe you are capable","date":"2012-07-27T20:14:15.368Z","type":"message"}
+{"nick":"jesusabdullah","message":"ik: Drawing a font with pooping dolphin glyphs sounds hard","date":"2012-07-27T20:14:24.163Z","type":"message"}
+{"nick":"ik","message":"http://www.fileformat.info/info/unicode/char/1f4a9/index.htm","date":"2012-07-27T20:14:45.420Z","type":"message"}
+{"nick":"ik","message":"I just googled for 'unicode poop' at work for you. I hope you're appropriately grateful","date":"2012-07-27T20:14:55.611Z","type":"message"}
+{"nick":"ik","message":"so all you really need is a dolphin now","date":"2012-07-27T20:15:01.269Z","type":"message"}
+{"nick":"ik","message":"oh christ","date":"2012-07-27T20:15:08.012Z","type":"message"}
+{"nick":"ik","message":"http://www.fileformat.info/info/unicode/char/1f42c/index.htm","date":"2012-07-27T20:15:08.554Z","type":"message"}
+{"nick":"ik","message":"��","date":"2012-07-27T20:15:28.157Z","type":"message"}
+{"nick":"ik","message":"pooping dolphin in two characters","date":"2012-07-27T20:15:32.565Z","type":"message"}
+{"nick":"ik","message":"of interest: the poop glyph in my terminal font has a face.","date":"2012-07-27T20:15:40.502Z","type":"message"}
+{"nick":"ik","message":"Poop with a face.","date":"2012-07-27T20:15:43.320Z","type":"message"}
+{"nick":"ik","message":"It looks somewhere between 'happy' and 'astonished'","date":"2012-07-27T20:16:00.477Z","type":"message"}
+{"nick":"ik","message":"shitwaves.","date":"2012-07-27T20:21:20.439Z","type":"message"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.174.105(dev-ie8-2)","date":"2012-07-27T20:24:25.769Z","type":"message"}
+{"nick":"tblobaum__","date":"2012-07-27T20:28:14.136Z","type":"join"}
+{"nick":"mikeal","date":"2012-07-27T20:30:14.228Z","type":"join"}
+{"nick":"jesusabdullah","message":"ik: appropriate.","date":"2012-07-27T20:36:37.584Z","type":"message"}
+{"nick":"Nexxy","message":"rofl","date":"2012-07-27T20:36:50.131Z","type":"message"}
+{"nick":"jesusabdullah","message":"aww, my font won't show the pooping dolphin","date":"2012-07-27T20:36:52.385Z","type":"message"}
+{"nick":"jesusabdullah","message":"by appropriate I mean, appropriately grateful","date":"2012-07-27T20:37:03.629Z","type":"message"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.226.209(free4)","date":"2012-07-27T20:53:25.786Z","type":"message"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 173.203.67.76(free3)","date":"2012-07-27T20:53:55.826Z","type":"message"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.226.209(free4)","date":"2012-07-27T20:54:56.361Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T20:58:51.557Z","type":"message"}
+{"nick":"SubStack","message":"ik: is this mysql related?","date":"2012-07-27T21:09:32.285Z","type":"message"}
+{"nick":"ik","message":"SubStack: yikes","date":"2012-07-27T21:10:14.358Z","type":"message"}
+{"nick":"ik","message":"maybe","date":"2012-07-27T21:10:15.144Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T21:33:09.531Z","type":"quit"}
+{"nick":"rowbit","message":"SubStack, pkrumins: Encoders down: 50.57.226.209(free4)","date":"2012-07-27T21:33:56.621Z","type":"message"}
+{"nick":"ryan_stevens","reason":"Quit: Leaving.","date":"2012-07-27T21:56:03.025Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T21:58:51.521Z","type":"message"}
+{"nick":"wiwillia","date":"2012-07-27T22:17:59.170Z","type":"quit"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) me@... successfully signed up for developer browserling plan ($20). Cash money! /!\\","date":"2012-07-27T22:18:00.451Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) paid account successfully upgraded /!\\","date":"2012-07-27T22:18:00.646Z","type":"message"}
+{"nick":"SubStack","message":":D","date":"2012-07-27T22:19:18.855Z","type":"message"}
+{"nick":"SubStack","message":"isaacs: that tap bug seems to be an issue with Test.prototype.emit, I've got a failing test for it, fixing","date":"2012-07-27T22:20:53.074Z","type":"message"}
+{"nick":"SubStack","message":"pow fixed","date":"2012-07-27T22:24:48.136Z","type":"message"}
+{"nick":"SubStack","message":"one-line change","date":"2012-07-27T22:24:51.402Z","type":"message"}
+{"nick":"SubStack","message":"https://github.com/substack/node-tap/commit/d964c6f4fdf76679c1a28e10c58162490a8c3352","date":"2012-07-27T22:26:58.952Z","type":"message"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2012-07-27T22:29:04.221Z","type":"quit"}
+{"nick":"SubStack","message":"https://github.com/isaacs/node-tap/pull/52","date":"2012-07-27T22:29:41.304Z","type":"message"}
+{"nick":"SubStack","message":"Raynos: ^^^","date":"2012-07-27T22:29:56.384Z","type":"message"}
+{"nick":"Raynos","message":"sweet","date":"2012-07-27T22:30:22.112Z","type":"message"}
+{"nick":"Raynos","message":"next time I see isaacs","date":"2012-07-27T22:30:32.839Z","type":"message"}
+{"nick":"SubStack","message":"now getting back to finishing porting upnode to the latest dnode","date":"2012-07-27T22:30:36.202Z","type":"message"}
+{"nick":"Raynos","message":"I will convince him he loves accepting PRs","date":"2012-07-27T22:30:39.570Z","type":"message"}
+{"nick":"shykes","new_nick":"zz_shykes","date":"2012-07-27T22:34:23.219Z","type":"nick"}
+{"nick":"pkrumins","message":"browserling reaches 180 customers!","date":"2012-07-27T22:37:02.252Z","type":"message"}
+{"nick":"SubStack","message":"\\o/","date":"2012-07-27T22:39:07.865Z","type":"message"}
+{"nick":"guybrush","message":"pkrumins: SubStack gratz, may i ask how much hardware you have running now?","date":"2012-07-27T22:40:25.479Z","type":"message"}
+{"nick":"pkrumins","message":"25 servers","date":"2012-07-27T22:40:41.639Z","type":"message"}
+{"nick":"guybrush","message":"sounds super cool :DD","date":"2012-07-27T22:40:48.432Z","type":"message"}
+{"nick":"pkrumins","message":"yep","date":"2012-07-27T22:40:52.666Z","type":"message"}
+{"nick":"captain_morgan","reason":"Read error: Connection reset by peer","date":"2012-07-27T22:46:10.446Z","type":"quit"}
+{"nick":"ryan_stevens","date":"2012-07-27T22:47:45.862Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T22:58:51.516Z","type":"message"}
+{"nick":"ryan_stevens","reason":"Quit: Leaving.","date":"2012-07-27T23:07:26.480Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-27T23:07:31.411Z","type":"join"}
+{"nick":"ryan_stevens","date":"2012-07-27T23:09:36.331Z","type":"join"}
+{"nick":"isaacs","message":"SubStack: thanks","date":"2012-07-27T23:13:37.369Z","type":"message"}
+{"nick":"hij1nx","date":"2012-07-27T23:14:29.220Z","type":"join"}
+{"nick":"zz_shykes","new_nick":"shykes","date":"2012-07-27T23:20:44.356Z","type":"nick"}
+{"nick":"hij1nx","reason":"Ping timeout: 264 seconds","date":"2012-07-27T23:26:11.023Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-07-27T23:27:37.067Z","type":"quit"}
+{"nick":"xaq","date":"2012-07-27T23:28:03.929Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-27T23:28:08.693Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-27T23:28:57.030Z","type":"join"}
+{"nick":"_sorensen","reason":"Ping timeout: 252 seconds","date":"2012-07-27T23:33:59.334Z","type":"quit"}
+{"nick":"xaq_","date":"2012-07-27T23:46:21.033Z","type":"join"}
+{"nick":"xaq_","reason":"Remote host closed the connection","date":"2012-07-27T23:46:25.341Z","type":"quit"}
+{"nick":"xaq","reason":"Ping timeout: 250 seconds","date":"2012-07-27T23:49:16.548Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: []","date":"2012-07-27T23:58:51.462Z","type":"message"}
