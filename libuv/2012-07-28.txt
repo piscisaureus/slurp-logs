@@ -204,3 +204,280 @@
 {"nick":"piscisaureus_","message":"I will try","date":"2012-07-28T19:14:57.129Z","type":"message"}
 {"nick":"piscisaureus_","message":"disabling node.js for the time being","date":"2012-07-28T19:15:06.148Z","type":"message"}
 {"nick":"isaacs","message":"there's also http://static.izs.me/irclogs/node.js/","date":"2012-07-28T19:15:23.047Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's probably fine too","date":"2012-07-28T19:15:33.785Z","type":"message"}
+{"nick":"ryah","message":"piscisaureus_: they will take care of it","date":"2012-07-28T19:15:39.313Z","type":"message"}
+{"nick":"Leom","date":"2012-07-28T19:18:22.055Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: the problem is not so much that it gets banned. But there is a ban of all no.de IPs that gets reinstated all the time, and there is an exception for slurp, which gets dropped every now and then.","date":"2012-07-28T19:18:23.715Z","type":"message"}
+{"nick":"piscisaureus_","message":"so","date":"2012-07-28T19:18:32.453Z","type":"message"}
+{"nick":"dominictarr","date":"2012-07-28T19:23:53.805Z","type":"join"}
+{"nick":"isaacs","message":"ok, so this: https://gist.github.com/3194476","date":"2012-07-28T19:24:41.587Z","type":"message"}
+{"nick":"isaacs","message":"got this actually sort of working","date":"2012-07-28T19:25:02.361Z","type":"message"}
+{"nick":"isaacs","message":"but using vm.runInThisContext instead of eval(), and setting the closure vars as globals, and adding 62 spaces to the front of the script.","date":"2012-07-28T19:25:32.231Z","type":"message"}
+{"nick":"isaacs","message":"too gross?","date":"2012-07-28T19:25:35.697Z","type":"message"}
+{"nick":"avalanche123","date":"2012-07-28T19:27:15.080Z","type":"join"}
+{"nick":"creationix","message":"isaacs, what's it trying to do?","date":"2012-07-28T19:31:20.245Z","type":"message"}
+{"nick":"creationix","message":"(the gist)","date":"2012-07-28T19:31:24.832Z","type":"message"}
+{"nick":"isaacs","message":"creationix: put the ^^^^ under the with instead of just under nothing","date":"2012-07-28T19:31:41.913Z","type":"message"}
+{"nick":"isaacs","message":"creationix: observe: node --use_strict -pe 'with(this){}'","date":"2012-07-28T19:31:52.117Z","type":"message"}
+{"nick":"isaacs","message":"undefined:1","date":"2012-07-28T19:32:26.518Z","type":"message"}
+{"nick":"isaacs","message":"^^^^","date":"2012-07-28T19:32:27.438Z","type":"message"}
+{"nick":"isaacs","message":"instead of:","date":"2012-07-28T19:32:30.168Z","type":"message"}
+{"nick":"isaacs","message":"eval:1","date":"2012-07-28T19:32:39.907Z","type":"message"}
+{"nick":"isaacs","message":"with(this){}","date":"2012-07-28T19:32:40.158Z","type":"message"}
+{"nick":"isaacs","message":"^^^^","date":"2012-07-28T19:32:40.496Z","type":"message"}
+{"nick":"creationix","message":"nasty, I see","date":"2012-07-28T19:33:02.436Z","type":"message"}
+{"nick":"joeandaverde","message":"is that caused by eval?","date":"2012-07-28T19:33:03.213Z","type":"message"}
+{"nick":"joeandaverde","message":"the fact that you don't see \"with...\"","date":"2012-07-28T19:33:12.028Z","type":"message"}
+{"nick":"creationix","message":"lol, I see the 62 spaces","date":"2012-07-28T19:34:38.172Z","type":"message"}
+{"nick":"creationix","message":"what a mess","date":"2012-07-28T19:34:46.005Z","type":"message"}
+{"nick":"creationix","message":"isaacs, so where is the current code for pe?","date":"2012-07-28T19:36:14.312Z","type":"message"}
+{"nick":"creationix","message":"the one that doesn't work","date":"2012-07-28T19:36:21.287Z","type":"message"}
+{"nick":"isaacs","message":"creationix: it's in src/node.js","date":"2012-07-28T19:36:26.374Z","type":"message"}
+{"nick":"isaacs","message":"creationix: search for process._eval","date":"2012-07-28T19:36:37.571Z","type":"message"}
+{"nick":"isaacs","message":"hm... this fix makes it break in a different way for ReferenceErrors or thrown errors though","date":"2012-07-28T19:38:52.032Z","type":"message"}
+{"nick":"mmalecki[food]","new_nick":"mmalecki[vodka]","date":"2012-07-28T19:39:23.895Z","type":"nick"}
+{"nick":"creationix","message":"ahh, found it \"return eval(process._eval)\"","date":"2012-07-28T19:40:05.027Z","type":"message"}
+{"nick":"isaacs","message":"righg","date":"2012-07-28T19:40:49.230Z","type":"message"}
+{"nick":"isaacs","message":"so for other kinds of errors, it's back to that old issue about how TryCatch objects lose their getSourceLine() values when they're rethrown.","date":"2012-07-28T19:41:28.000Z","type":"message"}
+{"nick":"creationix","message":"what does \"(new Function(process._eval))()\" do?","date":"2012-07-28T19:41:34.933Z","type":"message"}
+{"nick":"Leom","reason":"Quit: Leaving","date":"2012-07-28T19:42:45.463Z","type":"quit"}
+{"nick":"isaacs","message":"creationix: doesn't return the completion value, that's what","date":"2012-07-28T19:43:52.993Z","type":"message"}
+{"nick":"isaacs","message":"just calls it","date":"2012-07-28T19:43:54.451Z","type":"message"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-07-28T19:45:55.844Z","type":"quit"}
+{"nick":"isaacs","message":"ok, i think i may have figured it out...","date":"2012-07-28T19:46:09.075Z","type":"message"}
+{"nick":"isaacs","message":"we weren't displaying the error all the time when calling vm.runIn*Context(script, name, true)","date":"2012-07-28T19:46:27.612Z","type":"message"}
+{"nick":"isaacs","message":"so it was relying on the rethrown","date":"2012-07-28T19:46:35.251Z","type":"message"}
+{"nick":"isaacs","message":"i'm considering removing the 62 character thing, and instead just putting a \\n in the module wrapper, and subtracting one from the reported line number","date":"2012-07-28T19:47:18.901Z","type":"message"}
+{"nick":"isaacs","message":"oh, wait, no, that won't work, because people call vm.runInNewContext() themselves","date":"2012-07-28T19:47:55.092Z","type":"message"}
+{"nick":"isaacs","message":"and they don't know to add a \\n","date":"2012-07-28T19:47:59.543Z","type":"message"}
+{"nick":"isaacs","message":"they *also* don't know to add 62 spaces, though...","date":"2012-07-28T19:48:13.666Z","type":"message"}
+{"nick":"isaacs","message":"no, that won't work. hrm.","date":"2012-07-28T19:52:20.557Z","type":"message"}
+{"nick":"creationix","message":"couldn't we just insert a \\n before what they give us","date":"2012-07-28T19:53:22.429Z","type":"message"}
+{"nick":"isaacs","message":"creationix: yeah...","date":"2012-07-28T19:58:08.864Z","type":"message"}
+{"nick":"isaacs","message":"creationix: so, i'm debating between a few things","date":"2012-07-28T19:58:18.033Z","type":"message"}
+{"nick":"isaacs","message":"1. errors that report \"at eval:1:68\"","date":"2012-07-28T19:58:32.138Z","type":"message"}
+{"nick":"isaacs","message":"when it happened on char 6","date":"2012-07-28T19:58:35.350Z","type":"message"}
+{"nick":"isaacs","message":"2. errors that report \"at eval:2:6\", when it happened on line 1","date":"2012-07-28T19:58:52.100Z","type":"message"}
+{"nick":"isaacs","message":"3. adding yet another flag to say \"I didn't wrap this thing\"","date":"2012-07-28T19:59:07.272Z","type":"message"}
+{"nick":"isaacs","message":"4. just removing that stupid offset thing altogether, and letting the first line leak for modules.","date":"2012-07-28T19:59:20.920Z","type":"message"}
+{"nick":"isaacs","message":"since they almost never throw on the first line anyway","date":"2012-07-28T19:59:27.620Z","type":"message"}
+{"nick":"isaacs","message":"and when they do, it's already a lie.","date":"2012-07-28T19:59:31.601Z","type":"message"}
+{"nick":"isaacs","message":"or 5) change the stack output so that the offset is reflected there as well, and there are no lies told to the user, and no non-user-code leaked.","date":"2012-07-28T20:00:05.364Z","type":"message"}
+{"nick":"creationix","message":"4 or 5 sound good","date":"2012-07-28T20:00:18.763Z","type":"message"}
+{"nick":"isaacs","message":"i think 4 is the best.  it's the least magical, and the most simple.","date":"2012-07-28T20:00:50.834Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-07-28T20:02:26.783Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 244 seconds","date":"2012-07-28T20:09:36.106Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 264 seconds","date":"2012-07-28T20:13:34.889Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-07-28T20:16:04.277Z","type":"join"}
+{"nick":"isaacs","message":"alright.. seems to be working","date":"2012-07-28T20:19:05.041Z","type":"message"}
+{"nick":"isaacs","message":"make jslintfix <-- very handy","date":"2012-07-28T20:19:14.457Z","type":"message"}
+{"nick":"joeandaverde","message":"woot!","date":"2012-07-28T20:19:24.695Z","type":"message"}
+{"nick":"joeandaverde","message":"isaacs: do you have any significant evidence that a JS http parser can be faster than the c implementation?","date":"2012-07-28T20:20:06.626Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: no.","date":"2012-07-28T20:20:18.558Z","type":"message"}
+{"nick":"isaacs","message":"i don't have any evidence of this.  but i would like some :0","date":"2012-07-28T20:20:28.115Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2012-07-28T20:20:29.333Z","type":"message"}
+{"nick":"joeandaverde","message":"isaacs: My initial naive implementation is getting about 6k/sec vs 20k/sec ","date":"2012-07-28T20:20:36.949Z","type":"message"}
+{"nick":"joeandaverde","message":"lots of room to make up!","date":"2012-07-28T20:20:56.223Z","type":"message"}
+{"nick":"joeandaverde","message":"i'm trying a completely different route now.","date":"2012-07-28T20:21:43.773Z","type":"message"}
+{"nick":"joeandaverde","message":"here's the repo: I'm completely rewriting it because of chunked encoding? I'm figuring all this out as i go. https://github.com/joeandaverde/node-http-parser-js/blob/master/HttpParser.js","date":"2012-07-28T20:23:51.882Z","type":"message"}
+{"nick":"creationix","message":"joeandaverde, how does my tiny one perform on your box","date":"2012-07-28T20:26:32.343Z","type":"message"}
+{"nick":"creationix","message":"(not that it implements chunked encoding yet)","date":"2012-07-28T20:26:39.827Z","type":"message"}
+{"nick":"joeandaverde","message":"i think we're at the same spot ","date":"2012-07-28T20:26:51.481Z","type":"message"}
+{"nick":"joeandaverde","message":"i'll run it.","date":"2012-07-28T20:26:53.475Z","type":"message"}
+{"nick":"stagas","date":"2012-07-28T20:28:24.799Z","type":"join"}
+{"nick":"creationix","message":"isaacs, yes, options 4 was better I think","date":"2012-07-28T20:28:44.414Z","type":"message"}
+{"nick":"chobi_e","new_nick":"chobi_e_","date":"2012-07-28T20:30:47.060Z","type":"nick"}
+{"nick":"isaacs","message":"https://gist.github.com/3194476","date":"2012-07-28T20:31:20.905Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: the best approach is to write the most minimal http parser you can get away with, and benchmark every chagne","date":"2012-07-28T20:31:49.019Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: don't proceed to add *any* features that are not strictly necessary until you're out-performing http_parser.c on node's benchmark/http.sh benchmark","date":"2012-07-28T20:32:28.759Z","type":"message"}
+{"nick":"joeandaverde","message":"isaacs: agreed","date":"2012-07-28T20:32:32.729Z","type":"message"}
+{"nick":"joeandaverde","message":"creationix: about 8k/sec","date":"2012-07-28T20:32:59.397Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: then back-pedal any time something causes you to lose performance, and keep updating the benchmark to test each new feature you add.","date":"2012-07-28T20:33:00.757Z","type":"message"}
+{"nick":"creationix","message":"isaacs, does it have to be faster for all cases or just some common ones?","date":"2012-07-28T20:33:33.033Z","type":"message"}
+{"nick":"isaacs","message":"creationix: it has to be on par.","date":"2012-07-28T20:33:48.770Z","type":"message"}
+{"nick":"creationix","message":"large chunked requests with trailing headers, for example are hard","date":"2012-07-28T20:33:51.157Z","type":"message"}
+{"nick":"isaacs","message":"creationix: faster is always better, of cours.e","date":"2012-07-28T20:33:58.032Z","type":"message"}
+{"nick":"isaacs","message":"but it cannot be more than 2% slower for any use case.","date":"2012-07-28T20:34:04.490Z","type":"message"}
+{"nick":"creationix","message":"but simple GET / HTTP1.1 I'm about 10% faster","date":"2012-07-28T20:34:07.121Z","type":"message"}
+{"nick":"creationix","message":"ok, so can't be significantly slower for any use case","date":"2012-07-28T20:34:26.320Z","type":"message"}
+{"nick":"creationix","message":"that's going to be hard","date":"2012-07-28T20:34:29.565Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-28T20:34:32.094Z","type":"message"}
+{"nick":"isaacs","message":"how much slower is it for trailing headers?","date":"2012-07-28T20:34:37.907Z","type":"message"}
+{"nick":"isaacs","message":"and does it do chunked encoding?","date":"2012-07-28T20:34:47.626Z","type":"message"}
+{"nick":"creationix","message":"don't know yet, haven't implemented it","date":"2012-07-28T20:34:47.919Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok, so a lot slower then ;P","date":"2012-07-28T20:34:55.741Z","type":"message"}
+{"nick":"isaacs","message":"0 vs >0","date":"2012-07-28T20:35:00.947Z","type":"message"}
+{"nick":"creationix","message":"NaN vs >0","date":"2012-07-28T20:35:10.605Z","type":"message"}
+{"nick":"joeandaverde","message":"lol","date":"2012-07-28T20:35:22.438Z","type":"message"}
+{"nick":"joeandaverde","message":"that's what's concerning me? i just implemented as basic as possible header parsing and streaming of the body","date":"2012-07-28T20:35:53.165Z","type":"message"}
+{"nick":"creationix","message":"no, I think 0 is more correct.  There is a concrete number of runs it finished in a second","date":"2012-07-28T20:35:56.099Z","type":"message"}
+{"nick":"isaacs","message":"creationix: there IS an important set of cheating you can do, though: it doesn't need to support every interface of http_parser.c, just all the interfaces we use.","date":"2012-07-28T20:35:56.343Z","type":"message"}
+{"nick":"creationix","message":"right, and I may change the API if it makes it signiicantly faster","date":"2012-07-28T20:36:12.209Z","type":"message"}
+{"nick":"isaacs","message":"yes","date":"2012-07-28T20:36:16.904Z","type":"message"}
+{"nick":"creationix","message":"like in node we don't listen for every http header and value","date":"2012-07-28T20:36:19.669Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-07-28T20:36:24.172Z","type":"message"}
+{"nick":"creationix","message":"but http_parser.c does","date":"2012-07-28T20:36:25.263Z","type":"message"}
+{"nick":"isaacs","message":"we don't care about that","date":"2012-07-28T20:36:26.559Z","type":"message"}
+{"nick":"isaacs","message":"basically, it just has to support the use cases we actually have.","date":"2012-07-28T20:36:41.435Z","type":"message"}
+{"nick":"isaacs","message":"so yuo can skip a lot of work","date":"2012-07-28T20:36:44.840Z","type":"message"}
+{"nick":"creationix","message":"requests, responses, bodies, chunked bodies, headers, trailers","date":"2012-07-28T20:36:57.077Z","type":"message"}
+{"nick":"joeandaverde","message":"chunked encoding, upgrade, and keep alive?","date":"2012-07-28T20:36:58.572Z","type":"message"}
+{"nick":"creationix","message":"keepalive is just a header value right?","date":"2012-07-28T20:37:10.172Z","type":"message"}
+{"nick":"creationix","message":"nothing in the wire protocol is there/","date":"2012-07-28T20:37:14.703Z","type":"message"}
+{"nick":"isaacs","message":"creationix: yeah, i think that's about it","date":"2012-07-28T20:37:17.780Z","type":"message"}
+{"nick":"creationix","message":"so the parser doesn't need to care","date":"2012-07-28T20:37:24.761Z","type":"message"}
+{"nick":"joeandaverde","message":"i'm ah","date":"2012-07-28T20:37:26.408Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-07-28T20:37:27.636Z","type":"message"}
+{"nick":"joeandaverde","message":"except to know that it's a keep alive request?","date":"2012-07-28T20:37:34.370Z","type":"message"}
+{"nick":"creationix","message":"same for upgrade I think","date":"2012-07-28T20:37:34.616Z","type":"message"}
+{"nick":"isaacs","message":"the parser should just assume that yoer' going to pipe in some bytes, and it'll do some stuff.","date":"2012-07-28T20:37:42.521Z","type":"message"}
+{"nick":"isaacs","message":"node's responsible for detaching the parser from the socket if we're going to reuse the socket","date":"2012-07-28T20:38:05.254Z","type":"message"}
+{"nick":"creationix","message":"When I get back to it, my next step was to make benchmarked unit tests using the test suite","date":"2012-07-28T20:38:10.379Z","type":"message"}
+{"nick":"creationix","message":"and test all the bodies with chunk sizes from 1 to all bytes","date":"2012-07-28T20:38:22.748Z","type":"message"}
+{"nick":"isaacs","message":"yeah, it'd be really nice if node's `make bench` was a) useful, and b) parseable","date":"2012-07-28T20:38:38.984Z","type":"message"}
+{"nick":"isaacs","message":"and if all the benchmarks were actually consistent in their output","date":"2012-07-28T20:38:55.453Z","type":"message"}
+{"nick":"isaacs","message":"it's a mess right now.  there's a lot of useful stuff there, but it's not easy to use if you don't know what it's supposed to look like","date":"2012-07-28T20:39:19.861Z","type":"message"}
+{"nick":"Leom","date":"2012-07-28T20:41:22.168Z","type":"join"}
+{"nick":"creationix","message":"joeandaverde, right, but the code using httpParser can just read the emitted headers and know if it's keepalive right?","date":"2012-07-28T20:43:05.840Z","type":"message"}
+{"nick":"creationix","message":"I'm not sure that responsibility belongs in the parser","date":"2012-07-28T20:43:14.286Z","type":"message"}
+{"nick":"joeandaverde","message":"i agree, i just noticed it was present in http_parser.c","date":"2012-07-28T20:43:26.787Z","type":"message"}
+{"nick":"creationix","message":"the parser just needs to convert the byte stream to usable js events as quickly and effeciently as possible","date":"2012-07-28T20:43:34.469Z","type":"message"}
+{"nick":"joeandaverde","message":"sounds simpler :)","date":"2012-07-28T20:44:01.896Z","type":"message"}
+{"nick":"creationix","message":"I noticed that I'm emitting headers as an object (like what you get in req.headers), but the unit tests deal in terms of raw arrays","date":"2012-07-28T20:46:03.134Z","type":"message"}
+{"nick":"creationix","message":"the arrays are more correct, but I wonder what the overhead of converting the arrays to an object is","date":"2012-07-28T20:46:17.500Z","type":"message"}
+{"nick":"creationix","message":"since node usually just does that anyway","date":"2012-07-28T20:46:26.240Z","type":"message"}
+{"nick":"joeandaverde","message":"i did too until i started running the tests from test-http-parser.js","date":"2012-07-28T20:47:41.347Z","type":"message"}
+{"nick":"TheJH","reason":"Ping timeout: 246 seconds","date":"2012-07-28T20:50:26.840Z","type":"quit"}
+{"nick":"isaacs","message":"creationix: if you create the objects in the same order each time, i believe it's faster to create the object instead of the array.","date":"2012-07-28T20:59:55.470Z","type":"message"}
+{"nick":"isaacs","message":"creationix: but i'm not sure you can guarantee that","date":"2012-07-28T21:00:01.336Z","type":"message"}
+{"nick":"isaacs","message":"creationix: i'd even be ok with the parser just providing the header block as a string","date":"2012-07-28T21:00:26.513Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-07-28T21:00:28.147Z","type":"quit"}
+{"nick":"isaacs","message":"(it should do that anyway, i guess, but probably also parse it)(","date":"2012-07-28T21:00:49.323Z","type":"message"}
+{"nick":"joeandaverde","message":"really you're not creating the array each time. You're pushing the key and value onto an existing array of headers.","date":"2012-07-28T21:03:16.022Z","type":"message"}
+{"nick":"joeandaverde","message":"i can't imagine creating an object each time even with the same \"hidden class\" is any faster than that","date":"2012-07-28T21:03:44.329Z","type":"message"}
+{"nick":"creationix","message":"so the format at the C level is [[\"Key\", \"value\"],[\"Key\", \"value\"]]","date":"2012-07-28T21:04:19.965Z","type":"message"}
+{"nick":"creationix","message":"which supports multiple headers with the same key!","date":"2012-07-28T21:04:33.040Z","type":"message"}
+{"nick":"joeandaverde","message":"hmm, from what i saw in JS it looks like [key, value, key, value]","date":"2012-07-28T21:04:56.457Z","type":"message"}
+{"nick":"joeandaverde","message":"i could be wrong, however","date":"2012-07-28T21:05:06.816Z","type":"message"}
+{"nick":"creationix","message":"that would be faster","date":"2012-07-28T21:05:27.194Z","type":"message"}
+{"nick":"creationix","message":"and about as useful","date":"2012-07-28T21:05:29.824Z","type":"message"}
+{"nick":"creationix","message":"either way, it's not the node public JS api","date":"2012-07-28T21:05:36.273Z","type":"message"}
+{"nick":"creationix","message":"which is {\"key\":\"value}","date":"2012-07-28T21:05:44.256Z","type":"message"}
+{"nick":"creationix","message":"notice the lower-case","date":"2012-07-28T21:05:49.484Z","type":"message"}
+{"nick":"creationix","message":"ok, I'll try [\"Key\",\"value\",\"Key\",\"value\"] in the parser","date":"2012-07-28T21:06:28.702Z","type":"message"}
+{"nick":"creationix","message":"it's easy enough to convert that to the proper js object","date":"2012-07-28T21:06:35.353Z","type":"message"}
+{"nick":"joeandaverde","message":"i saw that in test-http-parser.js","date":"2012-07-28T21:07:00.152Z","type":"message"}
+{"nick":"creationix","message":"yeah, I know the C api because I use it in luvit and I know the node api because I use node","date":"2012-07-28T21:07:53.856Z","type":"message"}
+{"nick":"creationix","message":"but I don't know node's internal api","date":"2012-07-28T21:07:58.442Z","type":"message"}
+{"nick":"isaacs","message":"creationix: [[key,val],[key,val]] would be nice.","date":"2012-07-28T21:08:00.462Z","type":"message"}
+{"nick":"isaacs","message":"creationix: [key,val,key,val] might be faster, but it's clumsy to work with","date":"2012-07-28T21:08:13.320Z","type":"message"}
+{"nick":"joeandaverde","message":"what's the advantage to that, isaacs ?","date":"2012-07-28T21:08:14.533Z","type":"message"}
+{"nick":"creationix","message":"isaacs, I don't think it's more clumsy","date":"2012-07-28T21:08:27.065Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: more correct, preserves ordering, multiple values with the same key","date":"2012-07-28T21:08:33.819Z","type":"message"}
+{"nick":"creationix","message":"unless you're a foreach and destructuring addict","date":"2012-07-28T21:08:34.722Z","type":"message"}
+{"nick":"isaacs","action":"goes to forEach anonymous meetings","date":"2012-07-28T21:08:50.447Z","type":"action"}
+{"nick":"creationix","message":"I'm talking about [k,v,k,v] vs [[k,v],[k,v]]","date":"2012-07-28T21:09:02.846Z","type":"message"}
+{"nick":"isaacs","message":"and I would be hooked on destructuring, if it was availabie in V8","date":"2012-07-28T21:09:04.439Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-07-28T21:09:06.046Z","type":"message"}
+{"nick":"creationix","message":"but again, the latter is easy to derive from the former","date":"2012-07-28T21:09:35.081Z","type":"message"}
+{"nick":"isaacs","message":"[k,v,k,v] means that you have to do stuff like obj[kv[i]] = kv[i + 1]","date":"2012-07-28T21:09:36.263Z","type":"message"}
+{"nick":"creationix","message":"and most node clients will only use {k:v}","date":"2012-07-28T21:09:42.714Z","type":"message"}
+{"nick":"joeandaverde","message":"in the case that you're creating a new array as in [[k,v], [k,v]] why not use [{key:, value:}, {key:, value:}]","date":"2012-07-28T21:09:48.279Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: because if you have {key:val} and you don't know what the 'key\" is, you have to get it in a really awkward way","date":"2012-07-28T21:10:13.003Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: if an object only has one key ever, it should be [key,val]","date":"2012-07-28T21:10:25.396Z","type":"message"}
+{"nick":"isaacs","message":"if the key is not deterministic","date":"2012-07-28T21:10:37.887Z","type":"message"}
+{"nick":"creationix","message":"joeandaverde, because most people still \"feel\" that arrays are more effecient","date":"2012-07-28T21:10:44.368Z","type":"message"}
+{"nick":"creationix","message":"and it is if you JSON.serialize it","date":"2012-07-28T21:10:49.762Z","type":"message"}
+{"nick":"isaacs","message":"or {key: 'set-cookie', value:'a=b;expires=tomorrow'}","date":"2012-07-28T21:10:54.941Z","type":"message"}
+{"nick":"joeandaverde","message":"^^ that's what i'm proposing","date":"2012-07-28T21:11:08.995Z","type":"message"}
+{"nick":"isaacs","message":"given how hidden classes work, that's quite possibly the fastest.","date":"2012-07-28T21:11:19.936Z","type":"message"}
+{"nick":"isaacs","message":"but if the array is always an array of strings, i'm guessing that V8 could chomp on that crazy good, also","date":"2012-07-28T21:11:33.339Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: oh, i see, i thought you were proposing {key:value} not {key,value}","date":"2012-07-28T21:11:53.035Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: my mistake :)","date":"2012-07-28T21:11:57.159Z","type":"message"}
+{"nick":"joeandaverde","message":"all good, we're on the same page now :)","date":"2012-07-28T21:12:09.742Z","type":"message"}
+{"nick":"creationix","message":"I kkew what he meant ;)","date":"2012-07-28T21:12:10.466Z","type":"message"}
+{"nick":"creationix","message":"so, for the parser, the only correct way is to have an array of some sort since keys can repeat","date":"2012-07-28T21:12:39.848Z","type":"message"}
+{"nick":"creationix","message":"and the most effecient is [k,v,k,v\\","date":"2012-07-28T21:12:46.940Z","type":"message"}
+{"nick":"isaacs","message":"creationix: not clear that the most efficient is [k,v,k,v]","date":"2012-07-28T21:12:59.135Z","type":"message"}
+{"nick":"isaacs","message":"s/efficient/fast/","date":"2012-07-28T21:13:04.882Z","type":"message"}
+{"nick":"creationix","message":"unless the end user actually wants [[k,v],[k,v]]","date":"2012-07-28T21:13:06.503Z","type":"message"}
+{"nick":"isaacs","message":"the *simplest* is [k,v,k,v]","date":"2012-07-28T21:13:19.708Z","type":"message"}
+{"nick":"creationix","message":"well, an array is an object","date":"2012-07-28T21:13:30.508Z","type":"message"}
+{"nick":"creationix","message":"even simple arrays only holding two strings","date":"2012-07-28T21:13:39.761Z","type":"message"}
+{"nick":"creationix","message":"I guess we'd have to bench to make sure","date":"2012-07-28T21:13:46.993Z","type":"message"}
+{"nick":"creationix","message":"v8 is one complicated beast","date":"2012-07-28T21:13:50.612Z","type":"message"}
+{"nick":"isaacs","message":"but the fastest mayu well be [new Header(k, v), new Header(k, v)] where function Header(k, v) { this.key = k; this.value = v }","date":"2012-07-28T21:13:53.954Z","type":"message"}
+{"nick":"creationix","message":"isaacs, heh, probably","date":"2012-07-28T21:14:08.390Z","type":"message"}
+{"nick":"creationix","message":"new is freaky fast in v8","date":"2012-07-28T21:14:12.598Z","type":"message"}
+{"nick":"isaacs","message":"if you have a ctor, and objects alwyas are created in the same deterministic order in the ctor, V8 can optimize its brains out","date":"2012-07-28T21:14:20.894Z","type":"message"}
+{"nick":"saghul_","date":"2012-07-28T21:14:24.081Z","type":"join"}
+{"nick":"isaacs","message":"that's how you get C-ish speed out of V8","date":"2012-07-28T21:14:40.208Z","type":"message"}
+{"nick":"joeandaverde","message":"that wouldn't need to really be morphed again, would it? ","date":"2012-07-28T21:14:51.386Z","type":"message"}
+{"nick":"joeandaverde","message":"vs [k,v,k,v] which would definitely need to be converted to another structure ","date":"2012-07-28T21:15:05.093Z","type":"message"}
+{"nick":"isaacs","message":"well, then you could have HeaderSet.add(Header)","date":"2012-07-28T21:15:11.937Z","type":"message"}
+{"nick":"isaacs","message":"like, make it look like full-on Java","date":"2012-07-28T21:15:18.544Z","type":"message"}
+{"nick":"joeandaverde","message":"that being [new Header(k,v)...","date":"2012-07-28T21:15:25.274Z","type":"message"}
+{"nick":"isaacs","message":"arrays are super fast, too, if they have no holes, and always contain the same sort of thing","date":"2012-07-28T21:15:45.031Z","type":"message"}
+{"nick":"Leom","reason":"Ping timeout: 255 seconds","date":"2012-07-28T21:15:49.165Z","type":"quit"}
+{"nick":"isaacs","message":"and you can get more speed if you use new Array(n) when n is known","date":"2012-07-28T21:15:56.282Z","type":"message"}
+{"nick":"joeandaverde","message":"yeah, i wonder what default n is","date":"2012-07-28T21:16:10.390Z","type":"message"}
+{"nick":"joeandaverde","message":"in c# for example, lists start with 4, then grow to 8, and 16 and so on","date":"2012-07-28T21:16:55.407Z","type":"message"}
+{"nick":"joeandaverde","message":"i wonder if that's similar to how v8 works","date":"2012-07-28T21:17:00.534Z","type":"message"}
+{"nick":"isaacs","message":"creationix, ryah: got it working https://github.com/joyent/node/pull/3791","date":"2012-07-28T21:17:04.111Z","type":"message"}
+{"nick":"isaacs","message":"tne node -pe thing","date":"2012-07-28T21:17:12.073Z","type":"message"}
+{"nick":"creationix","message":"isaacs, nice, complete with unit tests","date":"2012-07-28T21:17:44.563Z","type":"message"}
+{"nick":"creationix","message":"removing hacks is always good","date":"2012-07-28T21:17:49.565Z","type":"message"}
+{"nick":"saghul_","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2012-07-28T21:20:09.898Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-07-28T21:22:22.656Z","type":"join"}
+{"nick":"joeandaverde","message":"creationix: when using does it ever send this","date":"2012-07-28T21:24:38.823Z","type":"message"}
+{"nick":"joeandaverde","message":"Send request failed!","date":"2012-07-28T21:24:40.492Z","type":"message"}
+{"nick":"joeandaverde","message":"Send request failed!","date":"2012-07-28T21:24:40.740Z","type":"message"}
+{"nick":"joeandaverde","message":"apr_socket_recv: Connection reset by peer (54)","date":"2012-07-28T21:24:40.740Z","type":"message"}
+{"nick":"joeandaverde","message":"oops, when using ab","date":"2012-07-28T21:24:50.665Z","type":"message"}
+{"nick":"creationix","message":"not sure","date":"2012-07-28T21:24:55.481Z","type":"message"}
+{"nick":"piscisaureus_","message":"joeandaverde: faulty ab on mac. Compile it yourself","date":"2012-07-28T21:25:06.956Z","type":"message"}
+{"nick":"joeandaverde","message":"i re-run it and it finally processes my requests","date":"2012-07-28T21:25:09.206Z","type":"message"}
+{"nick":"joeandaverde","message":"piscisaureus_: i did that D:","date":"2012-07-28T21:25:18.333Z","type":"message"}
+{"nick":"joeandaverde","message":"piscisaureus_: i'm running This is ApacheBench, Version 2.3 <$Revision: 655654 $>","date":"2012-07-28T21:25:55.092Z","type":"message"}
+{"nick":"piscisaureus_","message":"joeandaverde: I don't know... maybe compile another version. I was just relaying some basic knowledge. Otherwise I know nothing.","date":"2012-07-28T21:26:24.975Z","type":"message"}
+{"nick":"joeandaverde","message":"piscisaureus_: thank you","date":"2012-07-28T21:26:39.717Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-07-28T21:27:35.390Z","type":"quit"}
+{"nick":"joeandaverde","message":"creationix: if you're messing with the http parser stuff now do you mind running ab against my \"rewrite\" branch? I'm not fully trusting ab on my machine.","date":"2012-07-28T21:30:32.153Z","type":"message"}
+{"nick":"joeandaverde","message":"https://github.com/joeandaverde/node-http-parser-js/tree/rewrite","date":"2012-07-28T21:30:36.597Z","type":"message"}
+{"nick":"joeandaverde","message":"the coffeeshop i'm at is closing. I'll be back in a little bit.","date":"2012-07-28T21:31:01.821Z","type":"message"}
+{"nick":"isaacs","message":"joeandaverde: also, ab against 127.0.0.1, not localhost","date":"2012-07-28T21:31:15.831Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-07-28T21:31:20.063Z","type":"quit"}
+{"nick":"dshaw_","date":"2012-07-28T21:31:28.771Z","type":"join"}
+{"nick":"joeandaverde","message":"isaacs: thanks, i did have that issue to start with :)","date":"2012-07-28T21:32:01.078Z","type":"message"}
+{"nick":"joeandaverde","message":"ab -n 10000 -k http://127.0.0.1:8080/    ","date":"2012-07-28T21:32:21.202Z","type":"message"}
+{"nick":"beachdog","date":"2012-07-28T21:32:26.885Z","type":"join"}
+{"nick":"ryah","message":"creationix: dont worry about trailing headers - but chunked encoding is important","date":"2012-07-28T21:37:32.978Z","type":"message"}
+{"nick":"creationix","message":"yes, chunked is very common and node apps don't want to deal with that","date":"2012-07-28T21:38:21.050Z","type":"message"}
+{"nick":"creationix","message":"joeandaverde, sorry, reviving my living room raspberry pi","date":"2012-07-28T21:38:39.561Z","type":"message"}
+{"nick":"creationix","message":"the last update killed my ethernet driver","date":"2012-07-28T21:38:45.076Z","type":"message"}
+{"nick":"creationix","message":"I'm writing a node server to control the video playback over the web","date":"2012-07-28T21:39:06.992Z","type":"message"}
+{"nick":"creationix","message":"when I get my luvit-gl stuff done, I'll write some gui apps","date":"2012-07-28T21:39:58.403Z","type":"message"}
+{"nick":"creationix","message":"only gl and mp4 is fast on the raspberry pi","date":"2012-07-28T21:40:15.169Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: Zzzz","date":"2012-07-28T21:40:40.227Z","type":"quit"}
+{"nick":"joeandaverde","reason":"Ping timeout: 240 seconds","date":"2012-07-28T21:40:55.604Z","type":"quit"}
+{"nick":"mordy___","date":"2012-07-28T21:43:54.380Z","type":"part"}
+{"nick":"joeandaverde","date":"2012-07-28T21:52:46.355Z","type":"join"}
+{"nick":"hz","date":"2012-07-28T22:07:29.824Z","type":"join"}
+{"nick":"joeandaverde","message":"i think upgrading to mountain lion jacked up my PATH","date":"2012-07-28T22:09:51.938Z","type":"message"}
+{"nick":"rendar","date":"2012-07-28T22:18:11.042Z","type":"quit"}
+{"nick":"avalanche123","date":"2012-07-28T22:18:40.881Z","type":"join"}
+{"nick":"hz","reason":"Ping timeout: 272 seconds","date":"2012-07-28T22:22:01.813Z","type":"quit"}
+{"nick":"joeandaverde","message":"at first try this seems much more reliable for OSX users than ab: https://github.com/lighttpd/weighttp","date":"2012-07-28T22:39:46.672Z","type":"message"}
+{"nick":"joeandaverde","message":"for http benchmarking","date":"2012-07-28T22:39:51.586Z","type":"message"}
+{"nick":"bnoordhuis","message":"joeandaverde: there's also siege","date":"2012-07-28T22:41:27.555Z","type":"message"}
+{"nick":"blackorzar","reason":"Ping timeout: 244 seconds","date":"2012-07-28T22:54:25.152Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-28T22:56:10.485Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-07-28T22:58:36.919Z","type":"quit"}
+{"nick":"mikeal","date":"2012-07-28T23:02:17.058Z","type":"join"}
+{"nick":"dshaw_","date":"2012-07-28T23:03:20.401Z","type":"join"}
+{"nick":"Leom","date":"2012-07-28T23:08:57.691Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-07-28T23:28:43.694Z","type":"quit"}
+{"nick":"Leom","reason":"Ping timeout: 246 seconds","date":"2012-07-28T23:31:46.661Z","type":"quit"}
+{"nick":"CIA-108","message":"\u0002node:\u000f \u000303Tom Hughes-Croucher\u000f \u000307master\u000f * r\u0002c05f52c\u000f \u000310\u000f/ lib/child_process.js \u0002:\u000f child_process: improve maxBuffer error message - http://git.io/-CXhKw","date":"2012-07-28T23:31:55.509Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-07-28T23:31:59.498Z","type":"quit"}
+{"nick":"btrask","date":"2012-07-28T23:44:04.770Z","type":"join"}
