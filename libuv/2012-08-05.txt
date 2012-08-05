@@ -1,0 +1,241 @@
+{"nick":"stagas__","date":"2012-08-05T00:00:13.822Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2012-08-05T00:01:00.763Z","type":"quit"}
+{"nick":"stagas__","new_nick":"stagas","date":"2012-08-05T00:01:08.469Z","type":"nick"}
+{"nick":"mscdex","message":"piscisaureus_: nothing unless you count my inability to get libuv to stop unref'ing my poll watcher after some inactivity","date":"2012-08-05T00:01:08.963Z","type":"message"}
+{"nick":"mscdex","message":";-)","date":"2012-08-05T00:01:11.635Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: windows or unix?","date":"2012-08-05T00:01:47.370Z","type":"message"}
+{"nick":"mscdex","message":"i've only tested on windows so far","date":"2012-08-05T00:01:59.693Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: \"stop unrefing\" ?","date":"2012-08-05T00:02:31.652Z","type":"message"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-08-05T00:02:51.823Z","type":"quit"}
+{"nick":"piscisaureus_","message":"mscdex: you mean, poll watchers get unref'ed after some time?","date":"2012-08-05T00:02:57.474Z","type":"message"}
+{"nick":"stagas_","reason":"Ping timeout: 246 seconds","date":"2012-08-05T00:03:26.554Z","type":"quit"}
+{"nick":"mscdex","message":"i have two handles in my binding: a timer for sending keepalive messages on a socket (which works fine) and a poller for watching for socket traffic","date":"2012-08-05T00:03:44.894Z","type":"message"}
+{"nick":"stagas_","date":"2012-08-05T00:03:56.725Z","type":"join"}
+{"nick":"mscdex","message":"the poller after some initial messages gets no activity until i send some request to the other end","date":"2012-08-05T00:04:05.455Z","type":"message"}
+{"nick":"mscdex","message":"so if no requests are sent after some period of time, the event loop is exited","date":"2012-08-05T00:04:19.135Z","type":"message"}
+{"nick":"mscdex","message":"but if i make sure the poller's events are set to UV_READABLE | UV_WRITABLE instead, the loop stays alive","date":"2012-08-05T00:04:43.251Z","type":"message"}
+{"nick":"mscdex","message":"but that is inefficient because it's then continually calling that callback with nothing to do","date":"2012-08-05T00:04:57.342Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: instead of what?","date":"2012-08-05T00:05:04.649Z","type":"message"}
+{"nick":"stagas__","date":"2012-08-05T00:05:31.650Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 240 seconds","date":"2012-08-05T00:05:31.859Z","type":"quit"}
+{"nick":"stagas__","new_nick":"stagas","date":"2012-08-05T00:05:35.335Z","type":"nick"}
+{"nick":"mscdex","message":"huh?","date":"2012-08-05T00:05:38.319Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: after the refcount refactor handles stop keeping the loop alive when they can no longer generate events","date":"2012-08-05T00:05:40.277Z","type":"message"}
+{"nick":"mscdex","message":"hrm","date":"2012-08-05T00:05:57.518Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: \u000301\"the poller's events are set to UV_READABLE | UV_WRITABLE instead\u0003\u000301\"","date":"2012-08-05T00:05:58.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"\u000301mscdex: instead of what","date":"2012-08-05T00:06:02.423Z","type":"message"}
+{"nick":"piscisaureus_","message":"\u000301mscdex: if you set the event mask to 0 the handle will no longer keep the loop alive","date":"2012-08-05T00:06:14.822Z","type":"message"}
+{"nick":"mscdex","message":"oh, well any mask that doesn't generate events, so in my case UV_READABLE","date":"2012-08-05T00:06:24.850Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T00:07:04.084Z","type":"quit"}
+{"nick":"piscisaureus_","message":"mscdex: so is that uv_poll callback made reporting an error (with status != 0) ?","date":"2012-08-05T00:07:09.300Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: if that happens the uv_poll handle stops automatically","date":"2012-08-05T00:07:23.565Z","type":"message"}
+{"nick":"stagas","date":"2012-08-05T00:07:31.538Z","type":"join"}
+{"nick":"mscdex","message":"no, i have an assert for that and it never trips","date":"2012-08-05T00:07:31.751Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok","date":"2012-08-05T00:07:39.199Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2012-08-05T00:07:40.520Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: it would be good to have a test case for this...","date":"2012-08-05T00:07:56.375Z","type":"message"}
+{"nick":"mscdex","message":"i should also add that i even tried adding another (global) timer that is basically a no-op that fires every second and even that didn't help keep the event loop alive","date":"2012-08-05T00:07:58.966Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: the uv_poll code is not used that much so it is very well possible that there are bugs in there","date":"2012-08-05T00:08:11.811Z","type":"message"}
+{"nick":"mscdex","message":"which i really didn't understand","date":"2012-08-05T00:08:13.998Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: huh","date":"2012-08-05T00:08:23.381Z","type":"message"}
+{"nick":"stagas_","reason":"Ping timeout: 240 seconds","date":"2012-08-05T00:08:31.774Z","type":"quit"}
+{"nick":"mscdex","message":"the extra timer actually made the loop last a little longer, like maybe another minute, but that was it","date":"2012-08-05T00:08:44.805Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: in that case the loop should really stay alive.... are you sure it is not crashing somehow?","date":"2012-08-05T00:08:56.481Z","type":"message"}
+{"nick":"mscdex","message":"i'm sure. i have a debug statement inside the extra timer's callback and an assert to make sure status == 0","date":"2012-08-05T00:09:21.286Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: I mean, is it not segfaulting or something?","date":"2012-08-05T00:09:41.986Z","type":"message"}
+{"nick":"mscdex","message":"oh, nope","date":"2012-08-05T00:09:47.494Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: windows apps have the tendency to crash without notiec","date":"2012-08-05T00:09:54.181Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: hmm","date":"2012-08-05T00:10:14.430Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: It would be really nice to have something to try out","date":"2012-08-05T00:10:46.638Z","type":"message"}
+{"nick":"mscdex","message":"i dunno, like i said, if i keep the poller going by using UV_READABLE | UV_WRITABLE when there's no more network activity for the moment, things are all good","date":"2012-08-05T00:10:48.026Z","type":"message"}
+{"nick":"mscdex","message":"i have a repo, i haven't tested on non-windows yet though","date":"2012-08-05T00:11:09.643Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: right","date":"2012-08-05T00:11:22.241Z","type":"message"}
+{"nick":"mscdex","message":"https://github.com/mscdex/ssh2","date":"2012-08-05T00:11:45.174Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: normally I would disregard this issue as \"probably an user error\" but you have enough cred...","date":"2012-08-05T00:11:50.997Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-08-05T00:12:03.078Z","type":"quit"}
+{"nick":"mscdex","message":"i've been trying different workarounds all day today","date":"2012-08-05T00:12:06.531Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: ok, I will try that out tomorrow.","date":"2012-08-05T00:12:37.596Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: it's 2am now and I am slightly drunk :-)","date":"2012-08-05T00:12:58.933Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: so how do I reproduce? i load the binding in node, then connect to an ssh server, and then wait?","date":"2012-08-05T00:13:44.536Z","type":"message"}
+{"nick":"mscdex","message":"ok, right now i've got the event mask hack in there (in the poll callback), so you'll have to modify that","date":"2012-08-05T00:13:48.718Z","type":"message"}
+{"nick":"mscdex","message":"piscisaureus_: yeah. it seems to be same amount of time every time, but i haven't verified that for sure yet","date":"2012-08-05T00:14:14.410Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: event mask hack>","date":"2012-08-05T00:14:41.085Z","type":"message"}
+{"nick":"mscdex","message":"piscisaureus_: var s = new addon.Session(); s.connect({host:'127.0.0.1',port:22,username:'foo',password:'bar'}); /* then wait */","date":"2012-08-05T00:15:05.508Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: that <- https://github.com/mscdex/ssh2/blob/master/src/session.cc#L307 ?","date":"2012-08-05T00:15:11.543Z","type":"message"}
+{"nick":"mscdex","message":"yep","date":"2012-08-05T00:15:22.167Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: well, if the event mask is 0 then, yes, the loop gets unref'ed","date":"2012-08-05T00:16:04.471Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: but if there's other active handles then it should still not exit","date":"2012-08-05T00:16:28.049Z","type":"message"}
+{"nick":"mscdex","message":"right, i figured that out the other day, so what i was doing was just setting it to something non-zero that still wouldn't cause the callback to be called every tick","date":"2012-08-05T00:16:32.215Z","type":"message"}
+{"nick":"mscdex","message":"i.e. UV_READABLE","date":"2012-08-05T00:16:37.347Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: basically libuv will exit when the only alternative would be to \"hang\", e.g. no events can happen","date":"2012-08-05T00:16:47.674Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: can you share the output of \"netsh winsock show catalog\"","date":"2012-08-05T00:18:30.307Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-08-05T00:18:32.785Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 244 seconds","date":"2012-08-05T00:18:49.469Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T00:19:31.418Z","type":"join"}
+{"nick":"mscdex","message":"piscisaureus_: https://gist.github.com/a256d4934c7f1d923f49","date":"2012-08-05T00:19:58.570Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: vmci","date":"2012-08-05T00:21:03.206Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T00:21:06.548Z","type":"quit"}
+{"nick":"piscisaureus_","message":"mscdex: you have something corporate...","date":"2012-08-05T00:21:11.543Z","type":"message"}
+{"nick":"mscdex","message":"vmware","date":"2012-08-05T00:21:38.472Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2012-08-05T00:22:19.713Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: so it might be that uv_poll is running in \"slow\" mode for you","date":"2012-08-05T00:22:41.608Z","type":"message"}
+{"nick":"piscisaureus_","message":"there could be bugs in there","date":"2012-08-05T00:22:48.017Z","type":"message"}
+{"nick":"mscdex","message":"i have no idea there :-)","date":"2012-08-05T00:23:00.603Z","type":"message"}
+{"nick":"Benvie","message":"vmware has a tendency to take over your computer","date":"2012-08-05T00:23:05.922Z","type":"message"}
+{"nick":"Benvie","message":"it adds network adapters and all sorts of services","date":"2012-08-05T00:23:16.628Z","type":"message"}
+{"nick":"mscdex","message":"i was hoping there was some kind of UV_DEBUG env var thing i could set to get libuv debug output or something ;-)","date":"2012-08-05T00:23:27.892Z","type":"message"}
+{"nick":"stagas","date":"2012-08-05T00:23:45.289Z","type":"join"}
+{"nick":"piscisaureus_","message":"mscdex: nope","date":"2012-08-05T00:23:49.263Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: however, you can compile node and debug with msvc","date":"2012-08-05T00:24:04.053Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: compiling node is really easy","date":"2012-08-05T00:24:12.968Z","type":"message"}
+{"nick":"Benvie","message":"msvc is quite good for debugging","date":"2012-08-05T00:24:21.560Z","type":"message"}
+{"nick":"mscdex","message":"i know, but i hate using the msvc ide","date":"2012-08-05T00:24:26.719Z","type":"message"}
+{"nick":"piscisaureus_","message":"mscdex: ... said the guy that was using node on NT4 a year ago...","date":"2012-08-05T00:24:52.166Z","type":"message"}
+{"nick":"mscdex","message":"that wasn't a choice ;-)","date":"2012-08-05T00:25:05.429Z","type":"message"}
+{"nick":"Benvie","message":"wow hah","date":"2012-08-05T00:26:11.749Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah we really ruined mscdex' life","date":"2012-08-05T00:26:34.995Z","type":"message"}
+{"nick":"piscisaureus_","message":"node now supports xp sp3+","date":"2012-08-05T00:26:42.414Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is already a strech","date":"2012-08-05T00:26:49.324Z","type":"message"}
+{"nick":"mscdex","message":"!","date":"2012-08-05T00:26:53.865Z","type":"message"}
+{"nick":"piscisaureus_","message":"and even cygwin dropped nt4 support","date":"2012-08-05T00:26:58.402Z","type":"message"}
+{"nick":"Benvie","message":"yeah","date":"2012-08-05T00:28:01.136Z","type":"message"}
+{"nick":"mscdex","message":"inheriting legacy software can be a horrifying experience","date":"2012-08-05T00:28:11.304Z","type":"message"}
+{"nick":"Benvie","message":"I was shocked when some guy was using something I made on xp","date":"2012-08-05T00:28:24.627Z","type":"message"}
+{"nick":"Benvie","message":"I was like wow I didn't even expect that to be possible","date":"2012-08-05T00:28:32.844Z","type":"message"}
+{"nick":"stagas_","date":"2012-08-05T00:29:56.580Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 246 seconds","date":"2012-08-05T00:30:01.461Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T00:30:05.753Z","type":"nick"}
+{"nick":"avalanche123","date":"2012-08-05T00:31:09.561Z","type":"join"}
+{"nick":"stagas_","date":"2012-08-05T00:35:42.912Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 272 seconds","date":"2012-08-05T00:37:43.534Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T00:38:14.398Z","type":"nick"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-08-05T00:39:34.199Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-08-05T00:40:13.446Z","type":"join"}
+{"nick":"stagas_","date":"2012-08-05T00:46:41.723Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: https://github.com/joyent/libuv/pull/515 <-- any pointers for adding the windows bits?","date":"2012-08-05T00:48:59.484Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-08-05T00:49:18.314Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i looked at how uv_fs_ftruncate was done on windows, and it's lots of stuff i don't understand.","date":"2012-08-05T00:49:19.743Z","type":"message"}
+{"nick":"arlolra","date":"2012-08-05T00:49:21.820Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2012-08-05T00:49:36.765Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T00:49:37.096Z","type":"nick"}
+{"nick":"piscisaureus_","message":"isaacs: the windows bits should be implemented as open() + ftruncate()","date":"2012-08-05T00:49:38.747Z","type":"message"}
+{"nick":"isaacs","message":"ok, that's pretty straightforward, then, i guess","date":"2012-08-05T00:49:49.593Z","type":"message"}
+{"nick":"isaacs","message":"and explains why we don't have uv_fs_truncate already ;)","date":"2012-08-05T00:50:06.483Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, I think the cause of us not having fs_truncate is because of node :-)","date":"2012-08-05T00:50:47.532Z","type":"message"}
+{"nick":"isaacs","message":"orly?","date":"2012-08-05T00:50:59.182Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: padum tsjjjjj","date":"2012-08-05T00:51:08.375Z","type":"message"}
+{"nick":"isaacs","message":"has this truncate/ftruncate thing been around that long?  i remember it being an issue in 0.6","date":"2012-08-05T00:51:11.272Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: anyway, if you like a challenge, I'll leave it up to you","date":"2012-08-05T00:51:59.252Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I am sure you can do it, if you have a windows vm to test on","date":"2012-08-05T00:52:13.502Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2012-08-05T00:52:14.163Z","type":"quit"}
+{"nick":"isaacs","message":"i do","date":"2012-08-05T00:52:21.031Z","type":"message"}
+{"nick":"isaacs","message":"i don't think i have uv set up to build there, though","date":"2012-08-05T00:52:45.903Z","type":"message"}
+{"nick":"isaacs","message":"but i can run node's tests, of course","date":"2012-08-05T00:53:00.730Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, building uv is just as easy","date":"2012-08-05T00:53:10.839Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: clone libuv and run \"vcbuild test\"","date":"2012-08-05T00:53:25.386Z","type":"message"}
+{"nick":"isaacs","message":"kewl","date":"2012-08-05T00:53:28.760Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: (or run \"vcbuild nobuild\" if you just want to edit in VS)","date":"2012-08-05T00:53:43.608Z","type":"message"}
+{"nick":"isaacs","message":"nah, i like vim :)","date":"2012-08-05T00:54:02.184Z","type":"message"}
+{"nick":"piscisaureus_","message":"vim","date":"2012-08-05T00:54:17.560Z","type":"message"}
+{"nick":"piscisaureus_","action":"sighs","date":"2012-08-05T00:54:26.762Z","type":"action"}
+{"nick":"piscisaureus_","message":"envy, or disgust?","date":"2012-08-05T00:54:52.931Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: btw - before you start, you may want to merge v0.8 into master","date":"2012-08-05T00:57:27.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: a lot of stuff changed in win/fs.c","date":"2012-08-05T00:57:35.248Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok, good idea","date":"2012-08-05T00:57:53.017Z","type":"message"}
+{"nick":"isaacs","action":"already started, but whatever, that's what rebase is for","date":"2012-08-05T00:57:59.727Z","type":"action"}
+{"nick":"isaacs","message":"piscisaureus_: is it possible to call the file and then have fs__truncate() call fs__ftruncate() with the result?","date":"2012-08-05T01:01:24.224Z","type":"message"}
+{"nick":"isaacs","action":"doesn't quite grok what a uv_file or _open_osfhandle is","date":"2012-08-05T01:01:37.793Z","type":"action"}
+{"nick":"piscisaureus_","message":"isaacs: ehm, that seems rather dumb","date":"2012-08-05T01:05:45.157Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you may want to add fs__truncate_handle","date":"2012-08-05T01:06:00.847Z","type":"message"}
+{"nick":"piscisaureus_","message":"and ftruncate would call open_osfhandle and then fs__truncate_handle","date":"2012-08-05T01:06:23.525Z","type":"message"}
+{"nick":"isaacs","message":"k, that sounds nicer","date":"2012-08-05T01:06:30.461Z","type":"message"}
+{"nick":"isaacs","message":"and put the guts of fs__ftruncate into fs__truncate_handle, then?","date":"2012-08-05T01:06:46.161Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: open_osfhandle translates an fd to a windows handle","date":"2012-08-05T01:06:49.727Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yes","date":"2012-08-05T01:06:53.729Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-08-05T01:06:55.180Z","type":"message"}
+{"nick":"isaacs","message":"kewl","date":"2012-08-05T01:06:56.390Z","type":"message"}
+{"nick":"stagas_","date":"2012-08-05T01:07:06.782Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: similar to fs__stat_hande","date":"2012-08-05T01:07:39.448Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 244 seconds","date":"2012-08-05T01:09:27.456Z","type":"quit"}
+{"nick":"stagas_","reason":"Ping timeout: 244 seconds","date":"2012-08-05T01:12:33.577Z","type":"quit"}
+{"nick":"stagas__","date":"2012-08-05T01:12:39.693Z","type":"join"}
+{"nick":"stagas__","new_nick":"stagas","date":"2012-08-05T01:12:42.912Z","type":"nick"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-08-05T01:13:36.179Z","type":"quit"}
+{"nick":"dylang","date":"2012-08-05T01:15:03.460Z","type":"join"}
+{"nick":"arlolra","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-08-05T01:16:24.015Z","type":"quit"}
+{"nick":"stagas","reason":"Read error: No route to host","date":"2012-08-05T01:17:12.401Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T01:19:29.754Z","type":"join"}
+{"nick":"blackorzar_","reason":"Read error: Connection reset by peer","date":"2012-08-05T01:25:16.156Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2012-08-05T01:25:36.790Z","type":"quit"}
+{"nick":"yanush","reason":"Ping timeout: 245 seconds","date":"2012-08-05T01:26:45.094Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T01:28:18.469Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 244 seconds","date":"2012-08-05T01:33:13.588Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T01:47:07.727Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 240 seconds","date":"2012-08-05T01:56:01.754Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T01:59:41.437Z","type":"join"}
+{"nick":"dylang","reason":"Quit: dylang","date":"2012-08-05T02:01:11.898Z","type":"quit"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T02:01:12.228Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T02:01:44.428Z","type":"join"}
+{"nick":"dylang","date":"2012-08-05T02:04:50.867Z","type":"join"}
+{"nick":"EhevuTov","date":"2012-08-05T02:23:06.165Z","type":"join"}
+{"nick":"EhevuTov","reason":"Client Quit","date":"2012-08-05T02:24:18.020Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-08-05T02:27:21.992Z","type":"quit"}
+{"nick":"stagas_","date":"2012-08-05T02:32:33.704Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 246 seconds","date":"2012-08-05T02:34:38.579Z","type":"quit"}
+{"nick":"stagas_","reason":"Ping timeout: 244 seconds","date":"2012-08-05T02:37:48.497Z","type":"quit"}
+{"nick":"TheJH","reason":"Read error: Operation timed out","date":"2012-08-05T02:39:28.642Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T02:39:43.995Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T02:41:09.991Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T02:41:38.539Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 244 seconds","date":"2012-08-05T02:46:04.482Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T02:51:42.847Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 240 seconds","date":"2012-08-05T02:56:31.719Z","type":"quit"}
+{"nick":"stagas_","date":"2012-08-05T03:00:06.769Z","type":"join"}
+{"nick":"brson","date":"2012-08-05T03:00:59.558Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 244 seconds","date":"2012-08-05T03:05:11.412Z","type":"quit"}
+{"nick":"stagas_","reason":"Ping timeout: 272 seconds","date":"2012-08-05T03:06:33.649Z","type":"quit"}
+{"nick":"brson","date":"2012-08-05T03:06:36.127Z","type":"join"}
+{"nick":"stagas","date":"2012-08-05T03:07:54.445Z","type":"join"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-08-05T03:16:03.815Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-08-05T03:16:18.373Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-08-05T03:18:14.430Z","type":"quit"}
+{"nick":"dylang","reason":"Quit: dylang","date":"2012-08-05T03:19:32.962Z","type":"quit"}
+{"nick":"xaq","date":"2012-08-05T03:33:01.511Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T03:43:09.887Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T03:45:07.783Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 250 seconds","date":"2012-08-05T03:50:18.849Z","type":"quit"}
+{"nick":"stagas_","date":"2012-08-05T03:52:52.026Z","type":"join"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T03:55:31.970Z","type":"nick"}
+{"nick":"stagas_","date":"2012-08-05T04:15:36.669Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 250 seconds","date":"2012-08-05T04:16:18.683Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T04:16:28.775Z","type":"nick"}
+{"nick":"avalanche123","date":"2012-08-05T04:20:33.771Z","type":"join"}
+{"nick":"stagas_","date":"2012-08-05T04:20:36.807Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 250 seconds","date":"2012-08-05T04:21:04.568Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-05T04:21:16.848Z","type":"nick"}
+{"nick":"avalanche123","reason":"Ping timeout: 240 seconds","date":"2012-08-05T04:24:31.713Z","type":"quit"}
+{"nick":"theCole","date":"2012-08-05T04:41:46.600Z","type":"join"}
+{"nick":"stephank","reason":"Ping timeout: 260 seconds","date":"2012-08-05T04:50:43.510Z","type":"quit"}
+{"nick":"chilts_","date":"2012-08-05T04:52:48.867Z","type":"join"}
+{"nick":"chilts","reason":"Ping timeout: 260 seconds","date":"2012-08-05T04:52:50.901Z","type":"quit"}
+{"nick":"stephank","date":"2012-08-05T04:52:52.186Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-05T05:01:09.826Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-05T05:01:40.800Z","type":"join"}
+{"nick":"devaholic","date":"2012-08-05T05:25:58.994Z","type":"join"}
+{"nick":"philips_","reason":"Excess Flood","date":"2012-08-05T05:37:52.836Z","type":"quit"}
+{"nick":"philips_","date":"2012-08-05T05:39:03.956Z","type":"join"}
+{"nick":"mmalecki","reason":"Ping timeout: 244 seconds","date":"2012-08-05T05:42:46.535Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-08-05T05:42:51.619Z","type":"quit"}
+{"nick":"xaq","date":"2012-08-05T05:45:05.397Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-08-05T06:26:59.867Z","type":"quit"}
+{"nick":"xaq_","date":"2012-08-05T06:31:43.567Z","type":"join"}
+{"nick":"xaq","reason":"Ping timeout: 250 seconds","date":"2012-08-05T06:34:32.029Z","type":"quit"}
+{"nick":"xaq_","reason":"Remote host closed the connection","date":"2012-08-05T06:40:41.905Z","type":"quit"}
+{"nick":"brson","date":"2012-08-05T06:42:33.486Z","type":"join"}
+{"nick":"mordy___","date":"2012-08-05T06:44:22.742Z","type":"part"}
+{"nick":"loladiro","date":"2012-08-05T06:51:49.663Z","type":"join"}
+{"nick":"TheJH","date":"2012-08-05T06:56:07.765Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 246 seconds","date":"2012-08-05T07:17:43.282Z","type":"quit"}
+{"nick":"rendar","date":"2012-08-05T07:26:10.395Z","type":"join"}
+{"nick":"mikeal","date":"2012-08-05T07:28:39.308Z","type":"join"}
+{"nick":"stagas_","date":"2012-08-05T07:29:58.263Z","type":"join"}
