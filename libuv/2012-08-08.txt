@@ -1,0 +1,120 @@
+{"nick":"bnoordhuis","message":"gicode: in libuv or node?","date":"2012-08-08T00:02:31.354Z","type":"message"}
+{"nick":"bnoordhuis","message":"and what do you mean by receive buffer? the kernel-side buffer?","date":"2012-08-08T00:02:43.613Z","type":"message"}
+{"nick":"gicode","message":"bnoordhuis: Well, I figure I need to figure out the libuv bit first, but I would like to prevent a node Socket 'data' event from giving me too much data to process such that one client stalls other clients.","date":"2012-08-08T00:04:32.189Z","type":"message"}
+{"nick":"bnoordhuis","message":"gicode: that's what .pause() and .resume() are for in node","date":"2012-08-08T00:06:10.022Z","type":"message"}
+{"nick":"tjfontaine","message":"you can also break up your processing into smaller pieces and yield (i.e. process.nextTick)","date":"2012-08-08T00:06:37.533Z","type":"message"}
+{"nick":"gicode","message":"Yeah, I see how I could use a combination of pause()/resume() and process.nextTick(), but then I have to implement more buffering","date":"2012-08-08T00:07:36.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"gicode: how so? if the socket is paused you don't get any data","date":"2012-08-08T00:08:13.648Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-08-08T00:09:09.551Z","type":"quit"}
+{"nick":"hz","date":"2012-08-08T00:09:22.906Z","type":"quit"}
+{"nick":"gicode","message":"bnoordhuis: Well, I need to buffer the socket data up until I hit my limit, and simultaneously push that data into the parser","date":"2012-08-08T00:11:29.182Z","type":"message"}
+{"nick":"CIA-134","message":"\u0002libuv:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000221f2c16\u000f \u000310\u000f/ (3 files in 2 dirs)\u0002:\u000f include: fix macro formatting - https://github.com/joyent/libuv/commit/21f2c1629a242c0d61fcadd485542b8ec22d6988","date":"2012-08-08T00:20:12.725Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: yielding with nextTick is now Officially Frowned Upon™","date":"2012-08-08T00:21:25.272Z","type":"message"}
+{"nick":"CIA-134","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307v0.8\u000f * r\u000200d2f22\u000f \u000310\u000f/ src/win/process-stdio.c \u0002:\u000f windows: fix typos in process-stdio.c - https://github.com/joyent/libuv/commit/00d2f22151d5812a58cbae3df8b12e0a52f70e97","date":"2012-08-08T00:21:45.873Z","type":"message"}
+{"nick":"CIA-134","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307v0.8\u000f * r\u000239b750c\u000f \u000310\u000f/ src/win/process-stdio.c \u0002:\u000f windows: windows: don't duplicate invalid stdio handles - https://github.com/joyent/libuv/commit/39b750ca7009a5bef6add280d74ca36720d9a491","date":"2012-08-08T00:21:46.203Z","type":"message"}
+{"nick":"gicode","message":"piscisaureus_: What do you mean?","date":"2012-08-08T00:24:02.662Z","type":"message"}
+{"nick":"piscisaureus_","message":"gicode: yielding with nextTick will no longer work in the next version of node:","date":"2012-08-08T00:24:43.865Z","type":"message"}
+{"nick":"perezd","date":"2012-08-08T00:24:46.549Z","type":"join"}
+{"nick":"tjfontaine","message":"piscisaureus_: would a timer make more sense now?","date":"2012-08-08T00:24:52.587Z","type":"message"}
+{"nick":"piscisaureus_","message":"(v0.10)","date":"2012-08-08T00:24:54.433Z","type":"message"}
+{"nick":"gicode","message":"bnoordhuis: The main issue is that a single data event could contain thousands of messages","date":"2012-08-08T00:24:56.393Z","type":"message"}
+{"nick":"gicode","message":"piscisaureus_: What is the \"new\" way?","date":"2012-08-08T00:25:08.784Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: I think we will add something special for it","date":"2012-08-08T00:25:11.443Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2012-08-08T00:25:14.690Z","type":"message"}
+{"nick":"piscisaureus_","message":"gicode: setTimeout(x, 0) also works","date":"2012-08-08T00:25:20.501Z","type":"message"}
+{"nick":"gicode","message":"piscisaureus_: The docs make that sound evil","date":"2012-08-08T00:25:47.707Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-08-08T00:25:52.044Z","type":"quit"}
+{"nick":"CIA-134","message":"\u0002libuv:\u000f \u000303Bert Belder\u000f \u000307v0.8\u000f * r\u0002a1157ce\u000f \u000310\u000f/ src/win/process-stdio.c \u0002:\u000f windows: don't duplicate invalid stdio handles - https://github.com/joyent/libuv/commit/a1157cef3741984bd3b3d9564defadb35bccd20a","date":"2012-08-08T00:25:53.727Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's not","date":"2012-08-08T00:25:56.223Z","type":"message"}
+{"nick":"bnoordhuis","message":"but we should add setImmediate someday","date":"2012-08-08T00:26:03.709Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-08-08T00:26:07.899Z","type":"message"}
+{"nick":"piscisaureus_","message":"the downside of setTimeout(0) is that it constructs a timerwrap every time","date":"2012-08-08T00:26:24.682Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-08-08T00:26:46.300Z","type":"message"}
+{"nick":"tjfontaine","message":"piscisaureus_: no that's setInterval","date":"2012-08-08T00:26:47.168Z","type":"message"}
+{"nick":"tjfontaine","message":"well, I guess it depends on how many you can stick in the queue at one time :)","date":"2012-08-08T00:27:00.241Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: I think setTimeout(0) does too","date":"2012-08-08T00:27:06.751Z","type":"message"}
+{"nick":"tjfontaine","message":"setTimeout (wihtout being unref'd) will only create a timerwrap per timeout-bucket","date":"2012-08-08T00:28:07.185Z","type":"message"}
+{"nick":"tjfontaine","message":"setTimeout(x, 100) setTimeout(y, 100) setTimeout(z, 100) all use the same timerwrap","date":"2012-08-08T00:28:53.554Z","type":"message"}
+{"nick":"tjfontaine","message":"but it drops the timerwrap when the bucket is empty","date":"2012-08-08T00:29:23.533Z","type":"message"}
+{"nick":"beachdog_","date":"2012-08-08T00:30:44.069Z","type":"join"}
+{"nick":"beachdog","reason":"Read error: Connection reset by peer","date":"2012-08-08T00:30:49.564Z","type":"quit"}
+{"nick":"piscisaureus_","message":"unwatching all the repos, yay","date":"2012-08-08T00:31:34.590Z","type":"message"}
+{"nick":"tjfontaine","message":"is setImmediate going to become a standard?","date":"2012-08-08T00:34:42.224Z","type":"message"}
+{"nick":"gicode","message":"Ah, I see, nextTick could \"jump the queue\".  Definitely not ideal for a yield type purpose.","date":"2012-08-08T00:35:29.407Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: i believe so","date":"2012-08-08T00:39:28.856Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: hmm ok, would you see this as being more related to the libuv idle notification or a specialization of timer?","date":"2012-08-08T00:42:00.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: the latter","date":"2012-08-08T00:42:22.362Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2012-08-08T00:42:37.099Z","type":"message"}
+{"nick":"philips_","reason":"Excess Flood","date":"2012-08-08T00:42:40.149Z","type":"quit"}
+{"nick":"philips_","date":"2012-08-08T00:42:55.999Z","type":"join"}
+{"nick":"toothr","date":"2012-08-08T01:09:25.588Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 240 seconds","date":"2012-08-08T01:10:01.518Z","type":"quit"}
+{"nick":"toothr","new_nick":"toothrot","date":"2012-08-08T01:11:12.502Z","type":"nick"}
+{"nick":"brson","reason":"Read error: Connection reset by peer","date":"2012-08-08T01:17:10.720Z","type":"quit"}
+{"nick":"brson","date":"2012-08-08T01:17:41.414Z","type":"join"}
+{"nick":"beachdog_","reason":"Remote host closed the connection","date":"2012-08-08T01:38:11.224Z","type":"quit"}
+{"nick":"beachdog","date":"2012-08-08T01:38:37.704Z","type":"join"}
+{"nick":"abraxas","date":"2012-08-08T01:39:10.368Z","type":"join"}
+{"nick":"piscisaureus_","message":"time to check out","date":"2012-08-08T01:42:29.129Z","type":"message"}
+{"nick":"piscisaureus_","message":"fuck, it's almost 4am again :-(","date":"2012-08-08T01:43:13.485Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2012-08-08T01:46:32.375Z","type":"message"}
+{"nick":"bnoordhuis","message":"time for a late night snack first though","date":"2012-08-08T01:46:45.872Z","type":"message"}
+{"nick":"bnoordhuis","action":"signs off","date":"2012-08-08T01:47:37.071Z","type":"action"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-08-08T01:47:50.788Z","type":"quit"}
+{"nick":"devaholic","date":"2012-08-08T01:48:13.075Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-08-08T01:48:41.873Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-08-08T01:50:09.042Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2012-08-08T01:51:47.074Z","type":"quit"}
+{"nick":"blackorzar","reason":"Read error: Connection reset by peer","date":"2012-08-08T01:54:00.161Z","type":"quit"}
+{"nick":"xaq","date":"2012-08-08T01:58:04.970Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-08-08T02:01:48.427Z","type":"quit"}
+{"nick":"joshthecoder","date":"2012-08-08T02:13:15.499Z","type":"join"}
+{"nick":"lohkey_","date":"2012-08-08T02:13:56.501Z","type":"join"}
+{"nick":"lohkey_","reason":"Client Quit","date":"2012-08-08T02:13:56.717Z","type":"quit"}
+{"nick":"lohkey","reason":"Ping timeout: 276 seconds","date":"2012-08-08T02:16:39.556Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-08-08T02:21:00.566Z","type":"quit"}
+{"nick":"bulatshakirzyano","date":"2012-08-08T02:21:57.930Z","type":"join"}
+{"nick":"AvianFlu","new_nick":"Avian|FISHES","date":"2012-08-08T02:36:09.416Z","type":"nick"}
+{"nick":"Avian|FISHES","reason":"Quit: Avian|FISHES","date":"2012-08-08T02:43:42.118Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2012-08-08T02:46:27.485Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-08T03:23:30.169Z","type":"join"}
+{"nick":"brson","date":"2012-08-08T03:27:52.534Z","type":"join"}
+{"nick":"philips_","reason":"Excess Flood","date":"2012-08-08T03:32:29.850Z","type":"quit"}
+{"nick":"philips_","date":"2012-08-08T03:33:28.168Z","type":"join"}
+{"nick":"beachdog","reason":"Remote host closed the connection","date":"2012-08-08T03:52:22.329Z","type":"quit"}
+{"nick":"bulatshakirzyano","reason":"Quit: Computer has gone to sleep.","date":"2012-08-08T04:22:09.575Z","type":"quit"}
+{"nick":"bulatshakirzyano","date":"2012-08-08T04:28:36.983Z","type":"join"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-08-08T04:31:14.912Z","type":"quit"}
+{"nick":"bulatshakirzyano","reason":"Client Quit","date":"2012-08-08T04:31:45.445Z","type":"quit"}
+{"nick":"bulatshakirzyano","date":"2012-08-08T04:36:13.478Z","type":"join"}
+{"nick":"blackorzar","date":"2012-08-08T04:44:28.990Z","type":"join"}
+{"nick":"stagas_","date":"2012-08-08T04:59:32.911Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2012-08-08T05:00:37.193Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-08T05:01:50.737Z","type":"join"}
+{"nick":"stagas_","reason":"Ping timeout: 246 seconds","date":"2012-08-08T05:04:37.911Z","type":"quit"}
+{"nick":"stagas_","date":"2012-08-08T05:07:06.522Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 245 seconds","date":"2012-08-08T05:08:26.291Z","type":"quit"}
+{"nick":"stagas_","reason":"Read error: Connection reset by peer","date":"2012-08-08T05:08:52.992Z","type":"quit"}
+{"nick":"stagas_","date":"2012-08-08T05:13:08.997Z","type":"join"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-08-08T05:13:48.089Z","type":"nick"}
+{"nick":"dshaw_","date":"2012-08-08T05:14:04.961Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 246 seconds","date":"2012-08-08T05:17:55.983Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-08T05:18:48.531Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-08-08T05:20:39.632Z","type":"quit"}
+{"nick":"stagas","date":"2012-08-08T05:21:10.545Z","type":"join"}
+{"nick":"bulatshakirzyano","reason":"Quit: Computer has gone to sleep.","date":"2012-08-08T05:28:53.021Z","type":"quit"}
+{"nick":"bulatshakirzyano","date":"2012-08-08T05:30:11.427Z","type":"join"}
+{"nick":"blackorzar_","date":"2012-08-08T06:17:01.835Z","type":"join"}
+{"nick":"blackorzar","reason":"Ping timeout: 246 seconds","date":"2012-08-08T06:19:52.900Z","type":"quit"}
+{"nick":"blackorzar_","reason":"Read error: Connection reset by peer","date":"2012-08-08T06:46:39.794Z","type":"quit"}
+{"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-08-08T06:51:16.001Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-08-08T06:54:56.116Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-08-08T07:02:13.519Z","type":"quit"}
+{"nick":"bulatshakirzyano","reason":"Quit: Computer has gone to sleep.","date":"2012-08-08T07:02:14.412Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-08-08T07:10:26.051Z","type":"join"}
+{"nick":"mikeal","date":"2012-08-08T07:10:58.152Z","type":"join"}
+{"nick":"hz","date":"2012-08-08T07:13:23.494Z","type":"join"}
+{"nick":"rendar","date":"2012-08-08T07:27:18.396Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-08-08T07:38:40.267Z","type":"quit"}
+{"nick":"loladiro","date":"2012-08-08T07:40:20.961Z","type":"join"}
+{"nick":"joshthecoder","reason":"Quit: Leaving...","date":"2012-08-08T07:41:35.374Z","type":"quit"}
