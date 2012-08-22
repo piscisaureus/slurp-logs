@@ -24,3 +24,55 @@
 {"nick":"TheJH","reason":"Ping timeout: 240 seconds","date":"2012-08-21T12:48:00.065Z","type":"quit"}
 {"nick":"TheJH","date":"2012-08-21T14:24:43.264Z","type":"join"}
 {"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2009081014]","date":"2012-08-21T15:32:54.520Z","type":"quit"}
+{"nick":"C-Man","date":"2012-08-21T16:13:44.671Z","type":"join"}
+{"nick":"milani","date":"2012-08-21T16:19:09.356Z","type":"join"}
+{"nick":"milani","message":"can anyone please explain or send me a link about Local and Persistent differences?","date":"2012-08-21T16:19:52.217Z","type":"message"}
+{"nick":"milani","message":"like Local<Function> or Persistent<Function>, what is the difference. where should I use each.","date":"2012-08-21T16:20:15.935Z","type":"message"}
+{"nick":"joshthecoder","date":"2012-08-21T16:21:21.416Z","type":"join"}
+{"nick":"alex4nder","message":"milani: Persistent where you want to manage the existence of the handle beyond a handle scope","date":"2012-08-21T16:35:52.138Z","type":"message"}
+{"nick":"milani","message":"alex4nder, then I should destroy it manually?","date":"2012-08-21T16:36:16.422Z","type":"message"}
+{"nick":"alex4nder","message":"so you're responsible for disposing of it when you're done.. it also has the upshot that if you make it weak, you can do things like manage resources that are associated with that Value (e.g. backend C++ objects).","date":"2012-08-21T16:36:18.617Z","type":"message"}
+{"nick":"alex4nder","message":"milani: well if you created it, you should be disposing of it.","date":"2012-08-21T16:36:28.714Z","type":"message"}
+{"nick":"milani","message":"I'm passing a callback from node to c++ addon that goes into many c++ objects .","date":"2012-08-21T16:37:06.974Z","type":"message"}
+{"nick":"milani","message":"I defined it as local, I got segfault, I defined as persistent I didn't get any. can I still use Local function and somehow add a reference to it?","date":"2012-08-21T16:37:48.827Z","type":"message"}
+{"nick":"milani","message":"so when I'm done, I decrease the ref and gc can collect it.","date":"2012-08-21T16:38:13.080Z","type":"message"}
+{"nick":"alex4nder","message":"right, so you make it persistent as long as it's needed","date":"2012-08-21T16:38:44.247Z","type":"message"}
+{"nick":"alex4nder","message":"and then dispose of it","date":"2012-08-21T16:38:48.414Z","type":"message"}
+{"nick":"milani","message":"thx.","date":"2012-08-21T16:41:04.045Z","type":"message"}
+{"nick":"milani","message":"can I convert v8 handles to void* and get them back in another function?","date":"2012-08-21T17:24:59.922Z","type":"message"}
+{"nick":"mordy__","date":"2012-08-21T17:37:10.505Z","type":"part"}
+{"nick":"mal","topic":"see #chromium, http://code.google.com/p/v8/","date":"2012-08-21T17:45:00.739Z","type":"topic"}
+{"nick":"lohkey","date":"2012-08-21T17:53:44.785Z","type":"join"}
+{"nick":"evilpie","date":"2012-08-21T18:12:06.625Z","type":"join"}
+{"nick":"evilpie","message":"somebody knows some cases where IndexHash for Strings is useful besides for (x in [1, 2, 3]) a[i] ?","date":"2012-08-21T18:13:27.583Z","type":"message"}
+{"nick":"evilpie","date":"2012-08-21T18:28:36.186Z","type":"part"}
+{"nick":"xan_","reason":"Ping timeout: 240 seconds","date":"2012-08-21T18:35:34.694Z","type":"quit"}
+{"nick":"xan_","date":"2012-08-21T18:37:40.367Z","type":"join"}
+{"nick":"bnoordhuis","message":"milani: Persistent* p = new Persistent<Object>(); *p = Persistent<Object>::New(...); void* v = static_cast<void*>(p);","date":"2012-08-21T19:00:44.323Z","type":"message"}
+{"nick":"joshthecoder","message":"I think you can also just store the Object* then just create a Persistent from it when you need it: Object* o = *handle;  Persistent<Object> h(o);","date":"2012-08-21T19:14:26.882Z","type":"message"}
+{"nick":"joshthecoder","message":"Can avoid the extra heap allocation I guess.","date":"2012-08-21T19:14:39.943Z","type":"message"}
+{"nick":"milani","message":"hmmm, yeah. thx.","date":"2012-08-21T19:27:01.695Z","type":"message"}
+{"nick":"bnoordhuis","message":"joshthecoder: if you need to carry the object across functions / methods / handle scopes, it needs to be persistent all the way","date":"2012-08-21T19:27:26.058Z","type":"message"}
+{"nick":"joshthecoder","message":"bnoordhuis: the storage cell remains the same if you just rewrap it.","date":"2012-08-21T19:27:58.399Z","type":"message"}
+{"nick":"joshthecoder","message":"bnoordhuis: we have been using this in our v8->jni bridge to stash Object* in a Java long field.","date":"2012-08-21T19:28:51.533Z","type":"message"}
+{"nick":"joshthecoder","message":"Seems to work fine, but I would be interested to hear if there could be unseen issues with this method.","date":"2012-08-21T19:29:22.206Z","type":"message"}
+{"nick":"bnoordhuis","message":"joshthecoder: i would think that you're dead if any gc'ing happens","date":"2012-08-21T19:29:56.827Z","type":"message"}
+{"nick":"joshthecoder","message":"bnoordhuis: the storage cell out lives any Persistent handle that references it.","date":"2012-08-21T19:30:26.749Z","type":"message"}
+{"nick":"bnoordhuis","message":"or are you taking the Object* out of the Persistent?","date":"2012-08-21T19:30:31.999Z","type":"message"}
+{"nick":"joshthecoder","message":"it won't go away until you do a dispose on it.","date":"2012-08-21T19:30:37.106Z","type":"message"}
+{"nick":"joshthecoder","message":"bnoordhuis: yes","date":"2012-08-21T19:30:41.773Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah right","date":"2012-08-21T19:30:44.180Z","type":"message"}
+{"nick":"bnoordhuis","message":"it bends the intent of the api somewhat but i guess it'll work","date":"2012-08-21T19:30:59.505Z","type":"message"}
+{"nick":"joshthecoder","message":"bnoordhuis: the header docs seem to say it is okay. But yeah it isn't exactly clear if this is by design or we just get lucky here. :)","date":"2012-08-21T19:33:23.353Z","type":"message"}
+{"nick":"joshthecoder","reason":"Read error: Connection reset by peer","date":"2012-08-21T20:25:13.533Z","type":"quit"}
+{"nick":"joshthecoder","date":"2012-08-21T20:36:01.074Z","type":"join"}
+{"nick":"TheJH","reason":"Ping timeout: 260 seconds","date":"2012-08-21T20:39:56.808Z","type":"quit"}
+{"nick":"joshthecoder","reason":"Ping timeout: 272 seconds","date":"2012-08-21T20:48:06.059Z","type":"quit"}
+{"nick":"joshthecoder","date":"2012-08-21T20:51:16.974Z","type":"join"}
+{"nick":"rendar","date":"2012-08-21T22:13:39.735Z","type":"quit"}
+{"nick":"RT|Chatzilla","date":"2012-08-21T22:19:40.046Z","type":"join"}
+{"nick":"grantg","date":"2012-08-21T23:08:02.797Z","type":"join"}
+{"nick":"milani","reason":"\"Ex-Chat\"","date":"2012-08-21T23:13:51.701Z","type":"part"}
+{"nick":"milani","date":"2012-08-21T23:14:03.701Z","type":"join"}
+{"nick":"milani","reason":"\"Ex-Chat\"","date":"2012-08-21T23:14:22.217Z","type":"part"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 244 seconds","date":"2012-08-21T23:46:30.390Z","type":"quit"}
