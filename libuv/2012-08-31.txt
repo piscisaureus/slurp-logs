@@ -1,0 +1,199 @@
+{"nick":"piscisaureus_","message":"yeah, that's odd","date":"2012-08-31T00:01:24.990Z","type":"message"}
+{"nick":"mjr_","message":"I fear this memory thing is a smartos specific issue, but something about crypto seems to trigger it.","date":"2012-08-31T00:01:56.044Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wonder when node allocates 100000","date":"2012-08-31T00:02:09.663Z","type":"message"}
+{"nick":"piscisaureus_","message":"it looks nonrandom but it's a weird number of bytes to allocate","date":"2012-08-31T00:02:26.148Z","type":"message"}
+{"nick":"mjr_","message":"And also a very common pattern.","date":"2012-08-31T00:02:46.285Z","type":"message"}
+{"nick":"TheJH","reason":"Ping timeout: 248 seconds","date":"2012-08-31T00:03:25.225Z","type":"quit"}
+{"nick":"piscisaureus_","message":"ah wait, this is the allocation of a new slab","date":"2012-08-31T00:03:28.292Z","type":"message"}
+{"nick":"mjr_","message":"For the processes doing a lot of crypto, this crash happens as soon as a few minutes after starting.","date":"2012-08-31T00:04:02.189Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah right","date":"2012-08-31T00:04:41.122Z","type":"message"}
+{"nick":"piscisaureus_","message":"this number is in hex","date":"2012-08-31T00:04:45.741Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's 1MB","date":"2012-08-31T00:04:48.297Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is the default size for slabs","date":"2012-08-31T00:04:59.810Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: I don't see any crypto-related stuff in the stacks","date":"2012-08-31T00:05:55.018Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: this looks like an ordinary read from a tcp socket or pipe","date":"2012-08-31T00:06:15.410Z","type":"message"}
+{"nick":"mjr_","message":"piscisaureus_: that's actually encouraging, because nobody seems to know how to fix problems with crypto. :)","date":"2012-08-31T00:07:34.132Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: actually, it's not unlikely that this is an ordinary OOM situation","date":"2012-08-31T00:08:02.823Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: this is an x86 machine. I don't know about smartos, but on many OSes the maximum virtual address space that a process can use is 2gb or 3gb","date":"2012-08-31T00:08:58.902Z","type":"message"}
+{"nick":"piscisaureus_","message":"somewhere around that","date":"2012-08-31T00:09:02.465Z","type":"message"}
+{"nick":"piscisaureus_","message":"now if the heap is using 115617792 bytes","date":"2012-08-31T00:09:10.262Z","type":"message"}
+{"nick":"mjr_","message":"Heap is at 400MB","date":"2012-08-31T00:09:15.978Z","type":"message"}
+{"nick":"piscisaureus_","message":"which heap are we talking about?","date":"2012-08-31T00:09:27.460Z","type":"message"}
+{"nick":"mjr_","message":"The process heap.","date":"2012-08-31T00:10:00.922Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: ok. So how much is the v8 heap using?","date":"2012-08-31T00:10:29.901Z","type":"message"}
+{"nick":"mjr_","message":"Not sure.  I don't think very much.","date":"2012-08-31T00:10:44.582Z","type":"message"}
+{"nick":"piscisaureus_","message":"right","date":"2012-08-31T00:12:29.011Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: hmm, well, then out-of-memory seems to be unlikely","date":"2012-08-31T00:12:43.797Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: do you happen to know how much virtual memory was allocated when the process crashed?","date":"2012-08-31T00:13:01.474Z","type":"message"}
+{"nick":"piscisaureus_","message":"mjr_: but I can tell you for sure that these stacks don't suggest it has anything to do with crypto","date":"2012-08-31T00:13:20.873Z","type":"message"}
+{"nick":"mjr_","message":"I do not.  I think I have a graph of process RSS, and the V8 sizes.  Hang on","date":"2012-08-31T00:13:27.041Z","type":"message"}
+{"nick":"piscisaureus_","message":"vm is also not very interesting usually","date":"2012-08-31T00:13:50.507Z","type":"message"}
+{"nick":"piscisaureus_","message":"but is is when you are investigating a malloc() failure on x86 :-)","date":"2012-08-31T00:14:04.431Z","type":"message"}
+{"nick":"mjr_","message":"heapUsed is 40MB, heapTotal is 57MB","date":"2012-08-31T00:14:48.235Z","type":"message"}
+{"nick":"DrPizza","message":"there's also the hairy old fragmentation issue","date":"2012-08-31T00:14:55.055Z","type":"message"}
+{"nick":"mjr_","message":"So V8 thinks the heap is small.","date":"2012-08-31T00:15:00.281Z","type":"message"}
+{"nick":"DrPizza","message":"how long have these processes been running?","date":"2012-08-31T00:15:00.521Z","type":"message"}
+{"nick":"mjr_","message":"10 mins or so","date":"2012-08-31T00:15:06.345Z","type":"message"}
+{"nick":"DrPizza","message":"so unlikely to be that","date":"2012-08-31T00:15:14.634Z","type":"message"}
+{"nick":"mjr_","message":"DrPizza: I think this is a fragmentation problem, honestly.","date":"2012-08-31T00:15:19.729Z","type":"message"}
+{"nick":"piscisaureus_","message":"well","date":"2012-08-31T00:15:26.942Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's the only thing I can think of for sure","date":"2012-08-31T00:15:37.961Z","type":"message"}
+{"nick":"piscisaureus_","message":"but when you're using, say, 600mb of memory it would be really sad if your heap was fragmented so much","date":"2012-08-31T00:16:07.213Z","type":"message"}
+{"nick":"piscisaureus_","message":"unlikely i'd say","date":"2012-08-31T00:16:13.278Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe there's something peculiar about libumem","date":"2012-08-31T00:16:29.970Z","type":"message"}
+{"nick":"piscisaureus_","message":"did you try without?","date":"2012-08-31T00:16:41.782Z","type":"message"}
+{"nick":"DrPizza","message":"what is libumem?","date":"2012-08-31T00:16:56.165Z","type":"message"}
+{"nick":"mjr_","message":"I think the fancy SmartOS libumem stats on that gist indicate that we only really have 100MB in use, but we've claimed 400MB from the OS.","date":"2012-08-31T00:17:02.303Z","type":"message"}
+{"nick":"mjr_","message":"DrPizza: libumem is the SmartOS fancy allocator that is \"better\" than the one in libc.","date":"2012-08-31T00:17:23.725Z","type":"message"}
+{"nick":"DrPizza","message":"better i.e. less tested?","date":"2012-08-31T00:17:37.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think it's quite old actually","date":"2012-08-31T00:17:44.959Z","type":"message"}
+{"nick":"piscisaureus_","message":"from the solaris 9 daus","date":"2012-08-31T00:17:47.868Z","type":"message"}
+{"nick":"piscisaureus_","message":"*days","date":"2012-08-31T00:17:49.562Z","type":"message"}
+{"nick":"piscisaureus_","message":"but you want to ask bcantrill to be sure :-)","date":"2012-08-31T00:17:59.345Z","type":"message"}
+{"nick":"mjr_","message":"Yeah, still waiting to get a slice of his time to look at this.","date":"2012-08-31T00:19:21.729Z","type":"message"}
+{"nick":"mjr_","message":"I can't tell whether this is a SmartOS thing or not.  Certainly the SmartOS tools make it possible to understand problems like this in great detail.","date":"2012-08-31T00:19:42.774Z","type":"message"}
+{"nick":"piscisaureus_","message":"well you can try to not use libumem :-)","date":"2012-08-31T00:19:56.741Z","type":"message"}
+{"nick":"piscisaureus_","message":"if crashes within the our are common, you should know quickly enough","date":"2012-08-31T00:20:13.629Z","type":"message"}
+{"nick":"piscisaureus_","message":"libumem is just something you load with LD_PRELOAD right?","date":"2012-08-31T00:20:28.519Z","type":"message"}
+{"nick":"piscisaureus_","message":"s/our/hour/","date":"2012-08-31T00:20:42.588Z","type":"message"}
+{"nick":"mjr_","message":"Yeah, but I think the node 0.8 build uses libumem explicitly now.","date":"2012-08-31T00:21:46.545Z","type":"message"}
+{"nick":"piscisaureus_","message":"that's easy to fix","date":"2012-08-31T00:23:12.297Z","type":"message"}
+{"nick":"piscisaureus_","message":"git revert f70b138","date":"2012-08-31T00:23:15.445Z","type":"message"}
+{"nick":"mjr_","message":"That is worth a try","date":"2012-08-31T00:26:01.697Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-08-31T00:47:58.724Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-08-31T00:48:47.375Z","type":"quit"}
+{"nick":"dap","date":"2012-08-31T00:49:11.727Z","type":"join"}
+{"nick":"mmalecki[busy]","message":"mjr_: you guys ran into the ENOMEM stuff too?","date":"2012-08-31T00:50:25.361Z","type":"message"}
+{"nick":"mmalecki[busy]","new_nick":"mmalecki","date":"2012-08-31T00:50:41.759Z","type":"nick"}
+{"nick":"mjr_","message":"mmalecki[busy]: it has a different name on SmartOS, but I think so.","date":"2012-08-31T00:50:51.883Z","type":"message"}
+{"nick":"mjr_","message":"What do you guys see?","date":"2012-08-31T00:50:54.490Z","type":"message"}
+{"nick":"mmalecki","message":"mjr_: npm throwing ENOMEM/we were unable to spawn a child process because it threw ENOMEM","date":"2012-08-31T00:51:27.520Z","type":"message"}
+{"nick":"mmalecki","message":"also, it was SmartOS","date":"2012-08-31T00:51:36.676Z","type":"message"}
+{"nick":"mmalecki","message":"we were certain it's our fault somehow.","date":"2012-08-31T00:51:47.399Z","type":"message"}
+{"nick":"mjr_","message":"huh","date":"2012-08-31T00:51:59.392Z","type":"message"}
+{"nick":"mjr_","message":"Only on 0.8?","date":"2012-08-31T00:52:07.031Z","type":"message"}
+{"nick":"mjr_","message":"We don't get this if we revert back to 0.6","date":"2012-08-31T00:52:12.199Z","type":"message"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2012-08-31T00:52:13.957Z","type":"quit"}
+{"nick":"mmalecki","message":"we only run 0.8 in production as the host environment","date":"2012-08-31T00:52:25.131Z","type":"message"}
+{"nick":"mmalecki","message":"we could try reverting to 0.6 on staging tho.","date":"2012-08-31T00:52:50.355Z","type":"message"}
+{"nick":"mmalecki","message":"AvianFlu: ^ opinion?","date":"2012-08-31T00:52:55.376Z","type":"message"}
+{"nick":"mjr_","message":"How often do you get it?","date":"2012-08-31T00:53:12.891Z","type":"message"}
+{"nick":"mmalecki","message":"AvianFlu: also, don't really trust me. I'm in a certain state.","date":"2012-08-31T00:53:18.321Z","type":"message"}
+{"nick":"mmalecki","message":"mjr_: pretty rarely, but often in cases when we should have at least few megs of mem left.","date":"2012-08-31T00:53:48.658Z","type":"message"}
+{"nick":"mjr_","message":"Hmm","date":"2012-08-31T00:53:54.685Z","type":"message"}
+{"nick":"mmalecki","message":"mjr_: in what cases do you get it?","date":"2012-08-31T00:54:03.743Z","type":"message"}
+{"nick":"mjr_","message":"In our case, we have thousands of megs legs.","date":"2012-08-31T00:54:05.176Z","type":"message"}
+{"nick":"mjr_","message":"left","date":"2012-08-31T00:54:08.111Z","type":"message"}
+{"nick":"TooTallNate","reason":"*.net *.split","date":"2012-08-31T00:54:14.435Z","type":"quit"}
+{"nick":"chobi_e_","reason":"*.net *.split","date":"2012-08-31T00:54:14.674Z","type":"quit"}
+{"nick":"mmalecki","message":"mjr_: yeah, we run 256 MB hosts in production","date":"2012-08-31T00:54:27.426Z","type":"message"}
+{"nick":"mjr_","message":"On our processes with lots of HTTPS, we get it after a small number of minutes.","date":"2012-08-31T00:54:29.179Z","type":"message"}
+{"nick":"mmalecki","message":"so, that's quite a difference. but yeah, seems kind of similar, actually.","date":"2012-08-31T00:54:56.059Z","type":"message"}
+{"nick":"mjr_","message":"If you don't get this when reverting back to 0.6, that would be very useful information","date":"2012-08-31T00:55:20.354Z","type":"message"}
+{"nick":"mmalecki","message":"I can give it a try when I'm not in a certain state","date":"2012-08-31T00:55:41.434Z","type":"message"}
+{"nick":"mmalecki","message":"actually, fuck it, I'm drunk.","date":"2012-08-31T00:56:17.861Z","type":"message"}
+{"nick":"mmalecki","message":"well, not *that* bad, but the night is young.","date":"2012-08-31T00:56:34.367Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-08-31T00:58:48.915Z","type":"join"}
+{"nick":"mmalecki","message":"dang man, I'm depressed","date":"2012-08-31T01:00:41.345Z","type":"message"}
+{"nick":"piscisaureus_","message":"sounds unhealthy mmalecki","date":"2012-08-31T01:01:20.862Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-08-31T01:01:57.815Z","type":"quit"}
+{"nick":"mmalecki","message":"it probably does.","date":"2012-08-31T01:02:12.664Z","type":"message"}
+{"nick":"mmalecki","message":"well.","date":"2012-08-31T01:03:04.120Z","type":"message"}
+{"nick":"mmalecki","message":"whatever, really","date":"2012-08-31T01:03:09.226Z","type":"message"}
+{"nick":"mmalecki","message":"shots!","date":"2012-08-31T01:03:11.106Z","type":"message"}
+{"nick":"DrPizza","message":"hah","date":"2012-08-31T01:04:01.242Z","type":"message"}
+{"nick":"DrPizza","message":"hrm","date":"2012-08-31T01:04:03.585Z","type":"message"}
+{"nick":"DrPizza","message":"I need to figure out a reason to go to san francisco","date":"2012-08-31T01:04:10.826Z","type":"message"}
+{"nick":"DrPizza","message":"I need to feast on burritos","date":"2012-08-31T01:04:15.247Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't like the amount of ip chatter involved with a hello/100 requests","date":"2012-08-31T01:05:15.635Z","type":"message"}
+{"nick":"piscisaureus_","message":"And I also need to find myself an excuse to go to SF","date":"2012-08-31T01:05:28.987Z","type":"message"}
+{"nick":"mmalecki","message":"I'll be in SF in December","date":"2012-08-31T01:07:42.154Z","type":"message"}
+{"nick":"tomshreds","date":"2012-08-31T01:09:44.574Z","type":"join"}
+{"nick":"mmalecki","message":"well, I'm drinking in front of a mirror","date":"2012-08-31T01:10:56.438Z","type":"message"}
+{"nick":"mmalecki","reason":"Quit: Reconnecting","date":"2012-08-31T01:12:42.490Z","type":"quit"}
+{"nick":"mmalecki","date":"2012-08-31T01:13:00.239Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: hey, yt?","date":"2012-08-31T01:29:25.557Z","type":"message"}
+{"nick":"piscisaureus^","date":"2012-08-31T01:35:29.393Z","type":"join"}
+{"nick":"joshthecoder","reason":"Quit: Leaving...","date":"2012-08-31T01:43:18.624Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-08-31T01:46:53.796Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-08-31T01:47:36.526Z","type":"quit"}
+{"nick":"mmalecki","reason":"Ping timeout: 272 seconds","date":"2012-08-31T01:48:49.231Z","type":"quit"}
+{"nick":"piscisaureus^","reason":"Quit: leaving","date":"2012-08-31T01:53:15.008Z","type":"quit"}
+{"nick":"abraxas","date":"2012-08-31T01:55:38.097Z","type":"join"}
+{"nick":"erickt","date":"2012-08-31T01:56:38.579Z","type":"join"}
+{"nick":"erickt","reason":"Client Quit","date":"2012-08-31T01:59:12.204Z","type":"quit"}
+{"nick":"tomshreds","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-08-31T02:02:15.087Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yep","date":"2012-08-31T02:03:01.649Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ok, just checkin'","date":"2012-08-31T02:03:31.567Z","type":"message"}
+{"nick":"pooya","reason":"Quit: pooya","date":"2012-08-31T02:08:40.425Z","type":"quit"}
+{"nick":"bnoordhuis","message":"it's a sad fact but it seems level triggered epoll is faster than edge triggered epoll...","date":"2012-08-31T02:10:46.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"probably because everyone is using level triggered i/o so it's seen more optimization","date":"2012-08-31T02:11:10.354Z","type":"message"}
+{"nick":"bnoordhuis","message":"still, it's sad","date":"2012-08-31T02:11:20.225Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: any reasons beyond these contention issues","date":"2012-08-31T02:11:22.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-08-31T02:11:23.408Z","type":"message"}
+{"nick":"bnoordhuis","message":"bnoordhuis: it's lock contention","date":"2012-08-31T02:14:24.830Z","type":"message"}
+{"nick":"bnoordhuis","message":"i could shave off a few more cycles here and there","date":"2012-08-31T02:14:35.543Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that won't save it","date":"2012-08-31T02:14:40.685Z","type":"message"}
+{"nick":"bnoordhuis","message":"err, piscisaureus_ ","date":"2012-08-31T02:15:06.068Z","type":"message"}
+{"nick":"bnoordhuis","action":"is getting tired","date":"2012-08-31T02:15:10.957Z","type":"action"}
+{"nick":"piscisaureus_","message":"ya","date":"2012-08-31T02:15:21.985Z","type":"message"}
+{"nick":"piscisaureus_","message":"too bad","date":"2012-08-31T02:15:31.310Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: send some kernel patches :-p","date":"2012-08-31T02:15:42.064Z","type":"message"}
+{"nick":"piscisaureus_","message":"(kidding)","date":"2012-08-31T02:15:50.339Z","type":"message"}
+{"nick":"piscisisaureus^","date":"2012-08-31T02:17:50.274Z","type":"join"}
+{"nick":"bnoordhuis","message":"well... it's something that should be addressed","date":"2012-08-31T02:17:50.517Z","type":"message"}
+{"nick":"piscisisaureus^","new_nick":"piscisaureus^","date":"2012-08-31T02:18:03.811Z","type":"nick"}
+{"nick":"piscisaureus^","message":"I agree","date":"2012-08-31T02:18:34.586Z","type":"message"}
+{"nick":"piscisaureus^","message":"nothing but disappointment these days","date":"2012-08-31T02:18:47.503Z","type":"message"}
+{"nick":"piscisaureus^","message":"http.sys rules node","date":"2012-08-31T02:18:55.854Z","type":"message"}
+{"nick":"piscisaureus^","message":"level triggered rules edge triggered","date":"2012-08-31T02:19:10.090Z","type":"message"}
+{"nick":"piscisaureus^","message":"I sort of like this crappy chromebook btw - it feels like a permanent distraction-free mode","date":"2012-08-31T02:19:55.891Z","type":"message"}
+{"nick":"bnoordhuis","message":"how so? no solitaire?","date":"2012-08-31T02:20:30.744Z","type":"message"}
+{"nick":"piscisaureus^","message":"bnoordhuis: no mail, no twitter app","date":"2012-08-31T02:20:56.470Z","type":"message"}
+{"nick":"piscisaureus^","message":"no work","date":"2012-08-31T02:21:02.427Z","type":"message"}
+{"nick":"bnoordhuis","message":"2 out of 3, eh?","date":"2012-08-31T02:21:45.822Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, i'm off to bed","date":"2012-08-31T02:21:48.989Z","type":"message"}
+{"nick":"bnoordhuis","message":"sleep tight, bertje","date":"2012-08-31T02:21:52.221Z","type":"message"}
+{"nick":"piscisaureus^","message":"sleep tight bnoordhuis ","date":"2012-08-31T02:21:58.146Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2012-08-31T02:23:59.507Z","type":"quit"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-08-31T02:25:19.331Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-08-31T02:25:22.061Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-08-31T02:25:52.036Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-08-31T02:26:01.241Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 264 seconds","date":"2012-08-31T02:26:50.300Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2012-08-31T02:28:48.598Z","type":"quit"}
+{"nick":"pooya","date":"2012-08-31T02:59:35.323Z","type":"join"}
+{"nick":"loladiro","date":"2012-08-31T03:00:45.392Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 240 seconds","date":"2012-08-31T03:24:43.110Z","type":"quit"}
+{"nick":"chobi_e_","date":"2012-08-31T03:25:30.942Z","type":"join"}
+{"nick":"chobi_e_","reason":"Ping timeout: 256 seconds","date":"2012-08-31T03:30:27.638Z","type":"quit"}
+{"nick":"erickt","date":"2012-08-31T03:40:35.777Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-08-31T03:42:01.740Z","type":"quit"}
+{"nick":"chobi_e_","date":"2012-08-31T03:50:01.241Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-08-31T04:15:27.937Z","type":"quit"}
+{"nick":"piscisaureus^","reason":"Read error: Operation timed out","date":"2012-08-31T04:15:53.595Z","type":"quit"}
+{"nick":"loladiro","date":"2012-08-31T04:16:56.230Z","type":"join"}
+{"nick":"piscisaureus^","date":"2012-08-31T04:47:33.340Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-08-31T04:49:55.633Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-08-31T05:06:14.641Z","type":"quit"}
+{"nick":"ibobrik","date":"2012-08-31T05:40:48.272Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 265 seconds","date":"2012-08-31T05:52:56.141Z","type":"quit"}
+{"nick":"toothr","date":"2012-08-31T05:56:25.603Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-08-31T05:56:28.042Z","type":"join"}
+{"nick":"ibobrik","reason":"Quit: ibobrik","date":"2012-08-31T05:57:02.754Z","type":"quit"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-08-31T06:04:06.083Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-08-31T06:04:36.061Z","type":"join"}
+{"nick":"pooya","reason":"Quit: pooya","date":"2012-08-31T06:15:47.159Z","type":"quit"}
+{"nick":"indutny","message":"pampam","date":"2012-08-31T06:26:34.960Z","type":"message"}
+{"nick":"indutny","message":"good morninbg","date":"2012-08-31T06:26:36.472Z","type":"message"}
+{"nick":"indutny","message":"mjr_: I just read yesterday's logs, have you figured out anything else?","date":"2012-08-31T06:27:01.533Z","type":"message"}
+{"nick":"TheJH","date":"2012-08-31T06:29:16.353Z","type":"join"}
+{"nick":"ibobrik","date":"2012-08-31T06:32:36.102Z","type":"join"}
+{"nick":"toothr","reason":"Ping timeout: 240 seconds","date":"2012-08-31T06:41:03.592Z","type":"quit"}
+{"nick":"toothr","date":"2012-08-31T06:42:25.059Z","type":"join"}
+{"nick":"piscisaureus^","reason":"Quit: Lost terminal","date":"2012-08-31T06:46:36.137Z","type":"quit"}
+{"nick":"ibobrik_","date":"2012-08-31T07:13:05.517Z","type":"join"}
+{"nick":"paddybyers","date":"2012-08-31T07:16:05.996Z","type":"join"}
+{"nick":"ibobrik","reason":"Ping timeout: 260 seconds","date":"2012-08-31T07:16:15.912Z","type":"quit"}
+{"nick":"ibobrik_","new_nick":"ibobrik","date":"2012-08-31T07:16:16.151Z","type":"nick"}
+{"nick":"rendar","date":"2012-08-31T07:46:12.172Z","type":"join"}
