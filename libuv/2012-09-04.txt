@@ -114,3 +114,177 @@
 {"nick":"ibobrik","date":"2012-09-04T07:46:06.600Z","type":"join"}
 {"nick":"indutny","message":"ibobrik: yt?","date":"2012-09-04T07:51:32.919Z","type":"message"}
 {"nick":"indutny","message":"ibobrik: what if you'll try to write 4096 bytes maximum?","date":"2012-09-04T07:51:46.520Z","type":"message"}
+{"nick":"ibobrik","message":"same results","date":"2012-09-04T08:03:47.781Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: but buffer initialization helped","date":"2012-09-04T08:11:24.080Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: as far as i can see. this is weird","date":"2012-09-04T08:11:34.637Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: i have no idea how to \"initialize\" buffers that came from http request body btw","date":"2012-09-04T08:15:50.369Z","type":"message"}
+{"nick":"indutny","message":"ibobrik: they should be already initialized I guess","date":"2012-09-04T08:16:50.179Z","type":"message"}
+{"nick":"indutny","message":"but that's definitely a bug","date":"2012-09-04T08:16:54.180Z","type":"message"}
+{"nick":"indutny","message":"at least as far as I can see","date":"2012-09-04T08:17:00.214Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: i don't understand why pwrite even bother about calculating offsets when i give offset explicitly","date":"2012-09-04T08:18:58.092Z","type":"message"}
+{"nick":"indutny","message":"ibobrik: that's not the case","date":"2012-09-04T08:19:13.276Z","type":"message"}
+{"nick":"indutny","message":"you're writing more than PIPE_BUF data","date":"2012-09-04T08:19:22.378Z","type":"message"}
+{"nick":"indutny","message":"and when doing so pwrite is not atomic","date":"2012-09-04T08:19:28.965Z","type":"message"}
+{"nick":"indutny","message":"so that seems to be a libuv bug","date":"2012-09-04T08:25:04.790Z","type":"message"}
+{"nick":"indutny","message":"even eio bug","date":"2012-09-04T08:25:09.290Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: hm, this is buggy too: https://gist.github.com/3618478","date":"2012-09-04T08:26:11.233Z","type":"message"}
+{"nick":"ibobrik","message":"indutny: 100 writes < 4096 - same result","date":"2012-09-04T08:26:29.338Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-09-04T08:26:38.091Z","type":"message"}
+{"nick":"indutny","message":"something I'm missing there","date":"2012-09-04T08:26:43.460Z","type":"message"}
+{"nick":"indutny","message":"definitely","date":"2012-09-04T08:26:45.079Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-09-04T09:26:05.126Z","type":"join"}
+{"nick":"rendar","date":"2012-09-04T09:56:14.694Z","type":"quit"}
+{"nick":"rendar","date":"2012-09-04T09:58:16.609Z","type":"join"}
+{"nick":"bnoordhuis","date":"2012-09-04T10:03:48.197Z","type":"join"}
+{"nick":"stagas","date":"2012-09-04T10:05:11.028Z","type":"join"}
+{"nick":"bnoordhuis","message":"indutny: what's up?","date":"2012-09-04T10:28:34.660Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hey man","date":"2012-09-04T10:34:30.511Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: writes are not overlapping","date":"2012-09-04T10:34:36.332Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: and more interestingly","date":"2012-09-04T10:34:42.855Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: filling buffers with data helps","date":"2012-09-04T10:34:49.292Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: even with a random data","date":"2012-09-04T10:34:54.061Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: looking at the strace output, they seem to overlap","date":"2012-09-04T10:35:46.961Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: they should not","date":"2012-09-04T10:36:16.804Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: offset is increased by buffer length","date":"2012-09-04T10:36:26.254Z","type":"message"}
+{"nick":"bnoordhuis","message":"he's writing at the end of the file right?","date":"2012-09-04T10:39:16.169Z","type":"message"}
+{"nick":"bnoordhuis","message":"wait, i'll explain it in the issue","date":"2012-09-04T10:39:50.903Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-09-04T10:40:31.058Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: https://github.com/joyent/libuv/issues/544#issuecomment-8258839","date":"2012-09-04T10:44:53.567Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. it's not a bug","date":"2012-09-04T10:45:05.241Z","type":"message"}
+{"nick":"bnoordhuis","message":"or rather, not a bug in libuv","date":"2012-09-04T10:45:08.944Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: oviously","date":"2012-09-04T10:45:26.481Z","type":"message"}
+{"nick":"indutny","message":"obviously","date":"2012-09-04T10:45:30.663Z","type":"message"}
+{"nick":"indutny","message":"the thing is that we're doing parallel pwrites","date":"2012-09-04T10:45:39.115Z","type":"message"}
+{"nick":"indutny","message":"while we surely know that pwrite won't work correctly when called from multiple threads","date":"2012-09-04T10:45:57.343Z","type":"message"}
+{"nick":"bnoordhuis","message":"oviously... copiously egg-like?","date":"2012-09-04T10:46:16.494Z","type":"message"}
+{"nick":"bnoordhuis","message":"at worst it's a documentation issue","date":"2012-09-04T10:46:41.549Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think we document it for node, maybe not libuv","date":"2012-09-04T10:46:50.829Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-09-04T10:48:03.741Z","type":"message"}
+{"nick":"indutny","message":"it's just odd that it happens concurrently","date":"2012-09-04T10:48:21.740Z","type":"message"}
+{"nick":"indutny","message":"because it should not","date":"2012-09-04T10:48:27.923Z","type":"message"}
+{"nick":"ibobrik","message":"i see 2 solutions: 1. pre-allocating the whole big file before writing, 2. sticking fd to one io thread that will make linear pwrite calls one-after-another","date":"2012-09-04T10:48:49.327Z","type":"message"}
+{"nick":"ibobrik","message":"and 3. make write queue for every file in my own node.js code","date":"2012-09-04T10:52:14.334Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 272 seconds","date":"2012-09-04T10:54:56.854Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: Assertion failed: (handle->flags & UV_CLOSING), function uv__finish_close, file ../deps/uv/src/unix/core.c, line 129.","date":"2012-09-04T11:10:49.082Z","type":"message"}
+{"nick":"indutny","message":"I like this! :)","date":"2012-09-04T11:10:55.150Z","type":"message"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2012-09-04T11:11:37.966Z","type":"quit"}
+{"nick":"abraxas","date":"2012-09-04T11:12:34.420Z","type":"join"}
+{"nick":"stagas","reason":"Quit: ChatZilla 0.9.88-rdmsoft [XULRunner 1.9.0.17/2009122204]","date":"2012-09-04T11:13:27.121Z","type":"quit"}
+{"nick":"abraxas","reason":"Ping timeout: 244 seconds","date":"2012-09-04T11:17:10.214Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: why is this happening?","date":"2012-09-04T11:26:12.876Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-09-04T11:34:18.699Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: pwrite from multiple threads *should* be safe... we're doing it in node too","date":"2012-09-04T11:34:39.273Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: it isn't","date":"2012-09-04T11:35:19.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh - we're not doing it in node","date":"2012-09-04T11:35:21.297Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so what's happening?","date":"2012-09-04T11:35:29.604Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: data gets written at the wrong place?","date":"2012-09-04T11:35:35.765Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: it's writing junk :)","date":"2012-09-04T11:35:38.912Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: yeah, sort of","date":"2012-09-04T11:35:43.947Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so what it is - junk, or at the wrong place?","date":"2012-09-04T11:35:59.243Z","type":"message"}
+{"nick":"indutny","message":"idk","date":"2012-09-04T11:36:09.458Z","type":"message"}
+{"nick":"indutny","message":"but when you initalize buffers","date":"2012-09-04T11:36:18.821Z","type":"message"}
+{"nick":"indutny","message":"everything seems to be fine","date":"2012-09-04T11:36:21.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"huh","date":"2012-09-04T11:36:28.591Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: which buffers?","date":"2012-09-04T11:36:35.661Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so you're writing uninitialized memory and complaining that junk ends up in the file?","date":"2012-09-04T11:36:58.480Z","type":"message"}
+{"nick":"indutny","message":"https://gist.github.com/3617558","date":"2012-09-04T11:37:01.143Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: well, not me","date":"2012-09-04T11:37:09.092Z","type":"message"}
+{"nick":"indutny","message":"but the thing is I comparing read data to what was written","date":"2012-09-04T11:37:20.765Z","type":"message"}
+{"nick":"indutny","message":"and I expect it to be equal","date":"2012-09-04T11:37:29.858Z","type":"message"}
+{"nick":"CIA-130","reason":"Ping timeout: 265 seconds","date":"2012-09-04T11:48:34.828Z","type":"quit"}
+{"nick":"bnoordhuis","message":"CIA-130 doesn't even say bye? the nerve","date":"2012-09-04T11:49:47.134Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-09-04T11:54:18.387Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: meh","date":"2012-09-04T11:59:32.119Z","type":"message"}
+{"nick":"indutny","message":"bunch of xml stuff","date":"2012-09-04T11:59:35.720Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: xml? that's the new json, right?","date":"2012-09-04T11:59:56.192Z","type":"message"}
+{"nick":"indutny","message":"oh, do not remind me about it","date":"2012-09-04T12:00:17.345Z","type":"message"}
+{"nick":"ibobrik","message":"bnoordhuis, indutny: https://gist.github.com/3620592 sequential writes, corrupted file from time to time :(","date":"2012-09-04T12:00:30.903Z","type":"message"}
+{"nick":"indutny","message":"ha","date":"2012-09-04T12:01:04.475Z","type":"message"}
+{"nick":"indutny","message":"I knew it!","date":"2012-09-04T12:01:06.301Z","type":"message"}
+{"nick":"ibobrik","message":"i've updated libuv issue #544","date":"2012-09-04T12:07:37.355Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-09-04T12:21:52.943Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Client Quit","date":"2012-09-04T12:21:55.723Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-09-04T12:22:30.258Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-09-04T12:23:17.955Z","type":"join"}
+{"nick":"piscisaureus","date":"2012-09-04T12:28:10.997Z","type":"join"}
+{"nick":"CIA-129","date":"2012-09-04T12:29:07.840Z","type":"join"}
+{"nick":"safdsfasdfasdfas","date":"2012-09-04T12:30:08.385Z","type":"join"}
+{"nick":"safdsfasdfasdfas","new_nick":"`3rdEden","date":"2012-09-04T12:31:01.056Z","type":"nick"}
+{"nick":"loladiro","date":"2012-09-04T12:40:42.739Z","type":"join"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000283b1dda\u000f \u000310\u000f/ (src/node.cc test/simple/test-cli-eval.js)\u0002:\u000f cli: make argument to -p optional - http://git.io/_ff9Og","date":"2012-09-04T12:43:10.922Z","type":"message"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u000219a4322\u000f \u000310\u000f/ test/simple/test-cli-eval.js \u0002:\u000f test: add extra checks in simple/test-cli-eval - http://git.io/r7sx8g","date":"2012-09-04T12:43:11.162Z","type":"message"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-09-04T13:09:24.060Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-09-04T13:09:55.046Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-09-04T13:13:00.075Z","type":"quit"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00022efa3ae\u000f \u000310\u000f/ tools/install.py \u0002:\u000f installer: reapply b21c8e0b, honor --without-npm (+17 more commits...) - http://git.io/xhZiiA","date":"2012-09-04T13:13:06.712Z","type":"message"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307issue3964\u000f * r\u00029236230\u000f \u000310\u000f/ (56 files in 5 dirs)\u0002:\u000f doc: don't use &apos; - http://git.io/ORYVNg","date":"2012-09-04T13:17:16.968Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus: is the company meeting this friday?","date":"2012-09-04T13:18:46.309Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yup","date":"2012-09-04T13:19:01.046Z","type":"message"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307issue3964\u000f * r\u000235d1da1\u000f \u000310\u000f/ (15 files in 2 dirs)\u0002:\u000f doc: don't use &apos; - http://git.io/XWOdHA","date":"2012-09-04T13:23:14.396Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-09-04T13:25:42.909Z","type":"join"}
+{"nick":"bnoordhuis","message":"^ that guy","date":"2012-09-04T13:26:40.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"he didn't say where exactly he ran into &apos;","date":"2012-09-04T13:26:48.466Z","type":"message"}
+{"nick":"bnoordhuis","message":"i assume it's the blog but who knows","date":"2012-09-04T13:27:00.416Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-09-04T13:27:03.973Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't know either","date":"2012-09-04T13:27:07.220Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, IE","date":"2012-09-04T13:27:16.324Z","type":"message"}
+{"nick":"piscisaureus_","message":"It was a poor bug report","date":"2012-09-04T13:27:18.783Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: BUT &#39 is smaller than &apos","date":"2012-09-04T13:28:03.977Z","type":"message"}
+{"nick":"piscisaureus_","message":"LESS IS MOAR","date":"2012-09-04T13:28:21.072Z","type":"message"}
+{"nick":"piscisaureus_","message":"CAPSLOCKBOT is really stoic today","date":"2012-09-04T13:28:51.022Z","type":"message"}
+{"nick":"piscisaureus_","message":"HELLO CAPSLOCKBOT HOW ARE WE DOING TODAY?","date":"2012-09-04T13:29:05.916Z","type":"message"}
+{"nick":"piscisaureus","new_nick":"NUMLOCKBOT","date":"2012-09-04T13:29:42.193Z","type":"nick"}
+{"nick":"NUMLOCKBOT","message":"1 4M F1N3","date":"2012-09-04T13:29:58.917Z","type":"message"}
+{"nick":"hz","date":"2012-09-04T13:44:06.922Z","type":"join"}
+{"nick":"loladiro","date":"2012-09-04T13:48:42.207Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-09-04T13:52:20.417Z","type":"quit"}
+{"nick":"bentkus","date":"2012-09-04T13:53:03.698Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: how do you feel about that &apos patch btw? throw away or land?","date":"2012-09-04T13:53:38.483Z","type":"message"}
+{"nick":"bentkus","message":"Who wants to write an irc server in C? xD","date":"2012-09-04T13:57:47.559Z","type":"message"}
+{"nick":"tjfontaine","message":"bentkus: btdt","date":"2012-09-04T13:59:52.615Z","type":"message"}
+{"nick":"bentkus","message":"btdt?","date":"2012-09-04T14:04:31.648Z","type":"message"}
+{"nick":"bentkus","message":"with libuv?\\","date":"2012-09-04T14:04:52.590Z","type":"message"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Timothy J Fontaine\u000f \u000307master\u000f * r\u0002d3135e0\u000f \u000310\u000f/ (configure tools/gyp_node)\u0002:\u000f build: add configure option to build with ninja - http://git.io/Ylh98g","date":"2012-09-04T14:05:16.003Z","type":"message"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Ben Noordhuis\u000f \u000307master\u000f * r\u00027b6d3ce\u000f \u000310\u000f/ (Makefile configure)\u0002:\u000f build: add ninja support to Makefile - http://git.io/afPQnA","date":"2012-09-04T14:05:16.243Z","type":"message"}
+{"nick":"tjfontaine","message":"bentkus: homegrown event loop, libevent, and we're currently doing on based on libuv","date":"2012-09-04T14:06:27.467Z","type":"message"}
+{"nick":"bentkus","message":"github link plz?","date":"2012-09-04T14:06:47.789Z","type":"message"}
+{"nick":"tjfontaine","message":"bentkus: still quite young http://github.com/oftc/oftc-ircd","date":"2012-09-04T14:07:03.483Z","type":"message"}
+{"nick":"bentkus","message":"is it a branch of the oftc server?","date":"2012-09-04T14:08:02.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: land, doesn't hurt","date":"2012-09-04T14:08:15.073Z","type":"message"}
+{"nick":"tjfontaine","message":"bentkus: no oftc currently runs on oftc-hybrid","date":"2012-09-04T14:08:25.048Z","type":"message"}
+{"nick":"bnoordhuis","message":"ninja is nice","date":"2012-09-04T14:09:06.349Z","type":"message"}
+{"nick":"bentkus","message":"beafy server","date":"2012-09-04T14:09:06.588Z","type":"message"}
+{"nick":"bnoordhuis","message":"the build system, that is, not the killers for hire","date":"2012-09-04T14:09:22.722Z","type":"message"}
+{"nick":"tjfontaine","message":"killers are pretty awesome too, so long as they're not after you","date":"2012-09-04T14:09:40.479Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't know, i'd be worried about mixups","date":"2012-09-04T14:10:07.050Z","type":"message"}
+{"nick":"bnoordhuis","message":"i mean \"oh sorry, wrong bloke - won't happen again\" after the fact is little consolation","date":"2012-09-04T14:10:48.853Z","type":"message"}
+{"nick":"tjfontaine","message":"quite","date":"2012-09-04T14:11:22.689Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, time to take the wife out for a walk","date":"2012-09-04T14:11:54.406Z","type":"message"}
+{"nick":"loladiro","date":"2012-09-04T14:14:47.906Z","type":"join"}
+{"nick":"bentkus","new_nick":"txdv2","date":"2012-09-04T14:19:35.257Z","type":"nick"}
+{"nick":"CIA-129","message":"\u0002node:\u000f \u000303Bert Belder\u000f \u000307issue3964\u000f * r\u000212e327d\u000f \u000310\u000f/ (18 files in 4 dirs)\u0002:\u000f doc: don't use &apos; - http://git.io/EEDYtA","date":"2012-09-04T14:25:40.099Z","type":"message"}
+{"nick":"hz","reason":"Ping timeout: 272 seconds","date":"2012-09-04T14:45:28.843Z","type":"quit"}
+{"nick":"ibobrik","message":"indutny: i finally found it. \"a+\" is evil","date":"2012-09-04T14:47:04.388Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-09-04T14:47:20.246Z","type":"message"}
+{"nick":"piscisaureus_","message":"still weird tho","date":"2012-09-04T14:47:43.671Z","type":"message"}
+{"nick":"piscisaureus_","message":"what flags does it translate to","date":"2012-09-04T14:47:47.999Z","type":"message"}
+{"nick":"piscisaureus_","message":"O_RDWR | O_APPEND ?","date":"2012-09-04T14:47:57.094Z","type":"message"}
+{"nick":"indutny","message":"I think so","date":"2012-09-04T14:48:02.816Z","type":"message"}
+{"nick":"piscisaureus_","message":"looks like a linux bug to me to be honest","date":"2012-09-04T14:48:36.918Z","type":"message"}
+{"nick":"ibobrik","message":"wait a minute","date":"2012-09-04T14:48:44.282Z","type":"message"}
+{"nick":"ibobrik","message":"linux for sure","date":"2012-09-04T14:48:48.212Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-09-04T14:49:11.080Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: sure, if they used kqueue this bug wouldn't happen!","date":"2012-09-04T14:50:23.449Z","type":"message"}
+{"nick":"piscisaureus_","message":"har har","date":"2012-09-04T14:50:31.527Z","type":"message"}
+{"nick":"indutny","message":"s/r//g","date":"2012-09-04T14:50:43.843Z","type":"message"}
+{"nick":"ibobrik","message":"https://gist.github.com/3621892","date":"2012-09-04T14:51:05.777Z","type":"message"}
+{"nick":"ibobrik","message":"with r+ everything is okay","date":"2012-09-04T14:51:54.459Z","type":"message"}
+{"nick":"TheJH","date":"2012-09-04T14:54:21.898Z","type":"join"}
+{"nick":"ibobrik","message":"indutny: this should not happen, should it? i mean \"a+\" behavior","date":"2012-09-04T14:56:57.210Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 268 seconds","date":"2012-09-04T15:09:20.941Z","type":"quit"}
+{"nick":"erickt","date":"2012-09-04T15:12:43.947Z","type":"join"}
+{"nick":"hz","date":"2012-09-04T15:16:37.952Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-09-04T15:27:48.364Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Leaving...","date":"2012-09-04T15:28:00.669Z","type":"quit"}
+{"nick":"tomshreds","date":"2012-09-04T15:28:41.247Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-09-04T15:51:05.152Z","type":"quit"}
