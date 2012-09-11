@@ -1,0 +1,99 @@
+{"nick":"mitsuhiko","message":"a bunch of middleware i looked at for comparison move their networking logic into a separate thread. but one that does not yield on kernel level","date":"2012-09-11T00:00:28.210Z","type":"message"}
+{"nick":"mitsuhiko","message":"well, it does in a way, it sleeps 0.1sec on inactivity","date":"2012-09-11T00:00:39.140Z","type":"message"}
+{"nick":"mitsuhiko","message":"and then you have three different network modules and three threads and fancy polling on async network code","date":"2012-09-11T00:01:04.326Z","type":"message"}
+{"nick":"piscisaureus_","message":"doing networking logic on a separate thread sounds like a good idea by itself","date":"2012-09-11T00:01:21.511Z","type":"message"}
+{"nick":"piscisaureus_","message":"although you probably pay for better throughput by incurring more latency","date":"2012-09-11T00:01:34.293Z","type":"message"}
+{"nick":"piscisaureus_","message":"yielding every 0.1 seconds does not sound that great to me","date":"2012-09-11T00:02:05.857Z","type":"message"}
+{"nick":"mitsuhiko","message":"well, it does make sense in a way","date":"2012-09-11T00:04:09.231Z","type":"message"}
+{"nick":"mitsuhiko","message":"it's because originally that stuff was running in the only thread of the game, then everything started to multithread and the async api was no longer a perfect match for a thread that is otherwise completely idle","date":"2012-09-11T00:04:55.564Z","type":"message"}
+{"nick":"mitsuhiko","message":"at least that's my rationale for that","date":"2012-09-11T00:05:15.014Z","type":"message"}
+{"nick":"mraleph","date":"2012-09-11T00:05:22.787Z","type":"join"}
+{"nick":"piscisaureus_","message":"well, it depends on the exact implementation of course","date":"2012-09-11T00:06:06.980Z","type":"message"}
+{"nick":"piscisaureus_","message":"you should be aware that if you are targeting windows (what many games do) yielding for 0.1 second is not very efficient","date":"2012-09-11T00:06:42.125Z","type":"message"}
+{"nick":"piscisaureus_","message":"because the system had to make scheduler run at 10000 quantums per seconds instead of ~64","date":"2012-09-11T00:07:30.049Z","type":"message"}
+{"nick":"mitsuhiko","message":"not my code :)","date":"2012-09-11T00:07:47.427Z","type":"message"}
+{"nick":"mitsuhiko","message":"not going to touch it either","date":"2012-09-11T00:07:51.994Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha, sure","date":"2012-09-11T00:08:17.397Z","type":"message"}
+{"nick":"mitsuhiko","message":"unrelated: i have a ton of places where i do if (--shutdown_ticks == 0) do_the_real_shutdown","date":"2012-09-11T00:12:24.278Z","type":"message"}
+{"nick":"mitsuhiko","message":"because a single thing has more than one uv_handle_t","date":"2012-09-11T00:12:31.412Z","type":"message"}
+{"nick":"mitsuhiko","message":"would it make sense to provide an api for that?","date":"2012-09-11T00:12:37.814Z","type":"message"}
+{"nick":"mitsuhiko","message":"eg: chain shutdown a bunch of things","date":"2012-09-11T00:12:47.378Z","type":"message"}
+{"nick":"piscisaureus_","message":"well, I'm not really keen on adding this type of APIs?","date":"2012-09-11T00:13:51.179Z","type":"message"}
+{"nick":"piscisaureus_","message":"s/?/!","date":"2012-09-11T00:13:55.417Z","type":"message"}
+{"nick":"piscisaureus_","message":"is it really that bad?","date":"2012-09-11T00:14:08.083Z","type":"message"}
+{"nick":"mitsuhiko","message":"piscisaureus_: probably not… however the lack of it makes people lazy","date":"2012-09-11T00:14:23.705Z","type":"message"}
+{"nick":"mitsuhiko","message":"for instance i did not shut down timers properly with uv_close for a while and it still worked :)","date":"2012-09-11T00:14:33.165Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: well, if it works for you then I don't complain :-)","date":"2012-09-11T00:14:52.368Z","type":"message"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-09-11T00:15:20.061Z","type":"quit"}
+{"nick":"piscisaureus_","message":"mitsuhiko: I suppose you have a memory block with multiple handles inside them and you need to reference count to know when you can release it?","date":"2012-09-11T00:15:37.042Z","type":"message"}
+{"nick":"mitsuhiko","message":"yep","date":"2012-09-11T00:15:46.838Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: right, yeah we're not going to add an api for that","date":"2012-09-11T00:16:04.461Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: if you are really lazy you can malloc the handles individually","date":"2012-09-11T00:16:19.695Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: and close them with uv_close((uv_handle_t) handle, (uv_close_cb) free)","date":"2012-09-11T00:16:41.985Z","type":"message"}
+{"nick":"piscisaureus_","message":"although performance wise that's probably not ideal","date":"2012-09-11T00:17:13.940Z","type":"message"}
+{"nick":"mitsuhiko","message":"that would actually not help much in that case because of how this is structured. though that might be a misuse on my part anyways.","date":"2012-09-11T00:17:17.332Z","type":"message"}
+{"nick":"mitsuhiko","message":"my close callback does more than just free","date":"2012-09-11T00:17:28.074Z","type":"message"}
+{"nick":"mitsuhiko","message":"it also unregisters the object from a roster","date":"2012-09-11T00:17:35.123Z","type":"message"}
+{"nick":"mitsuhiko","message":"and well, it then frees the wrapper object which also has the handles on","date":"2012-09-11T00:18:04.238Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: I suppose you can (should, event) unregister it from the roster when you close the handles","date":"2012-09-11T00:18:12.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"*even","date":"2012-09-11T00:18:17.693Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm, I see","date":"2012-09-11T00:18:29.988Z","type":"message"}
+{"nick":"piscisaureus_","message":"anyway, I don't think adding this to the api is really warranted","date":"2012-09-11T00:18:38.983Z","type":"message"}
+{"nick":"mitsuhiko","message":"yeah, fair enough","date":"2012-09-11T00:18:45.229Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: you should be aware that if we start doing that you will pay the price too","date":"2012-09-11T00:18:50.266Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: because then I will be compelled to also add an api for creationix' use case, and for everyone elses :-)","date":"2012-09-11T00:19:08.357Z","type":"message"}
+{"nick":"mitsuhiko","message":"to be honest, if that becomes a documented and established pattern i would not mind at all doing that myself","date":"2012-09-11T00:20:14.278Z","type":"message"}
+{"nick":"mitsuhiko","message":"anyways. i'm trying to contribute in some way or another back to libuv, might as well be documentation.","date":"2012-09-11T00:21:59.230Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: that'd be cool :-)","date":"2012-09-11T00:22:14.721Z","type":"message"}
+{"nick":"piscisaureus_","message":"mitsuhiko: if you can contribute to nikhilm's uvbook that'd be great","date":"2012-09-11T00:22:51.162Z","type":"message"}
+{"nick":"stagas","reason":"Quit: ChatZilla 0.9.88-rdmsoft [XULRunner 1.9.0.17/2009122204]","date":"2012-09-11T00:22:57.715Z","type":"quit"}
+{"nick":"piscisaureus_","message":"it's a good start but there's also a lot of stuff missing still","date":"2012-09-11T00:23:29.363Z","type":"message"}
+{"nick":"mitsuhiko","message":"yeah. sounds like a plan","date":"2012-09-11T00:24:22.658Z","type":"message"}
+{"nick":"loladiro","date":"2012-09-11T00:28:35.284Z","type":"join"}
+{"nick":"CIA-129","reason":"Ping timeout: 246 seconds","date":"2012-09-11T00:42:31.157Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Quit: Lost terminal","date":"2012-09-11T00:46:40.134Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-09-11T00:55:49.758Z","type":"quit"}
+{"nick":"dap","date":"2012-09-11T00:56:15.184Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2012-09-11T00:57:59.022Z","type":"quit"}
+{"nick":"CIA-129","date":"2012-09-11T01:20:52.732Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 252 seconds","date":"2012-09-11T01:21:03.863Z","type":"quit"}
+{"nick":"abraxas","date":"2012-09-11T01:27:57.153Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-09-11T01:32:33.764Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-09-11T01:33:19.057Z","type":"quit"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-09-11T01:36:33.337Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-09-11T01:37:00.650Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-09-11T02:44:34.707Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-09-11T02:48:18.546Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2012-09-11T02:52:51.267Z","type":"quit"}
+{"nick":"avalanche123","date":"2012-09-11T04:58:01.509Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-09-11T05:11:55.264Z","type":"quit"}
+{"nick":"mikeal","date":"2012-09-11T05:12:45.497Z","type":"join"}
+{"nick":"mjr_","date":"2012-09-11T05:18:35.565Z","type":"join"}
+{"nick":"paddybyers","date":"2012-09-11T05:24:14.114Z","type":"join"}
+{"nick":"dshaw_","date":"2012-09-11T05:57:39.078Z","type":"join"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-09-11T05:57:54.991Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2012-09-11T06:18:46.058Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-09-11T06:22:22.624Z","type":"join"}
+{"nick":"FUUFREENODESTOPB","date":"2012-09-11T06:36:36.781Z","type":"join"}
+{"nick":"FUUFREENODESTOPB","new_nick":"`3rdEden","date":"2012-09-11T06:37:08.247Z","type":"nick"}
+{"nick":"avalanche123","date":"2012-09-11T06:39:22.818Z","type":"join"}
+{"nick":"CoverSlide","date":"2012-09-11T06:54:07.494Z","type":"join"}
+{"nick":"avalanche123","reason":"Quit: Computer has gone to sleep.","date":"2012-09-11T07:01:31.872Z","type":"quit"}
+{"nick":"rendar","date":"2012-09-11T07:11:44.548Z","type":"join"}
+{"nick":"indutny","message":"hoia","date":"2012-09-11T07:16:22.672Z","type":"message"}
+{"nick":"joshthecoder","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-09-11T07:32:04.586Z","type":"quit"}
+{"nick":"mjr_","message":"Hey indutny ","date":"2012-09-11T07:40:10.022Z","type":"message"}
+{"nick":"mmalecki","message":"mjr_: hello. thanks much for merging the native parser pull request, it makes our life way easier at nodejitsu","date":"2012-09-11T07:47:28.701Z","type":"message"}
+{"nick":"mjr_","message":"Yeah, sorry it took so long.","date":"2012-09-11T07:47:44.867Z","type":"message"}
+{"nick":"mjr_","message":"JS parser now beats the native code one.  Pretty great.","date":"2012-09-11T07:48:07.812Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, great to see. out of curiosity, how did you guys manage to get hiredis working on smartos instances?","date":"2012-09-11T07:49:19.280Z","type":"message"}
+{"nick":"mjr_","message":"We haven't been able to move to 0.8 yet, so it still builds on 0.6","date":"2012-09-11T07:49:46.158Z","type":"message"}
+{"nick":"mmalecki","message":"we never got it to work, it'd produce ELFCLASS32 binary, no matter what we tried","date":"2012-09-11T07:49:49.017Z","type":"message"}
+{"nick":"mjr_","message":"I think we got it building on 0.8 though with some little change.","date":"2012-09-11T07:49:59.747Z","type":"message"}
+{"nick":"mmalecki","message":"no, I mean, it built just fine, it wouldn't load correctly","date":"2012-09-11T07:50:20.920Z","type":"message"}
+{"nick":"mmalecki","message":"ah, you probably were running 32 bit instances, correct?","date":"2012-09-11T07:50:35.962Z","type":"message"}
+{"nick":"mjr_","message":"Must be.  I just built and ran it on 0.8 without a problem.","date":"2012-09-11T07:51:07.462Z","type":"message"}
+{"nick":"mjr_","message":"I think it matters what pkgsrc you are pointing to whether gcc will work or not","date":"2012-09-11T07:51:39.050Z","type":"message"}
+{"nick":"mjr_","message":"Pretty big mess, IMO","date":"2012-09-11T07:51:46.902Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, building native extensions is a mess if you're running 64 bit, unfortunately","date":"2012-09-11T07:52:11.685Z","type":"message"}
+{"nick":"hz","date":"2012-09-11T07:56:29.264Z","type":"join"}
