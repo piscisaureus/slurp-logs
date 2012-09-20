@@ -39,3 +39,77 @@
 {"nick":"vpovirk","message":"and I'm just not sure there's a good place to hook the loader","date":"2012-09-19T15:54:43.142Z","type":"message"}
 {"nick":"vpovirk","message":"at least on Wine, ntdll doesn't call LdrLoadDll recursively for dependencies; I believe it calls some internal function for deps instead","date":"2012-09-19T15:56:03.450Z","type":"message"}
 {"nick":"vpovirk","message":"I think the need for that has to do with calling DllMain/PROCESS_ATTACH in the correct order..","date":"2012-09-19T15:59:38.468Z","type":"message"}
+{"nick":"Dark-Star","message":"why would anyone want to reinvent sxs?","date":"2012-09-19T16:25:25.055Z","type":"message"}
+{"nick":"vpovirk","message":"we want to use it to do things it wasn't designed for","date":"2012-09-19T16:26:56.588Z","type":"message"}
+{"nick":"virmitio","message":"case example:  publisher forwarding","date":"2012-09-19T16:27:16.839Z","type":"message"}
+{"nick":"virmitio","message":"person A who has been building and publishing assembly \"foo\" for years is no longer maintaining it, but trusts person B to continue the work","date":"2012-09-19T16:28:15.822Z","type":"message"}
+{"nick":"vpovirk","message":"I had no idea that was a concern","date":"2012-09-19T16:28:59.519Z","type":"message"}
+{"nick":"virmitio","message":"under current SxS, the only way for old-\"foo\" assemblies to forward reference new-\"foo\" assemblies would be for A to give their private signing key to B","date":"2012-09-19T16:29:08.562Z","type":"message"}
+{"nick":"virmitio","message":"that would be bad","date":"2012-09-19T16:29:19.743Z","type":"message"}
+{"nick":"virmitio","message":"another case example: extention awareness","date":"2012-09-19T16:29:49.820Z","type":"message"}
+{"nick":"virmitio","message":"*extension","date":"2012-09-19T16:29:57.311Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 246 seconds","date":"2012-09-19T16:30:29.964Z","type":"quit"}
+{"nick":"virmitio","message":"I have two separate installs of PHP (for example) on a machine, both of the same version","date":"2012-09-19T16:30:58.351Z","type":"message"}
+{"nick":"virmitio","message":"if there's a module I want both to use that is in SxS, both installs need to be made explicitly aware of the extension","date":"2012-09-19T16:31:57.344Z","type":"message"}
+{"nick":"virmitio","message":"installing a new module assembly to SxS would not make it visible or discoverable from any program which was not already manifested to find that specific extension beforehand","date":"2012-09-19T16:33:09.897Z","type":"message"}
+{"nick":"virmitio","message":"now suppose that I've manifested up both of those installs to use module A in SxS.  If I build a new version of that module myself (cannot strong name with identical keys as the original), neither install will be able to locate and use the version that I just build myself","date":"2012-09-19T16:34:42.212Z","type":"message"}
+{"nick":"virmitio","message":"building an enhanced style of SxS (we're calling it SxS+ at the moment) will make thes trivial problems instead of \"you can't do that\" problems","date":"2012-09-19T16:40:14.977Z","type":"message"}
+{"nick":"Dark-Star","message":"these sound like tricky problems to solve...","date":"2012-09-19T16:53:52.038Z","type":"message"}
+{"nick":"virmitio","message":"true","date":"2012-09-19T16:54:05.689Z","type":"message"}
+{"nick":"virmitio","message":"but at present they would need to be solved in a haphazard manner, on an individual and case-by-case basis","date":"2012-09-19T16:54:42.981Z","type":"message"}
+{"nick":"Dark-Star","message":"so you're building atop SxS? or can you replace/re-create it in usermode? or will this be a pure source-code solution (i.e. needs source patches to work)?","date":"2012-09-19T16:55:02.108Z","type":"message"}
+{"nick":"virmitio","message":"and at that they would still be very clumsy and partially functional work-arounds","date":"2012-09-19T16:55:08.679Z","type":"message"}
+{"nick":"virmitio","message":"the present plan as I'm aware of it is that it will be a separate mechanism located elsewhere on the system.  It will not conflict with existing SxS assemblies and storage, and would operate by two available mechanisms:  1) source-side include to replace loadlibrary calls with our SxS+ lookup, or 2) a runtime redirection of such calls to our lookup.","date":"2012-09-19T16:59:12.624Z","type":"message"}
+{"nick":"virmitio","message":"lookups to SxS+ would fail over to SxS and local file system locations to locate the specified library","date":"2012-09-19T16:59:43.254Z","type":"message"}
+{"nick":"virmitio","message":"(I'm a little fuzzy on the exact lookup order because this was discussed with me last week and I haven't looked at my notes since then.)","date":"2012-09-19T17:00:38.998Z","type":"message"}
+{"nick":"Dark-Star","message":"if you do 2), wouldn't there be no need for 1) at all? also, I'm curious how Windows Defender etc. react when someone hijacks LoadLibrary() through a DLL injection (or is there any other, legal, mechanism for such things?)","date":"2012-09-19T17:01:23.838Z","type":"message"}
+{"nick":"virmitio","message":"Dark-Star: Excellent questions. I'm sorry you asked.  I know that these have been asked before but I cannot recall the answers that were found, and the two individuals who are most familiar with those methods are missing from the channel at the moment.","date":"2012-09-19T17:05:01.968Z","type":"message"}
+{"nick":"Dark-Star","message":"also I see problems with the source code approach, in that you probably can't mix SxS+-aware apps with (say) non-SxS+-aware DLLs/extensions...","date":"2012-09-19T17:05:15.434Z","type":"message"}
+{"nick":"virmitio","message":"why not?","date":"2012-09-19T17:05:46.540Z","type":"message"}
+{"nick":"Dark-Star","message":"yeah, no problem, I think I'm probably (hopefully ;-) not the first one to have these questions in his mind :)","date":"2012-09-19T17:05:51.060Z","type":"message"}
+{"nick":"Dark-Star","message":"non-sxs+-aware apps would bypass the SxS+ code path and thus end up with different builds of a common library (say, libz.dll, or something) so you have 1 lib in 2 different versions (and probably different compilation flags, calling conventions, etc.) in memory","date":"2012-09-19T17:06:56.618Z","type":"message"}
+{"nick":"Dark-Star","message":"I'm not sure if there's indeed any problem, that's just what came to my mind while thinking about it :)","date":"2012-09-19T17:07:21.421Z","type":"message"}
+{"nick":"virmitio","message":"seems a reasonable concern","date":"2012-09-19T17:08:08.700Z","type":"message"}
+{"nick":"virmitio","message":"I'll see what can be done to thoroughly test a setup of that sort once we've got a functional prototype","date":"2012-09-19T17:09:14.053Z","type":"message"}
+{"nick":"Dark-Star","message":"I see the calling conventions as the biggest problem, there are some projects out there that use _fastcall for everything, and they bring their own DLLs. If step 2) would then inject a \"matching\" DLL the program would simply crash","date":"2012-09-19T17:09:30.650Z","type":"message"}
+{"nick":"Dark-Star","message":"in the past, OpenTTD would have been a reasonably weird testcase for that, although I don't know if they switched to stdcall by now","date":"2012-09-19T17:10:29.101Z","type":"message"}
+{"nick":"Dark-Star","message":"the good thing is that stdcall vs. fastcall can at least be detected on DLL load time because the name mangling is different. Debug-vs-retail, however, cannot","date":"2012-09-19T17:12:01.469Z","type":"message"}
+{"nick":"Dark-Star","message":"brb, windows updates","date":"2012-09-19T17:13:28.390Z","type":"message"}
+{"nick":"Dark-Star","date":"2012-09-19T17:13:57.268Z","type":"quit"}
+{"nick":"FearTheCowboy","date":"2012-09-19T17:19:04.262Z","type":"join"}
+{"nick":"ender`","reason":"Quit:  Religion is like a blind man looking in a black room for a black cat that isn't there and finding it!\t-- Oscar Wilde\u000f","date":"2012-09-19T18:46:10.063Z","type":"quit"}
+{"nick":"FearTheCowboy","message":"Pity that Darkstar didn't come back.","date":"2012-09-19T19:14:58.654Z","type":"message"}
+{"nick":"FearTheCowboy","message":"I'm thinking that we're not going to replace SxS with SxS+, but more offer both.","date":"2012-09-19T19:15:13.458Z","type":"message"}
+{"nick":"FearTheCowboy","message":"There's nothing terribly wrong with SxS for shared libraries, it just doesn't support the extension/plugin model, and it's literally just as much work to add that to replace it.","date":"2012-09-19T19:15:55.052Z","type":"message"}
+{"nick":"FearTheCowboy","message":"(actually more to add, than to replace)","date":"2012-09-19T19:16:02.643Z","type":"message"}
+{"nick":"FearTheCowboy","message":"so I think that our shared library assemblies will both register into SxS and register in the SxS+ system (which will track where that library is in the real filesystem, so that we can locate it later.)","date":"2012-09-19T19:17:10.086Z","type":"message"}
+{"nick":"FearTheCowboy","message":"Although supporting old-fashioned SxS is gonna be tricky on offline systems.","date":"2012-09-19T19:17:42.023Z","type":"message"}
+{"nick":"vpovirk","message":"so, no linking using sxs+ without explicitly calling loadlibrary?","date":"2012-09-19T19:18:34.621Z","type":"message"}
+{"nick":"FearTheCowboy","message":"Not initially; but we can solve that problem too, but it's not as high a priority.","date":"2012-09-19T19:19:41.707Z","type":"message"}
+{"nick":"vpovirk","message":"what about xcopy deployment?","date":"2012-09-19T19:20:12.259Z","type":"message"}
+{"nick":"vpovirk","message":"currently we don't have any code in our native library packages that would care, but that can change","date":"2012-09-19T19:21:09.807Z","type":"message"}
+{"nick":"FearTheCowboy","message":"I've been working on a model that allows that too. I think we can leverage the existing search order for local SxS for that","date":"2012-09-19T19:21:24.120Z","type":"message"}
+{"nick":"vpovirk","message":"(and is mostly because sxs+ doesn't exist yet)","date":"2012-09-19T19:21:24.362Z","type":"message"}
+{"nick":"FearTheCowboy","message":"Well, SxS+ (perhaps I should call that SxS& :) ... is a lot different that I was originally (months back) thinking... and, yeah, it's gonna take a few months to get there","date":"2012-09-19T19:22:22.046Z","type":"message"}
+{"nick":"FearTheCowboy","message":"on the up side, I've gotten the Nuget folks to agree to supporting native libraries for C/C++ correctly","date":"2012-09-19T19:22:46.502Z","type":"message"}
+{"nick":"vpovirk","message":"cool","date":"2012-09-19T19:23:08.569Z","type":"message"}
+{"nick":"FearTheCowboy","message":"And in a way that's actually supported by Visual Studio","date":"2012-09-19T19:23:10.669Z","type":"message"}
+{"nick":"vpovirk","message":"how is \"sxs&\" pronounced?","date":"2012-09-19T19:23:32.416Z","type":"message"}
+{"nick":"FearTheCowboy","message":"side-by-side-and ?","date":"2012-09-19T19:23:39.670Z","type":"message"}
+{"nick":"FearTheCowboy","message":"lol","date":"2012-09-19T19:23:40.331Z","type":"message"}
+{"nick":"vpovirk","message":"\"side by side ref\"?","date":"2012-09-19T19:23:41.789Z","type":"message"}
+{"nick":"FearTheCowboy","message":"I talked with the Chocolatey guy.","date":"2012-09-19T19:24:14.937Z","type":"message"}
+{"nick":"FearTheCowboy","message":"Think we're just gonna provide a way his crap can be tolerated in the Unified model, but his code is for shit.","date":"2012-09-19T19:24:32.872Z","type":"message"}
+{"nick":"FearTheCowboy","message":"it's all powershell scripts, and not very appropriate anyway.","date":"2012-09-19T19:24:52.144Z","type":"message"}
+{"nick":"FearTheCowboy","message":"but, we should be able to use that for 'faux-packages' in the nearer term, which is flexible, if a tad dirty.","date":"2012-09-19T19:25:19.457Z","type":"message"}
+{"nick":"FearTheCowboy","message":"And I've spent the last couple days working with Rob Mensching (WiX) and I think that we're coming up on a better integration with what they are doing.","date":"2012-09-19T19:26:17.946Z","type":"message"}
+{"nick":"FearTheCowboy","reason":"Ping timeout: 244 seconds","date":"2012-09-19T19:52:36.550Z","type":"quit"}
+{"nick":"FearTheCowboy","date":"2012-09-19T20:22:29.194Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-09-19T20:55:35.720Z","type":"join"}
+{"nick":"vpovirk","reason":"Remote host closed the connection","date":"2012-09-19T21:47:59.354Z","type":"quit"}
+{"nick":"Gunni","reason":"Quit: now entering real-life...","date":"2012-09-19T22:15:47.013Z","type":"quit"}
+{"nick":"Gunni","date":"2012-09-19T22:16:58.233Z","type":"join"}
+{"nick":"Gunni","date":"2012-09-19T22:17:03.558Z","type":"part"}
+{"nick":"madewokherd","date":"2012-09-19T22:19:14.569Z","type":"join"}
+{"nick":"Dark-Star","date":"2012-09-19T22:42:11.733Z","type":"join"}
+{"nick":"virmitio","reason":"Quit: Leaving.","date":"2012-09-19T23:43:56.785Z","type":"quit"}
