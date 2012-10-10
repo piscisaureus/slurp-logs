@@ -1,0 +1,197 @@
+{"nick":"bnoordhuis","message":"it'll probably print a lot of data","date":"2012-10-10T00:00:39.876Z","type":"message"}
+{"nick":"isaacs","message":"hm...","date":"2012-10-10T00:02:07.906Z","type":"message"}
+{"nick":"isaacs","message":"(gdb) bt uv__fs_pwrite","date":"2012-10-10T00:02:11.517Z","type":"message"}
+{"nick":"isaacs","message":"No stack.","date":"2012-10-10T00:02:11.715Z","type":"message"}
+{"nick":"isaacs","message":"(gdb) commands","date":"2012-10-10T00:02:11.715Z","type":"message"}
+{"nick":"isaacs","message":"No breakpoint number 0.","date":"2012-10-10T00:02:11.715Z","type":"message"}
+{"nick":"isaacs","message":"(gdb) silent","date":"2012-10-10T00:02:11.715Z","type":"message"}
+{"nick":"isaacs","message":"Undefined command: \"silent\".  Try \"help\".","date":"2012-10-10T00:02:14.046Z","type":"message"}
+{"nick":"isaacs","message":"?","date":"2012-10-10T00:02:16.556Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: sorry, b uv__fs_pwrite","date":"2012-10-10T00:02:38.784Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-10-10T00:02:42.656Z","type":"message"}
+{"nick":"isaacs","message":"bt = backtrace, not break","date":"2012-10-10T00:02:46.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2012-10-10T00:02:49.583Z","type":"message"}
+{"nick":"isaacs","message":"nada","date":"2012-10-10T00:03:15.955Z","type":"message"}
+{"nick":"bnoordhuis","message":"it prints nothing?","date":"2012-10-10T00:03:21.047Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-10-10T00:03:42.095Z","type":"message"}
+{"nick":"isaacs","message":"which makes sense, since we're not doing a pwrite.","date":"2012-10-10T00:03:47.626Z","type":"message"}
+{"nick":"isaacs","message":"we're not passing in an offset","date":"2012-10-10T00:03:52.562Z","type":"message"}
+{"nick":"isaacs","message":"so uv__fs_write() should just call write()","date":"2012-10-10T00:04:00.305Z","type":"message"}
+{"nick":"bnoordhuis","message":"do you see lots of write() calls when you dtruss it?","date":"2012-10-10T00:04:32.666Z","type":"message"}
+{"nick":"isaacs","message":"yep.","date":"2012-10-10T00:05:11.579Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm, that's kind of worrisome","date":"2012-10-10T00:05:26.561Z","type":"message"}
+{"nick":"bnoordhuis","message":"pwrite() is known bad but i don't think write() is supposed to have issues","date":"2012-10-10T00:05:46.429Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah... libeio applied the mutex to both write() and pwrite()","date":"2012-10-10T00:06:24.124Z","type":"message"}
+{"nick":"bnoordhuis","message":"or rather, our libeio hack :)","date":"2012-10-10T00:06:30.750Z","type":"message"}
+{"nick":"isaacs","message":"now we see why it did that :)","date":"2012-10-10T00:06:31.394Z","type":"message"}
+{"nick":"bnoordhuis","message":"man, os x is so bad","date":"2012-10-10T00:06:41.386Z","type":"message"}
+{"nick":"bnoordhuis","message":"let me write a quick patch","date":"2012-10-10T00:06:47.509Z","type":"message"}
+{"nick":"isaacs","message":"kk","date":"2012-10-10T00:06:52.083Z","type":"message"}
+{"nick":"isaacs","message":"thanks","date":"2012-10-10T00:07:11.203Z","type":"message"}
+{"nick":"isaacs","message":"test works when running dtruss on it, though.","date":"2012-10-10T00:07:33.503Z","type":"message"}
+{"nick":"isaacs","message":"so... that's nice","date":"2012-10-10T00:07:35.746Z","type":"message"}
+{"nick":"isaacs","message":"oh, no, it still fails","date":"2012-10-10T00:08:09.685Z","type":"message"}
+{"nick":"isaacs","message":"just that all the dtruss output comes after","date":"2012-10-10T00:08:18.103Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: can you try https://github.com/joyent/libuv/commit/a5a8e8f ?","date":"2012-10-10T00:11:12.455Z","type":"message"}
+{"nick":"bnoordhuis","message":"git apply --directory=deps/uv/","date":"2012-10-10T00:11:25.538Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: fixed","date":"2012-10-10T00:14:11.667Z","type":"message"}
+{"nick":"bnoordhuis","message":"good, thanks","date":"2012-10-10T00:14:16.143Z","type":"message"}
+{"nick":"isaacs","message":"i see, yeah, just put the mutext around uv__fs_write","date":"2012-10-10T00:14:49.308Z","type":"message"}
+{"nick":"isaacs","message":"better than having a whole separate function anyway","date":"2012-10-10T00:14:53.537Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-10-10T00:17:38.311Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u0002cb03e3b\u0002 : darwin: work around concurrent write() kernel bug  Simultaneously writing - http://git.io/NFBvpQ","date":"2012-10-10T00:17:56.691Z","type":"message"}
+{"nick":"piscisaureus_","message":"time to sleep","date":"2012-10-10T00:18:06.544Z","type":"message"}
+{"nick":"piscisaureus_","message":"for you too ben","date":"2012-10-10T00:18:09.981Z","type":"message"}
+{"nick":"piscisaureus_","message":"later peepz","date":"2012-10-10T00:18:22.202Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-10-10T00:18:25.029Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u00025823290\u0002 : deps: upgrade libuv to cb03e3b - http://git.io/us78Yw","date":"2012-10-10T00:18:57.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"sleep tight, bertje","date":"2012-10-10T00:19:32.960Z","type":"message"}
+{"nick":"travis-ci","date":"2012-10-10T00:19:40.756Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#789 (master - cb03e3b : Ben Noordhuis): The build passed.","date":"2012-10-10T00:19:40.959Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/4affbe70b6f2...cb03e3bd2658","date":"2012-10-10T00:19:40.959Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/2728426","date":"2012-10-10T00:19:40.959Z","type":"message"}
+{"nick":"travis-ci","date":"2012-10-10T00:19:40.959Z","type":"part"}
+{"nick":"mmalecki","message":"bnoordhuis: at what time do you get up?","date":"2012-10-10T00:21:57.621Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: whenever i wake up","date":"2012-10-10T00:22:08.946Z","type":"message"}
+{"nick":"mmalecki","message":"just curious. trying to compare that to my sleep schedule","date":"2012-10-10T00:22:16.179Z","type":"message"}
+{"nick":"bnoordhuis","message":"usually around 11 or 12 in the morning","date":"2012-10-10T00:22:34.176Z","type":"message"}
+{"nick":"mmalecki","message":"that's still night for me XD","date":"2012-10-10T00:23:36.198Z","type":"message"}
+{"nick":"isaacs","message":"ok, so, if you do stream.write(chunk, cb) and there's an error, do we call cb(er), or emit('error', er)?","date":"2012-10-10T00:26:18.161Z","type":"message"}
+{"nick":"isaacs","message":"or both?","date":"2012-10-10T00:26:21.208Z","type":"message"}
+{"nick":"isaacs","message":"i'm tempted to say, call the cb, but don't emit 'error'","date":"2012-10-10T00:26:35.420Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs or anyone feel like trying out an alternative os x workaround? https://gist.github.com/a05bffbf3b0a19e1dd20","date":"2012-10-10T00:26:37.294Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: in APIs, I usually call cb only","date":"2012-10-10T00:26:40.422Z","type":"message"}
+{"nick":"mmalecki","message":"I think that's what core APIs do too","date":"2012-10-10T00:26:54.223Z","type":"message"}
+{"nick":"bnoordhuis","message":"should be a fair bit faster if you're writing to many files simultaneously","date":"2012-10-10T00:27:02.202Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: doesn't work","date":"2012-10-10T00:27:55.958Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: throws","date":"2012-10-10T00:27:58.447Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: throws?","date":"2012-10-10T00:28:07.331Z","type":"message"}
+{"nick":"isaacs","message":"well, the test fails.","date":"2012-10-10T00:28:12.047Z","type":"message"}
+{"nick":"isaacs","message":"so the test throws, from js, because it fails the assert","date":"2012-10-10T00:28:20.268Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: I would say if you cb(err) don't emit","date":"2012-10-10T00:28:33.475Z","type":"message"}
+{"nick":"bnoordhuis","message":"gah, let me guess... flock doesn't work on os x","date":"2012-10-10T00:28:41.978Z","type":"message"}
+{"nick":"bnoordhuis","message":"can you dtruss it to satisfy my curiosity?","date":"2012-10-10T00:28:52.611Z","type":"message"}
+{"nick":"isaacs","message":"sure","date":"2012-10-10T00:28:55.908Z","type":"message"}
+{"nick":"isaacs","message":"flock(0x8, 0x2, 0x102186EB4)\t\t = 0 0","date":"2012-10-10T00:29:29.677Z","type":"message"}
+{"nick":"isaacs","message":"write(0x8, \"aaaaaaaaaaaaaaaaaaaaaaaaaaaa\\n\\0\", 0x1D)\t\t = 29 0","date":"2012-10-10T00:29:29.872Z","type":"message"}
+{"nick":"isaacs","message":"flock(0x8, 0x8, 0x0)\t\t = 0 0","date":"2012-10-10T00:29:29.872Z","type":"message"}
+{"nick":"isaacs","message":"seems like flock is working, no?","date":"2012-10-10T00:29:35.266Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-10-10T00:30:03.569Z","type":"message"}
+{"nick":"isaacs","message":"well, it's not returning error anywya","date":"2012-10-10T00:30:17.386Z","type":"message"}
+{"nick":"isaacs","message":"but it's not actually doing the intended behavior either","date":"2012-10-10T00:30:24.678Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, i'll scrap it for now","date":"2012-10-10T00:30:58.504Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: fwiw, nobody runs os x servers :)","date":"2012-10-10T00:32:12.448Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: no, but a lot of silly people run benchmarks on os x","date":"2012-10-10T00:32:27.936Z","type":"message"}
+{"nick":"mmalecki","message":"ah, the \"benchmarked on my MacBook Air\" kind of benchmark","date":"2012-10-10T00:32:51.347Z","type":"message"}
+{"nick":"mmalecki","message":"gotta love those","date":"2012-10-10T00:32:56.992Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-10-10T00:39:10.988Z","type":"quit"}
+{"nick":"bnoordhuis","message":"i think my gdbjit patch landed in v8: https://github.com/v8/v8/commit/5248303","date":"2012-10-10T00:42:05.317Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-10-10T00:52:09.072Z","type":"join"}
+{"nick":"pastjean_","date":"2012-10-10T00:55:15.493Z","type":"join"}
+{"nick":"pastjean","reason":"Read error: Connection reset by peer","date":"2012-10-10T00:55:15.697Z","type":"quit"}
+{"nick":"erickt","date":"2012-10-10T01:00:24.877Z","type":"join"}
+{"nick":"harrisonm","date":"2012-10-10T01:03:06.906Z","type":"join"}
+{"nick":"loladiro","date":"2012-10-10T01:04:15.023Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-10-10T01:05:06.337Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-10-10T01:24:01.280Z","type":"quit"}
+{"nick":"isaacs","message":"omg, our crypto module is such utter annoying crap.","date":"2012-10-10T01:25:08.407Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i am relating with your pain.","date":"2012-10-10T01:25:19.407Z","type":"message"}
+{"nick":"harrison1","date":"2012-10-10T01:30:53.365Z","type":"join"}
+{"nick":"harrisonm","reason":"Quit: Reconnecting","date":"2012-10-10T01:31:42.986Z","type":"quit"}
+{"nick":"abraxas","date":"2012-10-10T01:37:49.204Z","type":"join"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-10-10T01:40:13.108Z","type":"quit"}
+{"nick":"jmar777","date":"2012-10-10T01:40:52.162Z","type":"join"}
+{"nick":"kazupon","date":"2012-10-10T01:45:57.266Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2012-10-10T01:48:55.317Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-10-10T01:51:40.838Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-10-10T02:02:12.645Z","type":"quit"}
+{"nick":"harrison1","new_nick":"harrisonm","date":"2012-10-10T02:08:07.470Z","type":"nick"}
+{"nick":"mjr_","reason":"Ping timeout: 246 seconds","date":"2012-10-10T02:08:20.562Z","type":"quit"}
+{"nick":"joshthecoder","reason":"Quit: Leaving...","date":"2012-10-10T02:08:53.022Z","type":"quit"}
+{"nick":"kazupon","date":"2012-10-10T02:12:00.712Z","type":"join"}
+{"nick":"xaq","date":"2012-10-10T02:20:30.522Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-10-10T02:22:33.475Z","type":"quit"}
+{"nick":"harrisonm","reason":"Ping timeout: 255 seconds","date":"2012-10-10T02:24:00.133Z","type":"quit"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-10-10T02:30:09.416Z","type":"quit"}
+{"nick":"joeandaverde","reason":"Ping timeout: 246 seconds","date":"2012-10-10T02:55:22.646Z","type":"quit"}
+{"nick":"joeandaverde","date":"2012-10-10T02:56:15.140Z","type":"join"}
+{"nick":"joshthecoder","date":"2012-10-10T03:09:45.647Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-10-10T03:14:01.520Z","type":"quit"}
+{"nick":"kazupon","date":"2012-10-10T03:30:35.347Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-10-10T03:36:58.299Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-10-10T03:38:24.653Z","type":"quit"}
+{"nick":"dap","date":"2012-10-10T03:49:26.994Z","type":"join"}
+{"nick":"mjr_","date":"2012-10-10T03:51:38.328Z","type":"join"}
+{"nick":"dap","reason":"Client Quit","date":"2012-10-10T03:51:46.648Z","type":"quit"}
+{"nick":"loladiro","date":"2012-10-10T04:19:02.488Z","type":"join"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-10-10T04:22:22.927Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-10-10T04:22:54.372Z","type":"join"}
+{"nick":"mjr__","date":"2012-10-10T04:24:55.455Z","type":"join"}
+{"nick":"mjr_","reason":"Read error: Connection reset by peer","date":"2012-10-10T04:24:55.650Z","type":"quit"}
+{"nick":"mjr__","new_nick":"mjr_","date":"2012-10-10T04:24:56.007Z","type":"nick"}
+{"nick":"perezd","date":"2012-10-10T04:44:31.747Z","type":"join"}
+{"nick":"tomshreds","reason":"Quit: Leaving...","date":"2012-10-10T04:58:23.501Z","type":"quit"}
+{"nick":"pastjean_","reason":"Read error: Connection reset by peer","date":"2012-10-10T05:14:05.497Z","type":"quit"}
+{"nick":"pastjean","date":"2012-10-10T05:14:26.436Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-10-10T05:19:38.762Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-10-10T05:26:26.262Z","type":"quit"}
+{"nick":"indutny","message":"isaacs: indeed","date":"2012-10-10T05:34:57.542Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-10-10T05:47:03.072Z","type":"join"}
+{"nick":"paddybyers","date":"2012-10-10T05:57:16.035Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-10-10T06:02:37.133Z","type":"quit"}
+{"nick":"mjr_","reason":"Quit: mjr_","date":"2012-10-10T06:14:03.180Z","type":"quit"}
+{"nick":"paddybyers","reason":"Ping timeout: 276 seconds","date":"2012-10-10T06:19:43.067Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-10-10T06:25:32.498Z","type":"join"}
+{"nick":"xaq_","date":"2012-10-10T06:32:01.506Z","type":"join"}
+{"nick":"xaq","reason":"Read error: Connection reset by peer","date":"2012-10-10T06:32:15.024Z","type":"quit"}
+{"nick":"pastjean","reason":"Remote host closed the connection","date":"2012-10-10T06:32:16.039Z","type":"quit"}
+{"nick":"pastjean","date":"2012-10-10T06:32:47.865Z","type":"join"}
+{"nick":"pastjean","reason":"Ping timeout: 256 seconds","date":"2012-10-10T06:37:31.840Z","type":"quit"}
+{"nick":"joshthecoder","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-10-10T06:40:12.937Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-10-10T06:52:28.421Z","type":"quit"}
+{"nick":"xaq_","reason":"Ping timeout: 260 seconds","date":"2012-10-10T06:56:35.356Z","type":"quit"}
+{"nick":"pastjean","date":"2012-10-10T07:03:25.743Z","type":"join"}
+{"nick":"rendar","date":"2012-10-10T07:03:34.106Z","type":"join"}
+{"nick":"xaq","date":"2012-10-10T07:09:20.703Z","type":"join"}
+{"nick":"mraleph","date":"2012-10-10T07:09:32.130Z","type":"join"}
+{"nick":"Ralt","date":"2012-10-10T07:10:08.912Z","type":"join"}
+{"nick":"pastjean","reason":"Ping timeout: 244 seconds","date":"2012-10-10T07:11:34.844Z","type":"quit"}
+{"nick":"pastjean","date":"2012-10-10T07:38:23.428Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-10-10T07:40:03.775Z","type":"quit"}
+{"nick":"indutny","message":"mraleph: hey","date":"2012-10-10T07:42:11.085Z","type":"message"}
+{"nick":"indutny","message":"mraleph: how does idle notification works?","date":"2012-10-10T07:42:23.284Z","type":"message"}
+{"nick":"pastjean","reason":"Ping timeout: 248 seconds","date":"2012-10-10T07:42:41.410Z","type":"quit"}
+{"nick":"indutny","message":"mmalecki: it seems that GC is triggering every 500-600 ms after idle notification","date":"2012-10-10T07:42:45.118Z","type":"message"}
+{"nick":"felixge","reason":"Remote host closed the connection","date":"2012-10-10T07:43:14.254Z","type":"quit"}
+{"nick":"mmalecki","message":"indutny: so does whiskey, what's the big deal?","date":"2012-10-10T07:43:19.990Z","type":"message"}
+{"nick":"mmalecki","message":"wait","date":"2012-10-10T07:43:35.525Z","type":"message"}
+{"nick":"mmalecki","message":"what did I just say","date":"2012-10-10T07:43:38.631Z","type":"message"}
+{"nick":"mmalecki","message":"anyway","date":"2012-10-10T07:43:39.549Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: that sounds plausible","date":"2012-10-10T07:43:48.162Z","type":"message"}
+{"nick":"felixge","date":"2012-10-10T07:43:51.970Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-10-10T07:43:52.201Z","type":"quit"}
+{"nick":"felixge","date":"2012-10-10T07:43:52.400Z","type":"join"}
+{"nick":"mmalecki","message":"you can disable it tho","date":"2012-10-10T07:43:52.779Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-10-10T07:44:14.292Z","type":"message"}
+{"nick":"indutny","message":"disabling is not a solution","date":"2012-10-10T07:44:22.247Z","type":"message"}
+{"nick":"xaq","reason":"Ping timeout: 246 seconds","date":"2012-10-10T07:45:23.619Z","type":"quit"}
+{"nick":"mmalecki","message":"why not?","date":"2012-10-10T07:45:32.626Z","type":"message"}
+{"nick":"indutny","message":"because it's good thing","date":"2012-10-10T07:49:35.688Z","type":"message"}
+{"nick":"indutny","message":"essentially","date":"2012-10-10T07:49:39.088Z","type":"message"}
+{"nick":"felixge_","date":"2012-10-10T07:51:24.680Z","type":"join"}
+{"nick":"felixge_","reason":"Changing host","date":"2012-10-10T07:51:24.910Z","type":"quit"}
+{"nick":"felixge_","date":"2012-10-10T07:51:25.110Z","type":"join"}
+{"nick":"felixge","reason":"Ping timeout: 260 seconds","date":"2012-10-10T07:55:20.725Z","type":"quit"}
+{"nick":"felixge_","new_nick":"felixge","date":"2012-10-10T07:55:20.925Z","type":"nick"}
+{"nick":"indutny","message":"mmalecki: so","date":"2012-10-10T07:58:03.744Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: about benchmarking","date":"2012-10-10T07:58:06.254Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: you can just clone tlsnappy repo","date":"2012-10-10T07:58:13.863Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: start nginx server with configuration in benchmark/nginx.conf","date":"2012-10-10T07:58:32.309Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: start node example/server --default 44301","date":"2012-10-10T07:58:42.036Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: start node example/server --hybrid 44302","date":"2012-10-10T07:58:46.106Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: start node example/server --cluster 44303","date":"2012-10-10T07:58:49.742Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: start node example/server --https 44304","date":"2012-10-10T07:58:53.655Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: run node benchmark/script.js > bench.log","date":"2012-10-10T07:59:03.693Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: and send me log file once finished","date":"2012-10-10T07:59:09.734Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-10-10T07:59:10.475Z","type":"message"}
+{"nick":"indutny","message":"quite straightforward","date":"2012-10-10T07:59:14.722Z","type":"message"}
