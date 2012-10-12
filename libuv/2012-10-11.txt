@@ -247,3 +247,430 @@
 {"nick":"piscisaureus_","message":"Ben and me are ready for it","date":"2012-10-11T15:59:41.243Z","type":"message"}
 {"nick":"piscisaureus_","message":"isaacs: don't call ben btw","date":"2012-10-11T15:59:46.522Z","type":"message"}
 {"nick":"isaacs","message":"k","date":"2012-10-11T15:59:53.227Z","type":"message"}
+{"nick":"bentkus","date":"2012-10-11T16:04:25.258Z","type":"join"}
+{"nick":"bentkus","message":"boom","date":"2012-10-11T16:04:40.596Z","type":"message"}
+{"nick":"indexzero","date":"2012-10-11T16:08:24.613Z","type":"join"}
+{"nick":"isaacs","message":"> [0,1,2,3].map(function(k) { return new Buffer([k])}).reduce(function(a,b){return a.toString('base64')+b.toString('base64')})","date":"2012-10-11T16:10:32.302Z","type":"message"}
+{"nick":"isaacs","message":"'AA==AQ==Ag==Aw=='","date":"2012-10-11T16:10:35.345Z","type":"message"}
+{"nick":"isaacs","message":"> b.toString('base64')","date":"2012-10-11T16:10:37.851Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis, piscisaureus_: ^","date":"2012-10-11T16:10:39.458Z","type":"message"}
+{"nick":"isaacs","message":"'AAECAw=='","date":"2012-10-11T16:10:41.875Z","type":"message"}
+{"nick":"TheJH","reason":"Ping timeout: 272 seconds","date":"2012-10-11T16:15:55.519Z","type":"quit"}
+{"nick":"perezd","date":"2012-10-11T16:18:05.646Z","type":"join"}
+{"nick":"dap","date":"2012-10-11T16:18:12.911Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis, piscisaureus_: So, tha'ts what you get when you use StringDecoder for base64 data.","date":"2012-10-11T16:22:06.194Z","type":"message"}
+{"nick":"isaacs","message":"even if we strip out the ==, it's still not accurate.","date":"2012-10-11T16:22:18.155Z","type":"message"}
+{"nick":"isaacs","message":"> new Buffer('AAAqAgAw', 'base64')","date":"2012-10-11T16:22:37.649Z","type":"message"}
+{"nick":"isaacs","message":"<Buffer 00 00 2a 02 00 30>","date":"2012-10-11T16:22:38.340Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah right","date":"2012-10-11T16:23:27.686Z","type":"message"}
+{"nick":"piscisaureus_","message":"it may actually be accurate","date":"2012-10-11T16:24:02.180Z","type":"message"}
+{"nick":"piscisaureus_","message":"but not without the == things indeed","date":"2012-10-11T16:24:18.873Z","type":"message"}
+{"nick":"isaacs","message":"or rather, it's not the original buffer.","date":"2012-10-11T16:24:20.459Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: so what's about that leak","date":"2012-10-11T16:24:32.139Z","type":"message"}
+{"nick":"piscisaureus_","message":"ya, this needs fixing. So you can't strip the == signs","date":"2012-10-11T16:24:36.498Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: how can I reproduce it?","date":"2012-10-11T16:24:37.900Z","type":"message"}
+{"nick":"piscisaureus_","message":"you have to treat it as a full stop and restart the parser after the = signs","date":"2012-10-11T16:24:49.046Z","type":"message"}
+{"nick":"isaacs","message":"> new Buffer('AA==AQ==Ag==Aw==', 'base64')","date":"2012-10-11T16:24:50.409Z","type":"message"}
+{"nick":"isaacs","message":"<Buffer 00 00 10 02 00 30>","date":"2012-10-11T16:24:50.959Z","type":"message"}
+{"nick":"indutny","message":"much closer","date":"2012-10-11T16:25:01.979Z","type":"message"}
+{"nick":"isaacs","message":"yeah, maybe we just need to update how we reconstitute buffers from base64 strings","date":"2012-10-11T16:25:32.889Z","type":"message"}
+{"nick":"isaacs","message":"and not assume that == can only be at the end.","date":"2012-10-11T16:25:38.777Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-10-11T16:25:42.574Z","type":"quit"}
+{"nick":"isaacs","message":"then you could concat base64 strings, and get the same buffer out.","date":"2012-10-11T16:25:48.259Z","type":"message"}
+{"nick":"indutny","message":"huh?","date":"2012-10-11T16:25:58.306Z","type":"message"}
+{"nick":"indutny","message":"I don't think it will work really fine","date":"2012-10-11T16:26:09.943Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-10-11T16:26:43.467Z","type":"quit"}
+{"nick":"indutny","message":"especially if you try to encode not % 4 == 0 bytes","date":"2012-10-11T16:26:57.045Z","type":"message"}
+{"nick":"Ralt","reason":"Ping timeout: 246 seconds","date":"2012-10-11T16:27:22.331Z","type":"quit"}
+{"nick":"isaacs","message":"right now we just skip over = chars that don't come at the very end.","date":"2012-10-11T16:30:44.815Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: https://gist.github.com/2cbc86de7719c37ba0d0 - run e.g. the 1000 125000 benchmark","date":"2012-10-11T16:30:53.028Z","type":"message"}
+{"nick":"stephank","date":"2012-10-11T16:32:28.178Z","type":"join"}
+{"nick":"indutny","message":"interesting","date":"2012-10-11T16:34:38.844Z","type":"message"}
+{"nick":"indutny","message":"it's all CRYPTO_malloc","date":"2012-10-11T16:39:08.156Z","type":"message"}
+{"nick":"indutny","message":"mostly allocated from ssl3_new","date":"2012-10-11T16:39:17.409Z","type":"message"}
+{"nick":"indutny","message":"which means that SSL_free wasn't called yet","date":"2012-10-11T16:39:28.619Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-11T16:39:55.109Z","type":"message"}
+{"nick":"indutny","message":"it all comes from SSL_new","date":"2012-10-11T16:39:58.253Z","type":"message"}
+{"nick":"indutny","message":"I suppose .close() isn't called","date":"2012-10-11T16:40:18.506Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-11T16:41:35.599Z","type":"message"}
+{"nick":"indutny","message":"'end' event isn't happening","date":"2012-10-11T16:41:40.314Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: plausible. most of the action happens on the first tick","date":"2012-10-11T16:43:52.544Z","type":"message"}
+{"nick":"indutny","message":"does this matter?","date":"2012-10-11T16:44:06.604Z","type":"message"}
+{"nick":"indutny","message":"I mean first tick thing","date":"2012-10-11T16:45:20.531Z","type":"message"}
+{"nick":"indutny","message":"aah","date":"2012-10-11T16:47:05.025Z","type":"message"}
+{"nick":"indutny","message":"process.nextTick","date":"2012-10-11T16:47:07.296Z","type":"message"}
+{"nick":"indutny","message":"surely they won't be destroyed ever","date":"2012-10-11T16:47:23.632Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2012-10-11T16:48:18.324Z","type":"quit"}
+{"nick":"indutny","message":"also","date":"2012-10-11T16:48:29.459Z","type":"message"}
+{"nick":"indutny","message":"you doing it wrong","date":"2012-10-11T16:48:32.073Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: you should use .end() instead of .write()","date":"2012-10-11T16:48:39.370Z","type":"message"}
+{"nick":"indutny","message":"what are you trying to benchmark here?","date":"2012-10-11T16:49:17.181Z","type":"message"}
+{"nick":"indutny","message":"maximum throughput?","date":"2012-10-11T16:49:30.483Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yes","date":"2012-10-11T16:49:59.978Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-11T16:50:06.930Z","type":"message"}
+{"nick":"indutny","message":"so my suggestion","date":"2012-10-11T16:50:10.180Z","type":"message"}
+{"nick":"indutny","message":"replace .write() with .end()","date":"2012-10-11T16:50:19.278Z","type":"message"}
+{"nick":"indutny","message":"and call next pummel iteration once 'close' is emitted either on encrypted or cleartext part of stream","date":"2012-10-11T16:50:37.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"i know all that :)","date":"2012-10-11T16:51:39.807Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-11T16:51:46.939Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it surprises me that it clings on to so much memory","date":"2012-10-11T16:51:49.194Z","type":"message"}
+{"nick":"indutny","message":"so what's the problem then?","date":"2012-10-11T16:51:51.630Z","type":"message"}
+{"nick":"indutny","message":"why?","date":"2012-10-11T16:51:57.379Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-10-11T16:52:08.206Z","type":"message"}
+{"nick":"indutny","message":"because you're writing much less data","date":"2012-10-11T16:52:12.476Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-11T16:52:13.531Z","type":"message"}
+{"nick":"indutny","message":"it allocates BIO for handshake data","date":"2012-10-11T16:52:18.556Z","type":"message"}
+{"nick":"indutny","message":"it allocates two BIO for your data","date":"2012-10-11T16:52:29.088Z","type":"message"}
+{"nick":"indutny","message":"it allocates two BIO for SSL internal stuff","date":"2012-10-11T16:52:36.083Z","type":"message"}
+{"nick":"indutny","message":"it allocates SSL itself","date":"2012-10-11T16:52:39.391Z","type":"message"}
+{"nick":"indutny","message":"it duplicates certificates","date":"2012-10-11T16:52:44.636Z","type":"message"}
+{"nick":"indutny","message":"more? :)","date":"2012-10-11T16:52:49.216Z","type":"message"}
+{"nick":"indutny","message":"I don't think that my ring buffer will help here","date":"2012-10-11T16:53:08.936Z","type":"message"}
+{"nick":"pquerna","message":"there are ways to reduce certificate memory;  it has a mech to store them on a disk... but...","date":"2012-10-11T16:53:11.329Z","type":"message"}
+{"nick":"pquerna","message":"then you have IO","date":"2012-10-11T16:53:18.060Z","type":"message"}
+{"nick":"indutny","message":"pquerna: indeed","date":"2012-10-11T16:53:23.745Z","type":"message"}
+{"nick":"indutny","message":"pquerna: have you seen my BIO_snappy() ?","date":"2012-10-11T16:53:34.169Z","type":"message"}
+{"nick":"pquerna","message":" nope","date":"2012-10-11T16:53:38.607Z","type":"message"}
+{"nick":"indutny","message":"pquerna: https://github.com/indutny/tlsnappy/blob/master/src/ring.cc and https://github.com/indutny/tlsnappy/blob/master/src/bio.cc","date":"2012-10-11T16:54:12.019Z","type":"message"}
+{"nick":"indutny","message":"if you're interested","date":"2012-10-11T16:54:15.496Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: btw, memory usage is pretty high indeed","date":"2012-10-11T16:57:38.309Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: it's like 10mb per connection","date":"2012-10-11T16:57:43.035Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 265 seconds","date":"2012-10-11T17:00:51.945Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-10-11T17:01:32.280Z","type":"quit"}
+{"nick":"indutny","message":"pquerna: and more description, just in case: http://blog.indutny.com/1.to-lock-or-not-to-lock","date":"2012-10-11T17:02:40.583Z","type":"message"}
+{"nick":"ryah","message":"indutny: what does \"default\" show in your graphs?","date":"2012-10-11T17:03:42.575Z","type":"message"}
+{"nick":"indutny","message":"ryah: 16 threads on one node instance","date":"2012-10-11T17:03:54.783Z","type":"message"}
+{"nick":"indutny","message":"it locks too much","date":"2012-10-11T17:04:11.778Z","type":"message"}
+{"nick":"ryah","message":"indutny: https?","date":"2012-10-11T17:04:39.126Z","type":"message"}
+{"nick":"indutny","message":"16 processes with `http` module as backend","date":"2012-10-11T17:04:55.492Z","type":"message"}
+{"nick":"indutny","message":"i.e. clusterized","date":"2012-10-11T17:05:01.179Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2012-10-11T17:05:04.371Z","type":"quit"}
+{"nick":"ryah","message":"really!","date":"2012-10-11T17:05:06.526Z","type":"message"}
+{"nick":"ryah","message":"how is that possible?","date":"2012-10-11T17:05:20.557Z","type":"message"}
+{"nick":"ryah","message":"a cluster of 16 processes is getting only 2000 req/sec?","date":"2012-10-11T17:05:47.799Z","type":"message"}
+{"nick":"indutny","message":"huh?","date":"2012-10-11T17:06:09.263Z","type":"message"}
+{"nick":"indutny","message":"what are you looking at?","date":"2012-10-11T17:06:12.963Z","type":"message"}
+{"nick":"indutny","message":"it's doing about 3500 req/sec","date":"2012-10-11T17:06:21.341Z","type":"message"}
+{"nick":"ryah","message":"https://raw.github.com/indutny/tlsnappy/master/benchmark/tlsnappy-rps-2.png","date":"2012-10-11T17:06:23.497Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-10-11T17:06:36.291Z","type":"message"}
+{"nick":"indutny","message":"that's default","date":"2012-10-11T17:06:38.701Z","type":"message"}
+{"nick":"indutny","message":"it's 16 threads of tlsnappy","date":"2012-10-11T17:06:46.219Z","type":"message"}
+{"nick":"tjfontaine","message":"as in require('https')","date":"2012-10-11T17:06:46.703Z","type":"message"}
+{"nick":"tjfontaine","message":"?","date":"2012-10-11T17:06:49.781Z","type":"message"}
+{"nick":"tjfontaine","message":"ah ok","date":"2012-10-11T17:06:54.587Z","type":"message"}
+{"nick":"indutny","message":"http://blog.indutny.com/0.benchmarking-tls","date":"2012-10-11T17:07:08.915Z","type":"message"}
+{"nick":"indutny","message":"I think I'm describing naming there ^","date":"2012-10-11T17:07:14.132Z","type":"message"}
+{"nick":"ryah","message":"and the green one is a single process with https?","date":"2012-10-11T17:07:19.388Z","type":"message"}
+{"nick":"indutny","message":"default - one tlsnappy process with 16 threads","date":"2012-10-11T17:07:22.372Z","type":"message"}
+{"nick":"indutny","message":"hybrid - 4 tlsnappy processes with 4 threads each","date":"2012-10-11T17:07:22.572Z","type":"message"}
+{"nick":"indutny","message":"cluster - 16 tlsnappy processes with 1 thread each","date":"2012-10-11T17:07:22.572Z","type":"message"}
+{"nick":"indutny","message":"http - 16 node.js processes in cluster","date":"2012-10-11T17:07:22.572Z","type":"message"}
+{"nick":"indutny","message":"ryah: green one is a cluster of https processes","date":"2012-10-11T17:07:34.110Z","type":"message"}
+{"nick":"ryah","message":"indutny: also 16?","date":"2012-10-11T17:07:45.835Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-10-11T17:07:50.339Z","type":"message"}
+{"nick":"ryah","message":"without tlsnappy?","date":"2012-10-11T17:07:51.605Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-10-11T17:07:55.421Z","type":"message"}
+{"nick":"indutny","message":"ryah: have you seen this https://docs.google.com/spreadsheet/ccc?key=0AhEDnA4M4EKGdDIwb3VYZTd1alA5T1pTVnlQWl9wanc#gid=0 ?","date":"2012-10-11T17:08:56.177Z","type":"message"}
+{"nick":"indutny","message":"ryah: patched openssl is the latest one","date":"2012-10-11T17:09:07.002Z","type":"message"}
+{"nick":"indutny","message":"i mean \"patched openssl\" sheet","date":"2012-10-11T17:09:15.390Z","type":"message"}
+{"nick":"indutny","message":"so basically tlsnappy is kicking ass now","date":"2012-10-11T17:10:51.801Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-10-11T17:10:58.088Z","type":"message"}
+{"nick":"ryah","message":"indutny: excited to see what comes from this","date":"2012-10-11T17:17:16.596Z","type":"message"}
+{"nick":"ryah","message":"sounds interesting","date":"2012-10-11T17:17:21.307Z","type":"message"}
+{"nick":"ryah","message":"indutny: you should clarify in the blog post what the different labels are in the graph","date":"2012-10-11T17:18:47.178Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-11T17:18:54.323Z","type":"message"}
+{"nick":"indutny","message":"I'll copy paste it from previous post","date":"2012-10-11T17:18:59.732Z","type":"message"}
+{"nick":"indutny","message":"done","date":"2012-10-11T17:19:42.079Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-11T17:22:44.754Z","type":"message"}
+{"nick":"indutny","message":"time to watch some Doctor Who series","date":"2012-10-11T17:22:49.851Z","type":"message"}
+{"nick":"indutny","message":"ttyl","date":"2012-10-11T17:22:52.489Z","type":"message"}
+{"nick":"ryah","message":"\"https\" shouldn't be effected by the patch?","date":"2012-10-11T17:22:56.963Z","type":"message"}
+{"nick":"ryah","message":"since there's no sync","date":"2012-10-11T17:23:06.164Z","type":"message"}
+{"nick":"ryah","message":"by \"https\" i mean the https label","date":"2012-10-11T17:23:14.564Z","type":"message"}
+{"nick":"ryah","message":"\"http - 16 node.js processes in cluster","date":"2012-10-11T17:23:24.591Z","type":"message"}
+{"nick":"ryah","message":"\"","date":"2012-10-11T17:23:25.821Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-11T17:27:45.540Z","type":"message"}
+{"nick":"indutny","message":"it won't be affected at all","date":"2012-10-11T17:27:55.637Z","type":"message"}
+{"nick":"indutny","message":"I think we may try using BIO_snappy() in node.js","date":"2012-10-11T17:28:05.280Z","type":"message"}
+{"nick":"indutny","message":"probably it'll perform better when transfering large amounts of data via tls","date":"2012-10-11T17:28:19.759Z","type":"message"}
+{"nick":"brson","date":"2012-10-11T17:33:56.328Z","type":"join"}
+{"nick":"kazupon","date":"2012-10-11T17:36:11.542Z","type":"join"}
+{"nick":"TheJH","date":"2012-10-11T17:37:00.833Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 246 seconds","date":"2012-10-11T17:40:40.339Z","type":"quit"}
+{"nick":"`3E|AFK","new_nick":"`3rdEden","date":"2012-10-11T17:47:12.983Z","type":"nick"}
+{"nick":"EhevuTov","date":"2012-10-11T17:55:36.827Z","type":"join"}
+{"nick":"EhevuTov_","date":"2012-10-11T17:57:27.759Z","type":"join"}
+{"nick":"EhevuTov","reason":"Ping timeout: 260 seconds","date":"2012-10-11T18:00:46.605Z","type":"quit"}
+{"nick":"ryah","message":"    build: rename uv.a to libuv.a","date":"2012-10-11T18:01:59.825Z","type":"message"}
+{"nick":"ryah","message":"^-- why?","date":"2012-10-11T18:02:03.611Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis","date":"2012-10-11T18:02:11.454Z","type":"message"}
+{"nick":"ryah","message":"sigh whatever","date":"2012-10-11T18:03:54.271Z","type":"message"}
+{"nick":"EhevuTov_","reason":"Quit: This computer has gone to sleep","date":"2012-10-11T18:06:19.346Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-10-11T18:06:46.183Z","type":"join"}
+{"nick":"ryah","message":"upgrade libuv - app break. anger.","date":"2012-10-11T18:07:02.852Z","type":"message"}
+{"nick":"ryah","message":"ESPIPE invalid seekReadFileSync","date":"2012-10-11T18:07:14.782Z","type":"message"}
+{"nick":"ryah","message":"-_-","date":"2012-10-11T18:07:16.124Z","type":"message"}
+{"nick":"lohkey","date":"2012-10-11T18:16:32.686Z","type":"join"}
+{"nick":"`3rdEden","reason":"Quit: Moving to another machine, MOAR.","date":"2012-10-11T18:17:33.498Z","type":"quit"}
+{"nick":"ryah","message":"req.result is broken","date":"2012-10-11T18:19:18.654Z","type":"message"}
+{"nick":"ki9a","date":"2012-10-11T18:21:59.703Z","type":"join"}
+{"nick":"paddybyers","reason":"Ping timeout: 256 seconds","date":"2012-10-11T18:34:17.688Z","type":"quit"}
+{"nick":"saghul","message":"ryah with the new name -luv works when compiling, it's convenient","date":"2012-10-11T18:42:05.814Z","type":"message"}
+{"nick":"V1","date":"2012-10-11T19:03:34.040Z","type":"join"}
+{"nick":"V1","new_nick":"`3rdEden","date":"2012-10-11T19:11:37.258Z","type":"nick"}
+{"nick":"bentkus","message":"why not create two build targets, uv.a and libuv.a","date":"2012-10-11T19:22:22.871Z","type":"message"}
+{"nick":"ki9a","message":"or libuv.so/dylib/dll ?","date":"2012-10-11T19:22:43.366Z","type":"message"}
+{"nick":"bentkus","message":"and","date":"2012-10-11T19:23:22.796Z","type":"message"}
+{"nick":"saghul","message":"AFAIK the shared lib thing will happen","date":"2012-10-11T19:23:28.033Z","type":"message"}
+{"nick":"bentkus","message":"the shared libraries are covered by gyp","date":"2012-10-11T19:23:39.716Z","type":"message"}
+{"nick":"saghul","message":"libuv.a fixes things, but what does naming it uv.a give?","date":"2012-10-11T19:23:50.472Z","type":"message"}
+{"nick":"bentkus","message":"ryah just said it, all the old build scripts will still work","date":"2012-10-11T19:24:26.687Z","type":"message"}
+{"nick":"saghul","message":"oh, thaaaat… since it was changed in an unstable release I guess it can be considered the new way for libuv 0.10","date":"2012-10-11T19:25:37.899Z","type":"message"}
+{"nick":"bentkus","message":"we can celebrate the new release in a wild cosplay pary","date":"2012-10-11T19:26:25.331Z","type":"message"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-10-11T19:30:27.137Z","type":"quit"}
+{"nick":"hz","date":"2012-10-11T19:48:18.250Z","type":"quit"}
+{"nick":"ki9a","reason":"Quit: Leaving.","date":"2012-10-11T19:51:59.288Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-10-11T20:02:53.402Z","type":"quit"}
+{"nick":"Aria","date":"2012-10-11T20:04:22.682Z","type":"join"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-10-11T20:08:27.456Z","type":"quit"}
+{"nick":"Aria","date":"2012-10-11T20:09:00.699Z","type":"join"}
+{"nick":"Aria","reason":"Read error: Operation timed out","date":"2012-10-11T20:10:20.080Z","type":"quit"}
+{"nick":"bentkus","message":"why is utime a double","date":"2012-10-11T20:12:06.728Z","type":"message"}
+{"nick":"erickt","date":"2012-10-11T20:13:53.381Z","type":"join"}
+{"nick":"ryah","message":"saghul: 1. dynamic linking libuv is stupid","date":"2012-10-11T20:15:48.047Z","type":"message"}
+{"nick":"ryah","message":"saghul: 2. if you create a dynamic lib it will have the proper prefix","date":"2012-10-11T20:16:10.874Z","type":"message"}
+{"nick":"saghul","message":"ryah I use it for static linking","date":"2012-10-11T20:16:40.646Z","type":"message"}
+{"nick":"ryah","message":"what does libuv.a fix?","date":"2012-10-11T20:16:45.210Z","type":"message"}
+{"nick":"ryah","message":"it doesn't fix anything","date":"2012-10-11T20:16:55.582Z","type":"message"}
+{"nick":"saghul","message":"the library directory is in the path and -luv will pick it up without explicitly listing the file","date":"2012-10-11T20:17:29.808Z","type":"message"}
+{"nick":"ryah","message":"dude","date":"2012-10-11T20:17:39.784Z","type":"message"}
+{"nick":"ryah","message":"-l is for dynamic linking","date":"2012-10-11T20:17:46.153Z","type":"message"}
+{"nick":"saghul","message":"or that's what I had to do to embed it in a Python module","date":"2012-10-11T20:17:57.709Z","type":"message"}
+{"nick":"ryah","message":"why dont you just compile libuv into your module?","date":"2012-10-11T20:18:42.100Z","type":"message"}
+{"nick":"saghul","message":"ryah that what I actually do","date":"2012-10-11T20:19:17.939Z","type":"message"}
+{"nick":"ryah","message":"then why do you have any -luv?","date":"2012-10-11T20:19:26.847Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-10-11T20:19:28.802Z","type":"join"}
+{"nick":"ryah","message":"you dont need to link ","date":"2012-10-11T20:19:31.192Z","type":"message"}
+{"nick":"piscisaureus_","message":"hello","date":"2012-10-11T20:19:37.275Z","type":"message"}
+{"nick":"saghul","message":"I wonder how -l actually works then, need to check that out :-)","date":"2012-10-11T20:19:42.137Z","type":"message"}
+{"nick":"ryah","message":"hello bert","date":"2012-10-11T20:19:45.087Z","type":"message"}
+{"nick":"bentkus","message":"why is dynamic linking stupid?","date":"2012-10-11T20:20:00.998Z","type":"message"}
+{"nick":"ryah","message":"why is it smart?","date":"2012-10-11T20:20:25.931Z","type":"message"}
+{"nick":"mmalecki","message":"bentkus: it's too complicated","date":"2012-10-11T20:20:34.638Z","type":"message"}
+{"nick":"ryah","message":"it's complex","date":"2012-10-11T20:20:36.636Z","type":"message"}
+{"nick":"ryah","message":"it breaks shit","date":"2012-10-11T20:20:39.638Z","type":"message"}
+{"nick":"ryah","message":"increases dependencies","date":"2012-10-11T20:20:48.922Z","type":"message"}
+{"nick":"ryah","message":"increases startup time","date":"2012-10-11T20:20:51.954Z","type":"message"}
+{"nick":"mmalecki","message":"and when linker tries to be smart (smartos' linker) tends to do that, it fails miserably","date":"2012-10-11T20:20:59.423Z","type":"message"}
+{"nick":"saghul","message":"ryah AFAIS -l will search for .so and then for .a, but since .so is not there it picks up .a.","date":"2012-10-11T20:21:13.950Z","type":"message"}
+{"nick":"ryah","message":"saghul: static libraries are included just like object files in the gcc command","date":"2012-10-11T20:21:41.913Z","type":"message"}
+{"nick":"ryah","message":"gcc 1.o 2.o 3.o uv.a -o myprogram","date":"2012-10-11T20:22:04.928Z","type":"message"}
+{"nick":"saghul","message":"sure, I was just wondering how come -l had worked :-)","date":"2012-10-11T20:22:20.643Z","type":"message"}
+{"nick":"ryah","message":":)","date":"2012-10-11T20:23:00.268Z","type":"message"}
+{"nick":"bentkus","message":"my wrapper works only with a dynamic library","date":"2012-10-11T20:23:01.952Z","type":"message"}
+{"nick":"ryah","message":"bentkus: why?","date":"2012-10-11T20:23:25.719Z","type":"message"}
+{"nick":"ryah","message":"look dynamic linking some things might make sense - libcurl, libz, or openssl - but libuv is basically the center of your program","date":"2012-10-11T20:24:07.587Z","type":"message"}
+{"nick":"ryah","message":"do you really want that to exist outside of your program?","date":"2012-10-11T20:24:15.196Z","type":"message"}
+{"nick":"bentkus","message":"I would like to exist it in the core of my runtime","date":"2012-10-11T20:24:29.279Z","type":"message"}
+{"nick":"bentkus","message":"ryah: sure, it makes sense just statitcally link libuv in node","date":"2012-10-11T20:25:28.811Z","type":"message"}
+{"nick":"bentkus","message":"but I have a runtime which has a base class library and there will be no additions for sure","date":"2012-10-11T20:25:49.428Z","type":"message"}
+{"nick":"bentkus","message":"and modules are not an option, because there are many different implementations of the runtime","date":"2012-10-11T20:26:25.456Z","type":"message"}
+{"nick":"ryah","message":"well whatever. i don't want to convince you otherwise - i am of the opinion that dynamic linking is on of the major cancers killing unix","date":"2012-10-11T20:27:44.095Z","type":"message"}
+{"nick":"ryah","message":"so can we change it back to uv.a ?","date":"2012-10-11T20:31:02.635Z","type":"message"}
+{"nick":"ryah","message":"strlen(\"uv.a\") < strlen(\"libuv.a\")","date":"2012-10-11T20:31:32.921Z","type":"message"}
+{"nick":"bentkus","message":"yeah uv.a has to be uv.a","date":"2012-10-11T20:32:43.481Z","type":"message"}
+{"nick":"bnoordhuis","date":"2012-10-11T20:35:32.053Z","type":"join"}
+{"nick":"ryah","message":"bnoordhuis: libuv.a ?","date":"2012-10-11T20:37:45.744Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't think bnoordhuis is home yet","date":"2012-10-11T20:38:00.029Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: yes","date":"2012-10-11T20:38:01.647Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: porque?","date":"2012-10-11T20:38:12.770Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: so -luv works","date":"2012-10-11T20:38:19.475Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh hah","date":"2012-10-11T20:38:21.941Z","type":"message"}
+{"nick":"bentkus","message":"prometheus is angry with your doings, mortal","date":"2012-10-11T20:38:34.911Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: but... (insert obvious complaint)","date":"2012-10-11T20:38:42.537Z","type":"message"}
+{"nick":"ryah","message":"(-l is for dynamic linking)","date":"2012-10-11T20:39:09.482Z","type":"message"}
+{"nick":"ryah","message":"whatever i dont know why im arguing for this so much","date":"2012-10-11T20:39:28.905Z","type":"message"}
+{"nick":"ryah","message":"just pissed i had to change my scripts","date":"2012-10-11T20:39:36.767Z","type":"message"}
+{"nick":"bnoordhuis","message":"heh","date":"2012-10-11T20:39:42.996Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's not just for dynamic linking though","date":"2012-10-11T20:39:51.762Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: yeah saghul explained it to me","date":"2012-10-11T20:40:07.207Z","type":"message"}
+{"nick":"ryah","message":"but people who don't care if they static or dynamically link should die","date":"2012-10-11T20:40:25.153Z","type":"message"}
+{"nick":"ryah","message":"who would not care about that?","date":"2012-10-11T20:40:32.411Z","type":"message"}
+{"nick":"ryah","message":"why would you leave this up to a flag..","date":"2012-10-11T20:40:52.090Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: the guy that requested it had a good story","date":"2012-10-11T20:40:56.515Z","type":"message"}
+{"nick":"bnoordhuis","message":"he's trying to bundle libuv as a luarock","date":"2012-10-11T20:41:12.090Z","type":"message"}
+{"nick":"bnoordhuis","message":"and luarocks assume a lib means -llibname","date":"2012-10-11T20:41:23.816Z","type":"message"}
+{"nick":"bnoordhuis","message":"*assumes","date":"2012-10-11T20:41:35.296Z","type":"message"}
+{"nick":"paddybyers","date":"2012-10-11T20:41:36.594Z","type":"join"}
+{"nick":"ryah","message":"lua should die","date":"2012-10-11T20:41:51.739Z","type":"message"}
+{"nick":"ryah","message":"well whatever i changed my script - now it's more effort to go back","date":"2012-10-11T20:42:20.005Z","type":"message"}
+{"nick":"ryah","message":"and lua is supported","date":"2012-10-11T20:42:27.682Z","type":"message"}
+{"nick":"paddybyers_","date":"2012-10-11T20:44:39.967Z","type":"join"}
+{"nick":"paddybyers","reason":"Ping timeout: 255 seconds","date":"2012-10-11T20:48:00.030Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2012-10-11T20:48:00.698Z","type":"nick"}
+{"nick":"perezd","date":"2012-10-11T20:50:00.383Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-10-11T20:51:10.269Z","type":"quit"}
+{"nick":"bnoordhuis","message":"ryah: you'll be pleased to know though that dynamic linking is an option too now :)","date":"2012-10-11T20:51:59.630Z","type":"message"}
+{"nick":"ryah","message":":P","date":"2012-10-11T20:52:20.715Z","type":"message"}
+{"nick":"bentkus","message":"only an option","date":"2012-10-11T20:52:46.933Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: don't tell anyone.","date":"2012-10-11T20:55:13.595Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: dynamic linking libuv in node, you mean?","date":"2012-10-11T20:55:29.773Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yes","date":"2012-10-11T20:55:33.489Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: that's crazy.","date":"2012-10-11T20:55:35.164Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: except for the 'in node' part","date":"2012-10-11T20:55:45.481Z","type":"message"}
+{"nick":"isaacs","message":"ok, good :)","date":"2012-10-11T20:55:57.678Z","type":"message"}
+{"nick":"isaacs","message":"though, it could be nice to just rebuild libuv and see the changes in dev right away.","date":"2012-10-11T20:56:06.709Z","type":"message"}
+{"nick":"isaacs","message":"(in node, i mean)","date":"2012-10-11T20:56:12.201Z","type":"message"}
+{"nick":"isaacs","message":"would make bisecting easier","date":"2012-10-11T20:56:19.848Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: you can already do that today with some git bisect fu","date":"2012-10-11T20:57:52.281Z","type":"message"}
+{"nick":"bnoordhuis","message":"just bit bisect libuv and git archive | tar x it to node/","date":"2012-10-11T20:58:13.030Z","type":"message"}
+{"nick":"bnoordhuis","message":"s/bit/git/","date":"2012-10-11T20:58:27.785Z","type":"message"}
+{"nick":"ryah","message":"chrome people build chrome with dynamic libraries during development","date":"2012-10-11T20:58:48.712Z","type":"message"}
+{"nick":"ryah","message":"makes for faster build times","date":"2012-10-11T20:58:55.731Z","type":"message"}
+{"nick":"bnoordhuis","message":"it'd be nice for v8","date":"2012-10-11T20:59:03.982Z","type":"message"}
+{"nick":"ryah","message":"they set the <(library) variable to \"shared_library\"","date":"2012-10-11T20:59:11.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"but libuv builds in 3 seconds flat on my machine","date":"2012-10-11T20:59:24.394Z","type":"message"}
+{"nick":"ryah","message":"http://neugierig.org/software/blog/2012/07/gyp-toc.html","date":"2012-10-11T21:00:55.708Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, that's what i do.","date":"2012-10-11T21:11:19.656Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but it'd be nice to not have to rebuild node also.","date":"2012-10-11T21:11:25.847Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but like ryah says, libuv is really not the problem there.","date":"2012-10-11T21:11:36.951Z","type":"message"}
+{"nick":"isaacs","message":"it's v8 that's the beast.","date":"2012-10-11T21:11:40.820Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2012-10-11T21:11:48.264Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's quite straightforward to fix though","date":"2012-10-11T21:11:58.384Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8\u000f * \u0002218f08d\u0002 : npm: Upgrade to 1.1.63 - http://git.io/Q0Okkw","date":"2012-10-11T21:12:59.919Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: is there a new way to build AUTHORS?","date":"2012-10-11T21:14:35.433Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: or is that just for master?","date":"2012-10-11T21:14:39.444Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: it's part script, part manual labor","date":"2012-10-11T21:15:00.197Z","type":"message"}
+{"nick":"bnoordhuis","message":"in case you're wondering, the script is this: git log --all --reverse --format='%aN <%aE>' | perl -ne 'BEGIN{print \"# Authors ordered by first contribution.\\n\"} print unless $h{$_}; $h{$_} = 1' > AUTHORS","date":"2012-10-11T21:15:54.263Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: I just do: git log --pretty='format:%ae %an' | tail -r | awk -f tools/updateAuthors.awk","date":"2012-10-11T21:17:29.606Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: then copy the last few bits and paste onto the bottom of AUTHORS","date":"2012-10-11T21:17:40.917Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: doesn't that mess with the order of contribution?","date":"2012-10-11T21:20:24.104Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created branch v0.8.12-release - http://git.io/v7eTwQ","date":"2012-10-11T21:23:33.641Z","type":"message"}
+{"nick":"bnoordhuis","message":"all these years and i never knew about :abbr retrun return...","date":"2012-10-11T21:24:12.028Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: no","date":"2012-10-11T21:27:27.126Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: because tail -r reverses it, and i just copy the last few.","date":"2012-10-11T21:27:35.715Z","type":"message"}
+{"nick":"isaacs","message":"review? http://git.io/v7eTwQ","date":"2012-10-11T21:28:16.156Z","type":"message"}
+{"nick":"isaacs","message":"indutny: you remember that bug with the debugger tests leaving child procs lying around?","date":"2012-10-11T21:30:16.207Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: \"crypto: fix -Wtautological-compare warning\" and \"build: Fix -Wsizeof-array-argument compiler warning.\" are thoroughly uninteresting","date":"2012-10-11T21:33:59.287Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-10-11T21:34:17.595Z","type":"message"}
+{"nick":"bnoordhuis","message":"otherwise lgtm","date":"2012-10-11T21:35:32.979Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8.12-release\u000f * \u000238c72d4\u0002 : 2012.10.12, Version 0.8.12 (Stable)  * npm: Upgrade to 1.1.63  * crypto:  - http://git.io/Ghdodg","date":"2012-10-11T21:35:43.327Z","type":"message"}
+{"nick":"rendar","date":"2012-10-11T21:37:37.306Z","type":"quit"}
+{"nick":"isaacs","message":"only pummels failing","date":"2012-10-11T21:41:56.839Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-10-11T21:53:30.502Z","type":"quit"}
+{"nick":"felixge","date":"2012-10-11T21:54:24.781Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-10-11T21:59:58.263Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-10-11T22:04:36.000Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis, piscisaureus_, indutny: How do you feel about adding a .end() method on StringDecoder?","date":"2012-10-11T22:13:10.658Z","type":"message"}
+{"nick":"piscisaureus_","message":"No objections I think","date":"2012-10-11T22:13:28.453Z","type":"message"}
+{"nick":"isaacs","message":"then we could use this with base64, and it would work","date":"2012-10-11T22:13:29.756Z","type":"message"}
+{"nick":"piscisaureus_","message":"can you not implement it as a stream? :-)","date":"2012-10-11T22:13:39.629Z","type":"message"}
+{"nick":"piscisaureus_","message":"(that may not necessarily be a good idea)","date":"2012-10-11T22:13:53.836Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-10-11T22:16:18.880Z","type":"join"}
+{"nick":"jmar777","date":"2012-10-11T22:31:19.839Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 248 seconds","date":"2012-10-11T22:35:31.281Z","type":"quit"}
+{"nick":"perezd","date":"2012-10-11T22:37:13.359Z","type":"join"}
+{"nick":"perezd","reason":"Client Quit","date":"2012-10-11T22:39:32.469Z","type":"quit"}
+{"nick":"perezd","date":"2012-10-11T22:41:00.054Z","type":"join"}
+{"nick":"perezd","reason":"Remote host closed the connection","date":"2012-10-11T22:41:37.138Z","type":"quit"}
+{"nick":"jmar777","message":"i'm going to be out of my league in this discussion in 3...2...  but was just curious about the future of fast file i/o in node. is this basically just a challenge of finding a portable solution for non-buffered, raw i/o?","date":"2012-10-11T22:54:40.016Z","type":"message"}
+{"nick":"jmar777","message":"e.g., O_DIRECT (linux), F_NOCACHE (osx), SOME_NON_BUFFERING_FLAG_I_DONT_KNOW (windows), etc?","date":"2012-10-11T22:56:12.251Z","type":"message"}
+{"nick":"TheJH","reason":"Ping timeout: 260 seconds","date":"2012-10-11T22:59:54.612Z","type":"quit"}
+{"nick":"piscisaureus_","message":"where did you get the idea that unbuffered == fast?","date":"2012-10-11T22:59:57.340Z","type":"message"}
+{"nick":"piscisaureus_","message":"and no, we know what the flags are called. The windows one is FILE_FLAG_NO_BUFFERING","date":"2012-10-11T23:00:57.009Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: just a google hunt spawned from reading through this: http://piscisaureus.no.de/libuv/2012-04-06#00:08:48.951","date":"2012-10-11T23:02:02.648Z","type":"message"}
+{"nick":"piscisaureus_","message":"jmar777: well, unbuffered io can enable kernel async file io","date":"2012-10-11T23:03:20.418Z","type":"message"}
+{"nick":"piscisaureus_","message":"jmar777: on windows, and on linux with exceptions","date":"2012-10-11T23:03:40.553Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it comes at a high cost","date":"2012-10-11T23:03:47.022Z","type":"message"}
+{"nick":"piscisaureus_","message":"no caching :-)","date":"2012-10-11T23:03:50.135Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: right - i assume AIO is the real goal, not necessarily the lack of buffers","date":"2012-10-11T23:03:54.389Z","type":"message"}
+{"nick":"piscisaureus_","message":"annoying alignment restrictions","date":"2012-10-11T23:03:57.293Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: true. we're looking at some use cases where we're needing to stream through gigs of data - as best i can tell we don't actually want caching cause we'll virtually never have a cache hit","date":"2012-10-11T23:04:21.489Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah","date":"2012-10-11T23:04:34.267Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't think caching will hurt, either","date":"2012-10-11T23:04:48.464Z","type":"message"}
+{"nick":"piscisaureus_","message":"you might benefit from readahead caching","date":"2012-10-11T23:04:55.748Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: regardless of how it's done (which is where I'm stuck), we just want to be able to move bottleneck to cpu, rather than on IO","date":"2012-10-11T23:05:02.321Z","type":"message"}
+{"nick":"piscisaureus_","message":"operating systems are not stupid","date":"2012-10-11T23:05:08.226Z","type":"message"}
+{"nick":"piscisaureus_","message":"(well they are)","date":"2012-10-11T23:05:11.885Z","type":"message"}
+{"nick":"bnoordhuis","message":"except os x","date":"2012-10-11T23:05:13.984Z","type":"message"}
+{"nick":"piscisaureus_","message":"but they will actually notice that you are reading front to back :-)","date":"2012-10-11T23:05:24.089Z","type":"message"}
+{"nick":"piscisaureus_","message":"jmar777: I suppose that you mean it the other way around?","date":"2012-10-11T23:07:21.098Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: so would it be a reasonable (albeit overly generalized) assumption that currently in node it would be impossible to do file i/o (sequential read through N-gigs) fast enough that CPU is the bottleneck?","date":"2012-10-11T23:07:38.592Z","type":"message"}
+{"nick":"piscisaureus_","message":"jmar777: why do you want the cpu to be the bottleneck?","date":"2012-10-11T23:08:02.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"jmar777: we can make node faster, but we can't make your platters spin faster?","date":"2012-10-11T23:08:25.770Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: well, ideally there are no bottlenecks. we're doing really simple stream based aggregates (sortta CEP-ish).","date":"2012-10-11T23:08:44.227Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: we've had to implement this on scala for now simply because we're able to stream the data from disk much faster than we've been able to do in node","date":"2012-10-11T23:09:20.404Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: normally node wouldn't be my first pick for doing intensive math, but at the same time that's what the rest of our stack uses and the math itself is pretty trivial and i'd trust the JIT to do a good enough job there","date":"2012-10-11T23:09:54.874Z","type":"message"}
+{"nick":"jmar777","message":"piscisaureus_: so maybe \"moving bottlenecks\" is the wrong terminology here. the real goal is just file i/o that can compete with AIO/O_DIRECT speeds","date":"2012-10-11T23:11:41.130Z","type":"message"}
+{"nick":"bnoordhuis","message":"jmar777: we're expected to have that in 0.10 or 0.12","date":"2012-10-11T23:12:48.201Z","type":"message"}
+{"nick":"isaacs","message":"Anyone want to review? https://github.com/joyent/node/pull/4119/files","date":"2012-10-11T23:12:58.788Z","type":"message"}
+{"nick":"jmar777","message":"bnoordhuis: awesome :)","date":"2012-10-11T23:13:05.275Z","type":"message"}
+{"nick":"isaacs","message":"https://github.com/isaacs/node/commit/0d17997547bcfa6d420306043f5434a767e3e2f8","date":"2012-10-11T23:13:08.322Z","type":"message"}
+{"nick":"bnoordhuis","message":"jmar777: if not quite as fast at least comparable to","date":"2012-10-11T23:13:10.308Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: are you using no brace if statements too now? :)","date":"2012-10-11T23:13:43.064Z","type":"message"}
+{"nick":"jmar777","message":"bnoordhuis: i think in this case \"close\" would be good enough for what we need","date":"2012-10-11T23:13:55.456Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: converted.","date":"2012-10-11T23:14:03.173Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: not that i particularly mind, mind you, it's my 'home' style","date":"2012-10-11T23:14:37.424Z","type":"message"}
+{"nick":"bnoordhuis","message":"but consistency and all that","date":"2012-10-11T23:14:46.255Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: make jslint is ok with it","date":"2012-10-11T23:15:20.553Z","type":"message"}
+{"nick":"isaacs","message":"and we've sort of used it here and there in node for a long time anyway","date":"2012-10-11T23:15:30.747Z","type":"message"}
+{"nick":"isaacs","action":"forgot the copyright spam on the test..","date":"2012-10-11T23:15:53.548Z","type":"action"}
+{"nick":"bnoordhuis","message":"☃<- what's that?","date":"2012-10-11T23:18:42.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: lots of duplication","date":"2012-10-11T23:21:25.279Z","type":"message"}
+{"nick":"bnoordhuis","message":"otoh, it's only a few lines of code","date":"2012-10-11T23:21:35.671Z","type":"message"}
+{"nick":"bnoordhuis","message":"and overabstraction is the root of all evil, along with premature optimization","date":"2012-10-11T23:21:58.724Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis++","date":"2012-10-11T23:24:37.573Z","type":"message"}
+{"nick":"kohai","message":"bnoordhuis has 25 beers","date":"2012-10-11T23:24:37.773Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: SNOWMAN","date":"2012-10-11T23:26:02.265Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-10-11T23:30:40.807Z","type":"quit"}
+{"nick":"tommybergeron","date":"2012-10-11T23:32:56.047Z","type":"join"}
+{"nick":"mraleph","reason":"Quit: Leaving.","date":"2012-10-11T23:34:39.711Z","type":"quit"}
+{"nick":"Aria","date":"2012-10-11T23:35:00.305Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: it's a snowman and an apple","date":"2012-10-11T23:36:06.473Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yes, the duplication will go away with the move to streams2","date":"2012-10-11T23:36:31.195Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: along with a lot of other duplication.","date":"2012-10-11T23:36:49.834Z","type":"message"}
+{"nick":"tomshreds","reason":"Ping timeout: 244 seconds","date":"2012-10-11T23:36:50.694Z","type":"quit"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2012-10-11T23:36:53.013Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs: snowman, apple... i hear a whooshing sound","date":"2012-10-11T23:37:00.322Z","type":"message"}
+{"nick":"Aria","reason":"Remote host closed the connection","date":"2012-10-11T23:38:45.388Z","type":"quit"}
+{"nick":"Aria","date":"2012-10-11T23:38:53.439Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: it's just some random unicode stuff.","date":"2012-10-11T23:39:31.399Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: i suppose i should put an emoji in there just to be on the safe side.","date":"2012-10-11T23:39:39.759Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, is that what it is","date":"2012-10-11T23:39:47.838Z","type":"message"}
+{"nick":"bnoordhuis","message":"it looks like a bug in my font :)","date":"2012-10-11T23:40:03.533Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: pushed a change to put an emoji in there.","date":"2012-10-11T23:41:54.297Z","type":"message"}
+{"nick":"isaacs","message":"now it's snowman, poopface, apple.","date":"2012-10-11T23:42:03.338Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, good old poopface","date":"2012-10-11T23:42:12.256Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so, +1?","date":"2012-10-11T23:43:27.375Z","type":"message"}
+{"nick":"isaacs","message":"oh, needs docs, i suppose","date":"2012-10-11T23:43:40.466Z","type":"message"}
+{"nick":"isaacs","message":"pushed","date":"2012-10-11T23:45:17.014Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: lgtm","date":"2012-10-11T23:46:04.343Z","type":"message"}
+{"nick":"TooTallNate","message":"where's MI6?","date":"2012-10-11T23:46:20.408Z","type":"message"}
+{"nick":"isaacs","message":"MI6: hi","date":"2012-10-11T23:46:57.262Z","type":"message"}
+{"nick":"tjfontaine","message":"if it's only happening in his own repo or a pull req there's not currently updates subscribed to it","date":"2012-10-11T23:47:01.122Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: oh, i'm pushing to my own fork","date":"2012-10-11T23:47:05.403Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u0002061f207\u0002 : string_decoder: Add 'end' method, do base64 properly - http://git.io/hQMjgA","date":"2012-10-11T23:47:37.284Z","type":"message"}
+{"nick":"isaacs","message":"there we go","date":"2012-10-11T23:47:39.652Z","type":"message"}
+{"nick":"TooTallNate","message":"daammmmmnnnnn","date":"2012-10-11T23:47:43.771Z","type":"message"}
+{"nick":"isaacs","message":"now i can go back to moving crypto out of c++.  hooray :)","date":"2012-10-11T23:48:11.944Z","type":"message"}
+{"nick":"isaacs","message":"release tomorrow morning.","date":"2012-10-11T23:48:17.362Z","type":"message"}
+{"nick":"isaacs","message":"0.8.12","date":"2012-10-11T23:48:20.932Z","type":"message"}
+{"nick":"isaacs","message":"almost no changes, which is optimum.","date":"2012-10-11T23:48:25.562Z","type":"message"}
+{"nick":"isaacs","message":"another 0.9 on monday","date":"2012-10-11T23:48:35.515Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's going to be interesting","date":"2012-10-11T23:49:39.530Z","type":"message"}
+{"nick":"bnoordhuis","message":"fair amount of changes","date":"2012-10-11T23:49:45.369Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-10-11T23:49:47.961Z","type":"message"}
+{"nick":"isaacs","message":"0.9.3 seems like mostly bugfixes.","date":"2012-10-11T23:49:58.381Z","type":"message"}
+{"nick":"isaacs","message":"hopefully 0.9.4 will be streams2","date":"2012-10-11T23:50:05.991Z","type":"message"}
+{"nick":"bnoordhuis","message":"if you call removing libeio a bug fix :)","date":"2012-10-11T23:50:09.449Z","type":"message"}
+{"nick":"isaacs","message":"or at least half of streams2 :)","date":"2012-10-11T23:50:14.090Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, of course it is!","date":"2012-10-11T23:50:18.221Z","type":"message"}
+{"nick":"tjfontaine","message":"we should probably figure out which fix for setImmediate we want as well","date":"2012-10-11T23:50:22.331Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: if it wasn't a bug, why'd you fix it??","date":"2012-10-11T23:50:23.663Z","type":"message"}
+{"nick":"TooTallNate","message":"so it sucks that there's no good way to make util.format() accept options for when it calls inspect()","date":"2012-10-11T23:51:05.499Z","type":"message"}
+{"nick":"isaacs","message":"yeah.","date":"2012-10-11T23:52:14.079Z","type":"message"}
+{"nick":"TooTallNate","message":"it makes doing a console.inspectOptions object kinda impossible…","date":"2012-10-11T23:52:44.626Z","type":"message"}
+{"nick":"isaacs","message":"right, because any args after the format string are parameters.","date":"2012-10-11T23:54:14.518Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: sleep on it.  you'll think of something.  i have confidence in you.","date":"2012-10-11T23:55:00.898Z","type":"message"}
+{"nick":"paddybyers","reason":"Ping timeout: 276 seconds","date":"2012-10-11T23:55:05.848Z","type":"quit"}
+{"nick":"isaacs","message":"right now, it's beer o'clock, i think","date":"2012-10-11T23:55:07.467Z","type":"message"}
