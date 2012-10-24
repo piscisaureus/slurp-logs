@@ -153,3 +153,509 @@
 {"nick":"davisp-","reason":"Changing host","date":"2012-10-24T07:19:43.395Z","type":"quit"}
 {"nick":"davisp-","date":"2012-10-24T07:19:43.595Z","type":"join"}
 {"nick":"davisp-","new_nick":"davisp","date":"2012-10-24T07:19:57.776Z","type":"nick"}
+{"nick":"mmalecki[off]","new_nick":"mmalecki","date":"2012-10-24T08:11:55.793Z","type":"nick"}
+{"nick":"hz","date":"2012-10-24T08:19:39.418Z","type":"join"}
+{"nick":"janjongboom","date":"2012-10-24T08:40:26.744Z","type":"join"}
+{"nick":"saghul","message":"indutny hey","date":"2012-10-24T09:27:13.443Z","type":"message"}
+{"nick":"saghul","message":"indutny any idea? https://github.com/joyent/libuv/issues/603","date":"2012-10-24T09:27:17.311Z","type":"message"}
+{"nick":"indutny","message":"hey","date":"2012-10-24T09:31:00.965Z","type":"message"}
+{"nick":"indutny","message":"em...","date":"2012-10-24T09:31:31.768Z","type":"message"}
+{"nick":"indutny","message":"is handle correct?","date":"2012-10-24T09:31:34.764Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-10-24T09:31:42.417Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-10-24T09:31:44.638Z","type":"message"}
+{"nick":"indutny","message":"I've an idea","date":"2012-10-24T09:31:46.459Z","type":"message"}
+{"nick":"indutny","message":"but it's really odd","date":"2012-10-24T09:31:52.936Z","type":"message"}
+{"nick":"indutny","message":"are you freeing handle in uv_close() ?","date":"2012-10-24T09:32:02.492Z","type":"message"}
+{"nick":"saghul","message":"yes","date":"2012-10-24T09:32:09.216Z","type":"message"}
+{"nick":"indutny","message":"so... I think what's really happening here is that handle is still in buffer","date":"2012-10-24T09:33:41.118Z","type":"message"}
+{"nick":"indutny","message":"I mean pipe's buffer","date":"2012-10-24T09:33:52.005Z","type":"message"}
+{"nick":"saghul","message":"aha, but it's memory was freed","date":"2012-10-24T09:34:02.676Z","type":"message"}
+{"nick":"saghul","message":"for some reason I can't catch it with the libuv test suite","date":"2012-10-24T09:35:14.093Z","type":"message"}
+{"nick":"saghul","message":"only with the pyuv one, I guess the overhead of the Python VM helps reproduce it or something","date":"2012-10-24T09:35:39.266Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-24T09:43:52.783Z","type":"message"}
+{"nick":"indutny","message":"are you willing to test one assumption?","date":"2012-10-24T09:44:01.749Z","type":"message"}
+{"nick":"indutny","message":"saghul: ^","date":"2012-10-24T09:44:15.244Z","type":"message"}
+{"nick":"saghul","message":"indutny sure, let me know what I can try","date":"2012-10-24T09:44:44.186Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-24T09:44:48.612Z","type":"message"}
+{"nick":"indutny","message":"can you set `loop->async_sweep_needed=1;` here https://github.com/joyent/libuv/blob/master/src/unix/async.c#L109","date":"2012-10-24T09:45:32.567Z","type":"message"}
+{"nick":"indutny","message":"`handle->loop->async_sweep_needed=1;`","date":"2012-10-24T09:45:45.996Z","type":"message"}
+{"nick":"indutny","message":"also","date":"2012-10-24T09:45:56.462Z","type":"message"}
+{"nick":"indutny","message":"another probable case is that you was calling uv_async_send after free","date":"2012-10-24T09:46:14.809Z","type":"message"}
+{"nick":"indutny","message":"and it was working because pipe_fd was still here","date":"2012-10-24T09:46:25.008Z","type":"message"}
+{"nick":"indutny","message":"would be good if you will check both","date":"2012-10-24T09:46:45.983Z","type":"message"}
+{"nick":"indutny","message":"you can use valgrind for latter one","date":"2012-10-24T09:46:52.434Z","type":"message"}
+{"nick":"saghul","message":"ok, let me try those","date":"2012-10-24T09:50:39.572Z","type":"message"}
+{"nick":"saghul","message":"I don't think I was calling uv_async_send after free, because I delete the reference to the Python object so it would blow up","date":"2012-10-24T09:52:44.434Z","type":"message"}
+{"nick":"saghul","message":"let me try the sweep thing","date":"2012-10-24T09:52:53.655Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-24T09:53:18.555Z","type":"message"}
+{"nick":"indutny","message":"it's just odd that you're experiencing it...","date":"2012-10-24T09:53:24.953Z","type":"message"}
+{"nick":"indutny","message":"because you should not","date":"2012-10-24T09:53:28.370Z","type":"message"}
+{"nick":"indutny","message":"btw, on what OS you are?","date":"2012-10-24T09:53:55.973Z","type":"message"}
+{"nick":"saghul","message":"I'm on Linux","date":"2012-10-24T09:55:50.607Z","type":"message"}
+{"nick":"saghul","message":"doh, it coredumped in the same place","date":"2012-10-24T09:56:32.183Z","type":"message"}
+{"nick":"indutny","message":"after sweep?","date":"2012-10-24T09:58:28.830Z","type":"message"}
+{"nick":"saghul","message":"yep","date":"2012-10-24T09:58:32.441Z","type":"message"}
+{"nick":"saghul","message":"it also crashes on OSX","date":"2012-10-24T09:58:39.721Z","type":"message"}
+{"nick":"indutny","message":"odd...","date":"2012-10-24T09:58:45.059Z","type":"message"}
+{"nick":"indutny","message":"can you call uv_async_io manually from uv__async_close?","date":"2012-10-24T09:58:54.948Z","type":"message"}
+{"nick":"saghul","message":"after setting the sweep?","date":"2012-10-24T09:59:30.286Z","type":"message"}
+{"nick":"indutny","message":"wel... doesn't matter","date":"2012-10-24T09:59:46.023Z","type":"message"}
+{"nick":"indutny","message":"you can remove sweep now","date":"2012-10-24T09:59:49.206Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-10-24T09:59:52.056Z","type":"message"}
+{"nick":"indutny","message":"btw, probably I can do it myself","date":"2012-10-24T09:59:55.937Z","type":"message"}
+{"nick":"indutny","message":"how can I reproduce it?","date":"2012-10-24T09:59:59.441Z","type":"message"}
+{"nick":"saghul","message":"well, I just run the pyuv test suite twice in a row","date":"2012-10-24T10:00:16.128Z","type":"message"}
+{"nick":"saghul","message":"and the second time it just happens","date":"2012-10-24T10:00:23.746Z","type":"message"}
+{"nick":"saghul","message":"don't bother, I can test it for you","date":"2012-10-24T10:00:34.044Z","type":"message"}
+{"nick":"saghul","message":"when I call uv_async_io, what should I set for events? 1?","date":"2012-10-24T10:01:12.851Z","type":"message"}
+{"nick":"indutny","message":"wait a minute","date":"2012-10-24T10:02:30.189Z","type":"message"}
+{"nick":"indutny","message":"I've another idea","date":"2012-10-24T10:02:32.478Z","type":"message"}
+{"nick":"indutny","message":"can you call uv_close() right after uv_async_send()","date":"2012-10-24T10:02:48.787Z","type":"message"}
+{"nick":"indutny","message":"or before it's callback is executed?","date":"2012-10-24T10:02:55.003Z","type":"message"}
+{"nick":"indutny","message":"you can check this by doing: assert(handle->pending == 0); in uv__async_close","date":"2012-10-24T10:03:12.777Z","type":"message"}
+{"nick":"indutny","message":"but this can probably happen only if they're both called from main thread","date":"2012-10-24T10:03:52.648Z","type":"message"}
+{"nick":"saghul","message":"I set the sweep flag, then called the io function and doesn't seem to crash","date":"2012-10-24T10:05:33.225Z","type":"message"}
+{"nick":"saghul","message":"I'll remove that and add the assert","date":"2012-10-24T10:05:46.831Z","type":"message"}
+{"nick":"saghul","message":"that assert was triggered immediately","date":"2012-10-24T10:07:12.301Z","type":"message"}
+{"nick":"indutny","message":"yay","date":"2012-10-24T10:07:23.713Z","type":"message"}
+{"nick":"indutny","message":"kewl","date":"2012-10-24T10:07:25.289Z","type":"message"}
+{"nick":"indutny","message":"are you calling uv_async_send() from event-loop's thread?","date":"2012-10-24T10:07:33.237Z","type":"message"}
+{"nick":"indutny","message":"saghul: ^","date":"2012-10-24T10:07:34.281Z","type":"message"}
+{"nick":"saghul","message":"niope, different thread","date":"2012-10-24T10:08:02.099Z","type":"message"}
+{"nick":"saghul","message":"AFAIS the pending flag is set to 0 on ASYNC_CB, but if closed it it would remain to 1","date":"2012-10-24T10:09:54.279Z","type":"message"}
+{"nick":"saghul","message":"even though, I close the handle in the async callback","date":"2012-10-24T10:10:11.790Z","type":"message"}
+{"nick":"c4milo","date":"2012-10-24T10:11:20.737Z","type":"join"}
+{"nick":"indutny","message":"saghul: interesting","date":"2012-10-24T10:14:40.764Z","type":"message"}
+{"nick":"indutny","message":"I'm trying to reproduce it mentally","date":"2012-10-24T10:14:53.340Z","type":"message"}
+{"nick":"saghul","message":"xD","date":"2012-10-24T10:15:02.005Z","type":"message"}
+{"nick":"indutny","message":"so uv__async_io() helped, right?","date":"2012-10-24T10:15:27.446Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 244 seconds","date":"2012-10-24T10:15:32.560Z","type":"quit"}
+{"nick":"saghul","message":"yes","date":"2012-10-24T10:15:42.664Z","type":"message"}
+{"nick":"saghul","message":"but I also set the async_sweep to 1","date":"2012-10-24T10:15:51.928Z","type":"message"}
+{"nick":"saghul","message":"let me test without that","date":"2012-10-24T10:15:58.286Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-10-24T10:16:41.926Z","type":"message"}
+{"nick":"saghul","message":"ok, that worked","date":"2012-10-24T10:18:26.592Z","type":"message"}
+{"nick":"saghul","message":"I just added this on uv__async_close: uv__async_io(handle->loop, &handle->loop->async_watcher, 1)","date":"2012-10-24T10:18:57.529Z","type":"message"}
+{"nick":"saghul","message":"does it make any sense to you? :-)","date":"2012-10-24T10:20:00.786Z","type":"message"}
+{"nick":"saghul","message":"indutny ^","date":"2012-10-24T10:20:03.022Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-24T10:20:39.692Z","type":"message"}
+{"nick":"indutny","message":"it makes sense","date":"2012-10-24T10:20:41.953Z","type":"message"}
+{"nick":"saghul","message":"cool!","date":"2012-10-24T10:21:16.201Z","type":"message"}
+{"nick":"indutny","message":"so handle's pointer is indeed in pipe's buffer","date":"2012-10-24T10:21:31.364Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2012-10-24T10:21:33.101Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-10-24T10:22:53.674Z","type":"quit"}
+{"nick":"mmalecki","message":"indutny: looks like I published some of your patches yesterday :D","date":"2012-10-24T10:23:23.299Z","type":"message"}
+{"nick":"stagas","date":"2012-10-24T10:23:25.184Z","type":"join"}
+{"nick":"indutny","message":"haha","date":"2012-10-24T10:23:31.590Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-24T10:23:33.516Z","type":"message"}
+{"nick":"indutny","message":"for http-proxy","date":"2012-10-24T10:23:37.909Z","type":"message"}
+{"nick":"indutny","message":"saghul: python test_async.py ?","date":"2012-10-24T10:49:21.333Z","type":"message"}
+{"nick":"indutny","message":"should I use some specific branch?","date":"2012-10-24T10:49:32.230Z","type":"message"}
+{"nick":"saghul","message":"you can pull master","date":"2012-10-24T10:49:44.508Z","type":"message"}
+{"nick":"saghul","message":"the run the whole test suite like this","date":"2012-10-24T10:49:50.638Z","type":"message"}
+{"nick":"saghul","message":"nosetests -v -w tests","date":"2012-10-24T10:49:55.500Z","type":"message"}
+{"nick":"indutny","message":"pip install nosetests, right?","date":"2012-10-24T10:50:13.229Z","type":"message"}
+{"nick":"saghul","message":"it should fail the 2nd or 3rd time you run it","date":"2012-10-24T10:50:23.259Z","type":"message"}
+{"nick":"saghul","message":"yes","date":"2012-10-24T10:50:24.594Z","type":"message"}
+{"nick":"saghul","message":"nop, pip install nose","date":"2012-10-24T10:50:30.484Z","type":"message"}
+{"nick":"indutny","message":"oh, ok","date":"2012-10-24T10:50:44.571Z","type":"message"}
+{"nick":"indutny","message":"No module named unittest2)","date":"2012-10-24T10:51:40.525Z","type":"message"}
+{"nick":"indutny","message":"pip install ?","date":"2012-10-24T10:51:50.203Z","type":"message"}
+{"nick":"indutny","message":"yeah, helped","date":"2012-10-24T10:51:58.456Z","type":"message"}
+{"nick":"indutny","message":"malloc: *** error for object 0x101951508: incorrect checksum for freed object - object was probably modified after being freed.","date":"2012-10-24T10:53:24.809Z","type":"message"}
+{"nick":"indutny","message":"*** set a breakpoint in malloc_error_break to debug","date":"2012-10-24T10:53:25.014Z","type":"message"}
+{"nick":"indutny","message":"at FSTest","date":"2012-10-24T10:53:29.352Z","type":"message"}
+{"nick":"indutny","message":"Fstat","date":"2012-10-24T10:53:33.044Z","type":"message"}
+{"nick":"indutny","message":"test_gc (test_gc.GCTest) ... ","date":"2012-10-24T10:55:54.498Z","type":"message"}
+{"nick":"indutny","message":"Program received signal EXC_BAD_ACCESS, Could not access memory.","date":"2012-10-24T10:55:54.698Z","type":"message"}
+{"nick":"indutny","message":"Reason: KERN_INVALID_ADDRESS at address: 0x0000000000000020","date":"2012-10-24T10:55:54.698Z","type":"message"}
+{"nick":"indutny","message":"saghul: ^","date":"2012-10-24T10:55:55.894Z","type":"message"}
+{"nick":"indutny","message":"are you sure you ain't doing something wrong","date":"2012-10-24T10:56:02.650Z","type":"message"}
+{"nick":"indutny","message":"#0  0x00000001000b0baa in PyObject_GC_Track ()","date":"2012-10-24T10:56:07.556Z","type":"message"}
+{"nick":"indutny","message":"#1  0x00000001000b14d9 in initgc ()","date":"2012-10-24T10:56:07.758Z","type":"message"}
+{"nick":"indutny","message":"#2  0x0000000100089197 in PyEval_EvalFrameEx ()","date":"2012-10-24T10:56:07.758Z","type":"message"}
+{"nick":"indutny","message":"#3  0x00000001000892f1 in PyEval_EvalFrameEx ()","date":"2012-10-24T10:56:07.758Z","type":"message"}
+{"nick":"indutny","message":"this is where it happens","date":"2012-10-24T10:56:12.257Z","type":"message"}
+{"nick":"indutny","message":"I'm getting random errors every other time","date":"2012-10-24T10:56:29.489Z","type":"message"}
+{"nick":"saghul","message":"ein?! I'm not seeing that","date":"2012-10-24T10:56:35.077Z","type":"message"}
+{"nick":"indutny","message":"well, looks like it's still related to uv__async_io","date":"2012-10-24T10:57:18.852Z","type":"message"}
+{"nick":"saghul","message":"all tests have been passing for me","date":"2012-10-24T10:57:21.458Z","type":"message"}
+{"nick":"indutny","message":"well, I see random errors on osx","date":"2012-10-24T10:57:59.184Z","type":"message"}
+{"nick":"saghul","message":"I guess you are running the system python, right?","date":"2012-10-24T10:58:05.353Z","type":"message"}
+{"nick":"indutny","message":"some of them a related to uv_work_t","date":"2012-10-24T10:58:05.561Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2012-10-24T10:58:08.932Z","type":"message"}
+{"nick":"saghul","message":"ok, I'll test with that one later then. I use a custom built one, because the one that ships with OSX don't have debug symbols","date":"2012-10-24T10:58:35.218Z","type":"message"}
+{"nick":"saghul","message":"from 2.6.1 to 2.6.8 there is a long way :-S","date":"2012-10-24T10:58:50.039Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-10-24T10:59:19.859Z","type":"message"}
+{"nick":"indutny","message":"well, what I can really see here","date":"2012-10-24T10:59:26.176Z","type":"message"}
+{"nick":"indutny","message":"uv__async_io reads some incorrect pointer from pipe buffer","date":"2012-10-24T10:59:42.122Z","type":"message"}
+{"nick":"saghul","message":"about the threadpool thing, did you get this? https://github.com/joyent/libuv/issues/580","date":"2012-10-24T11:00:00.771Z","type":"message"}
+{"nick":"indutny","message":"nope, I'm not receiving uv's notifications","date":"2012-10-24T11:00:33.075Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2012-10-24T11:00:47.688Z","type":"message"}
+{"nick":"indutny","message":"it seems to be related to async","date":"2012-10-24T11:00:53.529Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-10-24T11:00:54.862Z","type":"quit"}
+{"nick":"saghul","message":"right, the threadpool uses async, so things could go weird in many directions I guess","date":"2012-10-24T11:01:43.727Z","type":"message"}
+{"nick":"indutny","message":"indeed","date":"2012-10-24T11:03:13.667Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-10-24T11:10:52.748Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-10-24T11:26:12.159Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Read error: Connection reset by peer","date":"2012-10-24T11:32:00.070Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-10-24T11:32:24.947Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: ohai","date":"2012-10-24T11:47:22.498Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: I think I got your concept","date":"2012-10-24T11:49:38.498Z","type":"message"}
+{"nick":"c4milo","date":"2012-10-24T11:54:35.727Z","type":"join"}
+{"nick":"piscisaureus_","message":"indutny: very good sir :-)","date":"2012-10-24T11:55:38.338Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: indeed, sir","date":"2012-10-24T11:55:48.782Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: something may be more difficult because signal.c doesn't deal with EAGAIN","date":"2012-10-24T11:56:03.144Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: but I think it is solvable.","date":"2012-10-24T11:56:11.578Z","type":"message"}
+{"nick":"indutny","message":"what do you mean?","date":"2012-10-24T11:56:16.633Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: just try it :-)","date":"2012-10-24T11:56:49.075Z","type":"message"}
+{"nick":"indutny","message":"ok :)","date":"2012-10-24T11:57:43.629Z","type":"message"}
+{"nick":"indutny","message":"tests are passing","date":"2012-10-24T11:58:05.478Z","type":"message"}
+{"nick":"indutny","message":"it should be spinning in case of EAGAIN","date":"2012-10-24T11:58:30.574Z","type":"message"}
+{"nick":"indutny","message":"if there're some data","date":"2012-10-24T11:58:38.382Z","type":"message"}
+{"nick":"indutny","message":"err","date":"2012-10-24T11:58:42.197Z","type":"message"}
+{"nick":"indutny","message":"there's","date":"2012-10-24T11:58:43.240Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 244 seconds","date":"2012-10-24T11:58:52.525Z","type":"quit"}
+{"nick":"indutny","message":"async8 benchmark is passing too","date":"2012-10-24T11:59:12.275Z","type":"message"}
+{"nick":"indutny","message":"saghul: yt?","date":"2012-10-24T11:59:13.487Z","type":"message"}
+{"nick":"saghul","message":"indutny yep","date":"2012-10-24T11:59:26.156Z","type":"message"}
+{"nick":"indutny","message":"can you please try this patch","date":"2012-10-24T12:00:34.240Z","type":"message"}
+{"nick":"indutny","message":"saghul: https://github.com/indutny/libuv/commit/9e8cbfd16bc63103227a13391224f26b5e7bd6a1.patch","date":"2012-10-24T12:00:46.010Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: bertje, review please ^","date":"2012-10-24T12:01:09.999Z","type":"message"}
+{"nick":"saghul","message":"indutny hum, not it consistently crashes in the first run","date":"2012-10-24T12:04:37.475Z","type":"message"}
+{"nick":"indutny","message":"ahm?","date":"2012-10-24T12:04:47.152Z","type":"message"}
+{"nick":"indutny","message":"it crashes, or it's not?","date":"2012-10-24T12:04:56.513Z","type":"message"}
+{"nick":"saghul","message":"LoL, now it didn't","date":"2012-10-24T12:04:57.051Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-10-24T12:05:24.338Z","type":"message"}
+{"nick":"saghul","message":"yeah, same crash still","date":"2012-10-24T12:05:25.662Z","type":"message"}
+{"nick":"indutny","message":"saghul: can you gdb into uv__async_close","date":"2012-10-24T12:05:43.533Z","type":"message"}
+{"nick":"indutny","message":"and print handle->pending","date":"2012-10-24T12:05:52.542Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: so what if the second write() succeeds ?","date":"2012-10-24T12:06:52.930Z","type":"message"}
+{"nick":"indutny","message":"oooh","date":"2012-10-24T12:07:00.107Z","type":"message"}
+{"nick":"indutny","message":"that EAGAIN","date":"2012-10-24T12:07:02.717Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-10-24T12:07:04.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: or what if the pipe is drained immediately after you set  pending=1","date":"2012-10-24T12:07:20.562Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: ... but before you write for the first time","date":"2012-10-24T12:07:31.255Z","type":"message"}
+{"nick":"indutny","message":"and so what?","date":"2012-10-24T12:07:37.936Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: still *boom*","date":"2012-10-24T12:07:38.145Z","type":"message"}
+{"nick":"indutny","message":"that means that someone has send signal","date":"2012-10-24T12:07:45.624Z","type":"message"}
+{"nick":"indutny","message":"and closed handle","date":"2012-10-24T12:07:47.543Z","type":"message"}
+{"nick":"piscisaureus_","message":"no I mean","date":"2012-10-24T12:07:51.787Z","type":"message"}
+{"nick":"indutny","message":"at the same time, isn't it?","date":"2012-10-24T12:07:53.838Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: yeah that would probably be a bug anyway","date":"2012-10-24T12:08:16.842Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2012-10-24T12:08:24.705Z","type":"message"}
+{"nick":"indutny","message":"so...","date":"2012-10-24T12:08:34.907Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-10-24T12:08:36.310Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2012-10-24T12:08:45.203Z","type":"message"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2012-10-24T12:08:57.126Z","type":"quit"}
+{"nick":"indutny","message":"EAGAIN is indeed not really straightforward","date":"2012-10-24T12:09:02.394Z","type":"message"}
+{"nick":"piscisaureus_","message":"think about this","date":"2012-10-24T12:09:02.596Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: you can also just write a null pointer","date":"2012-10-24T12:09:12.733Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: and always do a full sweep if you see a null pointer","date":"2012-10-24T12:09:21.743Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: or...","date":"2012-10-24T12:09:22.679Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: I've another idea","date":"2012-10-24T12:09:31.051Z","type":"message"}
+{"nick":"indutny","message":"but null pointer will definitely work, yeah","date":"2012-10-24T12:09:39.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"time travel","date":"2012-10-24T12:09:42.182Z","type":"message"}
+{"nick":"indutny","message":"yes, I could use quantum effects in CPU","date":"2012-10-24T12:11:14.101Z","type":"message"}
+{"nick":"indutny","message":"or hack branch prediction","date":"2012-10-24T12:11:22.735Z","type":"message"}
+{"nick":"kazupon","date":"2012-10-24T12:11:43.751Z","type":"join"}
+{"nick":"saghul","message":"indutny pending is 1","date":"2012-10-24T12:12:06.761Z","type":"message"}
+{"nick":"saghul","message":"and Assertion failed: (!(handle->flags & UV_CLOSED)), function uv__make_close_pending, file src/unix/core.c, line 144.","date":"2012-10-24T12:12:08.976Z","type":"message"}
+{"nick":"indutny","message":"wow","date":"2012-10-24T12:12:20.929Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: can handle be UV_CLOSING and UV_CLOSED at the same time?","date":"2012-10-24T12:12:39.231Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-10-24T12:12:52.842Z","type":"message"}
+{"nick":"indutny","message":"yea","date":"2012-10-24T12:12:53.509Z","type":"message"}
+{"nick":"abraxas","date":"2012-10-24T12:13:08.792Z","type":"join"}
+{"nick":"bnoordhuis","date":"2012-10-24T12:14:30.392Z","type":"join"}
+{"nick":"indutny","message":"saghul: https://github.com/indutny/libuv/commit/1bca78f.patch","date":"2012-10-24T12:15:33.081Z","type":"message"}
+{"nick":"indutny","message":"saghul: please try this","date":"2012-10-24T12:15:38.171Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hey ben","date":"2012-10-24T12:16:11.098Z","type":"message"}
+{"nick":"saghul","message":"indutny on it","date":"2012-10-24T12:16:18.428Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ho fiodor","date":"2012-10-24T12:16:21.694Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: how are you doing today?","date":"2012-10-24T12:16:42.027Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah ben is here","date":"2012-10-24T12:16:42.879Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: i have another question for you","date":"2012-10-24T12:16:52.308Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: i'm fine, thanks :)","date":"2012-10-24T12:16:58.557Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what are you doing today and this week ?","date":"2012-10-24T12:17:00.323Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: preferably as little as possible","date":"2012-10-24T12:17:09.460Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: are you on vacation?","date":"2012-10-24T12:17:19.445Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 264 seconds","date":"2012-10-24T12:17:21.551Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can you make something up then? That I can mention in the standup.","date":"2012-10-24T12:17:39.310Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: no. i just feel like slacking off","date":"2012-10-24T12:17:39.518Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2012-10-24T12:17:55.976Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: working on removing libev, doing some experimenting with atomic ops in libuv, fixing bugs","date":"2012-10-24T12:18:04.573Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so when can we expect uv-atomics.h ?","date":"2012-10-24T12:18:17.665Z","type":"message"}
+{"nick":"piscisaureus_","action":"drools","date":"2012-10-24T12:18:21.768Z","type":"action"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i guess the question is what architectures we want to support","date":"2012-10-24T12:18:37.620Z","type":"message"}
+{"nick":"bnoordhuis","message":"x86/x64 obviously, probably arm. what about mips?","date":"2012-10-24T12:18:51.307Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: i don't care about mips. just assert(0 && \"we take patches\")","date":"2012-10-24T12:19:14.626Z","type":"message"}
+{"nick":"bnoordhuis","message":"heh","date":"2012-10-24T12:19:19.441Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can mips do atomics anyway?","date":"2012-10-24T12:19:26.371Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-10-24T12:19:29.462Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we can always have a sucky fallback","date":"2012-10-24T12:19:42.935Z","type":"message"}
+{"nick":"bnoordhuis","message":"it has a compare-and-swap instruction and you can use that to implement most atomic ops","date":"2012-10-24T12:19:53.841Z","type":"message"}
+{"nick":"bnoordhuis","message":"not very efficiently but still","date":"2012-10-24T12:19:59.144Z","type":"message"}
+{"nick":"saghul","message":"indutny no joy","date":"2012-10-24T12:20:03.017Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: who cares.","date":"2012-10-24T12:20:12.789Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I doubt that we can have 100% coverage for everything","date":"2012-10-24T12:20:26.786Z","type":"message"}
+{"nick":"jmar777","date":"2012-10-24T12:20:28.732Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: well, there's this one other guy besides me that runs node on mips :)","date":"2012-10-24T12:20:30.746Z","type":"message"}
+{"nick":"indutny","message":"saghul: still the same?","date":"2012-10-24T12:20:30.952Z","type":"message"}
+{"nick":"saghul","message":"yep","date":"2012-10-24T12:20:44.874Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you run mips?","date":"2012-10-24T12:20:48.799Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: occasionally","date":"2012-10-24T12:20:58.014Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: what atomics do you want to implement?","date":"2012-10-24T12:21:03.231Z","type":"message"}
+{"nick":"bnoordhuis","message":"that is, i occasionally test node on mips","date":"2012-10-24T12:21:04.688Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: on wi-fi router I guess?","date":"2012-10-24T12:21:14.295Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: yes","date":"2012-10-24T12:21:18.007Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: re atomics, this: http://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html#g_t_005f_005fatomic-Builtins","date":"2012-10-24T12:21:28.034Z","type":"message"}
+{"nick":"indutny","message":"otherwise it would be scary","date":"2012-10-24T12:21:28.632Z","type":"message"}
+{"nick":"indutny","message":"ah, so all those","date":"2012-10-24T12:21:35.380Z","type":"message"}
+{"nick":"saghul","message":"indutny in case it helps: https://gist.github.com/3945767","date":"2012-10-24T12:21:59.083Z","type":"message"}
+{"nick":"indutny","message":"it seems to be a lot for separating this code in another library","date":"2012-10-24T12:21:59.761Z","type":"message"}
+{"nick":"indutny","message":"libuatomic","date":"2012-10-24T12:22:02.331Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: do we really care about acquire, release semantics and those things","date":"2012-10-24T12:22:02.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes","date":"2012-10-24T12:22:06.590Z","type":"message"}
+{"nick":"piscisaureus_","message":"they should all just be full barriers","date":"2012-10-24T12:22:06.794Z","type":"message"}
+{"nick":"bnoordhuis","message":"and no, not full barriers :)","date":"2012-10-24T12:22:14.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"we are not targeting itanium are we","date":"2012-10-24T12:22:16.452Z","type":"message"}
+{"nick":"indutny","message":"saghul: p *h ?","date":"2012-10-24T12:22:20.057Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: btw, on x86, you can do away with nearly all barriers","date":"2012-10-24T12:22:40.199Z","type":"message"}
+{"nick":"indutny","message":"no itanium, please","date":"2012-10-24T12:23:09.450Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: even in sequentially consistent mode, if you use lock xchg in one or two places","date":"2012-10-24T12:23:09.656Z","type":"message"}
+{"nick":"saghul","message":"indutny https://gist.github.com/3945767 updated","date":"2012-10-24T12:23:38.449Z","type":"message"}
+{"nick":"saghul","message":"indutny WTF is that thing in the async_cb?","date":"2012-10-24T12:23:53.253Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-10-24T12:23:58.437Z","type":"message"}
+{"nick":"indutny","message":"type = UV_CHECK","date":"2012-10-24T12:24:02.136Z","type":"message"}
+{"nick":"indutny","message":"so it's just a junk","date":"2012-10-24T12:24:07.178Z","type":"message"}
+{"nick":"saghul","message":"looks so","date":"2012-10-24T12:24:26.973Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: lock xchg acts as a full barrier right?","date":"2012-10-24T12:24:30.732Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes, it's a synchronization point","date":"2012-10-24T12:24:39.148Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-10-24T12:25:10.235Z","type":"message"}
+{"nick":"indutny","message":"nice","date":"2012-10-24T12:25:11.885Z","type":"message"}
+{"nick":"bnoordhuis","message":"saghul: i think i know what's causing that crash","date":"2012-10-24T12:25:17.313Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: what?","date":"2012-10-24T12:25:23.796Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: your patch writes a pointer to a pipe","date":"2012-10-24T12:25:34.788Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2012-10-24T12:25:39.770Z","type":"message"}
+{"nick":"indutny","message":"sure","date":"2012-10-24T12:25:42.034Z","type":"message"}
+{"nick":"bnoordhuis","message":"but what if the handle gets closed in the mean time?","date":"2012-10-24T12:25:42.946Z","type":"message"}
+{"nick":"indutny","message":"well, that's a bug in client's code","date":"2012-10-24T12:25:58.023Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'd intended to bring that up but by then bert had already merged it :/","date":"2012-10-24T12:26:03.829Z","type":"message"}
+{"nick":"indutny","message":"concurrent uv_close() and uv_async_send()","date":"2012-10-24T12:26:14.175Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2012-10-24T12:26:18.033Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: ++","date":"2012-10-24T12:26:20.631Z","type":"message"}
+{"nick":"kohai","message":"piscisaureus_ has 18 beers","date":"2012-10-24T12:26:20.830Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I'm trying to address some races here https://github.com/indutny/libuv/commit/1bca78f.patch","date":"2012-10-24T12:26:28.678Z","type":"message"}
+{"nick":"indutny","message":"mostly pointed out by bertje","date":"2012-10-24T12:26:35.021Z","type":"message"}
+{"nick":"indutny","message":"basically, what if uv_close() is called after uv_async_send() pending should be 1","date":"2012-10-24T12:27:01.486Z","type":"message"}
+{"nick":"indutny","message":"otherwise no data can be in pipe","date":"2012-10-24T12:27:11.108Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-10-24T12:27:14.905Z","type":"message"}
+{"nick":"indutny","message":"wait","date":"2012-10-24T12:27:16.446Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok, guys I am going to be afk for half an hour","date":"2012-10-24T12:27:17.488Z","type":"message"}
+{"nick":"piscisaureus_","message":"when I am back I am at the office","date":"2012-10-24T12:27:22.672Z","type":"message"}
+{"nick":"piscisaureus_","message":"\\o","date":"2012-10-24T12:27:27.006Z","type":"message"}
+{"nick":"indutny","message":"pending could be reset by full sweep","date":"2012-10-24T12:27:29.352Z","type":"message"}
+{"nick":"indutny","message":"\\k","date":"2012-10-24T12:27:32.694Z","type":"message"}
+{"nick":"indutny","message":"\\e\\s\\c\\a\\p\\i\\n\\g","date":"2012-10-24T12:27:42.057Z","type":"message"}
+{"nick":"indutny","message":"saghul: can you check if sweep flag is ever set?","date":"2012-10-24T12:28:22.668Z","type":"message"}
+{"nick":"saghul","message":"indutny let me check","date":"2012-10-24T12:28:39.154Z","type":"message"}
+{"nick":"indutny","message":"breakpoint in uv__async_io","date":"2012-10-24T12:28:50.023Z","type":"message"}
+{"nick":"indutny","message":"where if (sweep_flag) { do sweep }","date":"2012-10-24T12:28:57.114Z","type":"message"}
+{"nick":"indutny","message":"s/where/at","date":"2012-10-24T12:29:02.053Z","type":"message"}
+{"nick":"saghul","message":"I just added a printf, poor mans debug","date":"2012-10-24T12:31:28.575Z","type":"message"}
+{"nick":"saghul","message":"and doesn't get set apparently","date":"2012-10-24T12:31:36.848Z","type":"message"}
+{"nick":"saghul","message":"yeah, I haven't seen that flag set even once","date":"2012-10-24T12:33:58.553Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-10-24T12:34:50.150Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2012-10-24T12:34:51.725Z","type":"message"}
+{"nick":"saghul","message":"lunch, brb","date":"2012-10-24T12:36:10.253Z","type":"message"}
+{"nick":"Raynos","reason":"Remote host closed the connection","date":"2012-10-24T12:39:09.008Z","type":"quit"}
+{"nick":"dscape","reason":"Remote host closed the connection","date":"2012-10-24T12:39:09.008Z","type":"quit"}
+{"nick":"indutny","reason":"Remote host closed the connection","date":"2012-10-24T12:39:09.207Z","type":"quit"}
+{"nick":"sgallagh","date":"2012-10-24T12:43:43.359Z","type":"join"}
+{"nick":"sgallagh","message":"bnoordhuis: What are the chances that someone could review the pending pull request https://github.com/joyent/libuv/pull/428 from avalance123? I'd like to see that land so I can send patches to support it in Node.JS proper","date":"2012-10-24T12:44:54.499Z","type":"message"}
+{"nick":"sgallagh","message":"I don't have a strong enough background in the build system to confidently review it myself","date":"2012-10-24T12:45:17.838Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: that PR doesn't apply any more, i'm afraid","date":"2012-10-24T12:46:09.027Z","type":"message"}
+{"nick":"bnoordhuis","message":"i have a patch pending that adds shared object support","date":"2012-10-24T12:46:10.580Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: Ah ok. Cool.","date":"2012-10-24T12:46:26.684Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it depends on removing libev first :)","date":"2012-10-24T12:46:31.662Z","type":"message"}
+{"nick":"sgallagh","action":"nods","date":"2012-10-24T12:46:40.775Z","type":"action"}
+{"nick":"bnoordhuis","message":"sgallagh: btw, can you sign the cla? i'd like to land your http_parser patch","date":"2012-10-24T12:46:56.171Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: I'm currently stuck in limbo on that as Legal reviews it. Hopefully in the next couple days. Sorry about that.","date":"2012-10-24T12:47:23.078Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, no problem","date":"2012-10-24T12:47:29.899Z","type":"message"}
+{"nick":"sgallagh","message":"If I were contributing as just an end-user, I'd be fine with it. But since I'm doing this in my Red Hat role, I need to make sure there aren't any \"gotchas\" there.","date":"2012-10-24T12:48:32.627Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: But anyway, thanks for the review and the willingness to include it. I'm looking forward to getting this into Fedora soon :)","date":"2012-10-24T12:50:04.668Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: sweet :)","date":"2012-10-24T12:50:54.592Z","type":"message"}
+{"nick":"indutny","date":"2012-10-24T12:50:56.483Z","type":"join"}
+{"nick":"indutny","message":"sorry","date":"2012-10-24T12:51:01.335Z","type":"message"}
+{"nick":"indutny","message":"irccloud problems","date":"2012-10-24T12:51:04.535Z","type":"message"}
+{"nick":"indutny","message":"saghul: I need to look into other stuff for some time...","date":"2012-10-24T12:51:23.061Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: probably for now it would be better to just revert that commit","date":"2012-10-24T12:51:32.461Z","type":"message"}
+{"nick":"saghul","message":"indutny no problem, thanks for the help!","date":"2012-10-24T12:51:48.285Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: i'll do that","date":"2012-10-24T12:51:50.688Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/bnoordhuis/libuv/compare/reopen-tty <- review anyone?","date":"2012-10-24T12:54:11.598Z","type":"message"}
+{"nick":"kazupon","date":"2012-10-24T12:55:18.269Z","type":"join"}
+{"nick":"dscape","date":"2012-10-24T12:59:43.938Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u0002b7f38b1\u0002 : Revert \"unix: avoid iterating over all async handles\"  This reverts commi - http://git.io/n8We_A","date":"2012-10-24T13:00:40.935Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-10-24T13:01:09.852Z","type":"quit"}
+{"nick":"Raynos","date":"2012-10-24T13:01:15.086Z","type":"join"}
+{"nick":"travis-ci","date":"2012-10-24T13:02:36.065Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#819 (master - b7f38b1 : Ben Noordhuis): The build passed.","date":"2012-10-24T13:02:36.269Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/61ecb3415d0d...b7f38b1e5384","date":"2012-10-24T13:02:36.269Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/2914008","date":"2012-10-24T13:02:36.270Z","type":"message"}
+{"nick":"travis-ci","date":"2012-10-24T13:02:36.270Z","type":"part"}
+{"nick":"bnoordhuis","message":"indutny: maybe it's easiest to create a pipe/socketpair for every async handle","date":"2012-10-24T13:04:46.349Z","type":"message"}
+{"nick":"bnoordhuis","message":"kind of wasteful in that it requires lots of file descriptors if you have lots of async handles","date":"2012-10-24T13:05:20.497Z","type":"message"}
+{"nick":"bnoordhuis","message":"but file descriptors are cheap","date":"2012-10-24T13:05:24.542Z","type":"message"}
+{"nick":"loladiro","date":"2012-10-24T13:07:48.491Z","type":"join"}
+{"nick":"sgallagh","message":"bnoordhuis: File descriptors aren't always cheap","date":"2012-10-24T13:09:18.353Z","type":"message"}
+{"nick":"sgallagh","message":"On many Linux systems, you are given 1024 per process to work with.","date":"2012-10-24T13:09:35.896Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: yes, but that's what `ulimit -n` is for :)","date":"2012-10-24T13:09:45.878Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: What I mean is that this is the hard limit unless you are root","date":"2012-10-24T13:10:09.353Z","type":"message"}
+{"nick":"sgallagh","message":"(And even then, you have to worry about \"capabilities\", which even root may be restricted from)","date":"2012-10-24T13:10:32.793Z","type":"message"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-10-24T13:10:52.115Z","type":"quit"}
+{"nick":"sgallagh","message":"Too many FDs bit me hard with the SSSD project a while ago","date":"2012-10-24T13:11:56.337Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: node is for building networked applications. in general, people are aware they need to up the nofile limit if they want to serve lots of requests concurrently","date":"2012-10-24T13:12:50.060Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's probably different for sssd","date":"2012-10-24T13:13:08.378Z","type":"message"}
+{"nick":"sgallagh","message":"Sure, but it's never a good idea to waste file descriptors for internal tasks that could be used for external ones","date":"2012-10-24T13:13:28.664Z","type":"message"}
+{"nick":"sgallagh","message":"SSSD's job was to handle network-based authentication (replacement for nss_ldap/pam_ldap/pam_krb5)","date":"2012-10-24T13:13:53.097Z","type":"message"}
+{"nick":"sgallagh","message":"And it had to handle incoming local socket requests from every process on the system (possibly as many as three per process)","date":"2012-10-24T13:14:28.943Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: right. these async handles are not internal things though, they're for inter-thread communication, e.g. for people that write native add-ons","date":"2012-10-24T13:14:52.653Z","type":"message"}
+{"nick":"sgallagh","message":"So on really heavily-loaded systems, we were in trouble","date":"2012-10-24T13:14:55.695Z","type":"message"}
+{"nick":"sgallagh","message":"ok","date":"2012-10-24T13:15:03.817Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: Anyway, my main point here was going to be: \"use as few as possible and try to close idle ones\"","date":"2012-10-24T13:15:47.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right, no objection there","date":"2012-10-24T13:16:01.843Z","type":"message"}
+{"nick":"bnoordhuis","message":"fortunately, i can push that responsibility to the libuv users :)","date":"2012-10-24T13:16:16.416Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I disagree with opening a pipe for every async","date":"2012-10-24T13:19:00.745Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: it's fine to disagree with me","date":"2012-10-24T13:19:16.071Z","type":"message"}
+{"nick":"bnoordhuis","message":"but only when you're wrong","date":"2012-10-24T13:19:19.317Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if indutny can't fix it, I will","date":"2012-10-24T13:19:19.972Z","type":"message"}
+{"nick":"bnoordhuis","message":"but what's your beef with it?","date":"2012-10-24T13:19:29.028Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well, the default fd limit on mac for example","date":"2012-10-24T13:19:52.605Z","type":"message"}
+{"nick":"piscisaureus_","message":"some tests already fail","date":"2012-10-24T13:19:57.170Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, silly os x","date":"2012-10-24T13:20:00.002Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: and for node users it's fine to up ulimit","date":"2012-10-24T13:20:08.399Z","type":"message"}
+{"nick":"indutny","message":"huh?","date":"2012-10-24T13:20:09.035Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-10-24T13:20:12.292Z","type":"message"}
+{"nick":"indutny","message":"osx openssl","date":"2012-10-24T13:20:15.102Z","type":"message"}
+{"nick":"indutny","message":"that thing?","date":"2012-10-24T13:20:17.749Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's only an issue when people create a lot of async handles","date":"2012-10-24T13:20:23.655Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i can't think of many plausible scenarios where you'd do that","date":"2012-10-24T13:20:41.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but for other situations (and for embedded nodes like in mapbox) that's not very userfriendly","date":"2012-10-24T13:20:42.604Z","type":"message"}
+{"nick":"TheJH","date":"2012-10-24T13:22:01.596Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: want to review https://github.com/bnoordhuis/libuv/compare/reopen-tty ?","date":"2012-10-24T13:34:44.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"or you, indutny","date":"2012-10-24T13:34:52.038Z","type":"message"}
+{"nick":"bnoordhu1s","date":"2012-10-24T13:36:50.562Z","type":"join"}
+{"nick":"c4milo","date":"2012-10-24T13:36:57.735Z","type":"join"}
+{"nick":"c4milo","reason":"Read error: Operation timed out","date":"2012-10-24T13:38:16.470Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u00028ac017e\u0002 : test: fix pummel/test-crypto-dh, pummel/test-dh-regr  Forgotten in the sw - http://git.io/3kCxAQ","date":"2012-10-24T13:39:03.425Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u000231f9fbc\u0002 : unix: reopen tty as /dev/tty  Reopen the file descriptor when it refers t - http://git.io/kGuD6A","date":"2012-10-24T13:43:20.564Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: not waiting for review any more?","date":"2012-10-24T13:43:36.476Z","type":"message"}
+{"nick":"bnoordhuis","message":" piscisaureus_ it took to long","date":"2012-10-24T13:43:44.482Z","type":"message"}
+{"nick":"bnoordhuis","message":"*too","date":"2012-10-24T13:43:46.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"it works on linux, os x and sunos","date":"2012-10-24T13:44:21.673Z","type":"message"}
+{"nick":"bnoordhuis","message":"i am as surprised as you are","date":"2012-10-24T13:44:26.555Z","type":"message"}
+{"nick":"bnoordhuis","message":"admittedly i skipped freebsd and netbsd","date":"2012-10-24T13:44:49.492Z","type":"message"}
+{"nick":"travis-ci","date":"2012-10-24T13:45:06.630Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#820 (master - 31f9fbc : Ben Noordhuis): The build passed.","date":"2012-10-24T13:45:06.837Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/b7f38b1e5384...31f9fbce6321","date":"2012-10-24T13:45:06.837Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/2914542","date":"2012-10-24T13:45:06.837Z","type":"message"}
+{"nick":"travis-ci","date":"2012-10-24T13:45:06.838Z","type":"part"}
+{"nick":"piscisaureus_","message":"bnoordhuis: HUH -> https://github.com/bnoordhuis/libuv/blob/66e924418865854b25448a59e8629bb0b6d57278/src/unix/tty.c#L63-66","date":"2012-10-24T13:45:30.089Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: of course not  !","date":"2012-10-24T13:45:39.903Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm?","date":"2012-10-24T13:45:48.361Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhu1s: or - maybe you're right","date":"2012-10-24T13:46:29.958Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you mean that close() happened before open('/dev/tty') ?","date":"2012-10-24T13:46:44.276Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes","date":"2012-10-24T13:46:51.294Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmmm","date":"2012-10-24T13:47:01.431Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I am not sure I agree with this solution tho","date":"2012-10-24T13:47:40.131Z","type":"message"}
+{"nick":"bnoordhuis","message":"how so?","date":"2012-10-24T13:47:45.030Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think you should just keep the old fd around","date":"2012-10-24T13:47:47.396Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: why?","date":"2012-10-24T13:48:05.653Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if you make a child process inherit from process.stdin, it will still inherit the nonblocking fd","date":"2012-10-24T13:48:06.024Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, but i don't see how that can be fixed","date":"2012-10-24T13:48:26.485Z","type":"message"}
+{"nick":"bnoordhuis","message":"i mean, that's already broken","date":"2012-10-24T13:48:34.060Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess in some cases we can reopen /dev/tty *again*, right before the execve","date":"2012-10-24T13:49:05.512Z","type":"message"}
+{"nick":"bnoordhuis","message":"and put it in blocking mode again","date":"2012-10-24T13:49:14.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"ghe","date":"2012-10-24T13:49:19.115Z","type":"message"}
+{"nick":"piscisaureus_","message":"stupid unix","date":"2012-10-24T13:49:32.464Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's a separate issue from what this commit is trying to address","date":"2012-10-24T13:49:41.700Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is making `node | cat` work","date":"2012-10-24T13:49:54.588Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is a silly thing but anyway","date":"2012-10-24T13:50:01.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok, back to libuv chores","date":"2012-10-24T13:50:49.432Z","type":"message"}
+{"nick":"bnoordhu1s","reason":"Ping timeout: 244 seconds","date":"2012-10-24T13:57:32.580Z","type":"quit"}
+{"nick":"bnoordhu1s","date":"2012-10-24T13:59:07.753Z","type":"join"}
+{"nick":"piscisaureus_","message":"ok now I am really going to the office","date":"2012-10-24T14:06:25.072Z","type":"message"}
+{"nick":"piscisaureus_","message":"see if janjongboom bought some beer already","date":"2012-10-24T14:06:35.834Z","type":"message"}
+{"nick":"janjongboom","message":"nope","date":"2012-10-24T14:06:45.531Z","type":"message"}
+{"nick":"janjongboom","message":"esther has ordered 3 crates","date":"2012-10-24T14:06:53.244Z","type":"message"}
+{"nick":"janjongboom","message":"but will be here only tomorrow","date":"2012-10-24T14:06:57.043Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah","date":"2012-10-24T14:07:20.462Z","type":"message"}
+{"nick":"piscisaureus_","message":"sadfae","date":"2012-10-24T14:07:24.367Z","type":"message"}
+{"nick":"piscisaureus_","message":"*sadface","date":"2012-10-24T14:07:27.281Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-10-24T14:13:00.349Z","type":"quit"}
+{"nick":"c4milo","date":"2012-10-24T14:16:42.129Z","type":"join"}
+{"nick":"saghul","message":"bnoordhuis yt?","date":"2012-10-24T14:19:36.560Z","type":"message"}
+{"nick":"saghul","message":"I have a weird case which I think libuv handles wrong: lets say I start 2 prepare handles","date":"2012-10-24T14:20:11.937Z","type":"message"}
+{"nick":"saghul","message":"then on the callback for the first, I close the second","date":"2012-10-24T14:20:28.596Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2012-10-24T14:21:00.893Z","type":"quit"}
+{"nick":"saghul","message":"since we are iterating the prepare_handles queue already, won't that prepare callback get called, even if we closed it?","date":"2012-10-24T14:21:23.719Z","type":"message"}
+{"nick":"saghul","message":"I can write  a C test case","date":"2012-10-24T14:21:41.908Z","type":"message"}
+{"nick":"pquerna","reason":"Ping timeout: 248 seconds","date":"2012-10-24T14:22:44.201Z","type":"quit"}
+{"nick":"pquerna","date":"2012-10-24T14:23:57.901Z","type":"join"}
+{"nick":"erickt","date":"2012-10-24T14:26:16.549Z","type":"join"}
+{"nick":"loladiro","date":"2012-10-24T14:28:15.515Z","type":"join"}
+{"nick":"AvianFlu","date":"2012-10-24T14:28:16.725Z","type":"join"}
+{"nick":"bnoordhuis","message":"saghul: ih now","date":"2012-10-24T14:29:02.563Z","type":"message"}
+{"nick":"saghul","message":"hum, maybe not, I need to dig deeper","date":"2012-10-24T14:29:14.292Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-10-24T14:29:32.097Z","type":"join"}
+{"nick":"bnoordhuis","message":"saghul: if you close the prepare handle, it gets removed from the prepare handles queue","date":"2012-10-24T14:31:00.286Z","type":"message"}
+{"nick":"bnoordhuis","message":"that is, the prepare cb won't get called","date":"2012-10-24T14:31:14.858Z","type":"message"}
+{"nick":"saghul","message":"can that be problematic if we are in the process of iterating that queue?","date":"2012-10-24T14:31:27.829Z","type":"message"}
+{"nick":"saghul","message":"I think the Python gc if fucking with me. I close handles if objects are gc'd, that is probably messing something up","date":"2012-10-24T14:32:11.548Z","type":"message"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-10-24T14:32:25.802Z","type":"quit"}
+{"nick":"saghul","message":"I'll let you know if it's an issue on libuv","date":"2012-10-24T14:32:30.043Z","type":"message"}
+{"nick":"bnoordhuis","message":"saghul: no, the queue is resilient to modification","date":"2012-10-24T14:32:59.952Z","type":"message"}
+{"nick":"bnoordhu1s","reason":"Ping timeout: 260 seconds","date":"2012-10-24T14:33:02.759Z","type":"quit"}
+{"nick":"saghul","message":"bnoordhuis ok, thanks!","date":"2012-10-24T14:33:14.191Z","type":"message"}
+{"nick":"hz","date":"2012-10-24T14:41:06.401Z","type":"join"}
+{"nick":"piscisaureus_","message":"I kinda regret sharing uv__handle_start with unix","date":"2012-10-24T14:57:02.978Z","type":"message"}
+{"nick":"dap","date":"2012-10-24T14:57:39.579Z","type":"join"}
+{"nick":"bnoordhuis","message":"because now you have to live up to its greatness?","date":"2012-10-24T14:58:52.350Z","type":"message"}
+{"nick":"bnoordhu1s","date":"2012-10-24T14:59:06.236Z","type":"join"}
+{"nick":"piscisaureus_","message":"no, because I can't reason what will happen to uv-unix when I change it","date":"2012-10-24T14:59:11.987Z","type":"message"}
+{"nick":"tjfontaine","message":"he's cloning!","date":"2012-10-24T14:59:13.437Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine?","date":"2012-10-24T14:59:29.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, me","date":"2012-10-24T14:59:32.514Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2012-10-24T14:59:35.193Z","type":"message"}
+{"nick":"bnoordhuis","message":"for reasons i don't fully comprehend","date":"2012-10-24T14:59:37.818Z","type":"message"}
+{"nick":"erickt_","date":"2012-10-24T14:59:38.907Z","type":"join"}
+{"nick":"bnoordhuis","action":"looks at his macbook","date":"2012-10-24T14:59:50.603Z","type":"action"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-10-24T14:59:54.903Z","type":"quit"}
+{"nick":"tjfontaine","message":"tis another irssi session","date":"2012-10-24T14:59:58.555Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we are also in the half shared state","date":"2012-10-24T15:00:02.903Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: uv-unix is like a girlfriend that wasn't want to go all the way","date":"2012-10-24T15:00:26.762Z","type":"message"}
+{"nick":"bnoordhu1s","reason":"Client Quit","date":"2012-10-24T15:00:46.648Z","type":"quit"}
+{"nick":"bnoordhuis","message":"so it was the bloody macbook >:(","date":"2012-10-24T15:00:58.805Z","type":"message"}
+{"nick":"tjfontaine","message":"piscisaureus_: but she'll at least cuddle with you, and doesn't mind being seen with you in public","date":"2012-10-24T15:01:22.209Z","type":"message"}
+{"nick":"bnoordhuis","message":"she also feels better than you but that's life","date":"2012-10-24T15:01:40.080Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-10-24T15:09:38.733Z","type":"quit"}
+{"nick":"erickt_","new_nick":"erickt","date":"2012-10-24T15:09:38.941Z","type":"nick"}
+{"nick":"piscisaureus_","message":"bnoordhuis: does uv-unix ever call uv__handle_start on a closing handle?","date":"2012-10-24T15:09:57.694Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I want to assert when that happens","date":"2012-10-24T15:10:07.633Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: no","date":"2012-10-24T15:10:07.842Z","type":"message"}
+{"nick":"bnoordhuis","message":"picking up mees, biab","date":"2012-10-24T15:10:55.311Z","type":"message"}
+{"nick":"piscisaureus_","message":"sjoer","date":"2012-10-24T15:11:12.982Z","type":"message"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-10-24T15:11:17.141Z","type":"quit"}
+{"nick":"hz","date":"2012-10-24T15:12:04.447Z","type":"join"}
+{"nick":"indexzero","date":"2012-10-24T15:17:47.752Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033piscisaureus\u000f created branch reftest - http://git.io/fF9FRQ","date":"2012-10-24T15:22:28.598Z","type":"message"}
+{"nick":"piscisaureus_","message":"seems to work on linux too","date":"2012-10-24T15:26:58.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: review https://github.com/joyent/libuv/commit/87dc44425ec9 ?","date":"2012-10-24T15:27:24.679Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2012-10-24T15:31:24.351Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-10-24T15:31:54.042Z","type":"quit"}
+{"nick":"pquerna","reason":"Changing host","date":"2012-10-24T15:32:01.256Z","type":"quit"}
+{"nick":"pquerna","date":"2012-10-24T15:32:01.458Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-10-24T15:47:54.472Z","type":"join"}
+{"nick":"perezd","date":"2012-10-24T15:48:37.614Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-10-24T15:51:56.214Z","type":"quit"}
+{"nick":"c4milo","date":"2012-10-24T15:55:30.733Z","type":"join"}
