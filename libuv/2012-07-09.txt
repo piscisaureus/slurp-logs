@@ -305,6 +305,62 @@
 {"nick":"brson","reason":"Quit: leaving","date":"2012-07-09T06:37:39.545Z","type":"quit"}
 {"nick":"stephank","reason":"Quit: *Poof!*","date":"2012-07-09T07:11:38.835Z","type":"quit"}
 {"nick":"rendar","date":"2012-07-09T07:12:49.431Z","type":"join"}
+{"type":"message","nick":"@isaacs","message":"I think it's clear that we need more real-world use case examples, though","date":"2012-07-09T18:22:08.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: perhaps, but if had two isolated clusters in the same process, it would only mean that if anything breaks both clusters breaks and you will have a lot of downtime.","date":"2012-07-09T18:22:15.000Z"}
+{"type":"message","nick":"@isaacs","message":"right","date":"2012-07-09T18:22:35.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: I agree with that, the testcase use case is not important.","date":"2012-07-09T18:22:36.000Z"}
+{"type":"message","nick":"@isaacs","message":"what you usually want is for the master to be basically nothing but a thing that manages workers, and does nothing else.","date":"2012-07-09T18:23:11.000Z"}
+{"type":"message","nick":"@isaacs","message":"and then workers do all the work, and if they crash or blow up, then the master creates a new one","date":"2012-07-09T18:23:27.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: exactly","date":"2012-07-09T18:23:30.000Z"}
+{"type":"message","nick":"@isaacs","message":"if you have two tasks, then just create two clusters.","date":"2012-07-09T18:23:44.000Z"}
+{"type":"message","nick":"@isaacs","message":"two master.","date":"2012-07-09T18:23:47.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: the master should be so simple that you will never need to restart it","date":"2012-07-09T18:23:54.000Z"}
+{"type":"message","nick":"@isaacs","message":"and your SFM or init or whatever can take care of that","date":"2012-07-09T18:24:05.000Z"}
+{"type":"message","nick":"@isaacs","message":"node task-one.js --workers=2 ; node task-two.js --workers=6","date":"2012-07-09T18:24:21.000Z"}
+{"type":"message","nick":"@isaacs","message":"i think i basically agree with you. it's just that the API is a little bit inflexible.","date":"2012-07-09T18:24:47.000Z"}
+{"type":"message","nick":"@isaacs","message":"but if we're going to add a bunch of complexity JUST for some flexibility that might one day be useful, then that's not really the right choice.","date":"2012-07-09T18:25:07.000Z"}
+{"type":"message","nick":"@isaacs","message":"someone has to actually need it today, in a way that can't be handled more simply by doing some other thing.","date":"2012-07-09T18:25:31.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: have you seen my cluster-master module?","date":"2012-07-09T18:26:06.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: i'm using it on npm-www, and it's really nice.","date":"2012-07-09T18:26:13.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: yes, i did","date":"2012-07-09T18:26:20.000Z"}
+{"type":"message","nick":"@isaacs","message":"i push new code, then HUP the master, and it reloads all the workers gracefully","date":"2012-07-09T18:26:20.000Z"}
+{"type":"message","nick":"@isaacs","message":"it's still a bit vulnerable to fast crashes","date":"2012-07-09T18:26:41.000Z"}
+{"type":"message","nick":"@isaacs","message":"like, if there's a route that throws, and everyone hits it at once, then it'll bring down the server, cuz it's kinda dumb.","date":"2012-07-09T18:27:00.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: using disconnect? I looked at it, before that feature was introduced.","date":"2012-07-09T18:27:01.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: well, the worker just calls server.close() when there's an error caught by a domain. then the master sees the disconnect, and spawns a new worker to replace it, and if it's not gone by 2 seconds, it kills it forcibly.","date":"2012-07-09T18:27:39.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: ahh, perfect :)","date":"2012-07-09T18:28:01.000Z"}
+{"type":"message","nick":"@isaacs","message":"also, when you HUP, it spawns a new worker first, waits to make sure it stays up for 2 seconds, and then does a graceful restart.","date":"2012-07-09T18:28:26.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: I thougt about extending process.send(Server) so Server don't take any connections if Server.lisenters('connect') === 0, that way cluster could almost be an extern module without using any internal API.","date":"2012-07-09T18:29:10.000Z"}
+{"type":"message","nick":"@isaacs","message":"but the close-on-error thing is not quite resilient. what i need to do is have the worker send a message to the master, saying, \"I had an error, can I shut down?\" and then the master gives it permission.","date":"2012-07-09T18:29:19.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: yeah, i'd like for cluster to not rely on any internal APIs.","date":"2012-07-09T18:30:03.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: if it was userland-able, then we could tell people to just write their own cluster module, using the builtin as an example.","date":"2012-07-09T18:30:17.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: ^ that should be perfectly doable, process.send is sync (wtf)","date":"2012-07-09T18:30:44.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"> \"I had an error, can I shut down?\"","date":"2012-07-09T18:30:56.000Z"}
+{"type":"message","nick":"@isaacs","message":"yeah, we need to fix that.","date":"2012-07-09T18:31:00.000Z"}
+{"type":"message","nick":"@isaacs","message":"process.send should not be sync","date":"2012-07-09T18:31:04.000Z"}
+{"type":"message","nick":"@isaacs","message":"AndreasMadsen: well, the error is caught by a domain.","date":"2012-07-09T18:31:23.000Z"}
+{"type":"message","nick":"@isaacs","message":"but if 8 people hit the same error in rapid succession, then all the workers will shut down","date":"2012-07-09T18:31:37.000Z"}
+{"type":"message","nick":"@isaacs","message":"ie, server.close()","date":"2012-07-09T18:31:43.000Z"}
+{"type":"message","nick":"@isaacs","message":"now i'm not serving requests.","date":"2012-07-09T18:31:47.000Z"}
+{"type":"message","nick":"@isaacs","message":"they should wait to call server.close() until the master has spawned their replacement","date":"2012-07-09T18:32:11.000Z"}
+{"type":"message","nick":"@isaacs","message":"worker-A domain.error -> \"i got an error, lmk when i can shut down\", master spawns fresh worker-B, master tells worker-A \"ok, close\", worker-A calls server.close()","date":"2012-07-09T18:33:04.000Z"}
+{"type":"message","nick":"@isaacs","message":"2 seconds later, if worker-a is still alive, master kills it","date":"2012-07-09T18:33:14.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: the right solution would be for the OS to pause the new requests until a new server is attached. I never liked the idea about delaying throws. But what you suggest is perfectly doable with process.send.","date":"2012-07-09T18:33:20.000Z"}
+{"type":"message","nick":"@isaacs","message":"well, there should never be a throw that actually crashes the server.","date":"2012-07-09T18:33:43.000Z"}
+{"type":"message","nick":"@isaacs","message":"it'll just hit the domain, and then the domain will know what to do about it","date":"2012-07-09T18:33:58.000Z"}
+{"type":"message","nick":"@isaacs","message":"but keep in mind, there are 7 other workers","date":"2012-07-09T18:34:20.000Z"}
+{"type":"message","nick":"@isaacs","message":"of course, if send is async, you might get one or two reqs in before you get a response, but meh.","date":"2012-07-09T18:43:06.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: as I said the perfect right solution would be for the OS/master to pause the request until a worker is online. Restarting a worker don't take long time, so the client won't really notic. The important thing is that there request didn't die.","date":"2012-07-09T18:43:07.000Z"}
+{"type":"message","nick":"@isaacs","message":"you might have gotten that anyway","date":"2012-07-09T18:43:10.000Z"}
+{"type":"message","nick":"@isaacs","message":"restarting a worker takes a long time.","date":"2012-07-09T18:43:19.000Z"}
+{"type":"message","nick":"@isaacs","message":"several milliseconds.","date":"2012-07-09T18:43:25.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: can you count that","date":"2012-07-09T18:43:33.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"in your head","date":"2012-07-09T18:43:39.000Z"}
+{"type":"message","nick":"@isaacs","message":"sometimes several hundred","date":"2012-07-09T18:43:42.000Z"}
+{"type":"message","nick":"@isaacs","message":"i read config files, do sync IO for require(), etc.","date":"2012-07-09T18:43:53.000Z"}
+{"type":"message","nick":"@isaacs","message":"you'll see more reqs hit in that time than in the time it takes to ask for permission to close","date":"2012-07-09T18:44:16.000Z"}
+{"type":"message","nick":"AndreasMadsen","message":"isaacs: right, but the 100 ms it takes to restart a worker, is not much in an Internet request.","date":"2012-07-09T18:44:52.000Z"}
+{"type":"message","nick":"@isaacs","message":"and server.close() just takes it out of rotation. it'll still serve requests that it's already accepted","date":"2012-07-09T18:44:53.000Z"}
 {"nick":"isaacs","message":"AndreasMadsen: it's slow enough taht if i do `svcadm restart npm-www` and then hit refresh, I get a blank screen 3 or 4 times.","date":"2012-07-09T18:46:28.661Z","type":"message"}
 {"nick":"dap","reason":"Quit: Leaving.","date":"2012-07-09T18:46:44.292Z","type":"quit"}
 {"nick":"isaacs","message":"and that's just before the first worker comes on","date":"2012-07-09T18:46:44.624Z","type":"message"}
