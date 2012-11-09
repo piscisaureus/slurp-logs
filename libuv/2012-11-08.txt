@@ -301,3 +301,566 @@
 {"nick":"isaacs","message":"yeah, there we just had a queue of things to do","date":"2012-11-08T15:59:51.993Z","type":"message"}
 {"nick":"isaacs","message":"right","date":"2012-11-08T15:59:54.889Z","type":"message"}
 {"nick":"isaacs","message":"yeah,t hat sucked","date":"2012-11-08T15:59:59.620Z","type":"message"}
+{"nick":"isaacs","message":"lots of unnecessary pausing of whatever you were piping into a file","date":"2012-11-08T16:00:06.807Z","type":"message"}
+{"nick":"piscisaureus_","message":"so if you were piping then it would pause and resume the incoming stream yeah, that","date":"2012-11-08T16:00:11.467Z","type":"message"}
+{"nick":"isaacs","message":"pretty much every userland fs-streamy-thing changes that behavior.","date":"2012-11-08T16:00:49.639Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I think for readable streams it is important to not confuse chunk size with the low water mark","date":"2012-11-08T16:02:19.371Z","type":"message"}
+{"nick":"piscisaureus_","message":"the low water mark only makes sense on \"slow\" streams, like tcp streams","date":"2012-11-08T16:02:41.149Z","type":"message"}
+{"nick":"piscisaureus_","message":"it can be more efficient to only emit readable when there are atleast x bytes pending","date":"2012-11-08T16:03:00.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"but the caveat is that if you have a duplex communication protocol, you may have to respond to a \"request\" that is smaller than the low water mark","date":"2012-11-08T16:03:39.345Z","type":"message"}
+{"nick":"indutny","message":"isaacs: call?","date":"2012-11-08T16:03:43.446Z","type":"message"}
+{"nick":"indutny","message":"or in 1h?","date":"2012-11-08T16:03:50.809Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so it should default to 1, and be user-configurable","date":"2012-11-08T16:03:52.476Z","type":"message"}
+{"nick":"isaacs","message":"1h","date":"2012-11-08T16:03:58.925Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh","date":"2012-11-08T16:04:02.474Z","type":"message"}
+{"nick":"piscisaureus_","message":"did you guys change time zones now?","date":"2012-11-08T16:04:13.527Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, blame america","date":"2012-11-08T16:04:22.860Z","type":"message"}
+{"nick":"piscisaureus_","message":"I blame obama","date":"2012-11-08T16:04:28.957Z","type":"message"}
+{"nick":"isaacs","message":"summer time ended","date":"2012-11-08T16:04:31.789Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: well, we ain't changing them anymore","date":"2012-11-08T16:04:41.718Z","type":"message"}
+{"nick":"isaacs","message":"it's at 17:00 now","date":"2012-11-08T16:04:42.616Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: blame Putin","date":"2012-11-08T16:04:47.445Z","type":"message"}
+{"nick":"piscisaureus_","message":"indutny: +1 for putin then","date":"2012-11-08T16:04:54.961Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: not really","date":"2012-11-08T16:05:01.792Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: we stuck in winter TZ","date":"2012-11-08T16:05:05.493Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: meh.  it' sjust a number","date":"2012-11-08T16:05:17.430Z","type":"message"}
+{"nick":"indutny","message":"I hoped for us to stay in summer time","date":"2012-11-08T16:05:18.344Z","type":"message"}
+{"nick":"piscisaureus_","message":"well you're stuck in winter so you better stick to winter tz as well :-)","date":"2012-11-08T16:05:19.426Z","type":"message"}
+{"nick":"isaacs","message":"er, indutny ","date":"2012-11-08T16:05:21.729Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: haha","date":"2012-11-08T16:05:26.222Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, so, for tcp streams, any duplex really, the lwm has to be 0","date":"2012-11-08T16:05:37.409Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but i also need a hwm for readables to say when to STOP reading","date":"2012-11-08T16:05:47.213Z","type":"message"}
+{"nick":"piscisaureus_","message":"well 1/0 whatever","date":"2012-11-08T16:05:48.232Z","type":"message"}
+{"nick":"piscisaureus_","message":"I would say you should not emit \"readable\" when there's 0 bytes to read :-)","date":"2012-11-08T16:06:00.805Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: right","date":"2012-11-08T16:06:08.575Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ","date":"2012-11-08T16:06:08.901Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ?","date":"2012-11-08T16:06:17.293Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: can you please remind me what should I write instead of uv_wait()?","date":"2012-11-08T16:06:21.738Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: but yes 0 should work, it would basically mean \"no low water mark\"","date":"2012-11-08T16:06:28.494Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah","date":"2012-11-08T16:06:34.938Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you mean what to work on?","date":"2012-11-08T16:06:41.127Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: no, I mean I would like to get uv_wait() in","date":"2012-11-08T16:06:52.834Z","type":"message"}
+{"nick":"isaacs","message":"but then you still need a high water mark, so that you can still keep trying to read the stream, so you see the EOF if it comes.","date":"2012-11-08T16:06:54.261Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: there is not much sense in having a high water mark for readable stream.","date":"2012-11-08T16:06:54.690Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: ^","date":"2012-11-08T16:06:58.742Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: :)","date":"2012-11-08T16:06:59.811Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: so, right now, i'm confusing lwm to mean \"when do i bother to emit('readable')\" and also \"when should i keep calling _read()\"","date":"2012-11-08T16:07:30.756Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the first is a lwm.  the second is more properly a high water mark.","date":"2012-11-08T16:07:38.322Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: oh, like that. uhm, as you know i'm not a big fan of the extra complexity","date":"2012-11-08T16:07:48.997Z","type":"message"}
+{"nick":"indutny","message":"I know","date":"2012-11-08T16:07:56.253Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-11-08T16:08:02.138Z","type":"message"}
+{"nick":"indutny","message":"lets expose fd then","date":"2012-11-08T16:08:06.450Z","type":"message"}
+{"nick":"bnoordhuis","message":"i would prefer to give the user the epoll/kqueue fd and the next timeout and call it a day","date":"2012-11-08T16:08:12.539Z","type":"message"}
+{"nick":"bnoordhuis","message":"exactly :)","date":"2012-11-08T16:08:15.491Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-11-08T16:08:17.784Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I think that if you hit an EOF you should just ignore any high/low marks","date":"2012-11-08T16:08:20.021Z","type":"message"}
+{"nick":"indutny","message":"at least it's anything","date":"2012-11-08T16:08:24.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"or something","date":"2012-11-08T16:08:30.441Z","type":"message"}
+{"nick":"indutny","message":"and if something won't work - that is user's problems","date":"2012-11-08T16:08:32.985Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-11-08T16:08:36.988Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, the user is free to move the polling to a thread","date":"2012-11-08T16:08:56.025Z","type":"message"}
+{"nick":"bnoordhuis","message":"we don't have to make that choice for him/her/it","date":"2012-11-08T16:09:04.765Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, at what time is the call this week?","date":"2012-11-08T16:09:24.375Z","type":"message"}
+{"nick":"bnoordhuis","message":"all this dst stuff is confusing me no end","date":"2012-11-08T16:09:31.842Z","type":"message"}
+{"nick":"indutny","message":"1h","date":"2012-11-08T16:09:50.963Z","type":"message"}
+{"nick":"indutny","message":"from now","date":"2012-11-08T16:09:52.348Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: Do you happen to know which upstream version of libev that your fork matches to?","date":"2012-11-08T16:13:06.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: you mean what release? frankly, no :)","date":"2012-11-08T16:14:10.940Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's at least over a year old though","date":"2012-11-08T16:14:23.898Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: Found it in the sources: looks like 4.04","date":"2012-11-08T16:15:13.962Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but that's the point, you won't even see the EOF if you dont _read()","date":"2012-11-08T16:15:45.325Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: let's say, you _read() and get a chunk, but dont read() to consume it","date":"2012-11-08T16:16:21.541Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: and meanwhile, i .end()","date":"2012-11-08T16:16:28.438Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: there's an EOF sitting there waiting to be consumed, but you're not going to see it","date":"2012-11-08T16:16:40.529Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: because you've called readStop() and aren't going to call readStart() again until you consume the bytes sitting in the buffer to trigger another _read(n,cb) call","date":"2012-11-08T16:17:12.708Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: so, _read() should get called in teh background until the highWaterMark is hit","date":"2012-11-08T16:17:35.507Z","type":"message"}
+{"nick":"isaacs","message":"also, let's just say that our call is at 17:00 forever.  8:00 am is too early for CA, but we can shift it to 10:00 when we go back on summer time.","date":"2012-11-08T16:18:18.123Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-11-08T16:23:13.080Z","type":"quit"}
+{"nick":"`3rdEden","new_nick":"`3E|FOOD|LOLZ","date":"2012-11-08T16:24:57.632Z","type":"nick"}
+{"nick":"piscisaureus_","message":"isaacs: ew 17.00 I think youre mixing stuff up","date":"2012-11-08T16:28:36.770Z","type":"message"}
+{"nick":"isaacs","message":"huh?","date":"2012-11-08T16:28:55.704Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: too late?","date":"2012-11-08T16:29:21.184Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs well if we are both back in summer time, 10.00am == 19.00pm for us","date":"2012-11-08T16:29:51.168Z","type":"message"}
+{"nick":"piscisaureus_","message":"just like now","date":"2012-11-08T16:29:53.013Z","type":"message"}
+{"nick":"isaacs","message":"ohh, ok.","date":"2012-11-08T16:30:05.113Z","type":"message"}
+{"nick":"isaacs","message":"stupid spherical planet...","date":"2012-11-08T16:30:11.684Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-08T16:30:17.314Z","type":"quit"}
+{"nick":"isaacs","message":"16:00 is actually fine for me.","date":"2012-11-08T16:30:23.820Z","type":"message"}
+{"nick":"isaacs","message":"i'd just prefer to stick with UTC and the sun, rather than this provincial \"us/pacific\" thing","date":"2012-11-08T16:30:37.761Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: 16.00 for us is 7am for you :-)","date":"2012-11-08T16:30:48.737Z","type":"message"}
+{"nick":"isaacs","message":"1600 is 8:00 for me right now","date":"2012-11-08T16:31:04.205Z","type":"message"}
+{"nick":"isaacs","message":"it's 16:32 right now","date":"2012-11-08T16:31:10.616Z","type":"message"}
+{"nick":"isaacs","message":"16:00 is 9AM when we're on summer time.","date":"2012-11-08T16:31:23.720Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you are referring to UTC times","date":"2012-11-08T16:31:31.721Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-11-08T16:31:33.709Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-11-08T16:31:34.660Z","type":"message"}
+{"nick":"isaacs","message":"16:00 UTC","date":"2012-11-08T16:31:38.317Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: here it is 17:30","date":"2012-11-08T16:31:39.925Z","type":"message"}
+{"nick":"isaacs","message":"right.","date":"2012-11-08T16:31:43.913Z","type":"message"}
+{"nick":"isaacs","message":"you're +1","date":"2012-11-08T16:31:45.608Z","type":"message"}
+{"nick":"isaacs","message":"i'm -8 or -7, depending on teh season","date":"2012-11-08T16:31:54.245Z","type":"message"}
+{"nick":"piscisaureus_","message":"here we are +1 or +2 depending on teh season","date":"2012-11-08T16:32:07.520Z","type":"message"}
+{"nick":"isaacs","message":"i thought you guys were +1/+0, but you're saying it's 1/2","date":"2012-11-08T16:32:10.081Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-11-08T16:32:10.706Z","type":"message"}
+{"nick":"isaacs","message":"k.  would 16:00Z work for you guys year-round?","date":"2012-11-08T16:32:33.204Z","type":"message"}
+{"nick":"isaacs","message":"i don't know if scott and nate will object to getting up early.","date":"2012-11-08T16:32:45.349Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-11-08T16:32:46.280Z","type":"message"}
+{"nick":"piscisaureus_","message":"for me it would","date":"2012-11-08T16:32:56.040Z","type":"message"}
+{"nick":"isaacs","message":"we might just have to deal with provincial bs.","date":"2012-11-08T16:32:57.344Z","type":"message"}
+{"nick":"isaacs","message":"seriously, i think time zones will eventually be seen as one of hte greatest tragedies of human civilization.","date":"2012-11-08T16:34:19.639Z","type":"message"}
+{"nick":"isaacs","message":"in the fullness of history.","date":"2012-11-08T16:34:24.518Z","type":"message"}
+{"nick":"piscisaureus_","message":"Yes. Forget about world wars and concentration camps.","date":"2012-11-08T16:35:25.632Z","type":"message"}
+{"nick":"piscisaureus_","message":"Time zones, that was it.","date":"2012-11-08T16:35:29.607Z","type":"message"}
+{"nick":"isaacs","message":"all those thigns were symptoms.","date":"2012-11-08T16:36:05.324Z","type":"message"}
+{"nick":"isaacs","message":"of the deeper disease.","date":"2012-11-08T16:36:12.437Z","type":"message"}
+{"nick":"isaacs","message":"how can we have an experience of universal brotherhood when we don't even know what time it is there?","date":"2012-11-08T16:36:35.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"also, everybody should learn dutch","date":"2012-11-08T16:37:08.504Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think that if everybody would be white and male then we'd also feel much more connected","date":"2012-11-08T16:37:51.974Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: why learn dutch?  the dutch all speak english already.","date":"2012-11-08T16:39:23.632Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well if everybody would learn english that 1 third of the world population would have an artifical advantage","date":"2012-11-08T16:39:54.341Z","type":"message"}
+{"nick":"piscisaureus_","message":"not so much with dutch","date":"2012-11-08T16:39:58.636Z","type":"message"}
+{"nick":"piscisaureus_","message":"even dutch people don't speak dutch properly","date":"2012-11-08T16:40:07.572Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that's what they said about esperanto and lojban","date":"2012-11-08T16:40:29.120Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but of course, esperanto is WAY easier for europeans and americans to leanr.","date":"2012-11-08T16:40:43.381Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: nad lojban is just kind of stupid.","date":"2012-11-08T16:40:53.766Z","type":"message"}
+{"nick":"CoverSlide","message":"everyone should learn dothraki","date":"2012-11-08T16:42:48.663Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: irl, economic factors always drive cultural changes, and the people with the money always have the advantage.  once upon a time, that was latin, now it's english in the west and mandarin in the east, and eventually may be some kind of hybrid simplified english-ish language.","date":"2012-11-08T16:43:01.942Z","type":"message"}
+{"nick":"isaacs","message":"polyglot systems attract the worst kind of language nerds.  you see this in java, and in europe.","date":"2012-11-08T16:43:28.540Z","type":"message"}
+{"nick":"isaacs","message":";P","date":"2012-11-08T16:43:31.557Z","type":"message"}
+{"nick":"CoverSlide","message":"well according to Firefly, Mandarin will become the dominant language in the future","date":"2012-11-08T16:43:36.028Z","type":"message"}
+{"nick":"isaacs","message":"CoverSlide: only for cursing, though","date":"2012-11-08T16:43:43.448Z","type":"message"}
+{"nick":"tjfontaine","message":"the world according to whedon","date":"2012-11-08T16:43:47.795Z","type":"message"}
+{"nick":"CoverSlide","message":"true","date":"2012-11-08T16:43:48.612Z","type":"message"}
+{"nick":"isaacs","message":"and really, as Futurama teaches us, Cantonese is WAY better for cursing.","date":"2012-11-08T16:44:07.220Z","type":"message"}
+{"nick":"isaacs","message":"Hailat!  Dasane!","date":"2012-11-08T16:44:18.009Z","type":"message"}
+{"nick":"isaacs","message":"literally: \"CRITICAL SITUATION! HIT YOU TO DEATH!\"","date":"2012-11-08T16:44:25.245Z","type":"message"}
+{"nick":"isaacs","message":"kinda makes \"shit\" and \"fuck\" look tame ","date":"2012-11-08T16:44:44.185Z","type":"message"}
+{"nick":"CoverSlide","message":"http://wiki.dothraki.org/dothraki/Learningdothraki","date":"2012-11-08T16:45:44.231Z","type":"message"}
+{"nick":"CoverSlide","message":"isaacs: looks like something you'd see at the end of an arcade fighting game","date":"2012-11-08T16:46:20.544Z","type":"message"}
+{"nick":"janjongboom","reason":"Quit: janjongboom","date":"2012-11-08T16:46:48.503Z","type":"quit"}
+{"nick":"kristate","date":"2012-11-08T16:50:38.374Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-11-08T16:52:51.538Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-11-08T16:53:06.659Z","type":"quit"}
+{"nick":"sergim","reason":"Quit: Computer has gone to sleep.","date":"2012-11-08T16:56:59.934Z","type":"quit"}
+{"nick":"bnoordhuis","message":"call in 3?","date":"2012-11-08T16:57:14.450Z","type":"message"}
+{"nick":"bnoordhu1s","date":"2012-11-08T16:57:21.979Z","type":"join"}
+{"nick":"bnoordhu1s","reason":"Client Quit","date":"2012-11-08T16:57:52.657Z","type":"quit"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-11-08T16:58:07.055Z","type":"quit"}
+{"nick":"bradleymeck","date":"2012-11-08T16:58:22.615Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: 1600 UTC works for me as well","date":"2012-11-08T16:58:40.884Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: bertje, maak es an","date":"2012-11-08T16:59:42.557Z","type":"message"}
+{"nick":"peterrs","reason":"Remote host closed the connection","date":"2012-11-08T17:06:40.273Z","type":"quit"}
+{"nick":"kkaefer","reason":"\"Leaving...\"","date":"2012-11-08T17:07:35.904Z","type":"part"}
+{"nick":"sgallagh","date":"2012-11-08T17:08:18.972Z","type":"join"}
+{"nick":"yunong","date":"2012-11-08T17:13:13.219Z","type":"join"}
+{"nick":"rendar","message":"isaacs: lol, futurama rocks :)","date":"2012-11-08T17:16:04.632Z","type":"message"}
+{"nick":"sblom","date":"2012-11-08T17:21:05.235Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-08T17:22:14.463Z","type":"quit"}
+{"nick":"perezd","date":"2012-11-08T17:23:24.425Z","type":"join"}
+{"nick":"indutny","message":"piscisaureus_: I've tried looking at https://github.com/joyent/node/issues/4231#issuecomment-10037956","date":"2012-11-08T17:29:46.179Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: but v8's hydrogen is so obscure","date":"2012-11-08T17:29:52.989Z","type":"message"}
+{"nick":"piscisaureus_","message":"heh","date":"2012-11-08T17:29:58.380Z","type":"message"}
+{"nick":"indutny","message":"even c1visualizer doesn't help me to get it","date":"2012-11-08T17:30:12.206Z","type":"message"}
+{"nick":"piscisaureus_","message":"i had the same fedor","date":"2012-11-08T17:30:16.208Z","type":"message"}
+{"nick":"indutny","message":"candor's HIR is much simplier to understand","date":"2012-11-08T17:30:31.635Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-11-08T17:30:32.403Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u000243d52c7\u0002 : test: make `make test` link against .so (+1 more commits) - http://git.io/VXSKzw","date":"2012-11-08T17:30:36.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"sgallagh: ^","date":"2012-11-08T17:30:40.282Z","type":"message"}
+{"nick":"piscisaureus_","message":"also much slower :-p","date":"2012-11-08T17:30:43.977Z","type":"message"}
+{"nick":"indutny","message":"not on every example :)","date":"2012-11-08T17:31:22.308Z","type":"message"}
+{"nick":"indutny","message":"well, yes, it's slower","date":"2012-11-08T17:31:42.919Z","type":"message"}
+{"nick":"indutny","message":"one day you'll work on it","date":"2012-11-08T17:31:46.979Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-11-08T17:31:49.164Z","type":"quit"}
+{"nick":"indutny","message":"when you'll be fired","date":"2012-11-08T17:31:51.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you can't really fire someone you don't pay","date":"2012-11-08T17:32:27.137Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: the best quote :)","date":"2012-11-08T17:32:44.093Z","type":"message"}
+{"nick":"bnoordhuis","message":"bert just showed up one day and couldn't be made to leave again","date":"2012-11-08T17:33:09.653Z","type":"message"}
+{"nick":"mikeal","date":"2012-11-08T17:34:25.220Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-11-08T17:34:41.246Z","type":"quit"}
+{"nick":"sblom","message":"indutny: here's what I know about the failure in simple/test-debugger-client.js","date":"2012-11-08T17:38:10.644Z","type":"message"}
+{"nick":"sblom","message":"indutny: it hangs in the third test case (eval(\"2+2\")) 100% of the time on my Windows machine, and about 20% of the time on my Macbook.","date":"2012-11-08T17:38:43.349Z","type":"message"}
+{"nick":"travis-ci","date":"2012-11-08T17:39:03.494Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#856 (master - 43d52c7 : Ben Noordhuis): The build passed.","date":"2012-11-08T17:39:03.628Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/d56434a21d9e...43d52c77baa4","date":"2012-11-08T17:39:03.628Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/3115409","date":"2012-11-08T17:39:03.628Z","type":"message"}
+{"nick":"travis-ci","date":"2012-11-08T17:39:03.628Z","type":"part"}
+{"nick":"sblom","message":"indutny: from doing some stepping in the debugger, it appears that the eval request is being made to v8, but for some reason it's vanishing. (Looking up a line number where you can see this in action.)","date":"2012-11-08T17:39:31.240Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2012-11-08T17:41:51.209Z","type":"action"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037streams2-net\u000f * \u00024ef328e\u0002 : test: update test-child-process-fork-net2 to work properly  It was only e - http://git.io/YdORJA","date":"2012-11-08T17:42:19.816Z","type":"message"}
+{"nick":"sblom","message":"indutny: isaacs mentioned to me (you may already know this) that there's some kind of historical wrestling match with a debugger initialization race condition that you can see as a fixme on line 100 in node.js","date":"2012-11-08T17:42:24.706Z","type":"message"}
+{"nick":"sblom","message":"(line 100 in joyent/node#master)","date":"2012-11-08T17:42:51.181Z","type":"message"}
+{"nick":"sgallagh","message":"bnoordhuis: Thanks for the pointer","date":"2012-11-08T17:46:00.349Z","type":"message"}
+{"nick":"sblom","message":"indutny: I'm pretty sure the line where my debug stepping lost the scent of the trail was line 206 in deps/v8/src/execution.cc (result = Invoke())","date":"2012-11-08T17:46:48.676Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-11-08T17:46:57.690Z","type":"quit"}
+{"nick":"sblom","message":"indutny: it's possible that's because of the initialization race that isaacs's reference indicates, but it felt slightly different from that to me.","date":"2012-11-08T17:47:14.274Z","type":"message"}
+{"nick":"sblom","message":"But I admit I'm a long way from having a good handle on debugging inside JITted v8 code.","date":"2012-11-08T17:47:35.312Z","type":"message"}
+{"nick":"sblom","message":"So it's possible v8 just confused me.","date":"2012-11-08T17:47:56.302Z","type":"message"}
+{"nick":"indutny","message":"kewl","date":"2012-11-08T17:48:22.090Z","type":"message"}
+{"nick":"indutny","message":"I'm having a dinner atm","date":"2012-11-08T17:48:29.198Z","type":"message"}
+{"nick":"indutny","message":"will look into it 10-20 minutes","date":"2012-11-08T17:48:36.123Z","type":"message"}
+{"nick":"indutny","message":"later","date":"2012-11-08T17:48:37.200Z","type":"message"}
+{"nick":"indutny","message":"sblom: thank you for sharing","date":"2012-11-08T17:48:41.815Z","type":"message"}
+{"nick":"piscisaureus_","date":"2012-11-08T17:48:45.703Z","type":"join"}
+{"nick":"mikeal","date":"2012-11-08T17:53:55.592Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-11-08T17:57:35.437Z","type":"quit"}
+{"nick":"joshthecoder","date":"2012-11-08T17:58:48.373Z","type":"join"}
+{"nick":"`3E|FOOD|LOLZ","new_nick":"`3rdEden","date":"2012-11-08T18:01:49.410Z","type":"nick"}
+{"nick":"mikeal","date":"2012-11-08T18:14:47.531Z","type":"join"}
+{"nick":"tomshreds","date":"2012-11-08T18:15:43.108Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-08T18:21:12.107Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-11-08T18:26:01.966Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: so about select() in osx","date":"2012-11-08T18:31:06.539Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yt","date":"2012-11-08T18:31:08.962Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-11-08T18:54:26.888Z","type":"quit"}
+{"nick":"hz","reason":"Ping timeout: 272 seconds","date":"2012-11-08T18:57:33.024Z","type":"quit"}
+{"nick":"hz","date":"2012-11-08T18:59:21.009Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-08T19:00:01.886Z","type":"quit"}
+{"nick":"hz","reason":"Read error: No route to host","date":"2012-11-08T19:00:13.345Z","type":"quit"}
+{"nick":"hz","date":"2012-11-08T19:00:47.009Z","type":"join"}
+{"nick":"slurp-transition","reason":"Remote host closed the connection","date":"2012-11-08T19:03:45.228Z","type":"quit"}
+{"nick":"hz","reason":"Ping timeout: 272 seconds","date":"2012-11-08T19:05:46.962Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-08T19:05:56.873Z","type":"join"}
+{"nick":"hz","date":"2012-11-08T19:06:36.978Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-08T19:08:16.126Z","type":"quit"}
+{"nick":"bnoordhuis","message":"indutny: ih","date":"2012-11-08T19:09:08.953Z","type":"message"}
+{"nick":"brson","date":"2012-11-08T19:09:30.357Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: ok","date":"2012-11-08T19:10:22.526Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: we still need it","date":"2012-11-08T19:10:33.452Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: who is 'we'?","date":"2012-11-08T19:10:43.777Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: osx people","date":"2012-11-08T19:10:52.303Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: opening \"/dev/tty\" brokes everything","date":"2012-11-08T19:11:06.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, i know","date":"2012-11-08T19:11:18.693Z","type":"message"}
+{"nick":"hz","reason":"Ping timeout: 272 seconds","date":"2012-11-08T19:12:06.957Z","type":"quit"}
+{"nick":"hz","date":"2012-11-08T19:12:56.033Z","type":"join"}
+{"nick":"bnoordhuis","message":"indutny: okay, so let's hear your proposal :)","date":"2012-11-08T19:14:33.199Z","type":"message"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-11-08T19:14:33.333Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: so, I've two idea","date":"2012-11-08T19:14:41.653Z","type":"message"}
+{"nick":"indutny","message":"ideas*","date":"2012-11-08T19:14:43.501Z","type":"message"}
+{"nick":"indutny","message":"1) Creating extra fd and feeding it to select() call","date":"2012-11-08T19:15:06.443Z","type":"message"}
+{"nick":"hz","date":"2012-11-08T19:15:11.010Z","type":"join"}
+{"nick":"indutny","message":"writing to it every time readable/writable state should be changed","date":"2012-11-08T19:15:21.860Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you mean an event fd kind of fd?","date":"2012-11-08T19:15:33.298Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2012-11-08T19:15:34.447Z","type":"message"}
+{"nick":"mmalecki[food]","new_nick":"mmalecki","date":"2012-11-08T19:15:37.671Z","type":"nick"}
+{"nick":"indutny","message":"2) Assume that state can't be changed after select() thread was started","date":"2012-11-08T19:16:00.539Z","type":"message"}
+{"nick":"indutny","message":"i.e. start is as late as possible","date":"2012-11-08T19:16:12.480Z","type":"message"}
+{"nick":"indutny","message":"or","date":"2012-11-08T19:16:14.819Z","type":"message"}
+{"nick":"indutny","message":"3) start thread only when reading/writing notifications requested","date":"2012-11-08T19:16:29.137Z","type":"message"}
+{"nick":"indutny","message":"yeah, 3 ides","date":"2012-11-08T19:16:32.365Z","type":"message"}
+{"nick":"indutny","message":"ideas*","date":"2012-11-08T19:16:34.209Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-11-08T19:16:37.128Z","type":"quit"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-11-08T19:16:40.541Z","type":"quit"}
+{"nick":"bnoordhuis","message":"the first sounds reasonable, the other two not so much","date":"2012-11-08T19:16:54.946Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2012-11-08T19:17:02.400Z","type":"message"}
+{"nick":"indutny","message":"btw, do you think 300 bytes per instruction is too much? :)","date":"2012-11-08T19:17:17.515Z","type":"message"}
+{"nick":"bnoordhuis","message":"300 bytes per instruction of what?","date":"2012-11-08T19:17:27.243Z","type":"message"}
+{"nick":"indutny","message":"offtopic","date":"2012-11-08T19:17:28.519Z","type":"message"}
+{"nick":"indutny","message":"candor","date":"2012-11-08T19:17:30.872Z","type":"message"}
+{"nick":"bnoordhuis","message":"define 'instruction'?","date":"2012-11-08T19:17:41.764Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mean assembly opcode?","date":"2012-11-08T19:17:47.454Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-11-08T19:17:53.014Z","type":"message"}
+{"nick":"bnoordhuis","message":"hmm, some would say it's a little excessive :)","date":"2012-11-08T19:18:03.372Z","type":"message"}
+{"nick":"indutny","message":"I think it's bad for cache","date":"2012-11-08T19:18:06.560Z","type":"message"}
+{"nick":"indutny","message":"yeah, indeed","date":"2012-11-08T19:18:12.353Z","type":"message"}
+{"nick":"mikeal","date":"2012-11-08T19:20:16.058Z","type":"join"}
+{"nick":"AvianFlu","date":"2012-11-08T19:20:54.758Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2012-11-08T19:21:10.587Z","type":"quit"}
+{"nick":"bnoordhuis","message":"a curious thing... if you run test/test-async under valgrind, it always times out, no matter how big the timeout is","date":"2012-11-08T19:26:19.831Z","type":"message"}
+{"nick":"lohkey","date":"2012-11-08T19:27:07.285Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: interesting","date":"2012-11-08T19:32:03.609Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I suppose valgrind bug?","date":"2012-11-08T19:32:17.269Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: or a very subtle race in the test","date":"2012-11-08T19:32:30.096Z","type":"message"}
+{"nick":"indutny","message":"run it with drd","date":"2012-11-08T19:32:39.921Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a multi-threaded test and valgrind doesn't really do threads, it just simulates them","date":"2012-11-08T19:32:52.051Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-11-08T19:32:59.592Z","type":"message"}
+{"nick":"indutny","message":"hm..","date":"2012-11-08T19:33:01.280Z","type":"message"}
+{"nick":"indutny","message":"run drd on one core VM","date":"2012-11-08T19:33:07.705Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-11-08T19:33:10.444Z","type":"message"}
+{"nick":"tommybergeron","date":"2012-11-08T19:47:24.143Z","type":"join"}
+{"nick":"tommybergeron","reason":"Client Quit","date":"2012-11-08T19:47:24.276Z","type":"quit"}
+{"nick":"tomshreds","reason":"Ping timeout: 244 seconds","date":"2012-11-08T19:49:49.095Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-08T19:50:13.474Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-11-08T19:50:58.304Z","type":"join"}
+{"nick":"mikeal","date":"2012-11-08T19:51:20.974Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-11-08T19:54:54.652Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-11-08T19:55:33.673Z","type":"quit"}
+{"nick":"EhevuTov_","date":"2012-11-08T19:55:41.648Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-11-08T19:56:18.422Z","type":"join"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-11-08T19:57:18.853Z","type":"quit"}
+{"nick":"EhevuTov","reason":"Ping timeout: 264 seconds","date":"2012-11-08T19:58:54.112Z","type":"quit"}
+{"nick":"TooTallNate","message":"piscisaureus_: so i'm not sure what 1. means http://codereview.chromium.org/11361103/","date":"2012-11-08T20:01:29.482Z","type":"message"}
+{"nick":"mikeal","reason":"Ping timeout: 246 seconds","date":"2012-11-08T20:01:34.909Z","type":"quit"}
+{"nick":"sergim","date":"2012-11-08T20:02:14.989Z","type":"join"}
+{"nick":"piscisaureus_","message":"TooTallNate: neither do I :-)","date":"2012-11-08T20:02:16.713Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe this guy is not aware that you are not a googler","date":"2012-11-08T20:02:28.392Z","type":"message"}
+{"nick":"piscisaureus_","message":"I would suggest that you just ask what he means :-)","date":"2012-11-08T20:02:42.729Z","type":"message"}
+{"nick":"TooTallNate","message":"ok thanks","date":"2012-11-08T20:02:50.698Z","type":"message"}
+{"nick":"indutny","message":"TooTallNate: ask for secrets","date":"2012-11-08T20:02:51.158Z","type":"message"}
+{"nick":"indutny","message":"TooTallNate: ask for ssh keys","date":"2012-11-08T20:02:59.490Z","type":"message"}
+{"nick":"indutny","message":"TooTallNate: say you need a ssh key to look into gyp commit queue","date":"2012-11-08T20:03:13.211Z","type":"message"}
+{"nick":"piscisaureus_","message":"Haha","date":"2012-11-08T20:03:15.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"You know google","date":"2012-11-08T20:03:17.604Z","type":"message"}
+{"nick":"piscisaureus_","message":"They don't use SSH","date":"2012-11-08T20:03:20.461Z","type":"message"}
+{"nick":"piscisaureus_","message":"they have something in-house :-)","date":"2012-11-08T20:03:26.241Z","type":"message"}
+{"nick":"indutny","message":"I'm pretty sure they have certificates for VPN","date":"2012-11-08T20:03:39.220Z","type":"message"}
+{"nick":"txdv","reason":"Read error: Connection reset by peer","date":"2012-11-08T20:04:54.114Z","type":"quit"}
+{"nick":"txdv","date":"2012-11-08T20:05:11.413Z","type":"join"}
+{"nick":"`3rdEden","reason":"Quit: switching to laptop","date":"2012-11-08T20:11:59.453Z","type":"quit"}
+{"nick":"stagas","date":"2012-11-08T20:12:17.063Z","type":"join"}
+{"nick":"paddybyers","reason":"Ping timeout: 255 seconds","date":"2012-11-08T20:12:22.442Z","type":"quit"}
+{"nick":"CoverSlide","new_nick":"CoverSlide|TPFR","date":"2012-11-08T20:12:27.997Z","type":"nick"}
+{"nick":"hz","date":"2012-11-08T20:13:36.998Z","type":"join"}
+{"nick":"mikeal","date":"2012-11-08T20:14:23.185Z","type":"join"}
+{"nick":"EhevuTov_","new_nick":"EhevuTov","date":"2012-11-08T20:14:45.565Z","type":"nick"}
+{"nick":"EhevuTov","reason":"Quit: Leaving","date":"2012-11-08T20:15:08.546Z","type":"quit"}
+{"nick":"hz","reason":"Client Quit","date":"2012-11-08T20:15:39.377Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-11-08T20:18:18.323Z","type":"join"}
+{"nick":"bnoordhuis","message":"indutny, piscisaureus_: https://github.com/bnoordhuis/libuv/commit/372aee2 <- review?","date":"2012-11-08T20:21:47.432Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: how is there a deadlock?","date":"2012-11-08T20:22:25.104Z","type":"message"}
+{"nick":"bnoordhuis","message":"i was afraid you were going to ask that","date":"2012-11-08T20:22:39.221Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, because if there is, I added it :-)","date":"2012-11-08T20:22:54.872Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so explain ?","date":"2012-11-08T20:22:58.988Z","type":"message"}
+{"nick":"bnoordhuis","message":"maybe livelock is a better word","date":"2012-11-08T20:23:00.114Z","type":"message"}
+{"nick":"bnoordhuis","message":"wait, i'll try to get a trace out of valgrind, that'll help explaining","date":"2012-11-08T20:23:23.706Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, sneakily enough it doesn't *always* happen, just often","date":"2012-11-08T20:23:46.760Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, stracing valgrind kills it. nice","date":"2012-11-08T20:24:18.440Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-11-08T20:24:51.824Z","type":"message"}
+{"nick":"piscisaureus_","message":"why does make nowadays no longer work :-(","date":"2012-11-08T20:24:56.299Z","type":"message"}
+{"nick":"piscisaureus_","message":"test/run-tests: error while loading shared libraries: libuv.so: cannot open shared object file: No such file or directory","date":"2012-11-08T20:25:03.296Z","type":"message"}
+{"nick":"indutny","message":"I know what's happening","date":"2012-11-08T20:25:13.180Z","type":"message"}
+{"nick":"indutny","message":"it checks variable after uv_async cb","date":"2012-11-08T20:25:20.921Z","type":"message"}
+{"nick":"indutny","message":"and it contains old value","date":"2012-11-08T20:25:24.453Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, so","date":"2012-11-08T20:25:31.245Z","type":"message"}
+{"nick":"indutny","message":"because there're no memory barriers","date":"2012-11-08T20:25:31.704Z","type":"message"}
+{"nick":"piscisaureus_","message":"it does it again","date":"2012-11-08T20:25:33.943Z","type":"message"}
+{"nick":"indutny","message":"and it loops","date":"2012-11-08T20:25:34.120Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: right?","date":"2012-11-08T20:25:36.148Z","type":"message"}
+{"nick":"txdv","message":"hi","date":"2012-11-08T20:25:39.560Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: oh, i broke that :)","date":"2012-11-08T20:25:51.944Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-11-08T20:25:57.539Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that on windows?","date":"2012-11-08T20:25:59.258Z","type":"message"}
+{"nick":"piscisaureus_","message":"how do I buuld the test runner with gyp?","date":"2012-11-08T20:26:05.459Z","type":"message"}
+{"nick":"piscisaureus_","message":"no linux","date":"2012-11-08T20:26:08.829Z","type":"message"}
+{"nick":"bnoordhuis","message":"it builds it automatically","date":"2012-11-08T20:26:16.235Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: .so file on linux ?","date":"2012-11-08T20:26:21.155Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's in out/Debug/run-tests","date":"2012-11-08T20:26:21.841Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2012-11-08T20:26:22.501Z","type":"quit"}
+{"nick":"txdv","message":"is async_t thread safe?","date":"2012-11-08T20:26:27.059Z","type":"message"}
+{"nick":"bnoordhuis","message":"txdv: in what context?","date":"2012-11-08T20:26:36.438Z","type":"message"}
+{"nick":"indutny","message":"by what means?","date":"2012-11-08T20:26:36.737Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what commands do you use to build run-tests? I can't seem to do it (master)","date":"2012-11-08T20:27:02.252Z","type":"message"}
+{"nick":"txdv","message":"like I call async_t for loop 1 from other loops in their own threads","date":"2012-11-08T20:27:05.698Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: re no memory barriers, that's not it","date":"2012-11-08T20:27:10.998Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ah, ok","date":"2012-11-08T20:27:17.921Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: just `./gyp_uv -f ninja && ninja -C out/Debug && out/Debug/run-tests","date":"2012-11-08T20:27:36.055Z","type":"message"}
+{"nick":"txdv","message":"all simultaneously","date":"2012-11-08T20:27:46.037Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the other ways of building are all broken apparently","date":"2012-11-08T20:27:56.665Z","type":"message"}
+{"nick":"bnoordhuis","message":"really? let me try a make build","date":"2012-11-08T20:28:11.880Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ah the gyp make works anyway","date":"2012-11-08T20:28:46.246Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: `./gyp_uv && make -j 8 -C out BUILDTYPE=Debug` wfm","date":"2012-11-08T20:28:50.881Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but the non-gyp make is still broken","date":"2012-11-08T20:28:55.472Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mean `make test`? it sets LD_LIBRARY_PATH and, well, wfm :)","date":"2012-11-08T20:29:21.571Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no I just do make && test/run-tests","date":"2012-11-08T20:29:40.123Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but - wut, are we using dynamic linking now?","date":"2012-11-08T20:29:52.861Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 255 seconds","date":"2012-11-08T20:30:11.461Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: did that ever work right? the all target doesn't rebuild run-tests","date":"2012-11-08T20:30:12.539Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: make test does","date":"2012-11-08T20:30:22.130Z","type":"message"}
+{"nick":"piscisaureus_","message":"er","date":"2012-11-08T20:30:25.822Z","type":"message"}
+{"nick":"piscisaureus_","message":"make test/run-tests","date":"2012-11-08T20:30:30.020Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: oh, you typed make *&&* test/run-tests","date":"2012-11-08T20:30:45.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: btw - ran the async test with valgrind 8 times now","date":"2012-11-08T20:30:58.877Z","type":"message"}
+{"nick":"bnoordhuis","message":"which would rebuild libuv.a but not test/run-tests","date":"2012-11-08T20:31:02.430Z","type":"message"}
+{"nick":"piscisaureus_","message":"no deadlick","date":"2012-11-08T20:31:02.557Z","type":"message"}
+{"nick":"piscisaureus_","message":"*deadlock","date":"2012-11-08T20:31:05.252Z","type":"message"}
+{"nick":"bnoordhuis","message":"no? 32 bits?","date":"2012-11-08T20:31:08.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"64","date":"2012-11-08T20:31:12.750Z","type":"message"}
+{"nick":"piscisaureus_","message":"debug build","date":"2012-11-08T20:31:15.398Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, really?","date":"2012-11-08T20:31:18.707Z","type":"message"}
+{"nick":"bnoordhuis","message":"awesomely finicky bug, this one","date":"2012-11-08T20:31:26.056Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: also, I don't really see how the old code has a livelock honestly","date":"2012-11-08T20:31:49.957Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so you should explain :-)","date":"2012-11-08T20:31:56.423Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm, it may be an artefact of how valgrind emulates threads","date":"2012-11-08T20:32:36.401Z","type":"message"}
+{"nick":"bnoordhuis","message":"to show i'm making this up:","date":"2012-11-08T20:33:40.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"$ time valgrind -q out/Debug/run-tests async async","date":"2012-11-08T20:33:41.479Z","type":"message"}
+{"nick":"bnoordhuis","message":"^CKilled","date":"2012-11-08T20:33:41.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"real    0m20.842s","date":"2012-11-08T20:33:41.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"user    0m20.824s","date":"2012-11-08T20:33:41.866Z","type":"message"}
+{"nick":"bnoordhuis","message":"sys     0m0.040s","date":"2012-11-08T20:33:43.941Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. it was spinning for 20 secs before i interrupted it","date":"2012-11-08T20:34:12.031Z","type":"message"}
+{"nick":"TooTallNate","message":"anyone wanna review? https://github.com/TooTallNate/node/commit/add%2Fos-endianness","date":"2012-11-08T20:34:20.827Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: can you get a per-thread breakdown?","date":"2012-11-08T20:34:23.852Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: breakdown of what?","date":"2012-11-08T20:34:35.398Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think it is running 1 thread only","date":"2012-11-08T20:34:44.026Z","type":"message"}
+{"nick":"piscisaureus_","message":"otherwise it should really not happen","date":"2012-11-08T20:34:49.265Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yeah, so that's what valgrind does","date":"2012-11-08T20:34:53.377Z","type":"message"}
+{"nick":"piscisaureus_","message":"crappy :-)","date":"2012-11-08T20:35:06.927Z","type":"message"}
+{"nick":"bnoordhuis","message":"it doesn't actually run multiple threads, it switches between them","date":"2012-11-08T20:35:08.948Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: so apparently it never actually switches","date":"2012-11-08T20:35:18.313Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what if you add printf(\"%d\\n\", n) to both thread_cb and async_cb ?","date":"2012-11-08T20:36:03.864Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: do you actually see it increase?","date":"2012-11-08T20:36:08.876Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: that's the fun bit, if you add printf statements, the test passes","date":"2012-11-08T20:36:39.049Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think it's a valgrind bug","date":"2012-11-08T20:36:49.811Z","type":"message"}
+{"nick":"piscisaureus_","message":"this should really work","date":"2012-11-08T20:36:55.279Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe it's not taking the \"volatile\" part seriously","date":"2012-11-08T20:37:05.556Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: your patch lgtm btw","date":"2012-11-08T20:38:21.607Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but it makes the test less interesting","date":"2012-11-08T20:38:29.238Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: because it always synchronizes between the thread and the async_cb we are much less likely to catch threadsafety issues","date":"2012-11-08T20:38:55.188Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yeah, i guess so","date":"2012-11-08T20:41:35.857Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: so what happens is that valgrind never switches away from the worker thread","date":"2012-11-08T20:41:49.612Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: maybe add a pthread_yield() ?","date":"2012-11-08T20:42:06.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"do we have uv_yield? :-)","date":"2012-11-08T20:42:12.909Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: windows implementation would be Sleep(0) couldn't be easier","date":"2012-11-08T20:42:23.382Z","type":"message"}
+{"nick":"piscisaureus_","message":"or RtlBackoff if you want to look interesting","date":"2012-11-08T20:42:46.500Z","type":"message"}
+{"nick":"piscisaureus_","message":"(you don't)","date":"2012-11-08T20:42:50.005Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yeah, a nanosleep({0,1}) fixes it","date":"2012-11-08T20:43:46.135Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, valgrind bug it is then","date":"2012-11-08T20:43:58.783Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-11-08T20:44:30.885Z","type":"quit"}
+{"nick":"bradleymeck","date":"2012-11-08T20:46:58.929Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: btw, `LD_LIBRARY_PATH=$PWD test/run-tests` lets you run the tests standalone now","date":"2012-11-08T20:47:12.990Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll make it compile the binary with an -rpath","date":"2012-11-08T20:47:29.238Z","type":"message"}
+{"nick":"piscisaureus_","message":"aha","date":"2012-11-08T20:47:46.695Z","type":"message"}
+{"nick":"piscisaureus_","action":"stores that for later","date":"2012-11-08T20:47:56.059Z","type":"action"}
+{"nick":"piscisaureus_","message":"bnoordhuis: it doesn't bother me too much - I can live with the gyp build","date":"2012-11-08T20:48:06.319Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but for the best \"beginner experience\" I think the makefile build should work propertly","date":"2012-11-08T20:48:27.308Z","type":"message"}
+{"nick":"piscisaureus_","message":"*properly","date":"2012-11-08T20:48:29.823Z","type":"message"}
+{"nick":"TheJH","reason":"Quit: goodbye","date":"2012-11-08T20:51:48.907Z","type":"quit"}
+{"nick":"TheJH","date":"2012-11-08T20:57:15.142Z","type":"join"}
+{"nick":"TheJH","reason":"Client Quit","date":"2012-11-08T20:57:15.275Z","type":"quit"}
+{"nick":"piscisaureus_","message":"hmm","date":"2012-11-08T20:57:26.972Z","type":"message"}
+{"nick":"piscisaureus_","message":"the debug build of node 0.8 is totally borked","date":"2012-11-08T20:57:33.282Z","type":"message"}
+{"nick":"piscisaureus_","message":"wtf happened","date":"2012-11-08T20:57:35.647Z","type":"message"}
+{"nick":"piscisaureus_","message":"One can never leave node alone, or others will fuck it up to no end :-p","date":"2012-11-08T20:58:44.015Z","type":"message"}
+{"nick":"tjfontaine","message":"how is it broken?","date":"2012-11-08T20:59:10.383Z","type":"message"}
+{"nick":"piscisaureus_","message":"it segfaults on startup","date":"2012-11-08T21:01:07.415Z","type":"message"}
+{"nick":"piscisaureus_","message":"I'm making a fresh checkout","date":"2012-11-08T21:05:27.188Z","type":"message"}
+{"nick":"piscisaureus_","message":"there's something fishy here","date":"2012-11-08T21:05:32.327Z","type":"message"}
+{"nick":"loladiro","date":"2012-11-08T21:12:35.394Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-11-08T21:17:52.860Z","type":"quit"}
+{"nick":"TheJH","date":"2012-11-08T21:29:59.101Z","type":"join"}
+{"nick":"TheJH","reason":"Read error: Connection reset by peer","date":"2012-11-08T21:36:52.409Z","type":"quit"}
+{"nick":"mikeal","date":"2012-11-08T21:48:02.751Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-11-08T21:48:29.509Z","type":"quit"}
+{"nick":"rendar","reason":"Quit: w hz","date":"2012-11-08T21:48:30.001Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-08T21:51:47.889Z","type":"quit"}
+{"nick":"mikeal","reason":"Ping timeout: 240 seconds","date":"2012-11-08T21:52:54.656Z","type":"quit"}
+{"nick":"piscisaureus_","message":"Very weird","date":"2012-11-08T21:58:02.023Z","type":"message"}
+{"nick":"piscisaureus_","message":"apparently the x64-debug version started crashing on windows as soon as we enabled openssl asm","date":"2012-11-08T21:58:29.958Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it crashes while running static initializers","date":"2012-11-08T21:58:40.487Z","type":"message"}
+{"nick":"piscisaureus_","message":"which openssl doesn't even use ...","date":"2012-11-08T21:58:45.625Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-11-08T21:59:38.931Z","type":"quit"}
+{"nick":"perezd","date":"2012-11-08T22:00:57.427Z","type":"join"}
+{"nick":"perezd","reason":"Client Quit","date":"2012-11-08T22:01:43.343Z","type":"quit"}
+{"nick":"piscisaureus_","message":"weird enough, the master branch - when all asm bells and whistles are used - does not have this issue","date":"2012-11-08T22:03:24.235Z","type":"message"}
+{"nick":"sergim","reason":"Quit: Textual IRC Client: http://www.textualapp.com/","date":"2012-11-08T22:05:14.899Z","type":"quit"}
+{"nick":"mikeal","date":"2012-11-08T22:14:31.941Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-11-08T22:17:42.557Z","type":"quit"}
+{"nick":"piscisaureus_","message":"fuck openssl are you kidding me","date":"2012-11-08T22:22:21.780Z","type":"message"}
+{"nick":"benoitc","date":"2012-11-08T22:22:59.689Z","type":"join"}
+{"nick":"piscisaureus_","message":"https://github.com/joyent/node/blob/v0.8/deps/openssl/asm/x64-win32-masm/x86_64cpuid.asm#L3 <-- DWORD, wut???","date":"2012-11-08T22:23:16.672Z","type":"message"}
+{"nick":"Raynos","message":"Would this be a bad place to ask mdb + v8.so (debugging core dumps) advice?","date":"2012-11-08T22:26:49.793Z","type":"message"}
+{"nick":"paddybyers","date":"2012-11-08T22:33:21.657Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-11-08T22:35:33.502Z","type":"join"}
+{"nick":"pquerna","reason":"Ping timeout: 256 seconds","date":"2012-11-08T22:36:57.237Z","type":"quit"}
+{"nick":"pquerna","date":"2012-11-08T22:37:11.065Z","type":"join"}
+{"nick":"pquerna","reason":"Changing host","date":"2012-11-08T22:37:11.358Z","type":"quit"}
+{"nick":"pquerna","date":"2012-11-08T22:37:11.491Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033piscisaureus\u000f created branch winfix - http://git.io/0Y_b6w","date":"2012-11-08T22:44:23.535Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- bnoordhuis: review?","date":"2012-11-08T22:44:25.964Z","type":"message"}
+{"nick":"piscisaureus_","message":"or sblom?","date":"2012-11-08T22:44:29.684Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: do did you break it? :p","date":"2012-11-08T22:47:48.574Z","type":"message"}
+{"nick":"TooTallNate","message":"s/do/so","date":"2012-11-08T22:47:53.597Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: well.. in a way.","date":"2012-11-08T22:47:58.912Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: I enabled compiled asm for openssl","date":"2012-11-08T22:48:06.064Z","type":"message"}
+{"nick":"TooTallNate","message":"right, indirectly","date":"2012-11-08T22:48:06.858Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2012-11-08T22:48:12.096Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: but this bug is just crazy :-)","date":"2012-11-08T22:48:14.434Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: something we should report to the openssl guys?","date":"2012-11-08T22:48:29.249Z","type":"message"}
+{"nick":"piscisaureus_","message":"possibly yeah","date":"2012-11-08T22:48:38.425Z","type":"message"}
+{"nick":"piscisaureus_","message":"Tootallnate: well it seems to be fixed in openssl 1.1.x","date":"2012-11-08T22:49:26.784Z","type":"message"}
+{"nick":"TooTallNate","message":"oh ok","date":"2012-11-08T22:49:34.892Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: https://github.com/joyent/node/blob/master/deps/openssl/openssl/crypto/perlasm/x86_64-xlate.pl#L569","date":"2012-11-08T22:50:28.000Z","type":"message"}
+{"nick":"piscisaureus_","message":"so their fix is slightly more sophisticated than mine :-)","date":"2012-11-08T22:50:38.909Z","type":"message"}
+{"nick":"piscisaureus_","message":"actually lemme just pick theirs","date":"2012-11-08T22:51:13.376Z","type":"message"}
+{"nick":"TooTallNate","message":"sgtm","date":"2012-11-08T22:51:52.552Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm but their fix is actually borked\\","date":"2012-11-08T22:52:52.061Z","type":"message"}
+{"nick":"piscisaureus_","message":"oh nvm","date":"2012-11-08T22:54:03.293Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- TooTallNate: still ok?","date":"2012-11-08T22:55:19.684Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037winfix\u000f * \u00029b22944\u0002 : windows: fix the x64 debug build - http://git.io/Xv-K2A","date":"2012-11-08T22:55:26.162Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- TooTallNate: that, actually","date":"2012-11-08T22:55:27.765Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: if it works","date":"2012-11-08T22:56:40.118Z","type":"message"}
+{"nick":"bradleymeck","date":"2012-11-08T23:02:13.109Z","type":"join"}
+{"nick":"piscisaureus_","message":"I can confirm that","date":"2012-11-08T23:04:31.540Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037v0.8\u000f * \u00029b22944\u0002 : windows: fix the x64 debug build - http://git.io/Y0LWnA","date":"2012-11-08T23:04:35.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"git checkout v0.8.13","date":"2012-11-08T23:04:49.325Z","type":"message"}
+{"nick":"piscisaureus_","message":"EWINDOW","date":"2012-11-08T23:04:56.992Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: lt?","date":"2012-11-08T23:05:41.729Z","type":"message"}
+{"nick":"TooTallNate","message":"yt rather","date":"2012-11-08T23:05:45.504Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: ho","date":"2012-11-08T23:06:28.584Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: care to review? https://github.com/TooTallNate/node/commit/add%2Fos-endianness","date":"2012-11-08T23:06:42.961Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: lgtm","date":"2012-11-08T23:07:38.524Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: thanks!","date":"2012-11-08T23:07:50.199Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice TooTallNate","date":"2012-11-08T23:08:35.161Z","type":"message"}
+{"nick":"dap","date":"2012-11-08T23:08:55.838Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Nathan Rajlich\u000f \u00037master\u000f * \u00025e4e87a\u0002 : os: add os.endianness() function - http://git.io/B-BiYA","date":"2012-11-08T23:10:15.046Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- isaacs: review?","date":"2012-11-08T23:12:58.518Z","type":"message"}
+{"nick":"piscisaureus_","message":"crap","date":"2012-11-08T23:13:02.165Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033piscisaureus\u000f created branch issue4256 - http://git.io/7o6N-A","date":"2012-11-08T23:13:03.179Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ^-- that","date":"2012-11-08T23:13:06.163Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: lgtm","date":"2012-11-08T23:13:42.255Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but + test","date":"2012-11-08T23:13:45.238Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: this was necessary because IsUndefined() returns false if domain is set to NULL :-)","date":"2012-11-08T23:14:05.974Z","type":"message"}
+{"nick":"TooTallNate","message":"haha, good 'ol undefined vs. null","date":"2012-11-08T23:14:12.614Z","type":"message"}
+{"nick":"txdv","message":"hei bnoordhuis how is rm-ev going on?","date":"2012-11-08T23:14:14.922Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: also, needs to probably be checked in a few other places, too","date":"2012-11-08T23:14:37.459Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-08T23:14:44.459Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-11-08T23:14:46.368Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: can you give me a global range where to look?","date":"2012-11-08T23:15:00.010Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: events.js has       if (this.domain) {","date":"2012-11-08T23:15:01.242Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, in that case it would work :-)","date":"2012-11-08T23:15:16.239Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: that one's ok","date":"2012-11-08T23:15:18.570Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: a bunch in src/node.js too","date":"2012-11-08T23:15:18.700Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: oh, i see, the goal is not to allow blarg.domain=true to not crash","date":"2012-11-08T23:15:33.454Z","type":"message"}
+{"nick":"isaacs","message":"it's to prevent null from crashing","date":"2012-11-08T23:15:37.100Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2012-11-08T23:15:38.674Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well, sure","date":"2012-11-08T23:15:39.312Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: well - maybe","date":"2012-11-08T23:15:51.927Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2012-11-08T23:15:58.624Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: the problem is that node itself was setting domain = null","date":"2012-11-08T23:16:03.654Z","type":"message"}
+{"nick":"isaacs","message":"i'm actually ok with any non-object truthy value crashing, now that i think about it","date":"2012-11-08T23:16:07.059Z","type":"message"}
+{"nick":"piscisaureus_","message":"so that would make it crash","date":"2012-11-08T23:16:08.689Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-11-08T23:16:11.700Z","type":"message"}
+{"nick":"isaacs","message":"makes sense","date":"2012-11-08T23:16:14.739Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-08T23:16:20.851Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: see https://github.com/joyent/node/issues/4256#issuecomment-10206979","date":"2012-11-08T23:16:20.980Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yes.","date":"2012-11-08T23:16:45.622Z","type":"message"}
+{"nick":"isaacs","message":"+1","date":"2012-11-08T23:16:58.686Z","type":"message"}
+{"nick":"isaacs","message":"please land, i'll get a v0.8.15 out before i leave","date":"2012-11-08T23:17:05.734Z","type":"message"}
+{"nick":"benoitc","date":"2012-11-08T23:17:29.175Z","type":"join"}
+{"nick":"isaacs","message":"wanna get andres's domains thing in there, too.  i have a fix for the problem with it","date":"2012-11-08T23:17:29.309Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: well tnorris in #node.js just confirmed it works","date":"2012-11-08T23:19:36.386Z","type":"message"}
+{"nick":"CAPSLOCKBOT","reason":"Ping timeout: 268 seconds","date":"2012-11-08T23:21:51.120Z","type":"quit"}
+{"nick":"paddybyers","reason":"Ping timeout: 240 seconds","date":"2012-11-08T23:25:14.654Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-11-08T23:29:02.785Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-08T23:32:38.404Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-08T23:32:38.533Z","type":"quit"}
+{"nick":"erickt","date":"2012-11-08T23:33:15.223Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-08T23:33:22.493Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-08T23:34:19.685Z","type":"quit"}
+{"nick":"paddybyers","date":"2012-11-08T23:36:06.112Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: actually, the problem seems to be fixed already in the latest node version]\\","date":"2012-11-08T23:38:00.110Z","type":"message"}
+{"nick":"piscisaureus_","message":"er, in 0.8","date":"2012-11-08T23:38:06.758Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah hehe nvm","date":"2012-11-08T23:38:28.118Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- isaacs, TooTallNate: good to land?","date":"2012-11-08T23:43:24.737Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037issue4256\u000f * \u000232df4e6\u0002 : domains: don't crash if domain is set to null - http://git.io/c4gaVA","date":"2012-11-08T23:43:29.956Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- that again :-)","date":"2012-11-08T23:43:39.106Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am too fast for MI6","date":"2012-11-08T23:43:42.196Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2012-11-08T23:44:05.286Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: lgtm","date":"2012-11-08T23:44:29.826Z","type":"message"}
+{"nick":"loladiro","date":"2012-11-08T23:45:18.290Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-08T23:49:34.709Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037v0.8\u000f * \u0002b3bfb6f\u0002 : domains: don't crash if domain is set to null  Closes #4256 - http://git.io/nHwbjA","date":"2012-11-08T23:49:46.356Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-08T23:56:00.329Z","type":"quit"}
+{"nick":"bnoordhuis","message":"txdv: it's nearing completion","date":"2012-11-08T23:58:30.063Z","type":"message"}
+{"nick":"bnoordhuis","message":"that is, the first 90% is done","date":"2012-11-08T23:58:55.060Z","type":"message"}
+{"nick":"txdv","message":"90% of work, now comes the 90% of time?","date":"2012-11-08T23:59:21.075Z","type":"message"}
+{"nick":"txdv","message":"'","date":"2012-11-08T23:59:21.200Z","type":"message"}
