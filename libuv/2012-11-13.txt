@@ -354,3 +354,264 @@
 {"nick":"bnoordhuis","message":"i thought i put a safeguard in but maybe that was for tcp","date":"2012-11-13T15:58:08.906Z","type":"message"}
 {"nick":"piscisaureus_","message":"bnoordhuis: what I do in windows is split the queue before processing callbacks","date":"2012-11-13T15:58:56.107Z","type":"message"}
 {"nick":"piscisaureus_","message":"bnoordhuis: and callbacks that are inserted after the split are not processed until the next round, e.g. after processing timeouts and polling again","date":"2012-11-13T15:59:19.574Z","type":"message"}
+{"nick":"piscisaureus_","message":"waitpid is weird :-(","date":"2012-11-13T16:00:03.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/joyent/libuv/commit/738b31 <- apparently i *did* fix it","date":"2012-11-13T16:00:49.041Z","type":"message"}
+{"nick":"bnoordhuis","message":"only it's not working now :)","date":"2012-11-13T16:00:53.377Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you also need this in the write() path","date":"2012-11-13T16:01:15.000Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah right, that's it","date":"2012-11-13T16:01:29.495Z","type":"message"}
+{"nick":"bnoordhuis","message":"weird that i can't reproduce it with master though","date":"2012-11-13T16:04:07.732Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am running ubuntu in a virtualboxvm on windows on my retina macbook","date":"2012-11-13T16:05:06.304Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think you have all the components to replicate this setup :-p","date":"2012-11-13T16:05:15.106Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2012-11-13T16:05:20.448Z","type":"message"}
+{"nick":"tjfontaine","message":"I died a little on the inside","date":"2012-11-13T16:05:29.646Z","type":"message"}
+{"nick":"piscisaureus_","message":"as the french say \"partir c'est un peu mourir\"","date":"2012-11-13T16:06:14.216Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: so are you going to leave us?","date":"2012-11-13T16:06:24.487Z","type":"message"}
+{"nick":"piscisaureus_","message":"I still think tjfontaine is french somehow.","date":"2012-11-13T16:06:41.325Z","type":"message"}
+{"nick":"tjfontaine","message":"piscisaureus_: is that a subtle way to ask me to leave?","date":"2012-11-13T16:06:46.821Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2012-11-13T16:06:49.625Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-11-13T16:07:10.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"No I am asking you to be french","date":"2012-11-13T16:07:21.353Z","type":"message"}
+{"nick":"tjfontaine","message":"I'll have to work hard on that, I took spanish in highschool and I don't think these romance languages translate as well as it was made out to me :P","date":"2012-11-13T16:08:31.012Z","type":"message"}
+{"nick":"Yorhel","reason":"\"WeeChat 0.3.9\"","date":"2012-11-13T16:08:50.091Z","type":"part"}
+{"nick":"bnoordhuis","message":"ha hum","date":"2012-11-13T16:12:05.387Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm doing this in the inner epoll/kqueue/etc. -> if (nfds == ARRAY_SIZE(events)) continue; // poll again","date":"2012-11-13T16:12:27.037Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the events are coming in as fast as i can read them","date":"2012-11-13T16:12:39.902Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-11-13T16:12:45.186Z","type":"message"}
+{"nick":"piscisaureus_","message":"WRONG","date":"2012-11-13T16:12:52.557Z","type":"message"}
+{"nick":"bnoordhuis","message":"so it seems :)","date":"2012-11-13T16:12:57.329Z","type":"message"}
+{"nick":"piscisaureus_","message":"I could imagine this if you have a very inefficient backend, like one that only reports one event at a time","date":"2012-11-13T16:13:25.464Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess i'll put an upper limit in there","date":"2012-11-13T16:14:02.466Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think you should not do it at all","date":"2012-11-13T16:14:11.562Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if you can process 32 or 64 events at a time, don't bother","date":"2012-11-13T16:14:24.275Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a lot more than that: ARRAY_SIZE(events) == 1024","date":"2012-11-13T16:14:43.820Z","type":"message"}
+{"nick":"piscisaureus_","message":"ooh","date":"2012-11-13T16:14:49.616Z","type":"message"}
+{"nick":"piscisaureus_","message":"in that case it's probably just bad to do it","date":"2012-11-13T16:14:57.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"though the way it works is that not all events translate to user-visible events","date":"2012-11-13T16:15:10.688Z","type":"message"}
+{"nick":"bnoordhuis","message":"if the user stops or closes a handle, i don't disarm it until it's reported as readable/writable","date":"2012-11-13T16:16:55.271Z","type":"message"}
+{"nick":"bnoordhuis","message":"(to reduce the # of syscalls)","date":"2012-11-13T16:16:55.402Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well - it has a risk","date":"2012-11-13T16:17:04.022Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you end up seeing the same events over and over again","date":"2012-11-13T16:17:10.621Z","type":"message"}
+{"nick":"piscisaureus_","message":"because you are not using edge-triggered backends","date":"2012-11-13T16:17:18.353Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: maybe i didn't explain it well","date":"2012-11-13T16:17:42.342Z","type":"message"}
+{"nick":"piscisaureus_","message":"unless you deregister all fds that are already dequeued - but that would be even worse for performance I think","date":"2012-11-13T16:17:44.359Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: show me the code","date":"2012-11-13T16:17:48.012Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/bnoordhuis/libuv/compare/rm-ev","date":"2012-11-13T16:18:04.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"Showing 66 changed files with 957 additions and 56,264 deletions.  <- awesome","date":"2012-11-13T16:18:14.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"let me link you to the relevant bits :)","date":"2012-11-13T16:18:26.403Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-11-13T16:18:27.714Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/bnoordhuis/libuv/compare/rm-ev#L54R196","date":"2012-11-13T16:18:54.800Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's where it starts","date":"2012-11-13T16:19:02.515Z","type":"message"}
+{"nick":"bnoordhuis","message":"kqueue and event ports code is more or less the same","date":"2012-11-13T16:19:12.802Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, and i know about the superfluous if (pe->events & (UV__EPOLLERR | UV__EPOLLHUP)) statement","date":"2012-11-13T16:19:50.830Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: not using faio?","date":"2012-11-13T16:20:11.638Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: no. i decided it was easier/more easily integrable this way. it's clearly inspired by faio though","date":"2012-11-13T16:20:38.179Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I see what you mean but I don't see the point of it","date":"2012-11-13T16:21:52.857Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: in case of heavy i/o this will just make timers suck more","date":"2012-11-13T16:22:11.826Z","type":"message"}
+{"nick":"piscisaureus_","message":"1024 is more than enough and it doesn't really save many syscalls","date":"2012-11-13T16:22:35.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: well, not doing it has a pretty negative impact on performance/throughput","date":"2012-11-13T16:22:36.747Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess i should do some benchmarking to see what the golden value is","date":"2012-11-13T16:22:55.419Z","type":"message"}
+{"nick":"piscisaureus_","message":"ya","date":"2012-11-13T16:23:02.782Z","type":"message"}
+{"nick":"piscisaureus_","message":"I remember that on windows 64 was actually pretty much the sweet spot","date":"2012-11-13T16:23:16.161Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it may not be completely comparabe","date":"2012-11-13T16:23:21.674Z","type":"message"}
+{"nick":"piscisaureus_","message":"*comparable","date":"2012-11-13T16:23:24.401Z","type":"message"}
+{"nick":"piscisaureus_","message":"because we have short-circuiting so in many cases events are not reported through the polling syscall","date":"2012-11-13T16:23:45.077Z","type":"message"}
+{"nick":"bnoordhuis","message":"still, performance is pretty good right now and there's still room for further improvement","date":"2012-11-13T16:25:52.278Z","type":"message"}
+{"nick":"bnoordhuis","message":"354898/s received, 355098/s sent. 1773072 received, 1774072 sent in 5.0 seconds. <- that's master","date":"2012-11-13T16:25:56.046Z","type":"message"}
+{"nick":"bnoordhuis","message":"361254/s received, 361299/s sent. 1820000 received, 1820224 sent in 5.0 seconds. <- that's rm-ev","date":"2012-11-13T16:26:05.632Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-11-13T16:26:20.478Z","type":"message"}
+{"nick":"txdv","message":"1%","date":"2012-11-13T16:26:56.703Z","type":"message"}
+{"nick":"bnoordhuis","message":"txdv: yeah, but this is the unoptimized version and it's already faster","date":"2012-11-13T16:27:26.160Z","type":"message"}
+{"nick":"piscisaureus_","message":"thanks for the heads up, txdv :-p","date":"2012-11-13T16:27:26.823Z","type":"message"}
+{"nick":"bnoordhuis","message":"and actually, after some runs i can say with confidence that the difference is more like 2% :)","date":"2012-11-13T16:29:10.694Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-13T16:32:31.748Z","type":"quit"}
+{"nick":"rendar","date":"2012-11-13T16:32:43.186Z","type":"join"}
+{"nick":"`3rdEden","new_nick":"`3E|FOODING","date":"2012-11-13T16:33:54.093Z","type":"nick"}
+{"nick":"bnoordhuis","message":"48 rounds of 1024 events each seem to give the best throughput","date":"2012-11-13T16:38:19.412Z","type":"message"}
+{"nick":"bnoordhuis","message":"magic numbers...","date":"2012-11-13T16:38:23.205Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 252 seconds","date":"2012-11-13T16:45:21.512Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u000209b0222\u0002 : bench: report proper benchmark name - https://github.com/joyent/libuv/compare/b9c8d196379d...09b022232aad","date":"2012-11-13T16:48:13.137Z","type":"message"}
+{"nick":"travis-ci","date":"2012-11-13T16:50:00.898Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#871 (master - 09b0222 : Ben Noordhuis): The build passed.","date":"2012-11-13T16:50:01.026Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/compare/b9c8d196379d...09b022232aad","date":"2012-11-13T16:50:01.027Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/3181918","date":"2012-11-13T16:50:01.027Z","type":"message"}
+{"nick":"travis-ci","date":"2012-11-13T16:50:01.027Z","type":"part"}
+{"nick":"bradleymeck","date":"2012-11-13T16:51:21.966Z","type":"join"}
+{"nick":"TheJH","date":"2012-11-13T16:58:36.661Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-13T17:00:17.451Z","type":"quit"}
+{"nick":"brson","date":"2012-11-13T17:07:46.552Z","type":"join"}
+{"nick":"sblom","date":"2012-11-13T17:19:33.108Z","type":"join"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-11-13T17:25:12.230Z","type":"quit"}
+{"nick":"`3E|FOODING","new_nick":"`3rdEden","date":"2012-11-13T17:56:22.437Z","type":"nick"}
+{"nick":"piscisaureus_","message":"gosh","date":"2012-11-13T17:57:15.053Z","type":"message"}
+{"nick":"piscisaureus_","message":"can't fcntl include unistd.h by itself ? :-(","date":"2012-11-13T17:57:28.054Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-11-13T18:01:02.753Z","type":"join"}
+{"nick":"c4milo_","reason":"Remote host closed the connection","date":"2012-11-13T18:02:10.834Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-11-13T18:04:05.192Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2012-11-13T18:05:51.538Z","type":"quit"}
+{"nick":"Ralt_","date":"2012-11-13T18:13:28.118Z","type":"join"}
+{"nick":"brson","date":"2012-11-13T18:14:16.953Z","type":"join"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2012-11-13T18:19:31.349Z","type":"quit"}
+{"nick":"sgallagh","date":"2012-11-13T18:20:25.237Z","type":"join"}
+{"nick":"janjongboom_","date":"2012-11-13T18:20:46.207Z","type":"join"}
+{"nick":"janjongboom","reason":"Read error: Connection reset by peer","date":"2012-11-13T18:20:46.643Z","type":"quit"}
+{"nick":"janjongboom_","new_nick":"janjongboom","date":"2012-11-13T18:20:46.777Z","type":"nick"}
+{"nick":"loladiro","date":"2012-11-13T18:29:31.107Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-11-13T18:30:10.853Z","type":"quit"}
+{"nick":"c4milo","date":"2012-11-13T18:31:55.454Z","type":"join"}
+{"nick":"joshthecoder","date":"2012-11-13T18:33:44.273Z","type":"join"}
+{"nick":"btrask","reason":"Quit: btrask","date":"2012-11-13T18:42:56.680Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-11-13T18:48:57.496Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: janjongboom","date":"2012-11-13T18:49:12.300Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-13T18:50:44.341Z","type":"quit"}
+{"nick":"indexzero","date":"2012-11-13T18:58:45.622Z","type":"join"}
+{"nick":"Ralt_","date":"2012-11-13T18:58:48.562Z","type":"join"}
+{"nick":"lohkey","date":"2012-11-13T19:00:00.261Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-13T19:02:30.606Z","type":"join"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2012-11-13T19:04:17.207Z","type":"quit"}
+{"nick":"kohai","reason":"Ping timeout: 268 seconds","date":"2012-11-13T19:09:13.096Z","type":"quit"}
+{"nick":"paddybyers","reason":"Ping timeout: 260 seconds","date":"2012-11-13T19:14:50.615Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-11-13T19:15:29.837Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-13T19:28:58.898Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-13T19:34:29.507Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-11-13T19:34:47.241Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-13T19:38:01.822Z","type":"quit"}
+{"nick":"Ralt_","date":"2012-11-13T19:40:40.768Z","type":"join"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2012-11-13T19:41:27.125Z","type":"quit"}
+{"nick":"TooTallNate","message":"piscisaureus_: do you have any thought on http://logs.libuv.org/libuv/2012-11-13#00:57:14.382 ?","date":"2012-11-13T19:45:19.009Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: I think in the long run figuring out a way to teach binary modules to be able to link against each other is the ideal mechanism, in that case libogg itself could be its own module, that both node-ogg and node-vorbis depend on","date":"2012-11-13T19:46:40.579Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: you mean in general, or the windows parts?","date":"2012-11-13T19:46:51.989Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: both? :p","date":"2012-11-13T19:47:26.869Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i think that's easier said than done","date":"2012-11-13T19:47:34.874Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-11-13T19:47:43.496Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: we basically have to play by unix/windows linking rules","date":"2012-11-13T19:47:43.685Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: I didn't say it was easy, I just think it's the right path for other things to come","date":"2012-11-13T19:47:57.166Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: if you want easy I think node-ogg and node-vorbis being separate doesn't make much sense, make them one module :)","date":"2012-11-13T19:48:15.355Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: on windows symbols are tied to a particular dll filename (not path). That's why you can move node.exe around but not rename it (when you want to use compiled addons anyway)","date":"2012-11-13T19:48:18.378Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: In theory you could also statically link libogg to node-ogg.node and use symbols from that file :-p","date":"2012-11-13T19:48:52.240Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: right, like the openssl-exports stuff right?","date":"2012-11-13T19:49:07.957Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: yeah","date":"2012-11-13T19:49:12.687Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: that'd be ideal really","date":"2012-11-13T19:49:21.110Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: if you can get node-gyp to generate a node-ogg.lib it will contain stubs for all exports that are in node-ogg.node.","date":"2012-11-13T19:50:01.837Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: then you can link node-vorbis to that.","date":"2012-11-13T19:50:11.904Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: you can also go wild with http://msdn.microsoft.com/en-us/library/151kt790.aspx :-)","date":"2012-11-13T19:50:20.667Z","type":"message"}
+{"nick":"piscisaureus_","message":"If you have a day or more","date":"2012-11-13T19:50:32.131Z","type":"message"}
+{"nick":"tjfontaine","message":"that doesn't sound very much different from just shipping libogg as a module","date":"2012-11-13T19:50:59.406Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: brb, switching devices","date":"2012-11-13T19:51:01.079Z","type":"quit"}
+{"nick":"tjfontaine","message":"which from a gyp standpoint is an easier task","date":"2012-11-13T19:51:20.218Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i don't think it solves the problems though","date":"2012-11-13T19:51:33.765Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: how do we generate the node.lib file?","date":"2012-11-13T19:51:47.654Z","type":"message"}
+{"nick":"TooTallNate","message":"i can probably make node-gyp do it for addons","date":"2012-11-13T19:51:54.954Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: not a \"real module\" that is loadable from require() but that just ships a .so|dll|dylib","date":"2012-11-13T19:52:01.071Z","type":"message"}
+{"nick":"piscisaureus_","message":"I would actually expect it to already do that","date":"2012-11-13T19:52:02.253Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: it just happens to be installable with npm","date":"2012-11-13T19:52:12.188Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: the real difficult part is that we don't know where node-ogg will be… it could be in vorbis/node_modules or, in a shared node_modules with vorbis, or who knows where","date":"2012-11-13T19:52:52.536Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: yes it already generates it","date":"2012-11-13T19:52:55.997Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: ahh, cool","date":"2012-11-13T19:53:02.718Z","type":"message"}
+{"nick":"lohkey","date":"2012-11-13T19:53:05.882Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-11-13T19:53:06.369Z","type":"quit"}
+{"nick":"piscisaureus_","message":"TooTallNate: now you need to get the linker to re-export libogg","date":"2012-11-13T19:53:19.486Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: easy in this case :) https://github.com/TooTallNate/node-ogg/blob/master/deps/libogg/win32/ogg.def","date":"2012-11-13T19:54:03.562Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: you do this by decorating function declarations with __declspec(dllexport) at compile time (so, when you're node-vorbis you should include libogg.h and make sure everything is decorated)","date":"2012-11-13T19:54:09.296Z","type":"message"}
+{"nick":"piscisaureus_","message":"or with a def file, it's also easy :-)","date":"2012-11-13T19:54:15.481Z","type":"message"}
+{"nick":"`3rdEden","date":"2012-11-13T19:54:44.392Z","type":"join"}
+{"nick":"TooTallNate","message":"piscisaureus_: so how does vorbis.node know where ogg.node is when being loaded?","date":"2012-11-13T19:54:46.561Z","type":"message"}
+{"nick":"piscisaureus_","message":"I was not going to suggest that, because it's usually painful","date":"2012-11-13T19:54:49.372Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: well, if it's already loaded it should not matter.","date":"2012-11-13T19:55:06.563Z","type":"message"}
+{"nick":"txdv","message":"ogg.node?","date":"2012-11-13T19:55:06.910Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: do we use RTLD_GLOBAL?","date":"2012-11-13T19:55:21.504Z","type":"message"}
+{"nick":"TooTallNate","message":"i haven't checked :\\","date":"2012-11-13T19:55:26.201Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: I don't know","date":"2012-11-13T19:55:37.196Z","type":"message"}
+{"nick":"V1","date":"2012-11-13T19:55:39.571Z","type":"join"}
+{"nick":"TooTallNate","message":"txdv: https://github.com/TooTallNate/node-ogg","date":"2012-11-13T19:55:40.080Z","type":"message"}
+{"nick":"TooTallNate","message":"txdv: it actually gets built as \"binding.node\", i'm just calling it that here for clarity","date":"2012-11-13T19:55:58.296Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: ok cool, that's encouraging. i'll play around some more","date":"2012-11-13T19:56:20.999Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: ai, that may cause problems actualy","date":"2012-11-13T19:56:21.162Z","type":"message"}
+{"nick":"paddybyers","date":"2012-11-13T19:56:37.617Z","type":"join"}
+{"nick":"piscisaureus_","message":"TooTallNate: http://msdn.microsoft.com/en-us/library/windows/desktop/ms684179%28v=vs.85%29.aspx, see LOAD_WITH_ALTERED_SEARCH_PATH.","date":"2012-11-13T19:56:41.573Z","type":"message"}
+{"nick":"piscisaureus_","message":"That's how it locates .node files","date":"2012-11-13T19:56:51.982Z","type":"message"}
+{"nick":"txdv","message":"crazy stuff","date":"2012-11-13T19:57:54.306Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: you may end up having to fiddle with the delay loader ...","date":"2012-11-13T19:57:54.795Z","type":"message"}
+{"nick":"TooTallNate","message":"AddDllDirectory() or something?","date":"2012-11-13T19:58:13.950Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: well - if you use normal loading you can't call anything, because it will resolve references at load time.","date":"2012-11-13T19:58:46.367Z","type":"message"}
+{"nick":"`3rdEden","reason":"Ping timeout: 240 seconds","date":"2012-11-13T19:58:54.617Z","type":"quit"}
+{"nick":"piscisaureus_","message":"I mean, loading the dll will already have failed before any of your own code runs","date":"2012-11-13T19:59:02.720Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: with delay loading you can pretty much do anything. It gives you sort of a \"callback\" when it is missing a symbol, and it will give you the opportunity to look it up.","date":"2012-11-13T19:59:36.934Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: how are we re-exporting the symbols on the other platforms?","date":"2012-11-13T20:00:02.981Z","type":"message"}
+{"nick":"tjfontaine","message":"it's not necessary currently with the osx linker","date":"2012-11-13T20:00:13.628Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: by just not stripping them","date":"2012-11-13T20:00:15.859Z","type":"message"}
+{"nick":"piscisaureus_","message":"TooTallNate: and on linux we're currently re-exporting by accident only, but we'll move to the not-stripping method","date":"2012-11-13T20:00:41.587Z","type":"message"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2012-11-13T20:02:59.193Z","type":"quit"}
+{"nick":"V1","new_nick":"`3rdEden","date":"2012-11-13T20:06:13.654Z","type":"nick"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-11-13T20:06:32.936Z","type":"quit"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-11-13T20:09:39.823Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-11-13T20:12:44.623Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-13T20:15:37.932Z","type":"quit"}
+{"nick":"stagas_","date":"2012-11-13T20:25:38.579Z","type":"join"}
+{"nick":"EhevuTov","date":"2012-11-13T20:26:09.972Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-11-13T20:30:25.419Z","type":"quit"}
+{"nick":"Ralt_","date":"2012-11-13T20:35:05.627Z","type":"join"}
+{"nick":"piscisaureus_","message":"Why did ansi c never add something to get the size of a heap allocated block","date":"2012-11-13T20:36:11.280Z","type":"message"}
+{"nick":"piscisaureus_","message":"I mean, it knows to do realloc - it should be possible to get the size of a memory block at all times","date":"2012-11-13T20:36:36.356Z","type":"message"}
+{"nick":"kazupon","date":"2012-11-13T20:36:55.836Z","type":"join"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2012-11-13T20:37:24.086Z","type":"quit"}
+{"nick":"CoverSlide|TPFR","message":"wouldn't it be like anything else in c-land? keep track of it yourself?","date":"2012-11-13T20:38:10.024Z","type":"message"}
+{"nick":"piscisaureus_","message":"sure, it's easy to keep track of it","date":"2012-11-13T20:38:47.307Z","type":"message"}
+{"nick":"AvianFlu","date":"2012-11-13T20:38:59.826Z","type":"join"}
+{"nick":"piscisaureus_","message":"but I mean, it seems so obvious and so easy to implement","date":"2012-11-13T20:39:10.775Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 260 seconds","date":"2012-11-13T20:46:18.561Z","type":"quit"}
+{"nick":"paddybyers","reason":"Ping timeout: 240 seconds","date":"2012-11-13T20:46:34.646Z","type":"quit"}
+{"nick":"Ralt_","date":"2012-11-13T20:47:42.542Z","type":"join"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-11-13T20:55:00.963Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-13T21:03:36.522Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-13T21:04:26.739Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-13T21:11:24.547Z","type":"join"}
+{"nick":"bnoordhuis","message":"why does talk.google.com:5223 use a self-signed certificate? wth google?","date":"2012-11-13T21:42:19.139Z","type":"message"}
+{"nick":"kazupon","date":"2012-11-13T21:43:05.254Z","type":"join"}
+{"nick":"indutny","message":":)","date":"2012-11-13T21:45:45.145Z","type":"message"}
+{"nick":"rendar","date":"2012-11-13T21:46:27.528Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 264 seconds","date":"2012-11-13T21:48:06.115Z","type":"quit"}
+{"nick":"bnoordhuis","message":"ah, somehow openssl s_client is not using my system's default ca store","date":"2012-11-13T21:49:06.912Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess ubuntu botched something, ffs","date":"2012-11-13T21:49:30.158Z","type":"message"}
+{"nick":"piscisaureus_","message":"stupid os","date":"2012-11-13T21:49:46.585Z","type":"message"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-11-13T21:53:28.337Z","type":"quit"}
+{"nick":"bnoordhuis","message":"you learn something new everyday, ubuntu has not one but two certificate stores, one in /etc/ssl/certs and one in /usr/share/ca-certificates","date":"2012-11-13T21:53:45.583Z","type":"message"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2012-11-13T21:54:12.811Z","type":"quit"}
+{"nick":"bnoordhuis","message":"they both have the right ca cert though, so i guess s_client uses neither","date":"2012-11-13T21:55:58.684Z","type":"message"}
+{"nick":"paddybyers","date":"2012-11-13T22:07:32.776Z","type":"join"}
+{"nick":"warz","date":"2012-11-13T22:08:49.592Z","type":"quit"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2012-11-13T22:10:03.193Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2012-11-13T22:13:29.883Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-11-13T22:24:17.454Z","type":"join"}
+{"nick":"EhevuTov_","date":"2012-11-13T22:31:53.566Z","type":"join"}
+{"nick":"`3rdEden","reason":"Ping timeout: 245 seconds","date":"2012-11-13T22:32:38.474Z","type":"quit"}
+{"nick":"EhevuTov","reason":"Ping timeout: 246 seconds","date":"2012-11-13T22:34:43.794Z","type":"quit"}
+{"nick":"piscisaureus_","message":"tired","date":"2012-11-13T22:34:51.084Z","type":"message"}
+{"nick":"piscisaureus_","message":"going to bed","date":"2012-11-13T22:34:56.584Z","type":"message"}
+{"nick":"piscisaureus_","message":"goodbye peepz","date":"2012-11-13T22:35:02.730Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-11-13T22:35:24.181Z","type":"quit"}
+{"nick":"indutny","message":"bye bye","date":"2012-11-13T22:35:26.819Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-13T22:41:18.229Z","type":"quit"}
+{"nick":"lohkey","date":"2012-11-13T22:42:31.196Z","type":"join"}
+{"nick":"joshthecoder","reason":"Quit: Leaving...","date":"2012-11-13T22:42:45.736Z","type":"quit"}
+{"nick":"kazupon","date":"2012-11-13T22:43:51.596Z","type":"join"}
+{"nick":"EhevuTov_","reason":"Quit: Leaving","date":"2012-11-13T22:46:56.720Z","type":"quit"}
+{"nick":"EhevuTov","date":"2012-11-13T22:47:25.923Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 252 seconds","date":"2012-11-13T22:48:21.489Z","type":"quit"}
+{"nick":"warz","date":"2012-11-13T22:50:50.702Z","type":"join"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2012-11-13T22:52:55.640Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-11-13T22:53:36.411Z","type":"quit"}
+{"nick":"TheJH","reason":"Ping timeout: 255 seconds","date":"2012-11-13T23:18:56.441Z","type":"quit"}
+{"nick":"yunong","date":"2012-11-13T23:19:22.543Z","type":"join"}
+{"nick":"hz","date":"2012-11-13T23:33:27.749Z","type":"quit"}
+{"nick":"xer0x","date":"2012-11-13T23:33:39.272Z","type":"join"}
+{"nick":"xer0x","reason":"Client Quit","date":"2012-11-13T23:35:35.112Z","type":"quit"}
+{"nick":"xer0x","date":"2012-11-13T23:35:56.991Z","type":"join"}
+{"nick":"joshthecoder","date":"2012-11-13T23:36:47.735Z","type":"join"}
+{"nick":"yunong","date":"2012-11-13T23:41:03.249Z","type":"part"}
+{"nick":"warz","message":"hm. im trying to think of a quick and easy way to see if a function in a third party lib im using performs any disk io.","date":"2012-11-13T23:41:47.960Z","type":"message"}
+{"nick":"kazupon","date":"2012-11-13T23:44:35.897Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 246 seconds","date":"2012-11-13T23:49:16.771Z","type":"quit"}
+{"nick":"xer0x","reason":"Quit: Lost terminal","date":"2012-11-13T23:53:00.406Z","type":"quit"}
+{"nick":"bnoordhuis","message":"warz: strace","date":"2012-11-13T23:53:09.853Z","type":"message"}
+{"nick":"warz","message":"hm, ok looking into that","date":"2012-11-13T23:56:58.019Z","type":"message"}
+{"nick":"warz","message":"oh wow looks like a powerful tool","date":"2012-11-13T23:57:45.399Z","type":"message"}
