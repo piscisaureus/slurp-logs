@@ -1,0 +1,101 @@
+{"nick":"creationix","message":"aww, my code doesn't compile on the v0.8 branch","date":"2012-11-22T00:00:02.640Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: flags = UV_CLOSING | UV_CLOSED | UV_STREAM_READING | UV_STREAM_READABLE","date":"2012-11-22T00:00:04.685Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: so apparently you already uv_close'd the handle","date":"2012-11-22T00:00:12.336Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wonder how unix manages flags, given that UV_STREAM_READING kinda contradicts UV_CLOSED","date":"2012-11-22T00:00:37.375Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah snap","date":"2012-11-22T00:01:16.868Z","type":"message"}
+{"nick":"creationix","message":"yeah, I never understood that","date":"2012-11-22T00:01:18.918Z","type":"message"}
+{"nick":"piscisaureus_","message":"I am weong tho :-)","date":"2012-11-22T00:01:24.772Z","type":"message"}
+{"nick":"dedis4","reason":"K-Lined","date":"2012-11-22T00:01:58.998Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 252 seconds","date":"2012-11-22T00:01:59.510Z","type":"quit"}
+{"nick":"piscisaureus_","message":"it is UV_CLOSING | UV_STREAM_READABLE | UV_STREAM_WRITABLE | UV__HANDLE_REF","date":"2012-11-22T00:02:11.213Z","type":"message"}
+{"nick":"piscisaureus_","message":"that makes sense","date":"2012-11-22T00:02:13.063Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: so probably you already called uv_close","date":"2012-11-22T00:02:32.700Z","type":"message"}
+{"nick":"creationix","message":"I'll trace it","date":"2012-11-22T00:02:40.238Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: somehow uv-unix decides to call your read cb nonetheless","date":"2012-11-22T00:02:46.923Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is legal btw","date":"2012-11-22T00:02:58.365Z","type":"message"}
+{"nick":"piscisaureus_","message":"but I would not expect UV_EOF in that case","date":"2012-11-22T00:03:15.031Z","type":"message"}
+{"nick":"brson","date":"2012-11-22T00:03:42.552Z","type":"join"}
+{"nick":"creationix","message":"ahh, found it","date":"2012-11-22T00:03:58.780Z","type":"message"}
+{"nick":"creationix","message":"someone put a call to uv_close in my on_read handler","date":"2012-11-22T00:04:05.736Z","type":"message"}
+{"nick":"creationix","message":"right before looking for the UV_EOF","date":"2012-11-22T00:04:33.297Z","type":"message"}
+{"nick":"piscisaureus_","message":"ghe hahaha","date":"2012-11-22T00:04:36.839Z","type":"message"}
+{"nick":"creationix","message":"is that right?","date":"2012-11-22T00:04:37.951Z","type":"message"}
+{"nick":"piscisaureus_","message":"someone, riiiight :-)","date":"2012-11-22T00:04:40.111Z","type":"message"}
+{"nick":"piscisaureus_","message":":-p","date":"2012-11-22T00:04:45.607Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: it is fine to respond to UV_EOF with uv_close","date":"2012-11-22T00:04:58.670Z","type":"message"}
+{"nick":"piscisaureus_","message":"actually, you are sorta supposed to do that","date":"2012-11-22T00:05:06.181Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/creationix/luv/blob/master/luv_stream.c#L26","date":"2012-11-22T00:05:06.466Z","type":"message"}
+{"nick":"creationix","message":"right, but shouldn't that be up to the client code?","date":"2012-11-22T00:05:18.625Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: but uv_shutdown may be more practical because you want to drain the write queue first","date":"2012-11-22T00:05:22.323Z","type":"message"}
+{"nick":"piscisaureus_","message":"otherwise libuv will cancel pending writes","date":"2012-11-22T00:05:28.698Z","type":"message"}
+{"nick":"creationix","message":"right, I'm calling shutdown in the lua script","date":"2012-11-22T00:05:39.828Z","type":"message"}
+{"nick":"creationix","message":"what happens if I call uv_shutdown, but never call uv_close","date":"2012-11-22T00:06:48.970Z","type":"message"}
+{"nick":"creationix","message":"it will leak resources right?","date":"2012-11-22T00:06:54.616Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-11-22T00:06:57.385Z","type":"message"}
+{"nick":"creationix","message":"alright, thanks","date":"2012-11-22T00:07:02.258Z","type":"message"}
+{"nick":"piscisaureus_","message":"it would be nice if libuv had a \"deferred close\"","date":"2012-11-22T00:07:23.195Z","type":"message"}
+{"nick":"piscisaureus_","message":"that does not truncate the write queue","date":"2012-11-22T00:07:27.411Z","type":"message"}
+{"nick":"piscisaureus_","message":"I wonder how node handles this actually","date":"2012-11-22T00:07:32.967Z","type":"message"}
+{"nick":"creationix","message":"probably calls close in the on_shutdown callback","date":"2012-11-22T00:07:54.679Z","type":"message"}
+{"nick":"creationix","message":"that's what I usually do","date":"2012-11-22T00:07:58.966Z","type":"message"}
+{"nick":"piscisaureus_","message":"I don't think so","date":"2012-11-22T00:08:12.196Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's less efficient :-)","date":"2012-11-22T00:08:18.828Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: yeah, node does not close in the binding layer","date":"2012-11-22T00:10:18.043Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: it might close in the js layer, depending on the state of the write queue and whether AllowHalfOpen is set","date":"2012-11-22T00:10:59.067Z","type":"message"}
+{"nick":"sgallagh_afk","reason":"Remote host closed the connection","date":"2012-11-22T00:12:53.131Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-11-22T00:38:44.786Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T00:38:45.164Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T00:39:17.231Z","type":"join"}
+{"nick":"jmar777_","date":"2012-11-22T00:43:43.799Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-22T00:43:52.545Z","type":"join"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2012-11-22T00:44:51.310Z","type":"quit"}
+{"nick":"jmar777","reason":"Ping timeout: 244 seconds","date":"2012-11-22T00:47:17.085Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 250 seconds","date":"2012-11-22T00:51:46.530Z","type":"quit"}
+{"nick":"brson","date":"2012-11-22T01:03:00.385Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T01:20:24.853Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-22T01:23:52.209Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-11-22T01:27:52.656Z","type":"quit"}
+{"nick":"AvianFlu","date":"2012-11-22T01:28:52.918Z","type":"join"}
+{"nick":"jmar777_","reason":"Remote host closed the connection","date":"2012-11-22T01:32:06.677Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T01:32:41.236Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 244 seconds","date":"2012-11-22T01:36:53.068Z","type":"quit"}
+{"nick":"abraxas","date":"2012-11-22T01:37:06.894Z","type":"join"}
+{"nick":"mmalecki","new_nick":"mmalecki[zzz]","date":"2012-11-22T01:40:04.143Z","type":"nick"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T01:40:05.137Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-22T01:44:41.761Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-11-22T01:48:32.911Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T01:55:41.235Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 252 seconds","date":"2012-11-22T02:01:11.974Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-11-22T02:12:57.396Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-11-22T02:21:33.888Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T02:22:07.804Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 240 seconds","date":"2012-11-22T02:26:14.620Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T02:30:33.300Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2012-11-22T02:35:39.841Z","type":"quit"}
+{"nick":"c4milo","date":"2012-11-22T03:07:49.761Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T03:12:37.056Z","type":"quit"}
+{"nick":"kristate","date":"2012-11-22T03:13:31.166Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-22T03:17:04.692Z","type":"join"}
+{"nick":"kazupon","date":"2012-11-22T03:33:33.463Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-22T03:53:10.612Z","type":"quit"}
+{"nick":"c4milo","date":"2012-11-22T03:53:59.200Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-22T04:07:55.854Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 255 seconds","date":"2012-11-22T04:13:19.863Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-11-22T04:19:13.148Z","type":"quit"}
+{"nick":"perezd","date":"2012-11-22T04:20:31.476Z","type":"join"}
+{"nick":"dap","date":"2012-11-22T04:22:34.528Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T04:51:48.899Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-22T04:57:51.815Z","type":"join"}
+{"nick":"coderarity","date":"2012-11-22T05:03:20.120Z","type":"join"}
+{"nick":"kristate","reason":"Remote host closed the connection","date":"2012-11-22T05:12:48.865Z","type":"quit"}
+{"nick":"kristate","date":"2012-11-22T05:26:24.631Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-11-22T05:32:53.531Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-22T05:33:27.253Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 244 seconds","date":"2012-11-22T05:37:39.070Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-22T05:53:55.009Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2012-11-22T05:54:12.162Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-22T06:21:56.596Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-11-22T07:06:06.469Z","type":"quit"}
+{"nick":"rendar","date":"2012-11-22T07:40:39.232Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-11-22T07:58:30.224Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2012-11-22T07:59:29.831Z","type":"quit"}
