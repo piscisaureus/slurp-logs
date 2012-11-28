@@ -1,0 +1,292 @@
+{"nick":"sergim","reason":"Quit: Computer has gone to sleep.","date":"2012-11-27T19:25:26.512Z","type":"quit"}
+{"nick":"piscisaureus_","message":"luckily it is easy to restart:","date":"2012-11-27T19:25:58.544Z","type":"message"}
+{"nick":"piscisaureus_","message":"ssh root@logs.libuv.org","date":"2012-11-27T19:25:58.766Z","type":"message"}
+{"nick":"piscisaureus_","message":"$ svcadm restart slurp","date":"2012-11-27T19:25:58.766Z","type":"message"}
+{"nick":"piscisaureus_","message":"but I already did it","date":"2012-11-27T19:26:02.119Z","type":"message"}
+{"nick":"TheJH","date":"2012-11-27T19:26:35.569Z","type":"join"}
+{"nick":"EhevuTov_","date":"2012-11-27T19:28:04.411Z","type":"join"}
+{"nick":"kazupon","date":"2012-11-27T19:29:21.394Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-27T19:30:11.479Z","type":"quit"}
+{"nick":"EhevuTov","reason":"Ping timeout: 252 seconds","date":"2012-11-27T19:31:16.845Z","type":"quit"}
+{"nick":"creationix","message":"I think uv_fs_read and uv_fs_write are the hardest for me to write bindings for","date":"2012-11-27T19:38:22.397Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 245 seconds","date":"2012-11-27T19:38:28.173Z","type":"quit"}
+{"nick":"piscisaureus_","message":"why?","date":"2012-11-27T19:38:54.438Z","type":"message"}
+{"nick":"EhevuTov_","reason":"Quit: Leaving","date":"2012-11-27T19:39:40.466Z","type":"quit"}
+{"nick":"creationix","message":"just complicated","date":"2012-11-27T19:40:51.522Z","type":"message"}
+{"nick":"creationix","message":"especially managing the data","date":"2012-11-27T19:40:56.908Z","type":"message"}
+{"nick":"creationix","message":"I wish the on_read callback has a pointer to the buffer in req->pty","date":"2012-11-27T19:41:30.725Z","type":"message"}
+{"nick":"creationix","message":"also, on uv_fs_write, how long to I need to make sure the data buffer is valid?","date":"2012-11-27T19:42:10.683Z","type":"message"}
+{"nick":"creationix","message":"till the callback is called I assume?","date":"2012-11-27T19:42:16.903Z","type":"message"}
+{"nick":"piscisaureus_","message":"yup","date":"2012-11-27T19:42:53.424Z","type":"message"}
+{"nick":"piscisaureus_","message":"euh","date":"2012-11-27T19:43:13.441Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: you get the buffer as an argument right?","date":"2012-11-27T19:43:22.537Z","type":"message"}
+{"nick":"piscisaureus_","message":"atleast for reads","date":"2012-11-27T19:43:27.668Z","type":"message"}
+{"nick":"creationix","message":"where?","date":"2012-11-27T19:43:57.724Z","type":"message"}
+{"nick":"creationix","message":"I can't find docs anywhere on that","date":"2012-11-27T19:44:04.670Z","type":"message"}
+{"nick":"creationix","message":"everyone just passes the buffer along manually using some other data structure","date":"2012-11-27T19:44:14.404Z","type":"message"}
+{"nick":"creationix","message":"this is for fs on read, not stream on read","date":"2012-11-27T19:44:42.421Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah,true","date":"2012-11-27T19:44:47.827Z","type":"message"}
+{"nick":"piscisaureus_","message":"obviously it is somewhere in the req :-)","date":"2012-11-27T19:44:55.778Z","type":"message"}
+{"nick":"creationix","message":"hmm","date":"2012-11-27T19:45:08.504Z","type":"message"}
+{"nick":"creationix","action":"goes a printf-ing","date":"2012-11-27T19:45:15.315Z","type":"action"}
+{"nick":"piscisaureus_","message":"not cross platform","date":"2012-11-27T19:46:21.606Z","type":"message"}
+{"nick":"piscisaureus_","message":"hehe","date":"2012-11-27T19:46:22.014Z","type":"message"}
+{"nick":"piscisaureus_","message":"I suppose we could stick in there","date":"2012-11-27T19:46:36.937Z","type":"message"}
+{"nick":"bnoordhuis","message":"nah. it's a matter of organizing your code","date":"2012-11-27T19:47:22.128Z","type":"message"}
+{"nick":"creationix","message":"I mean, fs_readlink puts it's data in req->ptr","date":"2012-11-27T19:48:27.009Z","type":"message"}
+{"nick":"creationix","message":"why can't req->pty point to the buffer that was passed in when fs_read or fs_write was called?","date":"2012-11-27T19:48:51.178Z","type":"message"}
+{"nick":"piscisaureus_","message":"creationix: bnoordhuis is the most expensive engineer here. I suppose he must be right.","date":"2012-11-27T19:49:37.822Z","type":"message"}
+{"nick":"piscisaureus_","message":"infact I don't like uv_fs at all :-)","date":"2012-11-27T19:50:09.930Z","type":"message"}
+{"nick":"creationix","message":"bnoordhuis, of course I can create a new struct and store the buffer there and chain that to req->data, but that seems like such a waste","date":"2012-11-27T19:50:12.884Z","type":"message"}
+{"nick":"piscisaureus_","message":"or","date":"2012-11-27T19:50:20.211Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: because it's an implementation detail and one that may change someday","date":"2012-11-27T19:50:33.707Z","type":"message"}
+{"nick":"piscisaureus_","message":"struct tim_fs_t {","date":"2012-11-27T19:50:40.545Z","type":"message"}
+{"nick":"piscisaureus_","message":"  uv_fs_t u;","date":"2012-11-27T19:50:40.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"  uv_buf_t buf;","date":"2012-11-27T19:50:40.764Z","type":"message"}
+{"nick":"piscisaureus_","message":"}","date":"2012-11-27T19:50:40.764Z","type":"message"}
+{"nick":"creationix","message":"so what is API and what is private","date":"2012-11-27T19:50:50.680Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ that. embed it","date":"2012-11-27T19:50:52.294Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: anything not explicitly marked public is private","date":"2012-11-27T19:51:05.832Z","type":"message"}
+{"nick":"piscisaureus_","message":"eu","date":"2012-11-27T19:51:12.257Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: not quite I think","date":"2012-11-27T19:51:17.458Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, it's a good rule of thumb","date":"2012-11-27T19:51:27.026Z","type":"message"}
+{"nick":"creationix","message":"right, so uv.h is public","date":"2012-11-27T19:51:30.492Z","type":"message"}
+{"nick":"piscisaureus_","message":"in uv.h it's more like","date":"2012-11-27T19:51:34.083Z","type":"message"}
+{"nick":"bnoordhuis","message":"though it doesn't quite hold for uv_fs_t","date":"2012-11-27T19:51:43.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"everything in uv.h is public unless it's marked private","date":"2012-11-27T19:51:48.236Z","type":"message"}
+{"nick":"creationix","message":"but it doesn't have any comments on how to use most of uv_fs_*","date":"2012-11-27T19:51:49.457Z","type":"message"}
+{"nick":"creationix","message":"I learned how to use it reading node source","date":"2012-11-27T19:51:55.424Z","type":"message"}
+{"nick":"creationix","message":"and reading libuv private source","date":"2012-11-27T19:52:02.455Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm","date":"2012-11-27T19:52:08.905Z","type":"message"}
+{"nick":"creationix","message":"but then I have no idea what's supported","date":"2012-11-27T19:52:09.123Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll update uv.h","date":"2012-11-27T19:52:47.332Z","type":"message"}
+{"nick":"bnoordhuis","message":"only errorno, fs_type and result are public","date":"2012-11-27T19:53:12.042Z","type":"message"}
+{"nick":"bnoordhuis","message":"and statbuf","date":"2012-11-27T19:53:29.236Z","type":"message"}
+{"nick":"creationix","message":"and readdir, readlink?","date":"2012-11-27T19:53:42.949Z","type":"message"}
+{"nick":"creationix","message":"how do I get their data","date":"2012-11-27T19:53:46.142Z","type":"message"}
+{"nick":"bnoordhuis","message":"sorry, ptr is too","date":"2012-11-27T19:54:16.366Z","type":"message"}
+{"nick":"bnoordhuis","message":"only in some cases though :)","date":"2012-11-27T19:54:21.922Z","type":"message"}
+{"nick":"bnoordhuis","message":"the documentation could be improved, yes","date":"2012-11-27T19:54:36.134Z","type":"message"}
+{"nick":"creationix","message":"yeah, docs would help save me a lot of guesswork there","date":"2012-11-27T19:54:42.124Z","type":"message"}
+{"nick":"piscisaureus_","message":"the api sanity too haha","date":"2012-11-27T19:54:46.728Z","type":"message"}
+{"nick":"creationix","message":"but regarding the buffer for uv_fs_write and uv_fs_read, is there a technical reason you can't point to it with ptr?","date":"2012-11-27T19:55:31.356Z","type":"message"}
+{"nick":"creationix","message":"that would be terribly useful to me","date":"2012-11-27T19:55:36.827Z","type":"message"}
+{"nick":"creationix","message":"I've already got a struct I store at ->data","date":"2012-11-27T19:55:47.900Z","type":"message"}
+{"nick":"creationix","message":"and I don't want to special case just for those two types","date":"2012-11-27T19:55:57.801Z","type":"message"}
+{"nick":"piscisaureus_","message":"no there's no technical reason","date":"2012-11-27T19:56:38.953Z","type":"message"}
+{"nick":"piscisaureus_","message":"although i'd prefer uv_buf_t here :-)","date":"2012-11-27T19:56:49.839Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: things would be a lot cleaner if we had per-operation structs instead of just uv_fs_t","date":"2012-11-27T19:58:22.198Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes","date":"2012-11-27T19:58:29.525Z","type":"message"}
+{"nick":"bnoordhuis","message":"who thought up the current api anyway? it wasn't me, of this i'm sure :)","date":"2012-11-27T19:58:52.029Z","type":"message"}
+{"nick":"piscisaureus_","message":"me neither","date":"2012-11-27T19:58:59.923Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, that one guy? the one we had to let go?","date":"2012-11-27T19:59:09.012Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah or maybe even that other guy that we had to let go","date":"2012-11-27T19:59:19.856Z","type":"message"}
+{"nick":"piscisaureus_","message":"but I remember that it was under a certain time pressure","date":"2012-11-27T19:59:29.682Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, and something of an afterthought","date":"2012-11-27T19:59:41.617Z","type":"message"}
+{"nick":"bnoordhuis","message":"\"we rock, libuv is almost done. oh right, fs\"","date":"2012-11-27T19:59:48.072Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes :-)","date":"2012-11-27T19:59:54.421Z","type":"message"}
+{"nick":"TheJH","reason":"Read error: Operation timed out","date":"2012-11-27T20:00:20.141Z","type":"quit"}
+{"nick":"piscisaureus_","message":"I think igor yanked out the windows bits within the week or so","date":"2012-11-27T20:01:25.997Z","type":"message"}
+{"nick":"sergim","date":"2012-11-27T20:03:29.942Z","type":"join"}
+{"nick":"felixge","date":"2012-11-27T20:04:02.270Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: so, uv_cancel()","date":"2012-11-27T20:05:30.043Z","type":"message"}
+{"nick":"felixge","reason":"Client Quit","date":"2012-11-27T20:05:40.266Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yes","date":"2012-11-27T20:05:46.599Z","type":"message"}
+{"nick":"bnoordhuis","message":"my main beef is that cancelling arbitrary requests isn't easy","date":"2012-11-27T20:05:46.956Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis:","date":"2012-11-27T20:05:47.859Z","type":"message"}
+{"nick":"felixge","date":"2012-11-27T20:05:50.058Z","type":"join"}
+{"nick":"bnoordhuis","message":"some need cleanup, some don't","date":"2012-11-27T20:05:51.496Z","type":"message"}
+{"nick":"piscisaureus_","message":"true","date":"2012-11-27T20:05:52.233Z","type":"message"}
+{"nick":"piscisaureus_","message":"but this is about pubic api","date":"2012-11-27T20:06:03.699Z","type":"message"}
+{"nick":"bnoordhuis","message":"ghehe, you said pubic","date":"2012-11-27T20:06:15.966Z","type":"message"}
+{"nick":"piscisaureus_","message":"there's no need to make it bigger than public","date":"2012-11-27T20:06:22.002Z","type":"message"}
+{"nick":"bnoordhuis","message":"the innuendos keep coming","date":"2012-11-27T20:06:34.720Z","type":"message"}
+{"nick":"piscisaureus_","message":"aw, /me makes appointment with freudian therapist","date":"2012-11-27T20:06:56.416Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2012-11-27T20:07:02.418Z","type":"message"}
+{"nick":"bnoordhuis","message":"actually, i thought up a solution (kind of) for uv_fs_t reqs","date":"2012-11-27T20:07:27.295Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: obviously we could just make uv_cancel a big switch statement","date":"2012-11-27T20:07:50.540Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's a big after_cb now but that could be split up in per-fs_type cbs","date":"2012-11-27T20:07:51.259Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah, that'd work","date":"2012-11-27T20:08:01.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"and invoke them with a cancelled=1 argument","date":"2012-11-27T20:08:12.639Z","type":"message"}
+{"nick":"bnoordhuis","message":"lot of work though","date":"2012-11-27T20:08:18.316Z","type":"message"}
+{"nick":"piscisaureus_","message":"huh","date":"2012-11-27T20:08:22.453Z","type":"message"}
+{"nick":"piscisaureus_","message":"why not report r=-1 and errno=ECANCELLED?","date":"2012-11-27T20:08:36.547Z","type":"message"}
+{"nick":"bnoordhuis","message":"or that. but we're talking internal functions here so the exact details don't matter","date":"2012-11-27T20:08:59.197Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: what we'd need is","date":"2012-11-27T20:09:40.305Z","type":"message"}
+{"nick":"lohkey","reason":"Ping timeout: 260 seconds","date":"2012-11-27T20:09:43.141Z","type":"quit"}
+{"nick":"bnoordhuis","message":"or or or... remove the uv_fs_t from the pending queue and put it on the completed queue with a flag saying 'cancelled'","date":"2012-11-27T20:09:52.891Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-11-27T20:10:06.275Z","type":"message"}
+{"nick":"bnoordhuis","message":"then invoke the user's cb with r=-1 and loop->err.code=UV_CANCELLED","date":"2012-11-27T20:10:08.447Z","type":"message"}
+{"nick":"piscisaureus_","message":"that'd make sense right?","date":"2012-11-27T20:10:14.284Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think so","date":"2012-11-27T20:10:18.899Z","type":"message"}
+{"nick":"piscisaureus_","message":"it would also work for getaddrinfo","date":"2012-11-27T20:10:21.531Z","type":"message"}
+{"nick":"bnoordhuis","message":"then it becomes the responsibility of the user to clean up","date":"2012-11-27T20:10:42.625Z","type":"message"}
+{"nick":"piscisaureus_","message":"uv_write/uv_connect/uv_shutdown is a little more difficult","date":"2012-11-27T20:10:47.805Z","type":"message"}
+{"nick":"bnoordhuis","message":"sounds like a plan :)","date":"2012-11-27T20:10:48.026Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-11-27T20:10:52.221Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but if we support only work at first, and maybe fs/getaddrinfo i'd be fine","date":"2012-11-27T20:11:22.906Z","type":"message"}
+{"nick":"bnoordhuis","message":"what are the issues with connect/write/shutdown?","date":"2012-11-27T20:11:28.089Z","type":"message"}
+{"nick":"bnoordhuis","message":"on unix, it's easy - much easier than fs and getaddrinfo","date":"2012-11-27T20:11:39.947Z","type":"message"}
+{"nick":"piscisaureus_","message":"well, you'd have to remove them from a stream-bound queue","date":"2012-11-27T20:11:45.735Z","type":"message"}
+{"nick":"bnoordhuis","message":"so?","date":"2012-11-27T20:12:02.407Z","type":"message"}
+{"nick":"piscisaureus_","message":"on windows we'd have to actually cancel the underlying syscall for which there is no guarantee it'd work :-)","date":"2012-11-27T20:12:12.586Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, i figured it was something like that","date":"2012-11-27T20:12:27.755Z","type":"message"}
+{"nick":"piscisaureus_","message":"so we have to specify that we can never make the guarantee that an operation can be cancelled","date":"2012-11-27T20:12:31.338Z","type":"message"}
+{"nick":"piscisaureus_","message":"the problem here, as always, is windows xp and LSPs","date":"2012-11-27T20:12:41.805Z","type":"message"}
+{"nick":"bnoordhuis","message":"can't you switch to select() when you detect either xp or an lsp?","date":"2012-11-27T20:13:07.353Z","type":"message"}
+{"nick":"bnoordhuis","message":"and maybe print a big fat warning in the console","date":"2012-11-27T20:13:17.608Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-11-27T20:13:29.498Z","type":"message"}
+{"nick":"piscisaureus_","message":"like uv_poll_t does","date":"2012-11-27T20:13:35.973Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: possibly","date":"2012-11-27T20:13:46.426Z","type":"message"}
+{"nick":"sergim","reason":"Quit: Computer has gone to sleep.","date":"2012-11-27T20:14:14.255Z","type":"quit"}
+{"nick":"sergim","date":"2012-11-27T20:15:55.914Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: btw, is xp really an issue? if we dropped xp support, how many people would complain?","date":"2012-11-27T20:16:13.458Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but realistically, cancelling write/end/connect is rather lame","date":"2012-11-27T20:16:14.829Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you could really just close the handle","date":"2012-11-27T20:16:44.559Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ehm, well, I don't know","date":"2012-11-27T20:16:50.971Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: agreed. if you need to do that, that to me suggests that you need to rethink your approach","date":"2012-11-27T20:16:52.752Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: at the oscon training I did with Rik there were quite a lot of XP users","date":"2012-11-27T20:17:21.600Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: in fact the majority was, even","date":"2012-11-27T20:17:31.158Z","type":"message"}
+{"nick":"bnoordhuis","message":"really? the mind boggles","date":"2012-11-27T20:17:37.220Z","type":"message"}
+{"nick":"piscisaureus_","message":"you sound like mraleph1 now","date":"2012-11-27T20:17:46.253Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: but really it shows how much we are affected by the hipster distortion field","date":"2012-11-27T20:18:06.697Z","type":"message"}
+{"nick":"bnoordhuis","message":"says he to the guy living in gouda :)","date":"2012-11-27T20:18:22.308Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: the only thing I am afraid of","date":"2012-11-27T20:19:22.324Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-27T20:19:28.406Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: within half a year creationix will come <bla bla bla> with some actually reasonable use case for cancelling uv_write","date":"2012-11-27T20:19:48.306Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, he is like that","date":"2012-11-27T20:20:00.499Z","type":"message"}
+{"nick":"piscisaureus_","message":"and then I'll feel obliged to fix that","date":"2012-11-27T20:20:18.310Z","type":"message"}
+{"nick":"bnoordhuis","message":"can't we add a clause to our license: \"Free for commercial or non-commercial use - unless your name is Tim Caswell and you live in Texas.\"?","date":"2012-11-27T20:20:48.895Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: you live in texas, don't you?","date":"2012-11-27T20:21:08.225Z","type":"message"}
+{"nick":"piscisaureus_","message":"sounds too easy to circumvent","date":"2012-11-27T20:21:17.019Z","type":"message"}
+{"nick":"piscisaureus_","message":"what if he moves","date":"2012-11-27T20:21:19.716Z","type":"message"}
+{"nick":"bnoordhuis","message":"i bet it's easier for us to change the license than for him to keep moving around","date":"2012-11-27T20:21:38.029Z","type":"message"}
+{"nick":"piscisaureus_","message":"what about","date":"2012-11-27T20:22:00.103Z","type":"message"}
+{"nick":"piscisaureus_","message":"- unless your mirror shows an image like this http://jsconf.eu/2010/speakers/tim_caswell.jpeg","date":"2012-11-27T20:22:15.178Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: or maybe","date":"2012-11-27T20:22:43.381Z","type":"message"}
+{"nick":"piscisaureus_","message":"NO WARRANTY EITHER EXPRESSED OR IMPLIED THAT THE SOFTWARE SUPPORTS REASONABLE USE CASES","date":"2012-11-27T20:23:11.665Z","type":"message"}
+{"nick":"LOUDBOT","message":"WHY DOES COMCAST NOT LIKE POMEGRANATES?","date":"2012-11-27T20:23:11.897Z","type":"message"}
+{"nick":"creationix","message":"bnoordhuis, correct","date":"2012-11-27T20:26:04.400Z","type":"message"}
+{"nick":"c4milo","date":"2012-11-27T20:26:26.395Z","type":"join"}
+{"nick":"bnoordhuis","message":"creationix: \"steers and queers\", if i remember the slogan right?","date":"2012-11-27T20:27:08.880Z","type":"message"}
+{"nick":"creationix","message":"sounds like Austin","date":"2012-11-27T20:27:27.163Z","type":"message"}
+{"nick":"creationix","message":"so about changing uv_fs_t to store the buffer in ->ptr, how hard is that change","date":"2012-11-27T20:27:59.555Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/torvalds/linux/pull/26#issuecomment-10774717 <- hah, here we go again","date":"2012-11-27T20:28:36.704Z","type":"message"}
+{"nick":"creationix","message":"I hacked mine externally (I just set req->ptr to my buffer after calling uv_fs_read) and it seems to work fine","date":"2012-11-27T20:28:40.648Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: it works but only accidentally","date":"2012-11-27T20:29:31.461Z","type":"message"}
+{"nick":"bnoordhuis","message":"on unix, the actual buffer is stored in void* buf, ptr is unused","date":"2012-11-27T20:29:51.584Z","type":"message"}
+{"nick":"piscisaureus_","message":"Crap I really have to finish and practice my talk now","date":"2012-11-27T20:30:03.656Z","type":"message"}
+{"nick":"bnoordhuis","message":"the paris one?","date":"2012-11-27T20:30:16.652Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-11-27T20:30:20.473Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: you should use req->data, that's what it's for","date":"2012-11-27T20:30:57.173Z","type":"message"}
+{"nick":"creationix","message":"bnoordhuis, I know it's unused, I'm proposing we change the public API","date":"2012-11-27T20:31:30.685Z","type":"message"}
+{"nick":"creationix","message":"and I'm already using req->data for something else","date":"2012-11-27T20:31:46.076Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: \"i'm already using it for something else\" <- that's not a great argument :)","date":"2012-11-27T20:32:25.586Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2012-11-27T20:32:36.703Z","type":"quit"}
+{"nick":"creationix","message":"sure it is","date":"2012-11-27T20:33:58.529Z","type":"message"}
+{"nick":"piscisaureus_","message":"3...2...1...","date":"2012-11-27T20:34:07.036Z","type":"message"}
+{"nick":"creationix","message":"making my code twice as complicated is a bad thing","date":"2012-11-27T20:34:08.079Z","type":"message"}
+{"nick":"TheJH","date":"2012-11-27T20:34:11.891Z","type":"join"}
+{"nick":"creationix","message":"unless there is a good reason to not point to the buffer with ptr","date":"2012-11-27T20:34:26.744Z","type":"message"}
+{"nick":"kazupon","date":"2012-11-27T20:35:04.461Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 260 seconds","date":"2012-11-27T20:40:03.257Z","type":"quit"}
+{"nick":"bnoordhuis","message":"creationix: the good reason is that libuv doesn't need ptr to point to anything valid in this case","date":"2012-11-27T20:40:40.116Z","type":"message"}
+{"nick":"bnoordhuis","message":"and i don't want to cast in (api) stone unnecessary things","date":"2012-11-27T20:41:05.193Z","type":"message"}
+{"nick":"creationix","message":"bnoordhuis, for reference, here is my hack https://github.com/creationix/luv/commit/4d0db57b132cd0e16725d9c622a091a7f1812d1c","date":"2012-11-27T20:42:42.091Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-11-27T20:43:04.500Z","type":"quit"}
+{"nick":"creationix","message":"the commented out code in luv_fs_read and luv_fs_write is from luvit which uses ->data for this","date":"2012-11-27T20:43:09.550Z","type":"message"}
+{"nick":"jmar777","date":"2012-11-27T20:43:40.916Z","type":"join"}
+{"nick":"creationix","message":"though I did discover that if I set anything to req->ptr it will get freed by libuv when I call uv_fs_req_cleanup(req)","date":"2012-11-27T20:44:20.653Z","type":"message"}
+{"nick":"creationix","message":"I was freeing it manually since I'm mallocing it manually and I got double free errors","date":"2012-11-27T20:44:35.207Z","type":"message"}
+{"nick":"creationix","message":"that might be a good reason to not do it, but it sure is terribly convenient","date":"2012-11-27T20:44:53.331Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: luv_callback_t* callback = (luv_callback_t*)malloc(sizeof(luv_callback_t)) <- luv_callback_t* callback = malloc(sizeof(*callback))","date":"2012-11-27T20:47:25.908Z","type":"message"}
+{"nick":"bnoordhuis","message":"shorter and won't fail horribly if the type of callback changes","date":"2012-11-27T20:47:41.588Z","type":"message"}
+{"nick":"jmar777","reason":"Ping timeout: 264 seconds","date":"2012-11-27T20:48:12.630Z","type":"quit"}
+{"nick":"bnoordhuis","message":"../../src/node_stat_watcher.cc:46:76: error: no matching function for call to ‘SetPrototypeMethod(v8::Persistent<v8::FunctionTemplate>&, const char [5], <unresolved overloaded function type>) <- i feared this day would come... g++ 4.8","date":"2012-11-27T20:48:34.814Z","type":"message"}
+{"nick":"creationix","message":"bnoordhuis, thanks","date":"2012-11-27T20:48:39.794Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-11-27T20:52:34.188Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-11-27T20:57:56.756Z","type":"quit"}
+{"nick":"jmar777","date":"2012-11-27T21:00:21.410Z","type":"join"}
+{"nick":"lohkey","date":"2012-11-27T21:06:40.387Z","type":"join"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-11-27T21:17:52.564Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-27T21:18:00.123Z","type":"join"}
+{"nick":"stagas_","date":"2012-11-27T21:19:28.662Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 248 seconds","date":"2012-11-27T21:20:53.032Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2012-11-27T21:20:54.170Z","type":"nick"}
+{"nick":"`3rdEden","date":"2012-11-27T21:23:25.389Z","type":"join"}
+{"nick":"sergim","reason":"Quit: Computer has gone to sleep.","date":"2012-11-27T21:29:32.436Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-11-27T21:35:37.659Z","type":"quit"}
+{"nick":"kazupon","date":"2012-11-27T21:36:04.663Z","type":"join"}
+{"nick":"jmar777","date":"2012-11-27T21:36:13.653Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 256 seconds","date":"2012-11-27T21:40:39.413Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 256 seconds","date":"2012-11-27T21:40:50.302Z","type":"quit"}
+{"nick":"TheJH","reason":"Remote host closed the connection","date":"2012-11-27T21:45:12.020Z","type":"quit"}
+{"nick":"brson","reason":"Remote host closed the connection","date":"2012-11-27T21:48:06.417Z","type":"quit"}
+{"nick":"rendar","date":"2012-11-27T21:50:30.874Z","type":"quit"}
+{"nick":"brson","date":"2012-11-27T21:50:31.391Z","type":"join"}
+{"nick":"sergim","date":"2012-11-27T21:55:23.654Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-11-27T21:56:27.984Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-11-27T21:57:22.413Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-11-27T21:57:48.613Z","type":"join"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-11-27T22:07:43.158Z","type":"quit"}
+{"nick":"hz","date":"2012-11-27T22:09:13.697Z","type":"join"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-11-27T22:14:02.229Z","type":"quit"}
+{"nick":"loladiro","date":"2012-11-27T22:14:16.831Z","type":"join"}
+{"nick":"hz","date":"2012-11-27T22:14:31.667Z","type":"join"}
+{"nick":"mikeal","date":"2012-11-27T22:15:35.454Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-11-27T22:17:02.432Z","type":"quit"}
+{"nick":"Ralt_","reason":"Ping timeout: 255 seconds","date":"2012-11-27T22:17:44.380Z","type":"quit"}
+{"nick":"hz","reason":"Read error: Connection reset by peer","date":"2012-11-27T22:18:22.740Z","type":"quit"}
+{"nick":"loladiro","reason":"Ping timeout: 260 seconds","date":"2012-11-27T22:18:44.827Z","type":"quit"}
+{"nick":"hz","date":"2012-11-27T22:18:46.763Z","type":"join"}
+{"nick":"hz","reason":"Client Quit","date":"2012-11-27T22:19:56.980Z","type":"quit"}
+{"nick":"sergim","reason":"Quit: Computer has gone to sleep.","date":"2012-11-27T22:22:53.878Z","type":"quit"}
+{"nick":"sergim","date":"2012-11-27T22:24:29.360Z","type":"join"}
+{"nick":"sergim","reason":"Client Quit","date":"2012-11-27T22:24:51.720Z","type":"quit"}
+{"nick":"felixge","reason":"Read error: Connection reset by peer","date":"2012-11-27T22:27:49.264Z","type":"quit"}
+{"nick":"kazupon","date":"2012-11-27T22:36:41.507Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-11-27T22:39:58.520Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 265 seconds","date":"2012-11-27T22:41:24.263Z","type":"quit"}
+{"nick":"TooTallNate","message":"isaacs: ping","date":"2012-11-27T22:46:02.053Z","type":"message"}
+{"nick":"perezd","date":"2012-11-27T22:46:30.589Z","type":"join"}
+{"nick":"indexzero","date":"2012-11-27T22:47:18.608Z","type":"join"}
+{"nick":"isaacs","message":"pong","date":"2012-11-27T22:52:03.634Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: do you have thoughts on https://github.com/isaacs/readable-stream/issues/30#issuecomment-10523918","date":"2012-11-27T22:53:55.384Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: peek sounds ok","date":"2012-11-27T22:54:26.284Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: it won't be particularly performant if you peek more than the first buffer, thohg","date":"2012-11-27T22:54:41.912Z","type":"message"}
+{"nick":"TooTallNate","message":"yay, i had a good idea!!","date":"2012-11-27T22:55:01.383Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: my only use-cases so far are for the beginning of the stream so that's ok with me","date":"2012-11-27T22:55:14.918Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2012-11-27T22:55:20.777Z","type":"quit"}
+{"nick":"isaacs","message":":D","date":"2012-11-27T22:55:27.865Z","type":"message"}
+{"nick":"mjr_","date":"2012-11-27T22:55:48.935Z","type":"join"}
+{"nick":"perezd","date":"2012-11-27T22:57:13.653Z","type":"join"}
+{"nick":"perezd","reason":"Remote host closed the connection","date":"2012-11-27T22:57:29.029Z","type":"quit"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2012-11-27T23:00:34.246Z","type":"quit"}
+{"nick":"bnoordhuis","message":"william shatner performing pulp's 'common people'","date":"2012-11-27T23:02:09.500Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's art, i tell you, art!","date":"2012-11-27T23:02:15.562Z","type":"message"}
+{"nick":"piscisaureus_","message":"http://en.wikipedia.org/wiki/Node_Module","date":"2012-11-27T23:02:19.503Z","type":"message"}
+{"nick":"stagas","date":"2012-11-27T23:04:18.723Z","type":"join"}
+{"nick":"mmalecki","new_nick":"mmalecki[zz]","date":"2012-11-27T23:06:22.614Z","type":"nick"}
+{"nick":"loladiro","date":"2012-11-27T23:08:26.489Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-11-27T23:09:57.729Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2012-11-27T23:10:45.473Z","type":"quit"}
+{"nick":"stagas","date":"2012-11-27T23:11:19.662Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2012-11-27T23:13:47.793Z","type":"quit"}
+{"nick":"warz","date":"2012-11-27T23:15:01.749Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-27T23:25:01.984Z","type":"quit"}
+{"nick":"bradleymeck","date":"2012-11-27T23:27:10.393Z","type":"join"}
+{"nick":"loladiro","date":"2012-11-27T23:31:05.167Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: around?","date":"2012-11-27T23:31:42.985Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: quickly, i have to go","date":"2012-11-27T23:32:00.216Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: are there people at the office this week?","date":"2012-11-27T23:32:10.388Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: pm","date":"2012-11-27T23:32:24.510Z","type":"message"}
+{"nick":"c4milo","date":"2012-11-27T23:36:03.388Z","type":"join"}
+{"nick":"kazupon","date":"2012-11-27T23:37:42.467Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 260 seconds","date":"2012-11-27T23:42:21.858Z","type":"quit"}
+{"nick":"mikeal","date":"2012-11-27T23:43:58.694Z","type":"join"}
+{"nick":"ArmyOfBruce","reason":"Excess Flood","date":"2012-11-27T23:44:44.714Z","type":"quit"}
+{"nick":"ArmyOfBruce","date":"2012-11-27T23:45:17.300Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-11-27T23:45:26.849Z","type":"quit"}
+{"nick":"benoitc","date":"2012-11-27T23:51:38.689Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-11-27T23:53:35.160Z","type":"quit"}
+{"nick":"mikeal","reason":"Ping timeout: 256 seconds","date":"2012-11-27T23:54:23.372Z","type":"quit"}
