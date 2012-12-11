@@ -230,3 +230,366 @@
 {"nick":"piscisaureus_","message":"bnoordhuis: the issue with turning off linger is that that the send buffer gets clipped as soon as you call close()","date":"2012-12-10T15:59:38.139Z","type":"message"}
 {"nick":"piscisaureus_","message":"e.g. it would fuck up node's http stuff","date":"2012-12-10T15:59:46.017Z","type":"message"}
 {"nick":"piscisaureus_","message":"because it calls close immediately after the last write()","date":"2012-12-10T15:59:53.747Z","type":"message"}
+{"nick":"bnoordhuis","message":"it calls shutdown() first, doesn' it?","date":"2012-12-10T16:00:06.725Z","type":"message"}
+{"nick":"piscisaureus_","message":"no","date":"2012-12-10T16:00:14.676Z","type":"message"}
+{"nick":"bnoordhuis","message":"why not? shouldn't we fix that?","date":"2012-12-10T16:00:37.029Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: because it saves a syscall :-)","date":"2012-12-10T16:00:46.878Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: saw the note but i wasn't sure what it related to","date":"2012-12-10T16:00:59.685Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: shutdown is unnecessary if you are sure that the other side will/should not send more data","date":"2012-12-10T16:01:22.416Z","type":"message"}
+{"nick":"travis-ci","date":"2012-12-10T16:01:33.189Z","type":"join"}
+{"nick":"travis-ci","message":"[travis-ci] joyent/libuv#940 (no-linger - 0e38494 : Ben Noordhuis): The build passed.","date":"2012-12-10T16:01:33.322Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Change view : https://github.com/joyent/libuv/commit/0e38494aff2b","date":"2012-12-10T16:01:33.322Z","type":"message"}
+{"nick":"travis-ci","message":"[travis-ci] Build details : http://travis-ci.org/joyent/libuv/builds/3594084","date":"2012-12-10T16:01:33.322Z","type":"message"}
+{"nick":"travis-ci","date":"2012-12-10T16:01:33.322Z","type":"part"}
+{"nick":"piscisaureus_","message":"bnoordhuis: close() will do a graceful close under the hood, *iff* linger is enabled (which is the case by default)","date":"2012-12-10T16:01:57.950Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: not always - that's just how most platforms implement it","date":"2012-12-10T16:02:17.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"and maybe not even always then","date":"2012-12-10T16:02:28.553Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so, for some reason, that change made a bunch of things break in the streams2-net branch","date":"2012-12-10T16:02:29.335Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: that's the behavior we rely on.","date":"2012-12-10T16:02:38.582Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: when i do a big write, my afterWrite funciton isn't being called.","date":"2012-12-10T16:02:42.589Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think it is actually sort of \"official\"","date":"2012-12-10T16:02:46.255Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: is there a test case i can try?","date":"2012-12-10T16:03:26.385Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: http://pubs.opengroup.org/onlinepubs/009695399/functions/setsockopt.html","date":"2012-12-10T16:03:37.826Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes, but - our sockets are non-blocking. i don't think the normal rules apply","date":"2012-12-10T16:05:04.673Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it breaks test/simple/test-tls-pause.js","date":"2012-12-10T16:05:07.845Z","type":"message"}
+{"nick":"kristate","reason":"Remote host closed the connection","date":"2012-12-10T16:05:19.691Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: and makes the benchmark/net-pipe.js throughput drop to 0","date":"2012-12-10T16:05:22.700Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: but only in your streams2 branch?","date":"2012-12-10T16:05:37.647Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: you could add a test for it","date":"2012-12-10T16:05:52.244Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yes. however, most of the times it'll work like you say","date":"2012-12-10T16:06:16.551Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it's not something we can rely on","date":"2012-12-10T16:06:23.446Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis:","date":"2012-12-10T16:06:30.381Z","type":"message"}
+{"nick":"piscisaureus_","message":"1 create a socketpair","date":"2012-12-10T16:06:30.502Z","type":"message"}
+{"nick":"piscisaureus_","message":"2 write data to socket 0, then close it","date":"2012-12-10T16:06:30.502Z","type":"message"}
+{"nick":"piscisaureus_","message":"3 read() on socket 1, see if it comes out","date":"2012-12-10T16:06:30.502Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm pretty sure linux won't always work like that","date":"2012-12-10T16:06:32.214Z","type":"message"}
+{"nick":"bnoordhuis","message":"even if it does 99% of the time","date":"2012-12-10T16:06:42.062Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: well, node relies heavily on this","date":"2012-12-10T16:06:43.471Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: on windows I had to move mountains to behave the same :-)","date":"2012-12-10T16:06:57.047Z","type":"message"}
+{"nick":"bnoordhuis","message":"that might explain some irreproducible bug reports :)","date":"2012-12-10T16:07:05.525Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created branch streams2-stdin-wip - http://git.io/uswGtg","date":"2012-12-10T16:07:11.888Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: in that branch^","date":"2012-12-10T16:07:12.827Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: there's got to be something i'm doing differently, because it works fine in master.","date":"2012-12-10T16:07:40.471Z","type":"message"}
+{"nick":"erickt","date":"2012-12-10T16:07:52.886Z","type":"join"}
+{"nick":"bnoordhuis","message":"let me try it","date":"2012-12-10T16:07:58.977Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: even if i just do `git checkout master -- lib/net.js` then the benchmark flows normally","date":"2012-12-10T16:08:36.529Z","type":"message"}
+{"nick":"isaacs","message":"thanks","date":"2012-12-10T16:08:58.435Z","type":"message"}
+{"nick":"bnoordhuis","message":" that suggests that you're doing something wrong :)","date":"2012-12-10T16:09:01.909Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: http://linux.die.net/man/7/socket","date":"2012-12-10T16:09:04.506Z","type":"message"}
+{"nick":"isaacs","message":"it does!","date":"2012-12-10T16:09:06.606Z","type":"message"}
+{"nick":"bnoordhuis","message":"(i kid, i kid - let me try it)","date":"2012-12-10T16:09:07.348Z","type":"message"}
+{"nick":"isaacs","message":"but i'm not sure what it is","date":"2012-12-10T16:09:12.375Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: if linux does not always do this, it is a bug","date":"2012-12-10T16:09:18.869Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: let's get back to it in a few","date":"2012-12-10T16:09:41.243Z","type":"message"}
+{"nick":"piscisaureus_","message":"kk","date":"2012-12-10T16:09:45.897Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: fwiw","date":"2012-12-10T16:11:48.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"(gdb) call uv__print_handles(0, 0)","date":"2012-12-10T16:11:50.218Z","type":"message"}
+{"nick":"bnoordhuis","message":"[--I] signal   0x127fe58","date":"2012-12-10T16:11:50.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"[-AI] async    0x127fd10","date":"2012-12-10T16:11:50.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"[R--] idle     0x127b620","date":"2012-12-10T16:11:50.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"[-A-] check    0x127b6a0","date":"2012-12-10T16:11:52.525Z","type":"message"}
+{"nick":"bnoordhuis","message":"[---] idle     0x127b700","date":"2012-12-10T16:11:55.035Z","type":"message"}
+{"nick":"bnoordhuis","message":"[-A-] timer    0x127b760","date":"2012-12-10T16:11:57.536Z","type":"message"}
+{"nick":"bnoordhuis","message":"[R--] timer    0x127b4e0","date":"2012-12-10T16:12:00.037Z","type":"message"}
+{"nick":"bnoordhuis","message":"[RA-] tcp      0x12c8700","date":"2012-12-10T16:12:02.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"[---] tty      0x13f9390","date":"2012-12-10T16:12:05.043Z","type":"message"}
+{"nick":"bnoordhuis","message":"[-A-] signal   0x13f94e0","date":"2012-12-10T16:12:07.546Z","type":"message"}
+{"nick":"bnoordhuis","message":"[---] tty      0x13f95a0","date":"2012-12-10T16:12:10.051Z","type":"message"}
+{"nick":"bnoordhuis","message":"[RA-] tcp      0x13f9700","date":"2012-12-10T16:12:12.553Z","type":"message"}
+{"nick":"bnoordhuis","message":"[R--] tcp      0x140d560","date":"2012-12-10T16:12:15.056Z","type":"message"}
+{"nick":"bnoordhuis","message":"R means ref'd, A means active","date":"2012-12-10T16:12:17.559Z","type":"message"}
+{"nick":"bnoordhuis","message":"(and I is internal)","date":"2012-12-10T16:12:20.066Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-12-10T16:12:46.176Z","type":"message"}
+{"nick":"isaacs","message":"neat","date":"2012-12-10T16:12:49.573Z","type":"message"}
+{"nick":"bnoordhuis","message":"so it looks like there's one tcp connection that somehow hangs","date":"2012-12-10T16:13:07.368Z","type":"message"}
+{"nick":"isaacs","message":"that makes sense.","date":"2012-12-10T16:13:14.802Z","type":"message"}
+{"nick":"isaacs","message":"but why?","date":"2012-12-10T16:13:26.695Z","type":"message"}
+{"nick":"bnoordhuis","message":"good question :)","date":"2012-12-10T16:13:31.022Z","type":"message"}
+{"nick":"isaacs","message":"what i see is, i write(bigBuffer) and never get the writeReq.oncomplete call","date":"2012-12-10T16:13:44.694Z","type":"message"}
+{"nick":"isaacs","message":"even though, on the other end, i'm reading it all in","date":"2012-12-10T16:13:49.980Z","type":"message"}
+{"nick":"isaacs","message":"and it only seems to happen when i'm using pipe(), so it's reading and writing in both directions","date":"2012-12-10T16:14:08.856Z","type":"message"}
+{"nick":"isaacs","message":"socket.pipe(socket)","date":"2012-12-10T16:14:14.643Z","type":"message"}
+{"nick":"isaacs","message":"if i just do:  socket.resume(); socket.end(bigBuffer); then it works.","date":"2012-12-10T16:14:55.215Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's no data in the write queue","date":"2012-12-10T16:15:06.013Z","type":"message"}
+{"nick":"isaacs","message":"strange.","date":"2012-12-10T16:15:14.622Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2012-12-10T16:15:32.107Z","type":"join"}
+{"nick":"bnoordhuis","message":"neither in the write_completed_queue","date":"2012-12-10T16:15:32.661Z","type":"message"}
+{"nick":"isaacs","message":"what about when you run test/simple/test-tls-pause.js","date":"2012-12-10T16:15:39.391Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's the one i'm testing now","date":"2012-12-10T16:16:27.259Z","type":"message"}
+{"nick":"isaacs","message":"what's especially strange to me is that master works, and streams2 doesn't, and the problem is triggered by some change in libuv@665a316","date":"2012-12-10T16:17:36.356Z","type":"message"}
+{"nick":"joshthecoder","reason":"Quit: Leaving...","date":"2012-12-10T16:18:05.746Z","type":"quit"}
+{"nick":"isaacs","message":"i'm not sure what i'm doing differently to trigger it, but it is concerning that someone else using libuv directly will get bit by this.","date":"2012-12-10T16:18:11.328Z","type":"message"}
+{"nick":"bnoordhuis","message":"what's interesting is that 63k buffers work but 64k buffers don't","date":"2012-12-10T16:21:01.352Z","type":"message"}
+{"nick":"bnoordhuis","message":"probably some trivial libuv bug, i'll look into it","date":"2012-12-10T16:21:16.359Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: thanks!","date":"2012-12-10T16:21:48.925Z","type":"message"}
+{"nick":"Ralt","reason":"Ping timeout: 265 seconds","date":"2012-12-10T16:22:28.897Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: let me know if you make any progress on it, i'd like to release another 0.9 very soon, like tomorrow morning","date":"2012-12-10T16:22:41.417Z","type":"message"}
+{"nick":"isaacs","message":"mornevening","date":"2012-12-10T16:22:45.592Z","type":"message"}
+{"nick":"bnoordhuis","message":"always with the pressure!","date":"2012-12-10T16:22:59.072Z","type":"message"}
+{"nick":"isaacs","message":":D","date":"2012-12-10T16:23:03.189Z","type":"message"}
+{"nick":"isaacs","action":"just watched \"6 Days to Air\", a documentary about the making of south park","date":"2012-12-10T16:23:16.244Z","type":"action"}
+{"nick":"isaacs","message":"inspirational.","date":"2012-12-10T16:23:19.255Z","type":"message"}
+{"nick":"isaacs","message":"every software dev should watch it","date":"2012-12-10T16:23:28.466Z","type":"message"}
+{"nick":"isaacs","message":"if only to realize how easy we have it :)","date":"2012-12-10T16:23:33.435Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: if you don't have the fix by tomorrow, we can release with streams2 minus net","date":"2012-12-10T16:25:27.005Z","type":"message"}
+{"nick":"bnoordhuis","message":"6 days? opulent luxury. i'm used to \"done by last week\"","date":"2012-12-10T16:25:50.828Z","type":"message"}
+{"nick":"AndreasMadsen","message":"hehe","date":"2012-12-10T16:26:16.856Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: I can relate to this.","date":"2012-12-10T16:26:24.076Z","type":"message"}
+{"nick":"mmalecki","message":"dscape knows how to fix deadline problems tho","date":"2012-12-10T16:27:14.440Z","type":"message"}
+{"nick":"dscape","message":"you mean by putting names of people next to a date","date":"2012-12-10T16:28:30.912Z","type":"message"}
+{"nick":"mmalecki","message":"yup","date":"2012-12-10T16:28:37.783Z","type":"message"}
+{"nick":"mmalecki","message":"and moving the date","date":"2012-12-10T16:28:47.634Z","type":"message"}
+{"nick":"dscape","message":"and then no worrying about it, just scream at people if they fail to either change date or reach it? :P","date":"2012-12-10T16:28:54.691Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: apparently they write, draw, voice, and edit every episode of south park in 1 week","date":"2012-12-10T16:28:59.673Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2012-12-10T16:30:18.667Z","type":"message"}
+{"nick":"indutny","message":"isaacs: man, we should use their release cycle model","date":"2012-12-10T16:30:24.426Z","type":"message"}
+{"nick":"isaacs","message":"indutny: during the first few releases of a stable branch, we do","date":"2012-12-10T16:32:28.060Z","type":"message"}
+{"nick":"`3rdEden","new_nick":"`3rdEden|FOODING","date":"2012-12-10T16:32:46.186Z","type":"nick"}
+{"nick":"isaacs","message":"indutny: but then we usually have tons of relatively fixable bugs coming in","date":"2012-12-10T16:32:52.530Z","type":"message"}
+{"nick":"indutny","message":"ahhaha","date":"2012-12-10T16:32:58.983Z","type":"message"}
+{"nick":"indutny","message":"yes, postponing stuff","date":"2012-12-10T16:33:05.720Z","type":"message"}
+{"nick":"indutny","message":"actually, it's probably good that we hadn't released 0.10 yet","date":"2012-12-10T16:33:18.171Z","type":"message"}
+{"nick":"loladiro","date":"2012-12-10T16:33:18.854Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T16:33:23.502Z","type":"quit"}
+{"nick":"indutny","message":"not every person has moved to 0.8","date":"2012-12-10T16:33:24.543Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2012-12-10T16:33:33.667Z","type":"message"}
+{"nick":"piscisaureus_","message":"our release cycle is too frequent","date":"2012-12-10T16:33:39.809Z","type":"message"}
+{"nick":"indutny","message":"it usually takes about half-year or more to move to another version","date":"2012-12-10T16:33:43.020Z","type":"message"}
+{"nick":"piscisaureus_","message":"being on 0.6 seems pretty shitty now tho","date":"2012-12-10T16:34:25.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"we don't fix bugs in it any more","date":"2012-12-10T16:34:30.656Z","type":"message"}
+{"nick":"indutny","message":"I suggest we should use 6 Uranian weeks release cycle","date":"2012-12-10T16:34:44.637Z","type":"message"}
+{"nick":"piscisaureus_","message":"although \"officially\" we were going to support it until the end of the year","date":"2012-12-10T16:34:47.788Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: the end is soon","date":"2012-12-10T16:34:55.645Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: we do","date":"2012-12-10T16:34:56.202Z","type":"message"}
+{"nick":"indutny","message":"21.12.12","date":"2012-12-10T16:34:57.156Z","type":"message"}
+{"nick":"bnoordhuis","message":"but only critical fixes","date":"2012-12-10T16:35:01.802Z","type":"message"}
+{"nick":"piscisaureus_","message":"what constitutes a critical fix?","date":"2012-12-10T16:35:12.255Z","type":"message"}
+{"nick":"indutny","message":"when everything fails","date":"2012-12-10T16:35:20.092Z","type":"message"}
+{"nick":"indutny","message":"and the office is in flames","date":"2012-12-10T16:35:25.168Z","type":"message"}
+{"nick":"bnoordhuis","message":"a security vulnerability, rm -rf /","date":"2012-12-10T16:35:26.640Z","type":"message"}
+{"nick":"indutny","message":"ahha","date":"2012-12-10T16:35:42.708Z","type":"message"}
+{"nick":"indutny","message":"you know my favorite env variable value?","date":"2012-12-10T16:35:49.999Z","type":"message"}
+{"nick":"indutny","message":"export EDITOR=/usr/bin/rm","date":"2012-12-10T16:35:54.864Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: security vulnerability <-- you always deny those","date":"2012-12-10T16:35:55.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's because they're features","date":"2012-12-10T16:36:05.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"for my russian friends","date":"2012-12-10T16:36:09.575Z","type":"message"}
+{"nick":"piscisaureus_","message":"hahaha","date":"2012-12-10T16:36:15.096Z","type":"message"}
+{"nick":"bnoordhuis","action":"ducks","date":"2012-12-10T16:36:19.504Z","type":"action"}
+{"nick":"indutny","message":"ahahaha","date":"2012-12-10T16:36:21.413Z","type":"message"}
+{"nick":"Ralt","date":"2012-12-10T16:38:10.496Z","type":"join"}
+{"nick":"bnoordhuis","message":"write(12, \"\\27\\3\\3@\\30\\205\\310\\10\\352{UF\\21\\233\\313{\\231\\364\\326\\215#\\200\\r\\34\\261\\237J.\\212\\267*H\"..., 65537) = 65537 <- suspicious","date":"2012-12-10T16:41:20.485Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: i would like you to fix those debugger tests","date":"2012-12-10T16:42:25.371Z","type":"message"}
+{"nick":"bnoordhuis","message":"either that or i'll remove them","date":"2012-12-10T16:42:32.329Z","type":"message"}
+{"nick":"indutny","message":"I can only agree on the latter one :)","date":"2012-12-10T16:42:47.567Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes? you think they're bad?","date":"2012-12-10T16:42:54.705Z","type":"message"}
+{"nick":"indutny","message":"move them to pummel or anything","date":"2012-12-10T16:43:05.721Z","type":"message"}
+{"nick":"indutny","message":"it's not really the thing you may want to test everytime","date":"2012-12-10T16:43:16.071Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't mind testing things repeatedly","date":"2012-12-10T16:43:28.298Z","type":"message"}
+{"nick":"bnoordhuis","message":"what i do mind is tests leaving behind stray processes","date":"2012-12-10T16:43:36.402Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2012-12-10T16:45:01.588Z","type":"message"}
+{"nick":"indutny","message":"there was a fix","date":"2012-12-10T16:45:05.241Z","type":"message"}
+{"nick":"indutny","message":"that was killing process group","date":"2012-12-10T16:45:09.362Z","type":"message"}
+{"nick":"piscisaureus_","message":"can we not make a node api that makes processes have their own process group?","date":"2012-12-10T16:45:59.487Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think it would be convenient for many people","date":"2012-12-10T16:46:08.998Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: someone needs to kill it","date":"2012-12-10T16:46:11.190Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: this group","date":"2012-12-10T16:46:15.520Z","type":"message"}
+{"nick":"indutny","message":"it won't die by itself","date":"2012-12-10T16:46:19.220Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah","date":"2012-12-10T16:46:19.436Z","type":"message"}
+{"nick":"piscisaureus_","message":"well we can add another indirection to the test","date":"2012-12-10T16:46:28.390Z","type":"message"}
+{"nick":"piscisaureus_","message":"e.g. some node process that uses fork() to spawn the actual test","date":"2012-12-10T16:46:41.804Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think having job control for spawn() would be nice","date":"2012-12-10T16:47:08.597Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2012-12-10T16:51:23.520Z","type":"message"}
+{"nick":"indutny","message":"this is a way to go","date":"2012-12-10T16:51:27.657Z","type":"message"}
+{"nick":"indutny","message":"but if it'll be killed because of timeout - process will still hang","date":"2012-12-10T16:51:38.420Z","type":"message"}
+{"nick":"indutny","message":"python test runner should kill process group","date":"2012-12-10T16:51:44.706Z","type":"message"}
+{"nick":"dap","date":"2012-12-10T16:52:44.166Z","type":"join"}
+{"nick":"isaacs","message":"indutny: i seem to recall that having python kill the process group was kind of awful.","date":"2012-12-10T16:52:48.275Z","type":"message"}
+{"nick":"indutny","message":"yeees","date":"2012-12-10T16:53:00.229Z","type":"message"}
+{"nick":"indutny","message":"but I can't remember why","date":"2012-12-10T16:53:03.521Z","type":"message"}
+{"nick":"isaacs","message":"indutny: because it makes test-mmessage and lint not get run","date":"2012-12-10T16:53:03.933Z","type":"message"}
+{"nick":"indutny","message":"can you?","date":"2012-12-10T16:53:04.981Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it kills the make process.","date":"2012-12-10T16:53:12.077Z","type":"message"}
+{"nick":"felixge","date":"2012-12-10T16:53:43.588Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2012-12-10T16:53:43.588Z","type":"quit"}
+{"nick":"felixge","date":"2012-12-10T16:53:43.588Z","type":"join"}
+{"nick":"isaacs","message":"for now, the debugger tests are very helpful to me.","date":"2012-12-10T16:53:53.389Z","type":"message"}
+{"nick":"isaacs","message":"but we should have debugger tests that don't make zombies, ideally","date":"2012-12-10T16:54:01.649Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis, indutny ^","date":"2012-12-10T16:54:07.915Z","type":"message"}
+{"nick":"isaacs","message":"i say this because i apparently broke the debugger yesterday :)","date":"2012-12-10T16:54:17.320Z","type":"message"}
+{"nick":"indutny","message":"aha!","date":"2012-12-10T16:54:23.333Z","type":"message"}
+{"nick":"indutny","message":"offender found :)","date":"2012-12-10T16:54:26.957Z","type":"message"}
+{"nick":"joshthecoder","date":"2012-12-10T16:54:28.438Z","type":"join"}
+{"nick":"bnoordhuis","message":"no, those tests have been leaving stray processes behind for a while now","date":"2012-12-10T16:54:39.557Z","type":"message"}
+{"nick":"bnoordhuis","message":"i've been pestering you about for some time as well, fedor","date":"2012-12-10T16:54:52.646Z","type":"message"}
+{"nick":"bnoordhuis","message":"*about it","date":"2012-12-10T16:54:56.941Z","type":"message"}
+{"nick":"isaacs","message":"indutny: only in streams2-net","date":"2012-12-10T16:55:13.904Z","type":"message"}
+{"nick":"isaacs","message":"indutny: and probably because of something i did to stdin","date":"2012-12-10T16:55:19.694Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-12-10T16:56:20.974Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: can you take a look at https://github.com/joyent/node/pull/4347","date":"2012-12-10T16:56:59.094Z","type":"message"}
+{"nick":"indutny","message":"please","date":"2012-12-10T16:57:00.520Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: executive summary for the workaround please?","date":"2012-12-10T16:57:52.627Z","type":"message"}
+{"nick":"bnoordhuis","message":"like i said, i never understood why mod_ssl does that","date":"2012-12-10T16:58:01.883Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: see last comment","date":"2012-12-10T16:58:09.297Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I removed that loop","date":"2012-12-10T16:58:12.824Z","type":"message"}
+{"nick":"indutny","message":"it was some legacy stuff, and you were right","date":"2012-12-10T16:58:19.645Z","type":"message"}
+{"nick":"bnoordhuis","message":"broken openssl version?","date":"2012-12-10T16:58:42.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"did you ask on the mod_ssl mailing list?","date":"2012-12-10T16:59:06.194Z","type":"message"}
+{"nick":"indutny","message":"no","date":"2012-12-10T16:59:10.696Z","type":"message"}
+{"nick":"indutny","message":"I looked at source","date":"2012-12-10T16:59:13.437Z","type":"message"}
+{"nick":"Ralt","reason":"Ping timeout: 240 seconds","date":"2012-12-10T16:59:14.635Z","type":"quit"}
+{"nick":"indutny","message":"there's a state machine","date":"2012-12-10T16:59:19.769Z","type":"message"}
+{"nick":"indutny","message":"but it's pretty simple","date":"2012-12-10T16:59:23.815Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-12-10T16:59:31.945Z","type":"message"}
+{"nick":"indutny","message":"also this remind me about one thing","date":"2012-12-10T16:59:36.969Z","type":"message"}
+{"nick":"indutny","message":"I probably should call it twice","date":"2012-12-10T16:59:41.404Z","type":"message"}
+{"nick":"indutny","message":"because it sends first and reads on the second call","date":"2012-12-10T16:59:50.245Z","type":"message"}
+{"nick":"bnoordhuis","action":"raises a questioning eyebrow","date":"2012-12-10T17:00:13.273Z","type":"action"}
+{"nick":"indutny","message":"you want to know why?","date":"2012-12-10T17:01:07.214Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2012-12-10T17:01:15.873Z","type":"message"}
+{"nick":"indutny","message":"one sec","date":"2012-12-10T17:01:29.304Z","type":"message"}
+{"nick":"bnoordhuis","message":"there is no knowledge that is not power, to quote mortal kombat","date":"2012-12-10T17:01:34.225Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://github.com/joyent/node/blob/master/deps/openssl/openssl/ssl/s3_lib.c#L4092","date":"2012-12-10T17:01:56.736Z","type":"message"}
+{"nick":"bnoordhuis","message":"i can do a passable imitation of the mortal kombat voice btw","date":"2012-12-10T17:02:06.354Z","type":"message"}
+{"nick":"indutny","message":"skip quit shutdown shit","date":"2012-12-10T17:02:10.852Z","type":"message"}
+{"nick":"bnoordhuis","message":"people always change the subject when i mention that :(","date":"2012-12-10T17:02:28.706Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, what should i be looking at?","date":"2012-12-10T17:02:48.566Z","type":"message"}
+{"nick":"bnoordhuis","message":"the ack from the peer?","date":"2012-12-10T17:03:23.308Z","type":"message"}
+{"nick":"bnoordhuis","message":"or rather, the expected ack from the peer","date":"2012-12-10T17:03:43.711Z","type":"message"}
+{"nick":"indutny","message":"yes, that's what I'm talking about","date":"2012-12-10T17:03:47.049Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, it kind of makes sense","date":"2012-12-10T17:04:09.052Z","type":"message"}
+{"nick":"bnoordhuis","message":"can you capture it in a test?","date":"2012-12-10T17:04:12.828Z","type":"message"}
+{"nick":"loladiro","date":"2012-12-10T17:04:57.955Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T17:05:31.722Z","type":"quit"}
+{"nick":"bnoordhuis","message":"piscisaureus_: still around?","date":"2012-12-10T17:06:43.242Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I'll try","date":"2012-12-10T17:07:20.419Z","type":"message"}
+{"nick":"bnoordhuis","message":"nice","date":"2012-12-10T17:07:29.520Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yup","date":"2012-12-10T17:07:37.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: re linger and close()","date":"2012-12-10T17:07:59.185Z","type":"message"}
+{"nick":"bnoordhuis","message":"or just close() really","date":"2012-12-10T17:08:06.744Z","type":"message"}
+{"nick":"bnoordhuis","message":"node shouldn't rely on that behavior","date":"2012-12-10T17:08:12.160Z","type":"message"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2012-12-10T17:08:26.049Z","type":"quit"}
+{"nick":"bnoordhuis","message":"what the linux man page fails to mention is that the rules change when non-blocking sockets are involved","date":"2012-12-10T17:08:31.601Z","type":"message"}
+{"nick":"loladiro","date":"2012-12-10T17:08:50.869Z","type":"join"}
+{"nick":"bnoordhuis","message":"and even if linux does the right thing, other platforms don't","date":"2012-12-10T17:09:27.951Z","type":"message"}
+{"nick":"bnoordhuis","message":"(but it doesn't - not always)","date":"2012-12-10T17:09:41.910Z","type":"message"}
+{"nick":"Ralt","date":"2012-12-10T17:11:58.185Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: now that i think of it, how does that even work?","date":"2012-12-10T17:12:24.693Z","type":"message"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T17:12:30.693Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: a sec","date":"2012-12-10T17:12:33.005Z","type":"message"}
+{"nick":"bnoordhuis","message":"uv_close() cancels pending write requests","date":"2012-12-10T17:12:35.324Z","type":"message"}
+{"nick":"bnoordhuis","message":"so it's a tossup what's actually sent out and what's not","date":"2012-12-10T17:12:54.715Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: true. Skype?","date":"2012-12-10T17:13:46.128Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: dat gaat wat sneller","date":"2012-12-10T17:13:58.141Z","type":"message"}
+{"nick":"bnoordhuis","message":"okee :)","date":"2012-12-10T17:14:02.258Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ik kan je ook bellen :_0","date":"2012-12-10T17:14:03.020Z","type":"message"}
+{"nick":"bnoordhuis","message":"bellen? was dat niet wat mensen in de '90s deden?","date":"2012-12-10T17:14:16.282Z","type":"message"}
+{"nick":"piscisaureus_","message":"haha","date":"2012-12-10T17:14:23.559Z","type":"message"}
+{"nick":"piscisaureus_","message":"get ur ass on skype then","date":"2012-12-10T17:14:31.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"ff macbook opstarten","date":"2012-12-10T17:14:37.641Z","type":"message"}
+{"nick":"loladiro","date":"2012-12-10T17:21:10.801Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T17:21:33.344Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-12-10T17:28:55.747Z","type":"quit"}
+{"nick":"loladiro","date":"2012-12-10T17:32:48.190Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T17:33:51.976Z","type":"quit"}
+{"nick":"`3rdEden|FOODING","new_nick":"`3rdEden","date":"2012-12-10T17:35:41.899Z","type":"nick"}
+{"nick":"tomshreds","date":"2012-12-10T17:36:16.427Z","type":"join"}
+{"nick":"piscisaureus_","message":"creationix: SL meeting?","date":"2012-12-10T17:57:41.788Z","type":"message"}
+{"nick":"bnoordhuis","message":"creationix: hurry up, we're waiting","date":"2012-12-10T18:04:44.104Z","type":"message"}
+{"nick":"TooTallNate","date":"2012-12-10T18:06:13.244Z","type":"join"}
+{"nick":"Ralt","reason":"Ping timeout: 259 seconds","date":"2012-12-10T18:06:14.951Z","type":"quit"}
+{"nick":"Ralt","date":"2012-12-10T18:06:47.502Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 252 seconds","date":"2012-12-10T18:19:56.487Z","type":"quit"}
+{"nick":"bradleymeck","date":"2012-12-10T18:31:26.663Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: have you figured out what is happening?","date":"2012-12-10T18:40:36.543Z","type":"message"}
+{"nick":"indutny","message":"bradleymeck: (about linger)","date":"2012-12-10T18:40:53.010Z","type":"message"}
+{"nick":"bradleymeck","message":"indutny: ?","date":"2012-12-10T18:41:06.882Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-12-10T18:41:14.039Z","type":"message"}
+{"nick":"indutny","message":"sorry, tab-completion failure","date":"2012-12-10T18:41:17.893Z","type":"message"}
+{"nick":"hz","date":"2012-12-10T18:52:35.459Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2012-12-10T19:00:24.565Z","type":"quit"}
+{"nick":"jmar777","date":"2012-12-10T19:00:51.350Z","type":"join"}
+{"nick":"brson","date":"2012-12-10T19:19:30.290Z","type":"join"}
+{"nick":"`3rdEden","reason":"Quit: derp","date":"2012-12-10T19:21:55.578Z","type":"quit"}
+{"nick":"`3rdEden","date":"2012-12-10T19:33:06.894Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2012-12-10T19:39:23.778Z","type":"quit"}
+{"nick":"jmar777","date":"2012-12-10T19:39:46.632Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-12-10T19:48:18.890Z","type":"quit"}
+{"nick":"jmar777","date":"2012-12-10T19:49:34.626Z","type":"join"}
+{"nick":"tomshreds","reason":"Quit: Linkinus - http://linkinus.com","date":"2012-12-10T19:51:03.603Z","type":"quit"}
+{"nick":"othiym23","message":"is anyone aware of any recent regressions in SunOS libuv that would cause 'Assertion failed: knp->data_type == KSTAT_DATA_INT32'","date":"2012-12-10T19:58:05.728Z","type":"message"}
+{"nick":"othiym23","message":"I'm getting reports of a crash on SmartOS in a library I wrote that's 100% JavaScript, and I've only heard of it happening there","date":"2012-12-10T19:58:38.445Z","type":"message"}
+{"nick":"othiym23","message":"(don't know what versions of node / what SmartMachine version it is yet)","date":"2012-12-10T19:58:58.487Z","type":"message"}
+{"nick":"indutny","message":"I can look into it today","date":"2012-12-10T19:59:02.213Z","type":"message"}
+{"nick":"othiym23","message":"indutny: dscape is the one seeing the issue, he might be able to hook you up with a heapdump / core file ;)","date":"2012-12-10T19:59:36.187Z","type":"message"}
+{"nick":"othiym23","message":"I don't have a repro case yet","date":"2012-12-10T19:59:48.171Z","type":"message"}
+{"nick":"indutny","message":"ahha","date":"2012-12-10T20:00:42.656Z","type":"message"}
+{"nick":"indutny","message":"dscape: yoyoyo","date":"2012-12-10T20:01:20.061Z","type":"message"}
+{"nick":"loladiro","date":"2012-12-10T20:01:21.719Z","type":"join"}
+{"nick":"indutny","message":"dscape: ping me on gtalk","date":"2012-12-10T20:01:38.610Z","type":"message"}
+{"nick":"indutny","message":"or skype","date":"2012-12-10T20:01:44.577Z","type":"message"}
+{"nick":"CAPSLOCKBOT","reason":"Ping timeout: 246 seconds","date":"2012-12-10T20:10:04.960Z","type":"quit"}
+{"nick":"sj26","reason":"Ping timeout: 246 seconds","date":"2012-12-10T20:10:05.087Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-12-10T20:10:33.064Z","type":"quit"}
+{"nick":"sgallagh","reason":"Ping timeout: 265 seconds","date":"2012-12-10T20:10:36.805Z","type":"quit"}
+{"nick":"russell_h","reason":"Ping timeout: 246 seconds","date":"2012-12-10T20:11:55.903Z","type":"quit"}
+{"nick":"russell_h","date":"2012-12-10T20:12:31.076Z","type":"join"}
+{"nick":"mjr_","date":"2012-12-10T20:13:17.750Z","type":"join"}
+{"nick":"sj26","date":"2012-12-10T20:13:29.388Z","type":"join"}
+{"nick":"bradleymeck","date":"2012-12-10T20:26:25.257Z","type":"join"}
+{"nick":"EhevuTov","date":"2012-12-10T20:28:42.589Z","type":"join"}
+{"nick":"TooTallNate","reason":"Ping timeout: 264 seconds","date":"2012-12-10T20:39:06.173Z","type":"quit"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-12-10T20:40:47.111Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-12-10T20:42:11.743Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-12-10T20:46:47.359Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-12-10T21:04:17.322Z","type":"join"}
+{"nick":"hz","date":"2012-12-10T21:20:15.945Z","type":"quit"}
+{"nick":"hz","date":"2012-12-10T21:20:47.434Z","type":"join"}
+{"nick":"warz","date":"2012-12-10T21:23:39.753Z","type":"join"}
+{"nick":"warz","reason":"Changing host","date":"2012-12-10T21:23:40.058Z","type":"quit"}
+{"nick":"warz","date":"2012-12-10T21:23:40.193Z","type":"join"}
+{"nick":"TooTallNate","reason":"Ping timeout: 240 seconds","date":"2012-12-10T21:26:34.630Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-12-10T21:27:19.582Z","type":"join"}
+{"nick":"AndreasMadsen","reason":"Read error: Connection reset by peer","date":"2012-12-10T21:30:22.088Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2012-12-10T21:31:00.186Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-12-10T21:33:13.112Z","type":"quit"}
+{"nick":"piscisaureus_","new_nick":"piscisaureus","date":"2012-12-10T21:38:33.918Z","type":"nick"}
+{"nick":"rendar","date":"2012-12-10T21:56:33.938Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-12-10T21:57:09.006Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-12-10T21:57:11.202Z","type":"quit"}
+{"nick":"benoitc","date":"2012-12-10T22:02:35.191Z","type":"join"}
+{"nick":"piscisaureus","reason":"Ping timeout: 264 seconds","date":"2012-12-10T22:13:18.110Z","type":"quit"}
+{"nick":"loladiro","date":"2012-12-10T22:16:17.608Z","type":"part"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-12-10T22:24:00.249Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-12-10T22:27:58.315Z","type":"quit"}
+{"nick":"benoitc","date":"2012-12-10T22:33:35.888Z","type":"join"}
+{"nick":"isaacs","message":"good afternoon heroes","date":"2012-12-10T22:41:32.355Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: talking in the 3rd person? :p","date":"2012-12-10T22:41:49.375Z","type":"message"}
+{"nick":"roxlu","message":"someone around who knows a bit about SSL? / openssl? I'm trying to write a https client with libuv","date":"2012-12-10T22:43:51.647Z","type":"message"}
+{"nick":"warz","date":"2012-12-10T22:51:36.990Z","type":"quit"}
+{"nick":"loladiro","date":"2012-12-10T22:53:26.375Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2012-12-10T22:53:53.830Z","type":"quit"}
+{"nick":"loladiro","reason":"Client Quit","date":"2012-12-10T22:57:13.429Z","type":"quit"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2012-12-10T22:57:19.878Z","type":"quit"}
+{"nick":"TooTallNate","message":"roxlu: you probably want indutny ","date":"2012-12-10T22:57:49.073Z","type":"message"}
+{"nick":"roxlu","message":"indutny: !!! :) ","date":"2012-12-10T22:59:02.590Z","type":"message"}
+{"nick":"creationix","message":"who is probably asleep","date":"2012-12-10T23:00:06.960Z","type":"message"}
+{"nick":"TooTallNate","message":"yes it is very late over there :p","date":"2012-12-10T23:00:18.179Z","type":"message"}
+{"nick":"creationix","message":"though pquerna might be able to help too","date":"2012-12-10T23:00:24.761Z","type":"message"}
+{"nick":"TooTallNate","message":"but you also never know with those guys, haha","date":"2012-12-10T23:00:30.945Z","type":"message"}
+{"nick":"roxlu","message":"indutny is dutch right?","date":"2012-12-10T23:00:47.992Z","type":"message"}
+{"nick":"isaacs","message":"roxlu: no, he's russian","date":"2012-12-10T23:00:59.033Z","type":"message"}
+{"nick":"roxlu","message":"oh","date":"2012-12-10T23:01:03.276Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-12-10T23:01:32.803Z","type":"quit"}
+{"nick":"isaacs","message":"wow, i didn't just break the debugger tests, the stdin changes completely broke the debugger.","date":"2012-12-10T23:03:31.320Z","type":"message"}
+{"nick":"isaacs","message":"it halts, but you can't get it to go again","date":"2012-12-10T23:03:38.531Z","type":"message"}
+{"nick":"sblom","date":"2012-12-10T23:10:05.926Z","type":"join"}
+{"nick":"AvianFlu","date":"2012-12-10T23:11:09.182Z","type":"join"}
+{"nick":"piscisaureus_","date":"2012-12-10T23:24:18.766Z","type":"join"}
+{"nick":"loladiro","date":"2012-12-10T23:30:16.785Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-12-10T23:32:58.073Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-12-10T23:36:17.342Z","type":"quit"}
+{"nick":"isaacs","message":"fuck yeah.","date":"2012-12-10T23:42:41.013Z","type":"message"}
+{"nick":"isaacs","message":"[02:26|% 100|+ 485|-   0]: Done                                               ","date":"2012-12-10T23:42:42.577Z","type":"message"}
+{"nick":"isaacs","message":"streams2, stdin, net, everything.","date":"2012-12-10T23:42:51.533Z","type":"message"}
+{"nick":"benoitc","date":"2012-12-10T23:43:06.246Z","type":"join"}
+{"nick":"loladiro","date":"2012-12-10T23:47:54.757Z","type":"join"}
