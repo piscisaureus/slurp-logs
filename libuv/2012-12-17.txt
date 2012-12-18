@@ -315,3 +315,512 @@
 {"nick":"isaacs","message":"bnoordhuis: if you don't listen to the response event on a request, and don't consume the request data before the response ends in a server, then it'll resume() it for it","date":"2012-12-17T15:58:34.706Z","type":"message"}
 {"nick":"isaacs","message":"ie, if there's no way you could have possibly consumed the data, with http/https","date":"2012-12-17T15:58:45.226Z","type":"message"}
 {"nick":"isaacs","message":"so, http fire-and-forget shoudl still work fine.  the problem is that the tests fire-and-forget-but-also-remember","date":"2012-12-17T15:59:16.786Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: any idea why 2433ec8 would drop benchmark/net-pipe.js performance to about 1/4?","date":"2012-12-17T16:05:06.613Z","type":"message"}
+{"nick":"isaacs","message":"er, more like 1/3, i guess","date":"2012-12-17T16:05:17.343Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: on solaris?","date":"2012-12-17T16:05:33.585Z","type":"message"}
+{"nick":"isaacs","message":"solaris and os x","date":"2012-12-17T16:05:38.462Z","type":"message"}
+{"nick":"bnoordhuis","message":"don't know and don't care about os x","date":"2012-12-17T16:06:33.338Z","type":"message"}
+{"nick":"isaacs","message":"there's a drop on ubuntu as well, but it's less significant","date":"2012-12-17T16:06:41.072Z","type":"message"}
+{"nick":"bnoordhuis","message":"but regarding solaris, what kernel and what arch?","date":"2012-12-17T16:06:42.974Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, you mentioned ubuntu. for me it's actually a little faster","date":"2012-12-17T16:06:56.796Z","type":"message"}
+{"nick":"bnoordhuis","message":"what arch was that?","date":"2012-12-17T16:07:07.473Z","type":"message"}
+{"nick":"isaacs","message":"benchmark/net-pipe.js is faster?","date":"2012-12-17T16:07:08.721Z","type":"message"}
+{"nick":"isaacs","message":"it was x64 for ubuntu, 32 for smartos","date":"2012-12-17T16:07:23.761Z","type":"message"}
+{"nick":"isaacs","message":"SunOS 828cbda3-e3d6-4744-86bf-8ad6733dcf15.local 5.11 joyent_20120424T232010Z i86pc i386 i86pc Solaris","date":"2012-12-17T16:07:33.561Z","type":"message"}
+{"nick":"isaacs","message":"node:           ELF 32-bit LSB executable 80386 Version 1 [FPU], dynamically linked, not stripped","date":"2012-12-17T16:07:44.031Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah no, it's a little slower","date":"2012-12-17T16:08:24.557Z","type":"message"}
+{"nick":"isaacs","message":"x64 is also slower on smartos","date":"2012-12-17T16:08:34.690Z","type":"message"}
+{"nick":"isaacs","message":"like from 3.1 to 1.0","date":"2012-12-17T16:08:45.961Z","type":"message"}
+{"nick":"isaacs","message":"reverting the mmap stuff brings the speed right back","date":"2012-12-17T16:09:05.980Z","type":"message"}
+{"nick":"isaacs","message":"what's that actually for, anyway?  is there another way we can fix 4283?","date":"2012-12-17T16:09:26.840Z","type":"message"}
+{"nick":"isaacs","message":"or at least, only do it on Linux, and not on other os's?","date":"2012-12-17T16:09:46.989Z","type":"message"}
+{"nick":"bnoordhuis","message":"the issue - and it probably exists on other platforms as well - is that we alloc buffers in such a way that the memory can't be returned to the os","date":"2012-12-17T16:10:27.730Z","type":"message"}
+{"nick":"bnoordhuis","message":"those memory leaks lots of people complain about? that's because buffers allocated with brk() usually can't be un-brk()'d again","date":"2012-12-17T16:10:54.150Z","type":"message"}
+{"nick":"isaacs","message":"hmm","date":"2012-12-17T16:11:45.298Z","type":"message"}
+{"nick":"isaacs","message":"we should bring this up to the joyent folks and ask them what is the best way to do this on smartos","date":"2012-12-17T16:13:02.948Z","type":"message"}
+{"nick":"isaacs","message":"because using mmap in this way is way too slow","date":"2012-12-17T16:13:20.247Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's probably because mmap performance sucks on solaris","date":"2012-12-17T16:13:27.367Z","type":"message"}
+{"nick":"isaacs","message":"but i hear you, we have to fix the memory leaks","date":"2012-12-17T16:13:38.337Z","type":"message"}
+{"nick":"bnoordhuis","message":"i hadn't thought of it before but when you brought it up i remembered that lots of people complain about it :)","date":"2012-12-17T16:13:45.511Z","type":"message"}
+{"nick":"`3rdEden","message":"like me ;)","date":"2012-12-17T16:14:00.665Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: do you have a test that demonstrates the memory leakings?","date":"2012-12-17T16:14:12.947Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, there's one in the issue","date":"2012-12-17T16:14:23.207Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2012-12-17T16:14:27.456Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, it's not a straight-up memory leak","date":"2012-12-17T16:14:31.205Z","type":"message"}
+{"nick":"isaacs","message":"right, it's not a js memleak","date":"2012-12-17T16:14:39.894Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, and not a c/c++ memleak either","date":"2012-12-17T16:14:48.619Z","type":"message"}
+{"nick":"isaacs","message":"it's more subtle, as i'm understanding it?","date":"2012-12-17T16:14:49.076Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2012-12-17T16:14:53.106Z","type":"message"}
+{"nick":"bnoordhuis","message":"the memory is reusable by the malloc() implementation","date":"2012-12-17T16:14:58.090Z","type":"message"}
+{"nick":"isaacs","message":"we alloc and when you free() it doesn't actually free()?","date":"2012-12-17T16:14:59.226Z","type":"message"}
+{"nick":"isaacs","message":"oh, ok","date":"2012-12-17T16:15:05.556Z","type":"message"}
+{"nick":"bnoordhuis","message":"right, it doesn't go back to the os","date":"2012-12-17T16:15:06.978Z","type":"message"}
+{"nick":"isaacs","message":"well, that's good, though, right?","date":"2012-12-17T16:15:10.916Z","type":"message"}
+{"nick":"isaacs","message":"i mean, you used that memory before, yo umight again","date":"2012-12-17T16:15:16.404Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes... but then again not","date":"2012-12-17T16:15:17.597Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's okay when your app does small allocations","date":"2012-12-17T16:15:38.300Z","type":"message"}
+{"nick":"bnoordhuis","message":"because then the memory gets reused","date":"2012-12-17T16:15:48.630Z","type":"message"}
+{"nick":"bnoordhuis","message":"if your app does a lot of small allocations at start-up and then only does large allocations from then on ","date":"2012-12-17T16:16:11.373Z","type":"message"}
+{"nick":"bnoordhuis","message":"that memory is _not_ reused","date":"2012-12-17T16:16:17.177Z","type":"message"}
+{"nick":"bnoordhuis","message":"which means it sits unused until the os swaps it out","date":"2012-12-17T16:16:26.832Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is wasteful","date":"2012-12-17T16:16:29.926Z","type":"message"}
+{"nick":"isaacs","message":"hm","date":"2012-12-17T16:16:45.415Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's a fairly subtle issue","date":"2012-12-17T16:16:51.894Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-12-17T16:17:14.713Z","type":"quit"}
+{"nick":"isaacs","message":"benchmark/net-pipe.js is doing one big alloc followed by lots of medium-sized ones","date":"2012-12-17T16:17:18.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm not sure how much faith to put in that benchmark","date":"2012-12-17T16:17:37.665Z","type":"message"}
+{"nick":"`3rdEden","new_nick":"`3E|DINNER","date":"2012-12-17T16:17:44.387Z","type":"nick"}
+{"nick":"bnoordhuis","message":"i get maybe 6.5 gbit throughput","date":"2012-12-17T16:17:45.361Z","type":"message"}
+{"nick":"jmar777","date":"2012-12-17T16:17:50.299Z","type":"join"}
+{"nick":"bnoordhuis","message":"while my system can easily do 60 gbit/s","date":"2012-12-17T16:17:53.144Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmap is probably one factor but there must be more","date":"2012-12-17T16:18:21.388Z","type":"message"}
+{"nick":"isaacs","message":"probably","date":"2012-12-17T16:18:26.994Z","type":"message"}
+{"nick":"isaacs","message":"streams1 are slightly faster still, but then there's also all the usability problems.  as long as it ends up comparable, i'm happy.","date":"2012-12-17T16:18:52.843Z","type":"message"}
+{"nick":"isaacs","message":"but we should also work on making it faster overall.","date":"2012-12-17T16:18:58.453Z","type":"message"}
+{"nick":"stagas","date":"2012-12-17T16:18:58.719Z","type":"join"}
+{"nick":"isaacs","message":"here's a flamegraph of it: http://static.izs.me/streams2-throughput-flamegraph3.svg","date":"2012-12-17T16:19:33.123Z","type":"message"}
+{"nick":"isaacs","message":"(scroll down)","date":"2012-12-17T16:19:36.143Z","type":"message"}
+{"nick":"isaacs","message":"oh, a bunch of the laggy bits there have already been removed.","date":"2012-12-17T16:20:10.054Z","type":"message"}
+{"nick":"isaacs","message":"i need to make a new one, that's out of date","date":"2012-12-17T16:20:14.393Z","type":"message"}
+{"nick":"jmar777","reason":"Ping timeout: 264 seconds","date":"2012-12-17T16:22:18.110Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Nicolas Chambrier\u000f \u00037v0.8\u000f * \u0002496c0bd\u0002 : doc: add Google+ French community - http://git.io/dSA9MA","date":"2012-12-17T16:22:30.517Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: thanks","date":"2012-12-17T16:24:52.421Z","type":"message"}
+{"nick":"isaacs","message":"merge machine :)","date":"2012-12-17T16:25:17.989Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ok, I can definitely say that that fd wasn't closed","date":"2012-12-17T16:26:14.081Z","type":"message"}
+{"nick":"isaacs","message":"we *really* need ci benchmarks","date":"2012-12-17T16:26:25.388Z","type":"message"}
+{"nick":"isaacs","message":"holy crap","date":"2012-12-17T16:26:27.678Z","type":"message"}
+{"nick":"bnoordhuis","message":"we used to have buildbots. they were nice","date":"2012-12-17T16:26:54.138Z","type":"message"}
+{"nick":"indutny","message":"aha","date":"2012-12-17T16:28:15.045Z","type":"message"}
+{"nick":"indutny","message":"so looks like my theory is correct","date":"2012-12-17T16:28:21.586Z","type":"message"}
+{"nick":"indutny","message":"it's closed and then open() returns same fd","date":"2012-12-17T16:28:37.984Z","type":"message"}
+{"nick":"indexzero","date":"2012-12-17T16:28:39.585Z","type":"join"}
+{"nick":"bnoordhuis","message":"indutny: close() should remove the fd from the kqueue set","date":"2012-12-17T16:29:05.999Z","type":"message"}
+{"nick":"bnoordhuis","message":"i say 'should' because it wouldn't surprise me if that's broken on os x","date":"2012-12-17T16:29:16.762Z","type":"message"}
+{"nick":"indutny","message":"hahahaa","date":"2012-12-17T16:29:20.794Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-12-17T16:30:15.054Z","type":"message"}
+{"nick":"indutny","message":"looks like it indeed does","date":"2012-12-17T16:30:18.723Z","type":"message"}
+{"nick":"indutny","message":"hm....","date":"2012-12-17T16:30:22.558Z","type":"message"}
+{"nick":"indutny","message":"why is it happening then","date":"2012-12-17T16:30:27.081Z","type":"message"}
+{"nick":"indutny","message":"time to dig into the xnu","date":"2012-12-17T16:30:32.281Z","type":"message"}
+{"nick":"isaacs","message":"here's what it looks like on the latest master: http://static.izs.me/stacks-a3877ab53.svg","date":"2012-12-17T16:31:45.005Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://svn.torproject.org/svn/libevent-urz/trunk/kqueue.c","date":"2012-12-17T16:35:14.984Z","type":"message"}
+{"nick":"indutny","message":"just FYI","date":"2012-12-17T16:35:16.978Z","type":"message"}
+{"nick":"indutny","message":"search for ENOENT","date":"2012-12-17T16:35:19.565Z","type":"message"}
+{"nick":"indutny","message":"I can confirm myself that close() removes fd from kqueu","date":"2012-12-17T16:35:38.243Z","type":"message"}
+{"nick":"indutny","message":"but lets try opening socket with the same fd...","date":"2012-12-17T16:35:48.382Z","type":"message"}
+{"nick":"indutny","message":"no","date":"2012-12-17T16:36:40.774Z","type":"message"}
+{"nick":"indutny","message":"it still works as expected","date":"2012-12-17T16:36:44.406Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Dean McNamee\u000f \u00037master\u000f * \u00021c265c5\u0002 : typed arrays: fix missing type in SizeOfArrayElementForType()  When Mikae (+1 more commits) - http://git.io/aAdOYA","date":"2012-12-17T16:38:08.531Z","type":"message"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2012-12-17T16:38:57.763Z","type":"action"}
+{"nick":"stagas","reason":"Ping timeout: 250 seconds","date":"2012-12-17T16:42:06.708Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: aha, the benchmark/net-pipe.js should be about half of benchmark/throughput.js, since you're measuring it in two directions.","date":"2012-12-17T16:43:15.137Z","type":"message"}
+{"nick":"isaacs","message":"yeah, this mmap stuff is not good.","date":"2012-12-17T16:43:30.907Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: handle also ENOENT (along EBADF) when kevent fails due to errors","date":"2012-12-17T16:43:42.204Z","type":"message"}
+{"nick":"indutny","message":"in the changelist. ENOENT can be returned in the following valid","date":"2012-12-17T16:43:42.338Z","type":"message"}
+{"nick":"indutny","message":"scenario: fd scheduled for delayed removal from the watched fd","date":"2012-12-17T16:43:42.338Z","type":"message"}
+{"nick":"indutny","message":"list, fd closed (which automatically removes the fd from the","date":"2012-12-17T16:43:42.338Z","type":"message"}
+{"nick":"indutny","message":"kqueue watched list), new opened fd which gets the same number,","date":"2012-12-17T16:43:42.338Z","type":"message"}
+{"nick":"indutny","message":"delayed changes applied (kevent()).","date":"2012-12-17T16:43:42.666Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-12-17T16:57:29.905Z","type":"quit"}
+{"nick":"jmar777","date":"2012-12-17T17:02:42.260Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: oooh shit","date":"2012-12-17T17:04:15.946Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I think I'm getting closer to it","date":"2012-12-17T17:04:23.399Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: so I place watcher pointer in kevent->udata","date":"2012-12-17T17:04:34.104Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: and there two interesting facts that I found","date":"2012-12-17T17:04:42.024Z","type":"message"}
+{"nick":"indutny","message":"1) sometimes udata == NULL","date":"2012-12-17T17:04:49.139Z","type":"message"}
+{"nick":"indutny","message":"2) sometimes udata != loop->watchers[ident]","date":"2012-12-17T17:05:02.062Z","type":"message"}
+{"nick":"indutny","message":"and when it != - it fails","date":"2012-12-17T17:05:09.207Z","type":"message"}
+{"nick":"indutny","message":"I need to think about it...","date":"2012-12-17T17:08:57.592Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2012-12-17T17:12:17.393Z","type":"message"}
+{"nick":"bradleymeck","date":"2012-12-17T17:12:17.976Z","type":"join"}
+{"nick":"indutny","message":"so sometimes watchers[fd] is NULL","date":"2012-12-17T17:12:24.263Z","type":"message"}
+{"nick":"indutny","message":"and fd is still in kqueue","date":"2012-12-17T17:12:28.810Z","type":"message"}
+{"nick":"indutny","message":"ohhh","date":"2012-12-17T17:12:31.053Z","type":"message"}
+{"nick":"indutny","message":"shit came real :)","date":"2012-12-17T17:12:33.182Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-12-17T17:16:03.062Z","type":"quit"}
+{"nick":"dap","date":"2012-12-17T17:21:31.783Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: what's really interesting...","date":"2012-12-17T17:25:35.695Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: is that I'm sure that close() was called on that fd","date":"2012-12-17T17:25:45.589Z","type":"message"}
+{"nick":"indutny","message":"I've debugged it","date":"2012-12-17T17:25:49.534Z","type":"message"}
+{"nick":"indutny","message":"looks like some wierd osx stuff to me","date":"2012-12-17T17:26:00.327Z","type":"message"}
+{"nick":"indutny","message":"probably, not only os","date":"2012-12-17T17:26:03.563Z","type":"message"}
+{"nick":"indutny","message":"osx","date":"2012-12-17T17:26:04.763Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2012-12-17T17:26:45.620Z","type":"message"}
+{"nick":"indutny","message":"I have an idea","date":"2012-12-17T17:26:47.554Z","type":"message"}
+{"nick":"kazupon","date":"2012-12-17T17:27:30.690Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: imagine following scenario","date":"2012-12-17T17:28:47.603Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created branch streams2-netwrite - http://git.io/A8N_kA","date":"2012-12-17T17:28:53.547Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2012-12-17T17:28:57.872Z","type":"message"}
+{"nick":"indutny","message":"no, probably that's not the case...","date":"2012-12-17T17:29:03.625Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_, TooTallNate, indutny, review plz? ^","date":"2012-12-17T17:29:06.379Z","type":"message"}
+{"nick":"indutny","message":"isaacs: it's too late :)","date":"2012-12-17T17:29:20.344Z","type":"message"}
+{"nick":"isaacs","message":"and bnoordhuis when you get back from dinner :)","date":"2012-12-17T17:29:20.918Z","type":"message"}
+{"nick":"indutny","message":"I better og sleeping","date":"2012-12-17T17:29:24.002Z","type":"message"}
+{"nick":"isaacs","message":"indutny: ok","date":"2012-12-17T17:29:27.262Z","type":"message"}
+{"nick":"indutny","message":"generally lgtm","date":"2012-12-17T17:30:03.665Z","type":"message"}
+{"nick":"indutny","message":"but didn't look in details","date":"2012-12-17T17:30:08.232Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: so I think that somehow during uv__stream_io callback, fd is closed and reopened","date":"2012-12-17T17:30:31.899Z","type":"message"}
+{"nick":"indutny","message":"and queue from which uv__stream_io was called contains this fd later on","date":"2012-12-17T17:30:59.615Z","type":"message"}
+{"nick":"indutny","message":"I'll narrow this down tomorrow","date":"2012-12-17T17:31:13.239Z","type":"message"}
+{"nick":"indutny","message":"but I think it should be pretty clear to you know","date":"2012-12-17T17:31:29.072Z","type":"message"}
+{"nick":"EhevuTov","date":"2012-12-17T17:33:56.396Z","type":"join"}
+{"nick":"`3E|DINNER","new_nick":"`3rdEden","date":"2012-12-17T17:42:02.098Z","type":"nick"}
+{"nick":"indutny","message":"bnoordhuis: nailed it down https://github.com/joyent/libuv/pull/656","date":"2012-12-17T17:49:16.151Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2012-12-17T17:49:17.011Z","type":"message"}
+{"nick":"indutny","message":"ttyl everyone","date":"2012-12-17T17:49:19.795Z","type":"message"}
+{"nick":"indutny","action":"signs off","date":"2012-12-17T17:49:22.028Z","type":"action"}
+{"nick":"warz_","date":"2012-12-17T17:50:30.998Z","type":"join"}
+{"nick":"warz","reason":"Ping timeout: 252 seconds","date":"2012-12-17T17:51:22.490Z","type":"quit"}
+{"nick":"c4milo_","reason":"Remote host closed the connection","date":"2012-12-17T17:56:13.404Z","type":"quit"}
+{"nick":"peterrs","reason":"Read error: Connection reset by peer","date":"2012-12-17T17:57:02.375Z","type":"quit"}
+{"nick":"peterrs","date":"2012-12-17T17:57:20.632Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2012-12-17T17:59:04.504Z","type":"quit"}
+{"nick":"c4milo","date":"2012-12-17T17:59:10.955Z","type":"join"}
+{"nick":"peterrs","reason":"Client Quit","date":"2012-12-17T18:00:44.691Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: ?","date":"2012-12-17T18:01:51.751Z","type":"message"}
+{"nick":"isaacs","action":"is going to revert the mmap thing","date":"2012-12-17T18:02:17.446Z","type":"action"}
+{"nick":"isaacs","message":"increasing RSS in this scenario is expected behavior.","date":"2012-12-17T18:02:25.216Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-12-17T18:05:38.998Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-12-17T18:14:00.808Z","type":"quit"}
+{"nick":"lohkey","date":"2012-12-17T18:17:30.458Z","type":"join"}
+{"nick":"EhevuTov","date":"2012-12-17T18:18:52.636Z","type":"join"}
+{"nick":"c4milo","date":"2012-12-17T18:18:59.170Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: what's up?","date":"2012-12-17T18:24:01.686Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2012-12-17T18:24:10.391Z","type":"quit"}
+{"nick":"piscisaureus_","message":"bnoordhuis: we're having a call","date":"2012-12-17T18:24:16.590Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: as in now?","date":"2012-12-17T18:24:25.443Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: yep","date":"2012-12-17T18:24:36.784Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, _now_ the reminder email comes in...","date":"2012-12-17T18:24:40.834Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, joining","date":"2012-12-17T18:24:51.417Z","type":"message"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2012-12-17T18:24:55.271Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-12-17T18:26:12.231Z","type":"quit"}
+{"nick":"c4milo","date":"2012-12-17T18:26:54.978Z","type":"join"}
+{"nick":"TooTallNate","date":"2012-12-17T18:30:24.006Z","type":"join"}
+{"nick":"`3rdEden","date":"2012-12-17T18:34:19.065Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: chatting with some smartos people about a solution for https://github.com/joyent/node/issues/4283","date":"2012-12-17T18:46:25.937Z","type":"message"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2012-12-17T18:46:36.070Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: but the mmap approach can not be made to work without huge costs.","date":"2012-12-17T18:46:39.966Z","type":"message"}
+{"nick":"sblom","date":"2012-12-17T18:46:48.685Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u00026c5356b\u0002 : Revert \"buffer: allocate memory with mmap()\"  Also Revert \"buffer: use MA - http://git.io/XSvaDQ","date":"2012-12-17T18:48:07.221Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2012-12-17T18:48:15.912Z","type":"quit"}
+{"nick":"isaacs","message":"sblom, piscisaureus_: Do I need to install something to build the etw stuff? https://gist.github.com/4320822","date":"2012-12-17T18:50:12.453Z","type":"message"}
+{"nick":"sblom","message":"@isaacs: I didn't think so--I'm looking into that GIST now.","date":"2012-12-17T18:50:47.410Z","type":"message"}
+{"nick":"isaacs","message":"sblom: building with noetw noperfcounter works fine","date":"2012-12-17T18:52:02.883Z","type":"message"}
+{"nick":"isaacs","message":"er, noperfctr","date":"2012-12-17T18:52:21.932Z","type":"message"}
+{"nick":"isaacs","message":"maybe i have to install etw and perfcounters?","date":"2012-12-17T18:52:39.035Z","type":"message"}
+{"nick":"AvianFlu","new_nick":"whatever","date":"2012-12-17T18:53:26.628Z","type":"nick"}
+{"nick":"whatever","new_nick":"AvianFlu","date":"2012-12-17T18:53:31.130Z","type":"nick"}
+{"nick":"sblom","message":"isaacs: Those are both about as built in to Windows as it gets. Lemme see if I can reproduce the build failure. Just building latest v0.8 branch?","date":"2012-12-17T18:55:33.828Z","type":"message"}
+{"nick":"sblom","message":"I'm surprised this is happening in 0.8--I thought the new code was only in master.","date":"2012-12-17T18:55:52.923Z","type":"message"}
+{"nick":"sblom","message":"But I could be crazy.","date":"2012-12-17T18:56:00.062Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: that's pretty lame. it means i'll be fielding \"rss leak\" issues for years to come :/","date":"2012-12-17T18:56:13.388Z","type":"message"}
+{"nick":"isaacs","message":"sblom: master","date":"2012-12-17T18:56:36.339Z","type":"message"}
+{"nick":"isaacs","message":"sblom: sorry, didn't specify :)","date":"2012-12-17T18:56:41.089Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: well, we can probably work out a way to re-use the memory we've claimed with brk()","date":"2012-12-17T18:56:59.417Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: or punt the issue upstream to the operating systems.","date":"2012-12-17T18:57:06.219Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: (which is what i've just done in the joyent jabber channel)","date":"2012-12-17T18:57:22.426Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm less optimistic","date":"2012-12-17T18:57:41.745Z","type":"message"}
+{"nick":"sblom","message":"isaacs: Okay--cool. I'll take a look.","date":"2012-12-17T18:57:42.464Z","type":"message"}
+{"nick":"sblom","message":"I'll be away for about an hour, but more news first thing this afternoon.","date":"2012-12-17T18:57:56.766Z","type":"message"}
+{"nick":"bnoordhuis","message":"this particular issue has existed for probably close to 10 years in glibc","date":"2012-12-17T18:57:57.113Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: if we dynamically increased the buffer.poolSize, then that might help things, or if we re-used the SlowBuffer memory when SlowBuffers give them up.","date":"2012-12-17T18:58:09.329Z","type":"message"}
+{"nick":"bnoordhuis","message":"and it's not really a bug either, just a pathological edge case","date":"2012-12-17T18:58:12.024Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it's a bug in the user.","date":"2012-12-17T18:58:18.478Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: they don't understand how rss works.","date":"2012-12-17T18:58:24.480Z","type":"message"}
+{"nick":"isaacs","message":"but every program in the world has this \"bug\", because performance generally matters much much more than heap fragmentation or size.","date":"2012-12-17T18:59:00.000Z","type":"message"}
+{"nick":"isaacs","message":"the cure is worse than the disease in this case.","date":"2012-12-17T18:59:15.258Z","type":"message"}
+{"nick":"EhevuTov","reason":"Read error: Connection timed out","date":"2012-12-17T18:59:58.998Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: it could be that you need a more expensive version of visual studio to build it. Do you have an msdn subscription? If not, claudio can hook you up with one.","date":"2012-12-17T19:02:01.504Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: aha, that could be it.  i think i have express.","date":"2012-12-17T19:02:17.995Z","type":"message"}
+{"nick":"isaacs","message":"claudio gave me some carte blanche msdn access once upon a time.","date":"2012-12-17T19:02:31.206Z","type":"message"}
+{"nick":"isaacs","message":"i'll see if i can dig it up","date":"2012-12-17T19:02:39.555Z","type":"message"}
+{"nick":"piscisaureus_","message":"sblom: I am not thrilled that compiling node now no longer works on express. Is there any way we could detect this and print a warning / build without ETW ?","date":"2012-12-17T19:02:47.371Z","type":"message"}
+{"nick":"isaacs","message":"some child proc regressions on streams2 in glassland","date":"2012-12-17T19:08:51.915Z","type":"message"}
+{"nick":"isaacs","message":"also many windows tests fail when run in a path that has spaces in it","date":"2012-12-17T19:09:35.930Z","type":"message"}
+{"nick":"isaacs","message":"which would not be a worthwhile concern on unix, but windows users generally always have a space in the path somewhere.","date":"2012-12-17T19:09:48.992Z","type":"message"}
+{"nick":"EhevuTov","date":"2012-12-17T19:11:47.631Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033bnoordhuis\u000f created branch mmap-reloaded - http://git.io/YnDEFw","date":"2012-12-17T19:13:05.621Z","type":"message"}
+{"nick":"brson","date":"2012-12-17T19:13:06.406Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: ^ does that work for you?","date":"2012-12-17T19:13:20.944Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: maybe check for >= kPoolSize instead of == kPoolSize","date":"2012-12-17T19:14:09.977Z","type":"message"}
+{"nick":"mikeal","date":"2012-12-17T19:14:30.729Z","type":"join"}
+{"nick":"piscisaureus_","message":"ceterum censeo that smartos should just get its shit together :-p","date":"2012-12-17T19:14:42.961Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: yeah, i probably should. this is just a quick fix to fix the benchmark/net-pipe regression","date":"2012-12-17T19:15:00.630Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: that's not so bad.","date":"2012-12-17T19:15:28.430Z","type":"message"}
+{"nick":"bnoordhuis","message":"an interesting observation is that the stream slab allocator clashes with mmap-ed buffers","date":"2012-12-17T19:18:02.928Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. performance drops when slabs are mmap-ed instead of new'd","date":"2012-12-17T19:18:17.242Z","type":"message"}
+{"nick":"bnoordhuis","message":"which makes sense, i guess, because mmap'ing large chunks is more expensive than smaller chunks","date":"2012-12-17T19:20:07.502Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: actually it gets slightly faster in mmap-reloaded over master.","date":"2012-12-17T19:20:15.264Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i noticed that too :)","date":"2012-12-17T19:20:26.163Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: how's linux?","date":"2012-12-17T19:20:45.883Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2012-12-17T19:20:55.932Z","type":"quit"}
+{"nick":"isaacs","message":"(really, os x performance is important, but not that much.  linux, smartos, and windows are everything)","date":"2012-12-17T19:21:01.982Z","type":"message"}
+{"nick":"bnoordhuis","message":"about the same now","date":"2012-12-17T19:21:02.367Z","type":"message"}
+{"nick":"isaacs","message":"darwin perf is only important for dumb blog post marketing bullshit benchmarks that people run on their laptops :)","date":"2012-12-17T19:21:26.462Z","type":"message"}
+{"nick":"isaacs","message":"(like the kind on blog.nodejs.org)","date":"2012-12-17T19:21:38.302Z","type":"message"}
+{"nick":"bnoordhuis","message":"no mmap: 6.3664 Gbits/sec (6833569792 bits / 999669522 ns)","date":"2012-12-17T19:22:25.969Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.3386 Gbits/sec (6803161088 bits / 999585177 ns)","date":"2012-12-17T19:22:26.166Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.3497 Gbits/sec (6816792576 bits / 999829549 ns)","date":"2012-12-17T19:22:26.296Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.3919 Gbits/sec (6860832768 bits / 999649879 ns)","date":"2012-12-17T19:22:26.966Z","type":"message"}
+{"nick":"bnoordhuis","message":"with mmap-reloaded: 6.4184 Gbits/sec (6888095744 bits / 999482968 ns)","date":"2012-12-17T19:22:37.118Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.4162 Gbits/sec (6887047168 bits / 999669034 ns)","date":"2012-12-17T19:22:37.269Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.4390 Gbits/sec (6911164416 bits / 999608860 ns)","date":"2012-12-17T19:22:37.405Z","type":"message"}
+{"nick":"bnoordhuis","message":"6.4126 Gbits/sec (6883901440 bits / 999769415 ns)","date":"2012-12-17T19:22:37.597Z","type":"message"}
+{"nick":"bnoordhuis","message":"statistically not that significant but it seems to be consistently faster","date":"2012-12-17T19:23:09.442Z","type":"message"}
+{"nick":"isaacs","message":"yes","date":"2012-12-17T19:23:28.440Z","type":"message"}
+{"nick":"isaacs","message":"that's statistically significant.","date":"2012-12-17T19:23:35.700Z","type":"message"}
+{"nick":"isaacs","message":"just did 3 runs, it's consistent and measurable","date":"2012-12-17T19:23:45.024Z","type":"message"}
+{"nick":"isaacs","message":"also, your computer is faster than mine.  i'm jealous.","date":"2012-12-17T19:23:54.428Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's not the only thing that's bigger","date":"2012-12-17T19:24:21.378Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, faster you say?","date":"2012-12-17T19:24:24.450Z","type":"message"}
+{"nick":"bnoordhuis","message":"actually, those numbers are lower than i expect","date":"2012-12-17T19:24:39.026Z","type":"message"}
+{"nick":"bnoordhuis","message":"the numbers with v0.8 are better","date":"2012-12-17T19:25:04.436Z","type":"message"}
+{"nick":"bnoordhuis","message":"to wit: 7.8203 Gbits/sec (8027373488 bits / 955978136 ns)","date":"2012-12-17T19:25:15.003Z","type":"message"}
+{"nick":"bnoordhuis","message":"7.6639 Gbits/sec (8237613056 bits / 1001040111 ns)","date":"2012-12-17T19:25:15.170Z","type":"message"}
+{"nick":"bnoordhuis","message":"7.6723 Gbits/sec (8237613056 bits / 999939702 ns)","date":"2012-12-17T19:25:15.303Z","type":"message"}
+{"nick":"bnoordhuis","message":"7.6193 Gbits/sec (8187281408 bits / 1000750002 ns)","date":"2012-12-17T19:25:15.521Z","type":"message"}
+{"nick":"bnoordhuis","message":"something to look into","date":"2012-12-17T19:25:47.939Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2012-12-17T19:26:02.399Z","type":"message"}
+{"nick":"isaacs","message":"v0.8 is comparable with master-pre-streams2","date":"2012-12-17T19:26:07.999Z","type":"message"}
+{"nick":"isaacs","message":"there's still some strictly js stuff to work out","date":"2012-12-17T19:26:21.091Z","type":"message"}
+{"nick":"isaacs","message":"but that's all just a matter of profiling and experimenting","date":"2012-12-17T19:26:27.469Z","type":"message"}
+{"nick":"isaacs","action":"'s job for January","date":"2012-12-17T19:26:33.259Z","type":"action"}
+{"nick":"isaacs","message":"the last 10% is polish.  but when there's a 70% drop, that's something worth fixing right away.","date":"2012-12-17T19:26:50.088Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm, i wish you'd squashed instead of merged it. kind of hard to backtrack now","date":"2012-12-17T19:27:00.341Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh well, too late now","date":"2012-12-17T19:27:12.682Z","type":"message"}
+{"nick":"isaacs","message":"also, sweet zombie jesus, http-simple is slow as donkeys on smartos.","date":"2012-12-17T19:27:29.288Z","type":"message"}
+{"nick":"isaacs","message":"wtf","date":"2012-12-17T19:27:31.191Z","type":"message"}
+{"nick":"warz_","date":"2012-12-17T19:27:48.017Z","type":"quit"}
+{"nick":"isaacs","message":"it hasn't regressed since 0.8, so maybe this is just some kind of \"ab sucks on smartos\" thing","date":"2012-12-17T19:28:47.177Z","type":"message"}
+{"nick":"isaacs","message":"Requests per second:    2725.89 [#/sec] (mean)","date":"2012-12-17T19:28:50.427Z","type":"message"}
+{"nick":"isaacs","message":"(on darwin)","date":"2012-12-17T19:29:02.007Z","type":"message"}
+{"nick":"isaacs","message":"with streams2 on smartos: Requests per second:    702.02 [#/sec] (mean)","date":"2012-12-17T19:29:27.038Z","type":"message"}
+{"nick":"isaacs","message":"pre-streams2 on smartos: Requests per second:    530.95 [#/sec] (mean)","date":"2012-12-17T19:29:40.927Z","type":"message"}
+{"nick":"isaacs","message":"that's terrible.","date":"2012-12-17T19:29:53.171Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it's easy to revert a merge commit.","date":"2012-12-17T19:30:48.286Z","type":"message"}
+{"nick":"isaacs","message":"and since it's just one big --no-ff (which would otherwise have been a ff) bisecting over it still works as you'd expect.","date":"2012-12-17T19:31:32.175Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, good","date":"2012-12-17T19:31:53.005Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: i wanted a rip-cord we could pull if it turned out to be a giant waste of time :)","date":"2012-12-17T19:33:55.954Z","type":"message"}
+{"nick":"isaacs","message":"though, that would suck a lot at this point, of course.","date":"2012-12-17T19:34:06.324Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: I'm seeing pre-streams2 master with this: [02:49|% 100|+ 470|-  14]: Done","date":"2012-12-17T19:34:21.313Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: does that gel with your understanding of the world?","date":"2012-12-17T19:34:28.485Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: if so, i'm going to start digging into any regressions.","date":"2012-12-17T19:34:42.933Z","type":"message"}
+{"nick":"piscisaureus_","message":"man, it's been ages since I last run tests","date":"2012-12-17T19:34:48.220Z","type":"message"}
+{"nick":"piscisaureus_","message":"let's see","date":"2012-12-17T19:34:50.308Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: something is busted in child_process, so that'll be my first target.","date":"2012-12-17T19:35:02.265Z","type":"message"}
+{"nick":"isaacs","action":"away for about 2 hours","date":"2012-12-17T19:37:50.631Z","type":"action"}
+{"nick":"EhevuTov","date":"2012-12-17T19:42:35.795Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-12-17T19:42:58.537Z","type":"quit"}
+{"nick":"warz","date":"2012-12-17T19:52:57.992Z","type":"join"}
+{"nick":"warz","reason":"Changing host","date":"2012-12-17T19:52:57.992Z","type":"quit"}
+{"nick":"warz","date":"2012-12-17T19:52:57.992Z","type":"join"}
+{"nick":"joshthecoder","date":"2012-12-17T19:56:48.620Z","type":"join"}
+{"nick":"bnoordhuis","message":"yet another interesting observation: prepopulating the page tables with mmap(MAP_POPULATE) gives a 8-10% speedup","date":"2012-12-17T20:01:46.035Z","type":"message"}
+{"nick":"bnoordhuis","message":"those pagefaults are expensive","date":"2012-12-17T20:02:12.232Z","type":"message"}
+{"nick":"bnoordhuis","message":"it probably hurts in low memory situations though","date":"2012-12-17T20:02:34.830Z","type":"message"}
+{"nick":"kazupon","date":"2012-12-17T20:18:48.350Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037mmap-reloaded\u000f * \u000218e5259\u0002 : buffer: prefault mmap'ed memory - http://git.io/S0Qpow","date":"2012-12-17T20:20:30.651Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 256 seconds","date":"2012-12-17T20:28:20.197Z","type":"quit"}
+{"nick":"sblom","message":"isaacs: This etw build error is starting to come back to me. The idea was that https://github.com/joyent/node/commit/953b049a89f803b0a152e776b8590e78ada180e4 fixed it. But if you're building master and still seeing it, I must not've fixed it as well as I thought.","date":"2012-12-17T20:29:37.793Z","type":"message"}
+{"nick":"c4milo","date":"2012-12-17T20:34:37.112Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2012-12-17T20:36:57.426Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2012-12-17T20:38:15.751Z","type":"join"}
+{"nick":"sblom","message":"piscisaureus_: Do we really no longer build with Express? That build error that isaacs pointed out is due to a missing directory. If you build a second time it should just work (which is also dumb, and I think I know how to fix it).","date":"2012-12-17T20:45:37.858Z","type":"message"}
+{"nick":"piscisaureus_","message":"sblom: oh, right. I was just guessing to be honest, and it appears I guessed wrong.","date":"2012-12-17T20:46:18.678Z","type":"message"}
+{"nick":"piscisaureus_","message":"sblom: I never had that error though...","date":"2012-12-17T20:46:25.924Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: btw, \"make test-all\" does [39:32|% 100|+ 501|-  47]: Done for me","date":"2012-12-17T20:46:52.863Z","type":"message"}
+{"nick":"EhevuTov_","date":"2012-12-17T20:48:11.497Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: so that means that without my parental oversight, \"you guys\" fuck up the windows build quite badly :-p","date":"2012-12-17T20:48:15.617Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: what tests are failing?","date":"2012-12-17T20:49:54.831Z","type":"message"}
+{"nick":"EhevuTov","reason":"Ping timeout: 255 seconds","date":"2012-12-17T20:51:20.580Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2012-12-17T20:52:43.603Z","type":"quit"}
+{"nick":"bnoordhuis","message":"before: 175,368 page-faults, after: 7,971 page-faults","date":"2012-12-17T20:52:51.513Z","type":"message"}
+{"nick":"benoitc","date":"2012-12-17T20:54:12.674Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037mmap-reloaded\u000f * \u00027bbbbf7\u0002 : buffer: bump kPoolSize, reduce pagefaults by 90% (+1 more commits) - http://git.io/ziFdRA","date":"2012-12-17T20:55:49.900Z","type":"message"}
+{"nick":"sblom","message":"isaacs, piscisaureus_: Looks to me like virgin builds succeed on both master and v0.8 when 953b049a is present, and fail when it's not. I think we just need to back-port it to v0.8 and you should be able to build cleanly.","date":"2012-12-17T20:59:16.588Z","type":"message"}
+{"nick":"sblom","message":"I'm double-checking that our Express build works because I admit that I haven't tried it in a loooong time.","date":"2012-12-17T20:59:37.348Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: did you just get a ton of trac emails?","date":"2012-12-17T21:00:27.935Z","type":"message"}
+{"nick":"bnoordhuis","message":"from something called cloudmosa.com?","date":"2012-12-17T21:00:35.933Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: no?","date":"2012-12-17T21:00:53.686Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: which address?","date":"2012-12-17T21:00:56.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"c9 / sl / private","date":"2012-12-17T21:01:05.819Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2012-12-17T21:01:06.570Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: my bnoordhuis.nl email address","date":"2012-12-17T21:01:18.798Z","type":"message"}
+{"nick":"bnoordhuis","message":"e.g. Trac Ticket #443: http://apps.facebook.com/battlepirates/ has no screen","date":"2012-12-17T21:01:39.352Z","type":"message"}
+{"nick":"bnoordhuis","message":"which is then signed off with a libuv commit i did...","date":"2012-12-17T21:01:52.640Z","type":"message"}
+{"nick":"sblom","action":"away for lunch.","date":"2012-12-17T21:01:57.332Z","type":"action"}
+{"nick":"bnoordhuis","message":"i guess someone didn't set up his bug tracker right","date":"2012-12-17T21:02:03.195Z","type":"message"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2012-12-17T21:17:00.523Z","type":"quit"}
+{"nick":"kazupon","date":"2012-12-17T21:24:15.199Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 265 seconds","date":"2012-12-17T21:28:44.038Z","type":"quit"}
+{"nick":"nrajlich","date":"2012-12-17T21:31:21.196Z","type":"join"}
+{"nick":"TooTallNate","reason":"Read error: Connection reset by peer","date":"2012-12-17T21:32:36.073Z","type":"quit"}
+{"nick":"nrajlich","new_nick":"TooTallNate","date":"2012-12-17T21:32:36.234Z","type":"nick"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2012-12-17T21:34:35.100Z","type":"quit"}
+{"nick":"stagas","date":"2012-12-17T21:39:57.241Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 255 seconds","date":"2012-12-17T21:44:53.530Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: Zzzz","date":"2012-12-17T21:51:15.649Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 264 seconds","date":"2012-12-17T21:52:24.431Z","type":"quit"}
+{"nick":"brson","date":"2012-12-17T21:54:00.176Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: I think it's just spam","date":"2012-12-17T22:00:33.737Z","type":"message"}
+{"nick":"warz","date":"2012-12-17T22:08:25.199Z","type":"quit"}
+{"nick":"brson_","date":"2012-12-17T22:12:53.808Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2012-12-17T22:13:31.499Z","type":"quit"}
+{"nick":"wolfeidau","date":"2012-12-17T22:21:49.280Z","type":"join"}
+{"nick":"kazupon","date":"2012-12-17T22:24:38.502Z","type":"join"}
+{"nick":"rendar","date":"2012-12-17T22:25:35.949Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 255 seconds","date":"2012-12-17T22:28:59.383Z","type":"quit"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2012-12-17T22:30:22.134Z","type":"quit"}
+{"nick":"isaacs","action":"back","date":"2012-12-17T22:35:44.630Z","type":"action"}
+{"nick":"isaacs","message":"sblom: on master, i get that failure over and over again","date":"2012-12-17T22:39:06.098Z","type":"message"}
+{"nick":"isaacs","message":"sblom: it's not just the first build","date":"2012-12-17T22:39:09.597Z","type":"message"}
+{"nick":"isaacs","message":"'ctrpp' is not recognized as an internal or external command,","date":"2012-12-17T22:39:20.567Z","type":"message"}
+{"nick":"isaacs","message":"operable program or batch file.","date":"2012-12-17T22:39:21.988Z","type":"message"}
+{"nick":"isaacs","message":"sblom: ^","date":"2012-12-17T22:39:25.247Z","type":"message"}
+{"nick":"sblom","message":"Ohhh. I think we're talking about two different issues. I'm talking about this one: https://gist.github.com/4277559","date":"2012-12-17T22:39:48.582Z","type":"message"}
+{"nick":"sblom","message":"isaacs: ^","date":"2012-12-17T22:40:09.297Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2012-12-17T22:40:13.877Z","type":"message"}
+{"nick":"sblom","message":"Sorry about that.","date":"2012-12-17T22:40:27.445Z","type":"message"}
+{"nick":"sblom","message":"Okay--_now_ I'm looking at the right gist, and will let you know what I find out.","date":"2012-12-17T22:40:46.421Z","type":"message"}
+{"nick":"isaacs","message":"sblom: yeah, that's a different thing","date":"2012-12-17T22:40:52.336Z","type":"message"}
+{"nick":"isaacs","message":"sblom: mildly annoying in v0.8, we should probably backport as you say, but not a significant blocker, really","date":"2012-12-17T22:41:06.116Z","type":"message"}
+{"nick":"sblom","message":"isaacs: Okay--will know more shortly.","date":"2012-12-17T22:41:21.223Z","type":"message"}
+{"nick":"isaacs","message":"sblom: i'd like to get perfctr and etw working built in 0.9.4.  i know it can do it somehow, but i think my vs express is not doing the job","date":"2012-12-17T22:41:45.396Z","type":"message"}
+{"nick":"isaacs","message":"k thanks","date":"2012-12-17T22:41:59.366Z","type":"message"}
+{"nick":"sblom","message":"isaacs: Do you have \\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.0A","date":"2012-12-17T22:43:09.039Z","type":"message"}
+{"nick":"sblom","message":"Might be as simple as needing to add something to your path if you have that.","date":"2012-12-17T22:43:23.043Z","type":"message"}
+{"nick":"isaacs","message":"ircretary: tell bnoordhuis WOW, net-pipe is WAY faster on mmap-reloaded!","date":"2012-12-17T22:43:25.535Z","type":"message"}
+{"nick":"ircretary","message":"isaacs: I'll be sure to tell bnoordhuis","date":"2012-12-17T22:43:25.925Z","type":"message"}
+{"nick":"isaacs","message":"ircretary: tell bnoordhuis (on darwin, about to check smartos)","date":"2012-12-17T22:43:38.465Z","type":"message"}
+{"nick":"ircretary","message":"isaacs: I'll be sure to tell bnoordhuis","date":"2012-12-17T22:43:38.874Z","type":"message"}
+{"nick":"sblom","message":"isaacs: also, what version of VS Express are you running? 2010?","date":"2012-12-17T22:44:23.314Z","type":"message"}
+{"nick":"isaacs","message":"sblom: https://gist.github.com/4323116","date":"2012-12-17T22:44:37.424Z","type":"message"}
+{"nick":"isaacs","message":"sblom: (yes, that path is there)","date":"2012-12-17T22:44:42.564Z","type":"message"}
+{"nick":"isaacs","message":"yes, 2010","date":"2012-12-17T22:45:01.094Z","type":"message"}
+{"nick":"sblom","message":"Yay. Is that path with \\Bin in your PATH","date":"2012-12-17T22:45:02.386Z","type":"message"}
+{"nick":"sblom","message":"actually, even better. Is ctrpp.exe in \\Program Files (x86)\\Microsoft SDKs\\Windows\\v7.0A\\Bin","date":"2012-12-17T22:45:25.682Z","type":"message"}
+{"nick":"isaacs","message":"yes","date":"2012-12-17T22:45:26.003Z","type":"message"}
+{"nick":"isaacs","message":"(it's in the path)","date":"2012-12-17T22:45:40.533Z","type":"message"}
+{"nick":"isaacs","message":"but no ctrpp.exe in there","date":"2012-12-17T22:46:13.413Z","type":"message"}
+{"nick":"isaacs","message":"https://gist.github.com/4323125","date":"2012-12-17T22:46:14.363Z","type":"message"}
+{"nick":"sblom","message":"isaacs: Okay--I'll figure out what the simplest way is to get ctrpp installed.","date":"2012-12-17T22:48:40.026Z","type":"message"}
+{"nick":"sblom","message":"stand by","date":"2012-12-17T22:48:44.369Z","type":"message"}
+{"nick":"sblom","message":"(or not)","date":"2012-12-17T22:48:55.056Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-12-17T22:50:20.800Z","type":"quit"}
+{"nick":"isaacs","message":"k :)","date":"2012-12-17T22:51:09.320Z","type":"message"}
+{"nick":"isaacs","message":"ircretary: tell bnoordhuis net-pipe.js on mmap-reloaded is faster on smartos as well, but not by nearly as large a diff","date":"2012-12-17T22:51:38.829Z","type":"message"}
+{"nick":"ircretary","message":"isaacs: I'll be sure to tell bnoordhuis","date":"2012-12-17T22:51:39.380Z","type":"message"}
+{"nick":"wolfeidau","date":"2012-12-17T22:53:56.925Z","type":"join"}
+{"nick":"isaacs","message":"TooTallNate: you around?","date":"2012-12-17T22:55:38.326Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: sup?","date":"2012-12-17T22:55:56.580Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: can you take a look at https://github.com/joyent/node/commit/3b949d19b2569281e6e2072fd8e90fc4b0aa7dda","date":"2012-12-17T22:56:11.516Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: nice, ok i'll check it out","date":"2012-12-17T22:56:31.357Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: your input would be wonderful as well if you're around ^","date":"2012-12-17T22:56:35.906Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: this is that \"sync writes should be sync\" thing","date":"2012-12-17T22:56:42.206Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: so is that basically the same patch as the other day?","date":"2012-12-17T22:58:01.522Z","type":"message"}
+{"nick":"TooTallNate","message":"looks very similar","date":"2012-12-17T22:58:05.338Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: it's exactly that patch, plus a test.","date":"2012-12-17T22:58:13.965Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: why does net.Socket._write  call cb() synchronously?","date":"2012-12-17T22:58:14.093Z","type":"message"}
+{"nick":"TooTallNate","message":"kewl","date":"2012-12-17T22:58:24.237Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: that's not the cb() that the user passes into write()","date":"2012-12-17T22:58:26.035Z","type":"message"}
+{"nick":"TooTallNate","message":"piscisaureus_: stderr","date":"2012-12-17T22:58:28.412Z","type":"message"}
+{"nick":"EhevuTov__","date":"2012-12-17T22:58:39.514Z","type":"join"}
+{"nick":"piscisaureus_","message":"ah, ok","date":"2012-12-17T22:58:43.084Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it calls synchronously because the buffer was entirely flushed so it can write more right now if possible.","date":"2012-12-17T22:58:47.625Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: this pulls out the \"always wait for req.oncomplete\" fuckup that i was doing before.","date":"2012-12-17T22:59:13.350Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah, right","date":"2012-12-17T22:59:24.531Z","type":"message"}
+{"nick":"piscisaureus_","message":":-)","date":"2012-12-17T22:59:26.981Z","type":"message"}
+{"nick":"piscisaureus_","message":"nice","date":"2012-12-17T22:59:27.793Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i started down the path of always just creating a new writeReq whether i needed to buffer or not, but it'sa lot of complexity to get the water marks exactly right, and it doesn't actually save anything.","date":"2012-12-17T23:00:11.744Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: you end up with exactly the same number of bytes being buffered either way, just a matter of where.","date":"2012-12-17T23:00:28.113Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: what branch is that?","date":"2012-12-17T23:00:42.219Z","type":"message"}
+{"nick":"isaacs","message":"and the same writeReq handling that we had before.","date":"2012-12-17T23:00:49.813Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so - do you flush to libuv early or late now?","date":"2012-12-17T23:00:55.309Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: streams2-netwrite","date":"2012-12-17T23:00:59.893Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i flush to libuv until the writeQueueLength is > -","date":"2012-12-17T23:01:30.793Z","type":"message"}
+{"nick":"isaacs","message":"er, >0","date":"2012-12-17T23:01:33.903Z","type":"message"}
+{"nick":"EhevuTov_","reason":"Ping timeout: 252 seconds","date":"2012-12-17T23:01:56.493Z","type":"quit"}
+{"nick":"piscisaureus_","message":"ah I see. hmm.","date":"2012-12-17T23:02:02.160Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: what i'd like to do is shove *everything* into libuv right away, and communicate back to the user using the writeQueueLength instead of _writableState.length","date":"2012-12-17T23:02:39.732Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but then it's trickier to know when to call the user's cb, emit drain, etc.","date":"2012-12-17T23:02:50.502Z","type":"message"}
+{"nick":"stagas_","date":"2012-12-17T23:02:51.671Z","type":"join"}
+{"nick":"isaacs","message":"things get hairier","date":"2012-12-17T23:02:53.891Z","type":"message"}
+{"nick":"isaacs","message":"positively hirsute","date":"2012-12-17T23:03:29.151Z","type":"message"}
+{"nick":"sblom","message":"isaacs: Do you have any other directories in \\Program Files (x86)\\Microsoft SDKs\\Windows?","date":"2012-12-17T23:03:55.580Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2012-12-17T23:04:18.260Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: ok, I can't see any correctness problems with the patch. But you know all the edge cases now, not me.","date":"2012-12-17T23:04:27.918Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: benchmarks will show whether it really looks good to me or not :-)","date":"2012-12-17T23:04:53.906Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: it makes the net stuff a tiny bit faster, but not significantly","date":"2012-12-17T23:05:51.620Z","type":"message"}
+{"nick":"isaacs","message":"and any benchmark is usually pushing bytes fast enough that it doesn't matter.","date":"2012-12-17T23:05:59.890Z","type":"message"}
+{"nick":"isaacs","message":"this is only more efficient in the case of many small writes","date":"2012-12-17T23:06:08.139Z","type":"message"}
+{"nick":"stagas","date":"2012-12-17T23:06:12.909Z","type":"join"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2012-12-17T23:06:31.758Z","type":"quit"}
+{"nick":"piscisaureus_","message":"isaacs: it is really much more complex than that :-)","date":"2012-12-17T23:06:36.099Z","type":"message"}
+{"nick":"txdv","message":"hey girls","date":"2012-12-17T23:06:42.350Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2012-12-17T23:06:49.588Z","type":"quit"}
+{"nick":"TooTallNate","date":"2012-12-17T23:07:16.749Z","type":"join"}
+{"nick":"wolfeidau","date":"2012-12-17T23:07:26.949Z","type":"join"}
+{"nick":"CoverSlide","message":"hay guurrlll!","date":"2012-12-17T23:07:41.777Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it depends on whether nagle is on or off, whether you are writing strings or buffers, whether buffers contain unicode or not, etc. Show me a benchmark where it is faster and I'll make one where it is slower.","date":"2012-12-17T23:07:43.608Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: so let's not worry too much now","date":"2012-12-17T23:07:55.178Z","type":"message"}
+{"nick":"piscisaureus_","message":"(I mean, I should not .... )","date":"2012-12-17T23:08:04.769Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, the point is, it's probably not really a significant perf issue","date":"2012-12-17T23:08:26.508Z","type":"message"}
+{"nick":"isaacs","message":"and if it is, whatver, later.","date":"2012-12-17T23:08:34.258Z","type":"message"}
+{"nick":"isaacs","message":"k, landing it","date":"2012-12-17T23:08:37.328Z","type":"message"}
+{"nick":"stagas_","reason":"Ping timeout: 250 seconds","date":"2012-12-17T23:08:38.583Z","type":"quit"}
+{"nick":"loladiro","date":"2012-12-17T23:08:43.116Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u000282c7c84\u0002 : net: Handle sync writable streams synchronously  This fixes the case wher - http://git.io/SF_DwQ","date":"2012-12-17T23:09:31.076Z","type":"message"}
+{"nick":"isaacs","message":"we have too many tests that use test/fixtures/ too much","date":"2012-12-17T23:09:41.707Z","type":"message"}
+{"nick":"isaacs","message":"fixtures should not contain test logic","date":"2012-12-17T23:09:59.937Z","type":"message"}
+{"nick":"isaacs","message":"spawn(process.execPath, [__filename, someArg]) > process.spawn(process.execPath, [path.resolve(__dirname, '..', 'fixtures', 'blerg.js')])","date":"2012-12-17T23:10:48.006Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: LGTM dawg","date":"2012-12-17T23:12:12.518Z","type":"message"}
+{"nick":"TooTallNate","message":"oh i guess i'm late","date":"2012-12-17T23:12:39.204Z","type":"message"}
+{"nick":"TooTallNate","message":"hahah","date":"2012-12-17T23:12:40.086Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2012-12-17T23:13:28.558Z","type":"quit"}
+{"nick":"isaacs","message":"TooTallNate: no, you're right on time.  i just have latency compensation in my irc client, so i knew you'd say that.","date":"2012-12-17T23:13:56.654Z","type":"message"}
+{"nick":"TooTallNate","message":":p","date":"2012-12-17T23:14:17.955Z","type":"message"}
+{"nick":"TooTallNate","message":"\"predictive logging\"","date":"2012-12-17T23:14:29.236Z","type":"message"}
+{"nick":"kazupon","date":"2012-12-17T23:24:59.781Z","type":"join"}
+{"nick":"isaacs","message":"windows makes me curse more than any other operating system ever.","date":"2012-12-17T23:27:21.556Z","type":"message"}
+{"nick":"isaacs","message":"it's the little things.","date":"2012-12-17T23:28:11.915Z","type":"message"}
+{"nick":"isaacs","message":"like copying a directory, and being told that you can't because there's a file in it","date":"2012-12-17T23:28:19.415Z","type":"message"}
+{"nick":"isaacs","message":"!$@#!#$!@#!$@#$!@","date":"2012-12-17T23:28:25.285Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 255 seconds","date":"2012-12-17T23:29:38.490Z","type":"quit"}
+{"nick":"CoverSlide","message":"that's what mice are for","date":"2012-12-17T23:37:49.426Z","type":"message"}
+{"nick":"sblom","message":"isaacs: I'll tell the file system team that you have some feedback for them. :)","date":"2012-12-17T23:45:52.746Z","type":"message"}
+{"nick":"sblom","message":"isaacs: (Things like that and not being able to delete a directory because somewhere I have a command prompte pointed into it drive me nuts.)","date":"2012-12-17T23:46:42.262Z","type":"message"}
+{"nick":"piscisaureus_","message":"unlocker","date":"2012-12-17T23:47:31.532Z","type":"message"}
+{"nick":"sblom","message":"piscisaureus_: Is that the name of a tool that I'm about to fall in love with?","date":"2012-12-17T23:47:53.647Z","type":"message"}
+{"nick":"piscisaureus_","message":"well it is not the prettiest tool in the world","date":"2012-12-17T23:48:07.368Z","type":"message"}
+{"nick":"piscisaureus_","message":"but it makes you quite lazy I can tell you","date":"2012-12-17T23:48:16.015Z","type":"message"}
+{"nick":"piscisaureus_","message":"the only risk is that it doesn't really move stuff to the recycle bin","date":"2012-12-17T23:48:29.149Z","type":"message"}
+{"nick":"piscisaureus_","message":"sblom: http://www.emptyloop.com/unlocker/","date":"2012-12-17T23:48:45.313Z","type":"message"}
+{"nick":"sblom","message":"piscisaureus_: neat","date":"2012-12-17T23:50:53.706Z","type":"message"}
+{"nick":"piscisaureus_","message":"the trick it uses is pretty aweful","date":"2012-12-17T23:52:00.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"it does DuplicateHandle from the process that has the handle open, and specifies DUPLICATE_CLOSE_SOURCE","date":"2012-12-17T23:52:24.707Z","type":"message"}
+{"nick":"piscisaureus_","message":"it actually surprises me that few if any program crashes when that happens","date":"2012-12-17T23:53:00.791Z","type":"message"}
+{"nick":"sblom","message":"impressive","date":"2012-12-17T23:53:37.111Z","type":"message"}
+{"nick":"isaacs","message":"sblom: tell them to be posix.","date":"2012-12-17T23:54:08.317Z","type":"message"}
+{"nick":"isaacs","message":"sblom: it's time to put away that fight.  the windows file system paradigm is not different, it's incorrect.  posix won.","date":"2012-12-17T23:54:37.387Z","type":"message"}
+{"nick":"isaacs","message":"backslashes?  seriously?","date":"2012-12-17T23:54:52.547Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: it's funny that that you pick the least of our concerns ...","date":"2012-12-17T23:55:13.396Z","type":"message"}
+{"nick":"isaacs","message":"how many person-hours has that cost humanity?  we could have built another great wall of china by now.","date":"2012-12-17T23:55:25.537Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yes, indeed!  the concerns only grow from there!","date":"2012-12-17T23:55:39.027Z","type":"message"}
+{"nick":"piscisaureus_","message":"sblom: tell them to allow moving files that have been marked for deletion! That shouldn't be too hard, and it would solve almost all problems.","date":"2012-12-17T23:56:05.335Z","type":"message"}
+{"nick":"isaacs","message":"of course, this is like shaking my fists at gravity.  good luck arguing with it.","date":"2012-12-17T23:56:15.066Z","type":"message"}
+{"nick":"sblom","message":"isaacs: I delivered the Posix rant to some friends of mine last night, actually. I don't think it can possibly happen, though. That's sort of like saying \"Windows should just be Linux\". I have a currently shipping solution for you if that's the case...","date":"2012-12-17T23:56:18.315Z","type":"message"}
+{"nick":"isaacs","message":"microsoft is a force of nature.","date":"2012-12-17T23:56:19.856Z","type":"message"}
+{"nick":"isaacs","message":"sblom: well, i mean, the filesystem interface in particular is just hideously antiquated and wrong.","date":"2012-12-17T23:56:50.966Z","type":"message"}
+{"nick":"isaacs","message":"sblom: vms is dead.  stop making marionettes with its electrified corpse.","date":"2012-12-17T23:57:19.556Z","type":"message"}
+{"nick":"piscisaureus_","message":"hahaha","date":"2012-12-17T23:57:30.269Z","type":"message"}
+{"nick":"isaacs","message":"windows has some godo stuff in other places.","date":"2012-12-17T23:57:32.712Z","type":"message"}
+{"nick":"piscisaureus_","message":"let's start small","date":"2012-12-17T23:57:48.102Z","type":"message"}
+{"nick":"piscisaureus_","message":"and fix the file locking thing","date":"2012-12-17T23:57:58.057Z","type":"message"}
+{"nick":"isaacs","message":"yes!","date":"2012-12-17T23:58:02.275Z","type":"message"}
+{"nick":"sblom","message":":)","date":"2012-12-17T23:58:05.189Z","type":"message"}
+{"nick":"piscisaureus_","message":"I think actually the windows file locking model is not that nonsentical","date":"2012-12-17T23:58:16.115Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: oh, i thought you meant \"start small\" with what you wanted to keep from windows","date":"2012-12-17T23:58:18.585Z","type":"message"}
+{"nick":"piscisaureus_","message":"but if I really want to the file should just be deletable","date":"2012-12-17T23:58:34.709Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2012-12-17T23:59:17.263Z","type":"quit"}
+{"nick":"isaacs","message":"piscisaureus_: the fact that you can delete it from the command line if the name is too long, that drives me crazy","date":"2012-12-17T23:59:49.744Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i actually open up a node repl and remove it with rimraf","date":"2012-12-17T23:59:58.324Z","type":"message"}
