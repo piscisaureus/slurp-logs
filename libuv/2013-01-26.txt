@@ -1,0 +1,211 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-01-26T00:00:00.860Z","type":"quit"}
+{"nick":"ircretary","date":"2013-01-26T00:00:07.507Z","type":"join"}
+{"nick":"loladiro","message":"piscisaureus_: ping","date":"2013-01-26T00:00:38.190Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: I'm here","date":"2013-01-26T00:00:50.673Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: but I'm not doing anything node-related atm","date":"2013-01-26T00:01:01.865Z","type":"message"}
+{"nick":"loladiro","message":"piscisaureus_: Can I still ask you a quick libuv-related question?","date":"2013-01-26T00:01:49.738Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: sure","date":"2013-01-26T00:01:56.905Z","type":"message"}
+{"nick":"trevnorris","message":"ok, how does v8 get away with inlining functions with native calls?","date":"2013-01-26T00:02:10.828Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: what would be the problem with that? It doesn't inline the native functions itself","date":"2013-01-26T00:03:27.030Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: `--trace-opt --trace-inlining --code-comments` shows that Math.random() is inlined, and doesn't mention the native call wasn't.","date":"2013-01-26T00:04:44.938Z","type":"message"}
+{"nick":"trevnorris","message":"in every node module I test it always lets me know the native module couldn't be inlined.","date":"2013-01-26T00:04:59.099Z","type":"message"}
+{"nick":"trevnorris","message":"all it displays is \"Inlining builtin 0x318ad2a49db1 <JS Function random>\"","date":"2013-01-26T00:06:20.353Z","type":"message"}
+{"nick":"mikeal","date":"2013-01-26T00:06:35.558Z","type":"join"}
+{"nick":"piscisaureus_","message":"trevnorris: Math.random is \"implemented\" in javascript","date":"2013-01-26T00:06:44.919Z","type":"message"}
+{"nick":"loladiro","message":"piscisaureus_: Alright, we're redesigning our synchronous I/O API on top of the libuv asynchronous one to make use of the fact that we have coroutines. I.e. we're jumping to a different task while doing \"synchronous\" I/O. One problem is that we can't run synchronous I/O operations inside of callbacks. Here's why: If we jumping from inside a callback to a different task, in which we may reenter the event loop, we still have half an event","date":"2013-01-26T00:06:46.631Z","type":"message"}
+{"nick":"loladiro","message":"loop lying around on a different stack and we're afraid of corrupting global state. So essentially running the libuv event loop would have to be reentrant for this to work. ","date":"2013-01-26T00:06:47.107Z","type":"message"}
+{"nick":"loladiro","message":"The question is. Is it already or can it be made so?","date":"2013-01-26T00:06:59.621Z","type":"message"}
+{"nick":"loladiro","message":"Sorry for the wall of text","date":"2013-01-26T00:07:21.171Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: right - so you want to be able to call uv_run() recursively?","date":"2013-01-26T00:07:39.853Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: Math.random() -> return %_RandomHeapNumber(); which is then defined in hydrogen.cc","date":"2013-01-26T00:07:50.116Z","type":"message"}
+{"nick":"loladiro","message":"piscisaureus_: Pretty much. Is that possible already?","date":"2013-01-26T00:08:43.931Z","type":"message"}
+{"nick":"trevnorris","message":"as \"HGraphBuilder::GenerateRandomHeapNumber\" (code comment says \"Fast support for Math.random()\")","date":"2013-01-26T00:08:45.794Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: I don't *think* it is possible byt there is no reason why it oculdn't","date":"2013-01-26T00:08:53.460Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: it's just work, and possibly making tradeoffs :-)","date":"2013-01-26T00:09:18.544Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: is it an option to use 2 separate uv_loops, one for \"async\" calls and one for sync calls","date":"2013-01-26T00:09:40.778Z","type":"message"}
+{"nick":"loladiro","message":"It might be the same I/O handle","date":"2013-01-26T00:10:20.867Z","type":"message"}
+{"nick":"piscisaureus_","message":"ah, hmm","date":"2013-01-26T00:10:25.133Z","type":"message"}
+{"nick":"piscisaureus_","action":"ponders","date":"2013-01-26T00:10:45.904Z","type":"action"}
+{"nick":"mikeal","reason":"Ping timeout: 255 seconds","date":"2013-01-26T00:11:08.473Z","type":"quit"}
+{"nick":"Raynos","message":"I keep seeing https://gist.github.com/e5f139d2d2ea60310790 on node v0.8.4","date":"2013-01-26T00:12:19.175Z","type":"message"}
+{"nick":"Raynos","message":"and it has me stumped.","date":"2013-01-26T00:12:22.916Z","type":"message"}
+{"nick":"Raynos","message":"that only started happening today","date":"2013-01-26T00:12:44.005Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: so recursive uv_run should be possible but I'm wondering if you couldn't just switch to \"no thread\" instead of another thread","date":"2013-01-26T00:14:39.328Z","type":"message"}
+{"nick":"piscisaureus_","message":"and not use uv_run recursively","date":"2013-01-26T00:14:49.155Z","type":"message"}
+{"nick":"loladiro","message":"The task (as in coroutine - not os level) switch is just so other tasks can continue their work on their respective stacks.","date":"2013-01-26T00:16:11.386Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: sure - so you want to call uv_run recursively to block your event loop","date":"2013-01-26T00:17:06.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: but the question is - what happens if the first event libuv processes is another, async event","date":"2013-01-26T00:17:32.640Z","type":"message"}
+{"nick":"piscisaureus_","message":"and you'll call uv_run recursively again","date":"2013-01-26T00:17:39.101Z","type":"message"}
+{"nick":"piscisaureus_","message":"*stack blow up*","date":"2013-01-26T00:17:43.203Z","type":"message"}
+{"nick":"loladiro","message":"there's very few cases in which we actually need to do that, so I'm not too concerned","date":"2013-01-26T00:18:53.840Z","type":"message"}
+{"nick":"hz","date":"2013-01-26T00:20:57.724Z","type":"quit"}
+{"nick":"piscisaureus_","message":"loladiro: so - you have a problem here which is bigger than you think ...","date":"2013-01-26T00:24:22.067Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: suppose the user does this:","date":"2013-01-26T00:25:02.754Z","type":"message"}
+{"nick":"piscisaureus_","message":"julia: async_write -> uv: uv_write","date":"2013-01-26T00:25:02.880Z","type":"message"}
+{"nick":"piscisaureus_","message":"julia: sync_write -> uv: uv_write","date":"2013-01-26T00:25:15.175Z","type":"message"}
+{"nick":"piscisaureus_","message":"<-- first uv_write comes back. Now what?","date":"2013-01-26T00:25:31.135Z","type":"message"}
+{"nick":"piscisaureus_","message":"^-- loladiro ?","date":"2013-01-26T00:25:37.884Z","type":"message"}
+{"nick":"piscisaureus_","message":"calling uv_run right after the sync_write won't save the day. It will just call the callback for the *first* uv_write","date":"2013-01-26T00:26:14.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: do you have the possibility to \"enqueue\" calls to a particular stack?","date":"2013-01-26T00:27:50.111Z","type":"message"}
+{"nick":"loladiro","message":"write is always async ;)","date":"2013-01-26T00:28:21.338Z","type":"message"}
+{"nick":"loladiro","message":"I can probably illustrate part of the api by example:","date":"2013-01-26T00:28:41.460Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: found it. it's because they're done in assembly (Math.random located in src/(x64|ia32)/full-codeget.cc)","date":"2013-01-26T00:30:27.036Z","type":"message"}
+{"nick":"trevnorris","message":"*full-codegen.cc","date":"2013-01-26T00:30:48.054Z","type":"message"}
+{"nick":"loladiro","message":"piscisaureus_: https://gist.github.com/4639192","date":"2013-01-26T00:31:08.426Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: it works because it's not really a \"function call\" it's more like a native operator","date":"2013-01-26T00:31:11.839Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: but I think that what V8 tells you is that it's inlining MathRandom(), nothing more.","date":"2013-01-26T00:31:35.047Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: yeah. got it now. so they just replace the function with the assembly instruction set they've programmed.","date":"2013-01-26T00:32:36.506Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: so what's blocking and what is nonblocking there?","date":"2013-01-26T00:32:38.017Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: hm, what do you mean \"native operator\"?","date":"2013-01-26T00:32:46.042Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: I would say that you have to build some magic into accept to create another greenlet.","date":"2013-01-26T00:33:17.690Z","type":"message"}
+{"nick":"loladiro","message":"piscisaureus: listen is not, readline is not, start_reading is not","date":"2013-01-26T00:33:19.333Z","type":"message"}
+{"nick":"loladiro","message":"readline is","date":"2013-01-26T00:33:24.361Z","type":"message"}
+{"nick":"loladiro","message":"sorry","date":"2013-01-26T00:33:26.425Z","type":"message"}
+{"nick":"piscisaureus_","message":"yes, so you suspend the thread after readline and resume it in read_cb when you got a full line","date":"2013-01-26T00:33:48.336Z","type":"message"}
+{"nick":"piscisaureus_","message":"\"thread\" is just the greenlet here","date":"2013-01-26T00:33:56.474Z","type":"message"}
+{"nick":"loladiro","message":"yes","date":"2013-01-26T00:33:58.977Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: with native operator I mean this: v8 know how to compile \"1+1","date":"2013-01-26T00:34:17.129Z","type":"message"}
+{"nick":"piscisaureus_","message":"er","date":"2013-01-26T00:34:21.384Z","type":"message"}
+{"nick":"loladiro","message":"the thing is that the task we're executing in the meantime might enter the event loop even though this is inside a callback","date":"2013-01-26T00:34:36.316Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: take a look at \"FullCodeGenerator::EmitRandomHeapNumber\" in src/x64/full-codegen.cc","date":"2013-01-26T00:34:56.813Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: with native operator I mean this: v8 know how to compile \"1+1\". It doesn't know how to compile console.log - it's just a function call. It the function might re-enter v8 and modify variables and stuff. %_RandomHeapNumer is just like an operator, e.g. v8 knows what it means specifically.","date":"2013-01-26T00:35:04.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: v8 calls this \"natives syntax\". I know how it works :-)","date":"2013-01-26T00:35:27.838Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: ah. no that's not right","date":"2013-01-26T00:36:02.193Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: yeah, totally. i'm just getting turned around on the terminology so wanted to solidify what you meant. thanks.","date":"2013-01-26T00:36:53.485Z","type":"message"}
+{"nick":"mikeal","date":"2013-01-26T00:37:24.854Z","type":"join"}
+{"nick":"piscisaureus_","message":"loladiro: what library are you guys using to switch stacks and all that. Or is it builtin to llvmjit nowadays?","date":"2013-01-26T00:37:34.786Z","type":"message"}
+{"nick":"loladiro","message":"combination of llvm JIT and Jeff being amazing at writing C code,  no external library other than that","date":"2013-01-26T00:38:23.670Z","type":"message"}
+{"nick":"tjfontaine","message":"loladiro: mcjit?","date":"2013-01-26T00:38:41.601Z","type":"message"}
+{"nick":"loladiro","message":"think so","date":"2013-01-26T00:38:58.135Z","type":"message"}
+{"nick":"tjfontaine","message":"k","date":"2013-01-26T00:39:05.390Z","type":"message"}
+{"nick":"loladiro","message":"actually I just asked. MCJIT was experimental","date":"2013-01-26T00:40:43.041Z","type":"message"}
+{"nick":"loladiro","message":"there seemed to have been problems on Mac","date":"2013-01-26T00:40:58.924Z","type":"message"}
+{"nick":"tjfontaine","message":"llvm jit world is in flux, few want to maintain the existing one, and there's not been enough pushing to get the mc version moving forward (from my understanding from lurking)","date":"2013-01-26T00:41:37.382Z","type":"message"}
+{"nick":"loladiro","message":"Hmm, that's too bad","date":"2013-01-26T00:42:37.553Z","type":"message"}
+{"nick":"tjfontaine","message":"loladiro: well as the mc/as stuff progresses the jit stuff should get better as a by product","date":"2013-01-26T00:43:17.060Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: so you know way more about this than i do. know if it's possible to do that from a library using v8?","date":"2013-01-26T00:43:43.348Z","type":"message"}
+{"nick":"loladiro","message":"yes, llvm has been great for use, so we're quite looking forward to that","date":"2013-01-26T00:43:54.226Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: only if you run with --allow_natives_syntax","date":"2013-01-26T00:44:12.496Z","type":"message"}
+{"nick":"piscisaureus_","message":"and you know what you're doing","date":"2013-01-26T00:44:16.027Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: ah, come one. I never know what I'm doing. ;-)","date":"2013-01-26T00:44:40.289Z","type":"message"}
+{"nick":"piscisaureus_","message":"trevnorris: http://www.youtube.com/watch?v=65EfTFUFDwI ?","date":"2013-01-26T00:45:12.810Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: \"The uploader has not made this video available in your country\"","date":"2013-01-26T00:45:36.700Z","type":"message"}
+{"nick":"tjfontaine","message":"that video hates americans","date":"2013-01-26T00:45:37.006Z","type":"message"}
+{"nick":"piscisaureus_","message":"maybe http://www.youtube.com/watch?v=r2y2GZHuukw ? Because that one is blocked in my country","date":"2013-01-26T00:47:02.284Z","type":"message"}
+{"nick":"abraxas","date":"2013-01-26T00:47:06.410Z","type":"join"}
+{"nick":"trevnorris","message":"blocked based on copyright....","date":"2013-01-26T00:47:23.831Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-01-26T00:48:08.494Z","type":"quit"}
+{"nick":"piscisaureus_","message":"haa","date":"2013-01-26T00:48:39.120Z","type":"message"}
+{"nick":"piscisaureus_","message":"too bad then","date":"2013-01-26T00:48:47.475Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: do I understand it correctly if you want to call uv_run() from one stack, then call it again from another?","date":"2013-01-26T00:49:24.623Z","type":"message"}
+{"nick":"loladiro","message":"yes","date":"2013-01-26T00:49:45.682Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: what's the video supposed to be?","date":"2013-01-26T00:49:47.950Z","type":"message"}
+{"nick":"piscisaureus_","message":"aah","date":"2013-01-26T00:49:49.456Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: so - no recursive calls. Just re-entrant from multiple stacks","date":"2013-01-26T00:50:09.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"hmm, difficult :-)","date":"2013-01-26T00:50:12.034Z","type":"message"}
+{"nick":"trevnorris","message":"nm. found it elsewhere I think","date":"2013-01-26T00:51:18.579Z","type":"message"}
+{"nick":"loladiro","message":"yes, quite difficult, but it leads to such a nice API ;)","date":"2013-01-26T00:51:25.856Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 255 seconds","date":"2013-01-26T00:51:32.501Z","type":"quit"}
+{"nick":"piscisaureus_","message":"loladiro: luvit does all this without the need for a reentrant uv_run","date":"2013-01-26T00:51:41.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"and yes I agree about the api","date":"2013-01-26T00:52:09.470Z","type":"message"}
+{"nick":"piscisaureus_","message":"it's also possible with node-coroutines btw","date":"2013-01-26T00:52:23.306Z","type":"message"}
+{"nick":"piscisaureus_","message":"err, node-fibers","date":"2013-01-26T00:52:35.794Z","type":"message"}
+{"nick":"loladiro","message":"whose writing luvit. I'd love to talk to them","date":"2013-01-26T00:52:42.639Z","type":"message"}
+{"nick":"loladiro","message":"*who's","date":"2013-01-26T00:52:55.209Z","type":"message"}
+{"nick":"piscisaureus_","message":"loladiro: creationix. philips_. rphillips.","date":"2013-01-26T00:53:34.186Z","type":"message"}
+{"nick":"philips_","message":"loladiro: herro","date":"2013-01-26T00:53:54.580Z","type":"message"}
+{"nick":"loladiro","message":"Hey philips_ !","date":"2013-01-26T00:54:18.197Z","type":"message"}
+{"nick":"loladiro","message":"How are you mixing coroutines/libuv","date":"2013-01-26T00:54:43.624Z","type":"message"}
+{"nick":"philips_","message":"loladiro: there is nothing in the core of luvit that is doing that. Although there are some experiments that both creationix and kansface are working on","date":"2013-01-26T00:56:30.567Z","type":"message"}
+{"nick":"philips_","message":"loladiro: https://groups.google.com/forum/?fromgroups#!topic/luvit/Kp0xta5jFmg","date":"2013-01-26T00:56:54.370Z","type":"message"}
+{"nick":"philips_","message":"loladiro: and this https://github.com/creationix/moonslice-luv","date":"2013-01-26T00:58:59.394Z","type":"message"}
+{"nick":"philips_","message":"loladiro: anyways you can ask about it on the luvit google groups if you want ","date":"2013-01-26T00:59:09.600Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: how do i use readable.push()?","date":"2013-01-26T01:01:06.484Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: if I don't implement _read()?","date":"2013-01-26T01:01:18.802Z","type":"message"}
+{"nick":"loladiro","message":"philips_: Alright, I'll probably send an email. Would be good to collaborate on any libuv level patches that would need to be made","date":"2013-01-26T01:02:24.779Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Read error: Connection reset by peer","date":"2013-01-26T01:15:20.149Z","type":"quit"}
+{"nick":"rump","date":"2013-01-26T01:15:36.276Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-01-26T01:17:34.648Z","type":"quit"}
+{"nick":"mikeal","date":"2013-01-26T01:18:24.265Z","type":"join"}
+{"nick":"trevnorris","message":"good weekend y'all. i'm off to a lan party.","date":"2013-01-26T01:21:51.434Z","type":"message"}
+{"nick":"trevnorris","reason":"\"off to the gibs\"","date":"2013-01-26T01:22:54.763Z","type":"part"}
+{"nick":"CoverSlide","message":"wow people have those?","date":"2013-01-26T01:24:34.560Z","type":"message"}
+{"nick":"loladiro","date":"2013-01-26T01:24:48.156Z","type":"join"}
+{"nick":"TooTallNate","message":"lan party… good 'ol days","date":"2013-01-26T01:25:01.421Z","type":"message"}
+{"nick":"CoverSlide","message":"Imma go to a cyber cafe and play some quake","date":"2013-01-26T01:26:47.349Z","type":"message"}
+{"nick":"mikeal","reason":"Ping timeout: 240 seconds","date":"2013-01-26T01:27:48.125Z","type":"quit"}
+{"nick":"txdv","message":"hey","date":"2013-01-26T01:28:24.004Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-01-26T01:34:56.158Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2013-01-26T01:35:01.722Z","type":"quit"}
+{"nick":"tjfontaine","message":"CoverSlide: I glanced and only saw \"Imma go ... cyber\" ","date":"2013-01-26T01:52:40.791Z","type":"message"}
+{"nick":"mikeal","date":"2013-01-26T01:54:34.478Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-01-26T02:00:51.378Z","type":"quit"}
+{"nick":"Raynos","message":"TooTallNate: `._read = noop`","date":"2013-01-26T02:09:12.238Z","type":"message"}
+{"nick":"TooTallNate","message":"Raynos: kinda silly...","date":"2013-01-26T02:09:40.469Z","type":"message"}
+{"nick":"Raynos","message":"TooTallNate: https://github.com/joyent/node/blob/master/test/simple/test-stream2-objects.js#L182","date":"2013-01-26T02:09:58.568Z","type":"message"}
+{"nick":"TooTallNate","message":"Raynos: slightly related question: how would I do a Transform stream, where the write() calls should be \"objectMode\", but the read() calls should be normal","date":"2013-01-26T02:10:42.650Z","type":"message"}
+{"nick":"TooTallNate","message":"is that possible?","date":"2013-01-26T02:10:45.282Z","type":"message"}
+{"nick":"Raynos","message":"TooTallNate: sure. ","date":"2013-01-26T02:12:22.534Z","type":"message"}
+{"nick":"Raynos","message":"oh wait Transform","date":"2013-01-26T02:12:37.490Z","type":"message"}
+{"nick":"Raynos","message":"hmm.","date":"2013-01-26T02:12:39.934Z","type":"message"}
+{"nick":"Raynos","message":"Yeah that would work ","date":"2013-01-26T02:12:44.994Z","type":"message"}
+{"nick":"Raynos","message":"just make sure to return Buffer or string from the transform callback","date":"2013-01-26T02:12:57.758Z","type":"message"}
+{"nick":"TooTallNate","message":"Raynos: sure, but since it's in \"objectMode\" won't it treat those as objects?","date":"2013-01-26T02:13:17.191Z","type":"message"}
+{"nick":"TooTallNate","message":"not strictly the end of the world","date":"2013-01-26T02:13:28.453Z","type":"message"}
+{"nick":"Raynos","message":"internally there is stream._readableState.objectMode and stream._writableState.objectMode","date":"2013-01-26T02:13:36.946Z","type":"message"}
+{"nick":"Raynos","message":"so both sides of the stream can be in one or the other","date":"2013-01-26T02:13:50.921Z","type":"message"}
+{"nick":"TooTallNate","message":"Raynos: ahh right… so does Transform have a way to set distinct options for the read/write sides?","date":"2013-01-26T02:14:04.501Z","type":"message"}
+{"nick":"Raynos","message":"TooTallNate: no","date":"2013-01-26T02:14:28.880Z","type":"message"}
+{"nick":"TooTallNate","message":"bummer","date":"2013-01-26T02:14:39.145Z","type":"message"}
+{"nick":"Raynos","message":"but streams convert to object mode transparently if you write non Buffer/string data","date":"2013-01-26T02:14:40.252Z","type":"message"}
+{"nick":"TooTallNate","message":"Raynos: but not vice versa ;)","date":"2013-01-26T02:15:00.991Z","type":"message"}
+{"nick":"Raynos","message":"well they default to non object mode","date":"2013-01-26T02:15:15.539Z","type":"message"}
+{"nick":"Raynos","message":"a user of a readable stream can't turn it into an object stream unless he calls .push()","date":"2013-01-26T02:15:43.609Z","type":"message"}
+{"nick":"Raynos","message":"which a user shouldn't do. The owner of the readable stream (the source) should use .push(), the consumer shouldn't ever turn it into an object stream","date":"2013-01-26T02:16:04.408Z","type":"message"}
+{"nick":"Raynos","message":"The consumer of a writable stream is the one that decides objects or buffers. The target of the writable stream just takes what he gets and writes it","date":"2013-01-26T02:16:28.081Z","type":"message"}
+{"nick":"Raynos","message":"Now obvouisly the target can create a writable stream which defaults to object mode. So even when strings/buffers get's written it's treated nicely","date":"2013-01-26T02:16:56.048Z","type":"message"}
+{"nick":"Raynos","message":"TooTallNate: `var t = new Transform(); t._writableState.objectMode = true`","date":"2013-01-26T02:17:11.730Z","type":"message"}
+{"nick":"Raynos","message":"https://github.com/joyent/node/commit/420e07c5777bdb2e493147d296abfc102f725015#commitcomment-2504870","date":"2013-01-26T02:17:53.099Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-01-26T02:27:22.022Z","type":"quit"}
+{"nick":"TooTallNate","message":"Raynos: so what do you think a good API for that would be?","date":"2013-01-26T02:31:03.411Z","type":"message"}
+{"nick":"Raynos","message":"TooTallNate: two parameters","date":"2013-01-26T02:31:17.961Z","type":"message"}
+{"nick":"Raynos","message":"duplex(readOptions, writeOptions)","date":"2013-01-26T02:31:22.825Z","type":"message"}
+{"nick":"Raynos","message":"and Writable.call(writeOptions || readOptions)","date":"2013-01-26T02:31:30.722Z","type":"message"}
+{"nick":"TooTallNate","message":"ya","date":"2013-01-26T02:31:42.664Z","type":"message"}
+{"nick":"Raynos","message":".call(this, ...) ","date":"2013-01-26T02:31:42.998Z","type":"message"}
+{"nick":"TooTallNate","message":"sgtm","date":"2013-01-26T02:31:43.709Z","type":"message"}
+{"nick":"jmar777","date":"2013-01-26T02:37:35.170Z","type":"join"}
+{"nick":"abraxas","date":"2013-01-26T02:47:24.505Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 276 seconds","date":"2013-01-26T02:52:18.461Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-01-26T03:11:32.027Z","type":"quit"}
+{"nick":"cjd","date":"2013-01-26T03:26:48.851Z","type":"join"}
+{"nick":"cjd","message":"hi guys, quick question... getting icmp errors from an unconnected udp socket, is there a cross platform way or should I give up hope of it ever working?","date":"2013-01-26T03:27:33.655Z","type":"message"}
+{"nick":"cjd","message":"I'm asking here because I figure people here would know more than anyone about cross platform bs issues","date":"2013-01-26T03:28:02.111Z","type":"message"}
+{"nick":"rump","reason":"Quit: rump","date":"2013-01-26T03:29:21.264Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2013-01-26T03:30:27.198Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-01-26T03:50:26.857Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-01-26T03:58:48.604Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033piscisaureus\u000f created branch win-ipv6-fixes - http://git.io/RHqeVw","date":"2013-01-26T04:19:09.112Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-01-26T04:22:04.190Z","type":"quit"}
+{"nick":"Benvie","date":"2013-01-26T04:24:06.832Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-01-26T04:24:39.399Z","type":"quit"}
+{"nick":"qmx","reason":"Ping timeout: 260 seconds","date":"2013-01-26T04:34:09.985Z","type":"quit"}
+{"nick":"qmx","date":"2013-01-26T04:38:09.834Z","type":"join"}
+{"nick":"brson","date":"2013-01-26T04:43:42.100Z","type":"join"}
+{"nick":"trevnorris","date":"2013-01-26T04:47:10.671Z","type":"join"}
+{"nick":"stagas","date":"2013-01-26T05:22:05.656Z","type":"join"}
+{"nick":"erickt","date":"2013-01-26T05:30:55.895Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-01-26T05:39:32.671Z","type":"quit"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2013-01-26T05:56:19.337Z","type":"quit"}
+{"nick":"felixge","date":"2013-01-26T06:03:19.157Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2013-01-26T06:03:19.342Z","type":"quit"}
+{"nick":"felixge","date":"2013-01-26T06:03:19.467Z","type":"join"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-01-26T06:04:14.251Z","type":"nick"}
+{"nick":"mikeal","date":"2013-01-26T06:09:49.945Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-01-26T06:14:22.329Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-01-26T07:21:25.871Z","type":"join"}
+{"nick":"mikeal","reason":"Read error: Connection reset by peer","date":"2013-01-26T07:24:29.721Z","type":"quit"}
+{"nick":"mikeal","date":"2013-01-26T07:24:39.279Z","type":"join"}
+{"nick":"karupanerura","reason":"Excess Flood","date":"2013-01-26T07:44:54.572Z","type":"quit"}
+{"nick":"karupanerura","date":"2013-01-26T07:45:51.361Z","type":"join"}
+{"nick":"rendar","date":"2013-01-26T07:50:30.367Z","type":"join"}
