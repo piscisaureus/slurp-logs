@@ -1,0 +1,197 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-02-02T00:00:01.014Z","type":"quit"}
+{"nick":"isaacs","message":"wasn't there some talk of threaded gc in v8?","date":"2013-02-02T00:00:06.961Z","type":"message"}
+{"nick":"ircretary","date":"2013-02-02T00:00:07.646Z","type":"join"}
+{"nick":"isaacs","message":"meh.  probably not a good idea to jump off a stable v8 right now anyway.","date":"2013-02-02T00:00:51.330Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yes, that landed in v8's master this week","date":"2013-02-02T00:00:53.320Z","type":"message"}
+{"nick":"bnoordhuis","message":"and no, i wouldn't recommend switching to that right away :)","date":"2013-02-02T00:01:05.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"they already landed at least one bug fix","date":"2013-02-02T00:01:12.391Z","type":"message"}
+{"nick":"isaacs","message":"that's rad.","date":"2013-02-02T00:01:45.600Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u0002cd42f56\u0002 : buffer: optimize Buffer.prototype.write(s, 'hex')  Move the implementatio - http://git.io/ovgLWg","date":"2013-02-02T00:01:51.212Z","type":"message"}
+{"nick":"isaacs","message":"so, i guess this weekend i'll read up on idle notifications and try to learn wth that was even supposed to be doing in the first place.","date":"2013-02-02T00:02:04.440Z","type":"message"}
+{"nick":"isaacs","message":"because GC is demonstrably eating our lunch right now.","date":"2013-02-02T00:02:18.149Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: it was supposed to do this -> https://github.com/bnoordhuis/node-idle-gc","date":"2013-02-02T00:02:26.809Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. proactively invoke the GC but only if we're _really_ idle","date":"2013-02-02T00:03:05.241Z","type":"message"}
+{"nick":"isaacs","message":"hm.  actually, i'm not sure if that's going to work out..","date":"2013-02-02T00:03:33.679Z","type":"message"}
+{"nick":"hij1nx","message":"isaacs: bnoordhuis: ok, thanks for the feedback :)","date":"2013-02-02T00:03:40.636Z","type":"message"}
+{"nick":"isaacs","message":"i mean, what we're seeing is increased latency when we are NOT idle.","date":"2013-02-02T00:03:45.359Z","type":"message"}
+{"nick":"isaacs","message":"because GC kicks in","date":"2013-02-02T00:03:49.218Z","type":"message"}
+{"nick":"isaacs","message":"we should have a mode that just never runs gc at all.","date":"2013-02-02T00:04:34.198Z","type":"message"}
+{"nick":"roxlu","message":"bnoordhuis: uv doesn't have a cross platform sleep(), does it?","date":"2013-02-02T00:04:39.333Z","type":"message"}
+{"nick":"bnoordhuis","message":"roxlu: no, only in test/ :)","date":"2013-02-02T00:05:06.879Z","type":"message"}
+{"nick":"isaacs","message":"FUCKIT I GOTS ME PLENNY A MEMORY, LETS RUN A BENCHMARK!","date":"2013-02-02T00:05:09.903Z","type":"message"}
+{"nick":"LOUDBOT","message":"OVERACTIVE BLADDER? QUICK EAT SOME CELERY!","date":"2013-02-02T00:05:10.907Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: in StreamWrap::WriteBuffer, every call does a malloc?","date":"2013-02-02T00:05:38.959Z","type":"message"}
+{"nick":"isaacs","action":"relocating &","date":"2013-02-02T00:05:51.927Z","type":"action"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-02T00:06:27.578Z","type":"quit"}
+{"nick":"bnoordhuis","message":"trevnorris: well, placement new but yes","date":"2013-02-02T00:06:57.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"or rather, it does some cleverness where it allocates heap memory for a c++ object plus extra buffer space","date":"2013-02-02T00:07:34.971Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: forgive my inexperience, but thought we pooled buffers because the act of malloc'ing is expensive.","date":"2013-02-02T00:08:06.603Z","type":"message"}
+{"nick":"trevnorris","message":"oh, so it's not like external memory/","date":"2013-02-02T00:08:14.848Z","type":"message"}
+{"nick":"trevnorris","message":"?","date":"2013-02-02T00:08:16.558Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: well, it is, it's heap memory","date":"2013-02-02T00:08:46.570Z","type":"message"}
+{"nick":"trevnorris","message":"so does that also need to be  gc'd afterwards?","date":"2013-02-02T00:09:11.889Z","type":"message"}
+{"nick":"bnoordhuis","message":"not gc'd, it's freed in the AfterWrite callback","date":"2013-02-02T00:09:26.040Z","type":"message"}
+{"nick":"trevnorris","message":"ah, duh. yeah. since it's external memory v8 doesn't touch it.","date":"2013-02-02T00:09:55.682Z","type":"message"}
+{"nick":"trevnorris","message":"erm. something like that.","date":"2013-02-02T00:10:08.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2013-02-02T00:10:12.631Z","type":"message"}
+{"nick":"bnoordhuis","message":"and yes, malloc is expensive","date":"2013-02-02T00:10:19.513Z","type":"message"}
+{"nick":"pfox__","message":"bnoordhuis: hey.. you going to sleep soon?","date":"2013-02-02T00:10:28.961Z","type":"message"}
+{"nick":"pfox__","message":"i might have a mingw32 patch","date":"2013-02-02T00:10:33.471Z","type":"message"}
+{"nick":"bnoordhuis","message":"but a slabbuffer would be insecure because js code could manipulate c++ objects","date":"2013-02-02T00:10:49.920Z","type":"message"}
+{"nick":"bnoordhuis","message":"that'd make for some awesome exploits though","date":"2013-02-02T00:10:59.294Z","type":"message"}
+{"nick":"bnoordhuis","message":"pfox__: i'll be around for another 10 minutes or so","date":"2013-02-02T00:11:08.471Z","type":"message"}
+{"nick":"pfox__","message":"gotcha.","date":"2013-02-02T00:11:18.224Z","type":"message"}
+{"nick":"pfox__","message":"well.. do you think you can land this, then? https://gist.github.com/26a8955c1b864cf69754","date":"2013-02-02T00:11:33.218Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: awesome. i'll remember that. ;-)","date":"2013-02-02T00:11:37.818Z","type":"message"}
+{"nick":"pfox__","message":"just a one-liner in config-mingw.mk","date":"2013-02-02T00:11:46.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"sure. you want attribution?","date":"2013-02-02T00:12:19.508Z","type":"message"}
+{"nick":"pfox__","message":"it was graydon's doing, actually :)","date":"2013-02-02T00:12:43.837Z","type":"message"}
+{"nick":"pfox__","message":"i don't think it'll matter","date":"2013-02-02T00:12:49.269Z","type":"message"}
+{"nick":"bnoordhuis","message":"just say no and i won't have to ask you to sign the cla","date":"2013-02-02T00:13:05.006Z","type":"message"}
+{"nick":"pfox__","message":"no","date":"2013-02-02T00:13:07.244Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, cool :)","date":"2013-02-02T00:13:13.360Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u0002b271b06\u0002 : build: fix up WIN_SRCS - http://git.io/ipMdPA","date":"2013-02-02T00:17:08.092Z","type":"message"}
+{"nick":"pfox__","message":"mucho gracias, bnoordhuis","date":"2013-02-02T00:21:57.299Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: isaacs: apparently the precompiled linux binary doesn't work on opensuse","date":"2013-02-02T00:23:58.966Z","type":"message"}
+{"nick":"TooTallNate","message":"we just get","date":"2013-02-02T00:24:01.116Z","type":"message"}
+{"nick":"TooTallNate","message":"\"FATAL ERROR: v8::Context::New() V8 is no longer usable\"","date":"2013-02-02T00:24:02.269Z","type":"message"}
+{"nick":"bnoordhuis","message":"any ulimits in effect?","date":"2013-02-02T00:24:26.757Z","type":"message"}
+{"nick":"bnoordhuis","message":"that error usually means v8 can't mmap memory","date":"2013-02-02T00:24:52.506Z","type":"message"}
+{"nick":"bnoordhuis","message":"*enough memory","date":"2013-02-02T00:25:00.364Z","type":"message"}
+{"nick":"TooTallNate","action":"checking","date":"2013-02-02T00:25:27.519Z","type":"action"}
+{"nick":"bnoordhuis","message":"does a binary compiled from source work?","date":"2013-02-02T00:25:43.772Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ooh. meant to thank you for massif. so many options... =)_","date":"2013-02-02T00:27:15.699Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's versatile, isn't it? :)","date":"2013-02-02T00:27:39.287Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. and honestly I sorta like the ms_paint output","date":"2013-02-02T00:28:18.708Z","type":"message"}
+{"nick":"trevnorris","message":"ms_print*","date":"2013-02-02T00:28:27.754Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: --page-as-heap really showed the differences between how v0.8 and master are handling tcp streams.","date":"2013-02-02T00:30:33.157Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-02T00:36:40.257Z","type":"join"}
+{"nick":"einaros","reason":"Quit: leaving","date":"2013-02-02T00:46:38.919Z","type":"quit"}
+{"nick":"TooTallNate","message":"bnoordhuis: a binary compiled from source gives the same error","date":"2013-02-02T00:51:45.075Z","type":"message"}
+{"nick":"qmx|away","new_nick":"qmx","date":"2013-02-02T00:52:17.170Z","type":"nick"}
+{"nick":"TooTallNate","message":"bnoordhuis: ok `ulimit -v unlimited` fixed it :)","date":"2013-02-02T00:52:59.841Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 255 seconds","date":"2013-02-02T00:53:20.585Z","type":"quit"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-02-02T00:54:14.365Z","type":"quit"}
+{"nick":"isaacs","message":"lol","date":"2013-02-02T01:02:40.568Z","type":"message"}
+{"nick":"isaacs","message":"-// A rather convoluted algorithm has been devised to determine when Node is","date":"2013-02-02T01:02:41.048Z","type":"message"}
+{"nick":"isaacs","message":"-// idle. You'll have to figure it out for yourself.","date":"2013-02-02T01:02:41.778Z","type":"message"}
+{"nick":"trevnorris","message":"wtf? where is that?","date":"2013-02-02T01:03:18.573Z","type":"message"}
+{"nick":"trevnorris","message":"nm. found it","date":"2013-02-02T01:03:35.681Z","type":"message"}
+{"nick":"trevnorris","message":"oh whoops. that was a message in v8.","date":"2013-02-02T01:04:16.993Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: well, it used to bein node.cc","date":"2013-02-02T01:04:32.523Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: but it's removed","date":"2013-02-02T01:04:35.927Z","type":"message"}
+{"nick":"trevnorris","message":"that's awesome. definitely what a coder wants to read.","date":"2013-02-02T01:05:01.942Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: how's this async sequence testing: http://git.io/IFWACg","date":"2013-02-02T01:16:18.814Z","type":"message"}
+{"nick":"trevnorris","message":"this sucker can now handle anything. =)","date":"2013-02-02T01:16:26.622Z","type":"message"}
+{"nick":"trevnorris","message":"i'll get the existing PR updated this weekend. should be ready by monday (hopefully)","date":"2013-02-02T01:16:48.502Z","type":"message"}
+{"nick":"isaacs","message":"sweet :)","date":"2013-02-02T01:17:01.829Z","type":"message"}
+{"nick":"lohkey","date":"2013-02-02T01:17:54.277Z","type":"part"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-02-02T01:18:28.747Z","type":"quit"}
+{"nick":"isaacs","message":"zero deopts: $ ./node --trace_inlining --code_comments --trace_deopt --trace_opt benchmark/net/tcp_raw_c2s.js --iter 10","date":"2013-02-02T01:37:28.272Z","type":"message"}
+{"nick":"loladiro","date":"2013-02-02T01:38:19.439Z","type":"join"}
+{"nick":"isaacs","message":"hm.  moving makecallback back to C++ has a 2% improvement on the tcp_raw stuff, and way less bailouts/deopts, but virtually zero effect on http_simple.","date":"2013-02-02T01:55:10.851Z","type":"message"}
+{"nick":"isaacs","message":"that's too bad.","date":"2013-02-02T01:55:13.880Z","type":"message"}
+{"nick":"isaacs","message":"hm.  actually, wiht http_simple LENGTH=1024, it's about a 5% increase","date":"2013-02-02T02:23:08.003Z","type":"message"}
+{"nick":"isaacs","message":"oh, no, i was reading it wrong.","date":"2013-02-02T02:25:31.058Z","type":"message"}
+{"nick":"isaacs","message":"it's faster with makecallback in js if the length increases.","date":"2013-02-02T02:25:40.248Z","type":"message"}
+{"nick":"isaacs","message":"ok.  fine.  dead end.","date":"2013-02-02T02:25:44.868Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-02-02T02:28:27.903Z","type":"quit"}
+{"nick":"tjfontaine","message":":/","date":"2013-02-02T02:42:04.441Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-02-02T02:47:08.287Z","type":"quit"}
+{"nick":"lohkey","date":"2013-02-02T03:00:12.902Z","type":"join"}
+{"nick":"hz","date":"2013-02-02T03:28:02.433Z","type":"quit"}
+{"nick":"c4milo","date":"2013-02-02T03:45:01.329Z","type":"join"}
+{"nick":"googol","reason":"Read error: Connection reset by peer","date":"2013-02-02T03:47:07.328Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-02-02T03:50:12.097Z","type":"join"}
+{"nick":"jmar777","date":"2013-02-02T04:03:53.341Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-02-02T04:07:29.415Z","type":"quit"}
+{"nick":"tjfontaine","message":"TooTallNate: sigh, this ffi issue is because this guy used my script and didn't follow my advice","date":"2013-02-02T04:29:08.358Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2013-02-02T04:29:28.444Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: what was you advice?","date":"2013-02-02T04:29:32.316Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: well, he's ultimately trying to wrap too much","date":"2013-02-02T04:30:09.269Z","type":"message"}
+{"nick":"tjfontaine","message":"the script sees and wraps","date":"2013-02-02T04:30:23.340Z","type":"message"}
+{"nick":"tjfontaine","message":"var size_t = exports.size_t = Struct({","date":"2013-02-02T04:30:23.666Z","type":"message"}
+{"nick":"tjfontaine","message":"    __darwin_size_t: ref.types.ulong,","date":"2013-02-02T04:30:23.798Z","type":"message"}
+{"nick":"tjfontaine","message":"});","date":"2013-02-02T04:30:24.328Z","type":"message"}
+{"nick":"tjfontaine","message":"which is more than likely the issue","date":"2013-02-02T04:30:31.541Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-02-02T04:30:40.432Z","type":"quit"}
+{"nick":"tjfontaine","message":"but then you see methods like scanf in the methods","date":"2013-02-02T04:31:11.954Z","type":"message"}
+{"nick":"jmar777","date":"2013-02-02T04:31:15.877Z","type":"join"}
+{"nick":"jmar777_","date":"2013-02-02T04:33:54.546Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2013-02-02T04:34:17.791Z","type":"quit"}
+{"nick":"TooTallNate","message":"tjfontaine: what's sbml?","date":"2013-02-02T04:35:36.106Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: \"systems biology markup language\"","date":"2013-02-02T04:36:00.463Z","type":"message"}
+{"nick":"tjfontaine","message":"http://sbml.org/Software/libSBML","date":"2013-02-02T04:36:03.980Z","type":"message"}
+{"nick":"TooTallNate","message":"woah","date":"2013-02-02T04:36:27.263Z","type":"message"}
+{"nick":"TooTallNate","message":"well i'm convinced it's in his code","date":"2013-02-02T04:37:51.654Z","type":"message"}
+{"nick":"tjfontaine","message":"well it's certainly in how much it wrapped, is there an easy DEBUG=\"\" to see what method it's failing on?","date":"2013-02-02T04:38:24.926Z","type":"message"}
+{"nick":"jmar777_","reason":"Remote host closed the connection","date":"2013-02-02T04:39:26.868Z","type":"quit"}
+{"nick":"jmar777","date":"2013-02-02T04:40:01.283Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 264 seconds","date":"2013-02-02T04:44:30.106Z","type":"quit"}
+{"nick":"tjfontaine","message":"TooTallNate: the real problem with this library he's trying to wrap is that it's C bindings to a C++ interface, and they haven't followed sane namespace naming conventions, or at least have the sense to stick it all in a single header file, so determining what to wrap programmatically is a bit of a long shot :)","date":"2013-02-02T04:46:14.835Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2013-02-02T04:46:45.380Z","type":"message"}
+{"nick":"TooTallNate","message":"is that using a generator of some sort?","date":"2013-02-02T04:46:52.462Z","type":"message"}
+{"nick":"TooTallNate","message":"did you write one?","date":"2013-02-02T04:47:01.387Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, the file he has is using my libclang based generator","date":"2013-02-02T04:47:19.315Z","type":"message"}
+{"nick":"TooTallNate","message":"nice, i remember you saying you were making that","date":"2013-02-02T04:47:32.284Z","type":"message"}
+{"nick":"TooTallNate","message":"how come you wrap typedefs in structs like that?","date":"2013-02-02T04:47:54.004Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, with other things going on I haven't had time to finish everything I wanted, like ref-strict or the c++ mangling","date":"2013-02-02T04:48:04.690Z","type":"message"}
+{"nick":"tjfontaine","message":"well, it tries really hard to resolve types for fields, and types for structs","date":"2013-02-02T04:48:30.557Z","type":"message"}
+{"nick":"tjfontaine","message":"sometimes in weird define situations you get interesting results","date":"2013-02-02T04:48:41.162Z","type":"message"}
+{"nick":"TooTallNate","message":"interesting","date":"2013-02-02T04:48:55.053Z","type":"message"}
+{"nick":"tjfontaine","message":"that size_t wrapper must exist somewhere","date":"2013-02-02T04:48:56.243Z","type":"message"}
+{"nick":"tjfontaine","message":"because I'm just taking the info that libclang sees","date":"2013-02-02T04:49:05.718Z","type":"message"}
+{"nick":"tjfontaine","message":"what's curious about his situation is that it's failing in a different spot than mine","date":"2013-02-02T04:50:00.495Z","type":"message"}
+{"nick":"tjfontaine","message":"on darwin it fails with a much better slap you on the wrist for being greedy error: Error: Dynamic Symbol Retrieval Error: dlsym(0x100e00130, __inline_memcpy_chk): symbol not found","date":"2013-02-02T04:50:26.510Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-02-02T04:50:49.431Z","type":"quit"}
+{"nick":"TooTallNate","message":"tjfontaine: wow, nice slim version","date":"2013-02-02T04:59:08.399Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: amazing what happens when you tell it to only look for things that start with 'SBML' :)","date":"2013-02-02T04:59:52.883Z","type":"message"}
+{"nick":"TooTallNate","message":"that's cool stuff","date":"2013-02-02T05:00:36.302Z","type":"message"}
+{"nick":"TooTallNate","message":"you'll have to show me how to use it some time :)","date":"2013-02-02T05:00:48.724Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, there's also a '-x' that indicates to only wrap functions found in the current header file","date":"2013-02-02T05:01:02.585Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i wrote these by hand, haha https://github.com/TooTallNate/n8.io/blob/master/lib/git.js","date":"2013-02-02T05:01:33.337Z","type":"message"}
+{"nick":"TooTallNate","message":"it was painful","date":"2013-02-02T05:01:35.782Z","type":"message"}
+{"nick":"TooTallNate","message":"not terrible","date":"2013-02-02T05:01:38.649Z","type":"message"}
+{"nick":"TooTallNate","message":"but not fun either","date":"2013-02-02T05:01:42.732Z","type":"message"}
+{"nick":"tjfontaine","message":"heh is that libgit?","date":"2013-02-02T05:02:07.065Z","type":"message"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2013-02-02T05:02:14.229Z","type":"quit"}
+{"nick":"tjfontaine","message":"a long long time ago is what pushed me down the path to write this software :)","date":"2013-02-02T05:02:20.298Z","type":"message"}
+{"nick":"brson","date":"2013-02-02T05:02:41.989Z","type":"join"}
+{"nick":"tjfontaine","message":"in my opinion the point of this software is only to get you about 60% of the way, to get the tedious and obvious stuff out of the way","date":"2013-02-02T05:03:00.819Z","type":"message"}
+{"nick":"stagas_","date":"2013-02-02T05:04:25.902Z","type":"join"}
+{"nick":"TooTallNate","message":"libgit2 technically","date":"2013-02-02T05:04:55.825Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-02-02T05:05:13.561Z","type":"message"}
+{"nick":"tjfontaine","message":"the one that works well :)","date":"2013-02-02T05:05:18.501Z","type":"message"}
+{"nick":"tjfontaine","message":"the next step would be to generate basic boiler plate for addon modules as well","date":"2013-02-02T05:05:50.270Z","type":"message"}
+{"nick":"TooTallNate","message":"that would be pretty cool","date":"2013-02-02T05:06:06.452Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2013-02-02T05:06:42.153Z","type":"quit"}
+{"nick":"tjfontaine","message":"it's not that difficult, just some man hours","date":"2013-02-02T05:06:45.372Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: because, similarly, i've been writing all of this by hand ","date":"2013-02-02T05:06:45.722Z","type":"message"}
+{"nick":"TooTallNate","message":"https://github.com/TooTallNate/node-ogg/blob/master/src/binding.cc","date":"2013-02-02T05:06:46.467Z","type":"message"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-02-02T05:06:50.424Z","type":"nick"}
+{"nick":"tjfontaine","message":"ya, it's just too tedious :)","date":"2013-02-02T05:07:18.728Z","type":"message"}
+{"nick":"brson","reason":"Read error: Connection reset by peer","date":"2013-02-02T05:08:31.611Z","type":"quit"}
+{"nick":"brson","date":"2013-02-02T05:08:48.284Z","type":"join"}
+{"nick":"trevnorris","date":"2013-02-02T05:13:58.968Z","type":"join"}
+{"nick":"tjfontaine","message":"TooTallNate: https://gist.github.com/a10266f88d0a1f57b816","date":"2013-02-02T05:16:30.740Z","type":"message"}
+{"nick":"tjfontaine","message":"var git_tag_foreach_cb = exports.git_tag_foreach_cb = FFI.Function(ref.types.int32, [ref.types.CString, voidPtr, voidPtr]);","date":"2013-02-02T05:17:26.498Z","type":"message"}
+{"nick":"tjfontaine","message":"then you can change what you want to ref.types.Object","date":"2013-02-02T05:17:53.479Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: so no luck on the cc side eh? that's stinks.","date":"2013-02-02T05:18:00.636Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: so you saw an improvement in tcp_raw. is it possible to do something similar with http calls?","date":"2013-02-02T05:18:34.189Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: wow, nice :D","date":"2013-02-02T05:31:01.064Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: why do the constants get put in an object like that?","date":"2013-02-02T05:32:23.676Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-02-02T05:36:05.893Z","type":"quit"}
+{"nick":"indexzero","date":"2013-02-02T05:50:06.351Z","type":"join"}
+{"nick":"trevnorris","message":"showing some performance numbers and isaacs want's them in like iterations/sec. but their up in the 50 millions. bump it down to iter/ms?","date":"2013-02-02T06:03:48.290Z","type":"message"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-02-02T06:39:58.690Z","type":"nick"}
+{"nick":"lohkey","date":"2013-02-02T06:53:00.242Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2013-02-02T07:06:15.149Z","type":"quit"}
+{"nick":"brson","date":"2013-02-02T07:07:47.730Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 248 seconds","date":"2013-02-02T07:18:12.755Z","type":"quit"}
+{"nick":"brson","date":"2013-02-02T07:20:35.522Z","type":"join"}
+{"nick":"EhevuTov","date":"2013-02-02T07:23:22.269Z","type":"join"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-02-02T07:35:09.464Z","type":"quit"}
+{"nick":"rendar","date":"2013-02-02T07:44:30.590Z","type":"join"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-02-02T07:51:16.666Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-02-02T07:51:49.266Z","type":"join"}
+{"nick":"lohkey","reason":"Quit: lohkey","date":"2013-02-02T07:52:00.447Z","type":"quit"}
