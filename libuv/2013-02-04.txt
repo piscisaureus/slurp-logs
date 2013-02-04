@@ -104,3 +104,172 @@
 {"nick":"piscisaureus_","message":"l","date":"2013-02-04T07:59:16.669Z","type":"message"}
 {"nick":"isaacs","message":"the thing that sucks about this \"early return\" issue in inlining is that it means you have to write your code like super old-school C.","date":"2013-02-04T07:59:30.982Z","type":"message"}
 {"nick":"isaacs","message":"with var ret; and then giant if-blocks, and then at the bottom, a single \"return ret\"","date":"2013-02-04T07:59:46.662Z","type":"message"}
+{"nick":"isaacs","message":"V8 should just figure out how to inline early returns.","date":"2013-02-04T08:00:04.812Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: imho, think it'd be helpful to figure out how to break things down into smaller functions.","date":"2013-02-04T08:00:34.256Z","type":"message"}
+{"nick":"trevnorris","message":"v8 can inline sets of functions easily.","date":"2013-02-04T08:00:44.434Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: bijna morgen","date":"2013-02-04T08:00:49.931Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: well, that's another thing, function text has to be rather small to be inlined.","date":"2013-02-04T08:01:13.071Z","type":"message"}
+{"nick":"trevnorris","message":"then if there's a deop'd part it won't affect the rest of the quick code.","date":"2013-02-04T08:01:14.153Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: like, even comments in the code will fuck it up","date":"2013-02-04T08:01:20.291Z","type":"message"}
+{"nick":"trevnorris","message":"yup. know that stupid one.","date":"2013-02-04T08:01:32.657Z","type":"message"}
+{"nick":"isaacs","message":"so a lot of this refactor is just moving comments outside of the fucntion body, and breaking up into small functions, and removing any tidy early return values.","date":"2013-02-04T08:02:01.451Z","type":"message"}
+{"nick":"isaacs","message":"other stuff to generally uglify the code.","date":"2013-02-04T08:02:07.571Z","type":"message"}
+{"nick":"isaacs","message":"it makes me sad.","date":"2013-02-04T08:02:09.220Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. i think it'll hit a good balance. just a few growing pains.","date":"2013-02-04T08:03:06.003Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: also with some better profiling we should be able to determine what code is absolutely necessary to uglify. and other code that just can't be.","date":"2013-02-04T08:06:09.873Z","type":"message"}
+{"nick":"trevnorris","message":"(e.g. knowing that some operations must be used that will force deopt. so no point in over optimizing)","date":"2013-02-04T08:07:03.458Z","type":"message"}
+{"nick":"isaacs","message":"yeah, deopts are super magical to me right now.","date":"2013-02-04T08:09:41.803Z","type":"message"}
+{"nick":"isaacs","message":"i know that you'll get deopted if your data types change.","date":"2013-02-04T08:09:53.496Z","type":"message"}
+{"nick":"isaacs","message":"but like.. i've got cases where i'm pretty sure that's not happening, and it's still getting deopted","date":"2013-02-04T08:10:04.506Z","type":"message"}
+{"nick":"felixge","date":"2013-02-04T08:10:32.752Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2013-02-04T08:10:33.043Z","type":"quit"}
+{"nick":"felixge","date":"2013-02-04T08:10:33.176Z","type":"join"}
+{"nick":"isaacs","message":"especially in cases where it's optimizing a function, then immediately deoptimizing it","date":"2013-02-04T08:11:09.620Z","type":"message"}
+{"nick":"trevnorris","message":"it does suck you in, doesn't it? ;-)","date":"2013-02-04T08:12:18.584Z","type":"message"}
+{"nick":"trevnorris","message":"is it printing you out the assembly stack of the deopt?","date":"2013-02-04T08:12:44.775Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-04T08:13:58.573Z","type":"message"}
+{"nick":"isaacs","message":"which i guess, mraleph would say, tells me everything i need to know, obviously.","date":"2013-02-04T08:14:10.003Z","type":"message"}
+{"nick":"isaacs","message":"but i'm a bit confused by it.","date":"2013-02-04T08:14:19.083Z","type":"message"}
+{"nick":"trevnorris","message":"can you gist one for me?","date":"2013-02-04T08:14:23.566Z","type":"message"}
+{"nick":"isaacs","message":"https://gist.github.com/4705572","date":"2013-02-04T08:14:53.852Z","type":"message"}
+{"nick":"isaacs","message":"[optimizing: onwriteDrain / 2f775a95c7d9 - took 0.026, 0.056, 0.051 ms]","date":"2013-02-04T08:16:04.272Z","type":"message"}
+{"nick":"isaacs","message":"**** DEOPT: onwriteDrain at bailout #2, address 0x0, frame size 0","date":"2013-02-04T08:16:04.408Z","type":"message"}
+{"nick":"isaacs","message":"it's optimizing onwriteDrain, and then immediately deopting it repeatedly","date":"2013-02-04T08:16:15.392Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: same iwth Socket._write, socketWrite, etc.","date":"2013-02-04T08:16:44.491Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: it will help if you give a name to all the anonymous functions.","date":"2013-02-04T08:16:57.169Z","type":"message"}
+{"nick":"isaacs","message":"yeah, i know","date":"2013-02-04T08:17:10.471Z","type":"message"}
+{"nick":"isaacs","message":"ok, i need to get some sleep.","date":"2013-02-04T08:17:43.960Z","type":"message"}
+{"nick":"trevnorris","message":"cool. see ya tomorrow.","date":"2013-02-04T08:17:51.955Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: do you have any idea why the v8 tick processor would be showing way more time spent in gettimeofday in master than in v0.8?","date":"2013-02-04T08:18:11.260Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: this makes me curious:","date":"2013-02-04T08:18:22.970Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I have no time, sorry.","date":"2013-02-04T08:18:45.696Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: later today :-)","date":"2013-02-04T08:18:51.689Z","type":"message"}
+{"nick":"isaacs","message":"   ticks parent  name","date":"2013-02-04T08:18:55.510Z","type":"message"}
+{"nick":"isaacs","message":"   3107   36.8%  ___gettimeofday","date":"2013-02-04T08:18:57.260Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: you're just saying that to be clever, since the question is about gettimeofday, aren't you?","date":"2013-02-04T08:19:20.640Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: :D","date":"2013-02-04T08:19:34.249Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: np, i have no time tonight.  if you have any flashes of insight, you can use internets to send messages.","date":"2013-02-04T08:19:46.359Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: there's a reason I got up at 5:30 today ...","date":"2013-02-04T08:19:47.223Z","type":"message"}
+{"nick":"isaacs","message":"i'll bet :)","date":"2013-02-04T08:19:52.069Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: indeed. async ftw","date":"2013-02-04T08:19:58.009Z","type":"message"}
+{"nick":"isaacs","message":"whatever it is, i hope it's wroth seeing the sunrise","date":"2013-02-04T08:20:02.559Z","type":"message"}
+{"nick":"isaacs","message":"or, does the sun rise this time of year on the north pole?","date":"2013-02-04T08:20:17.999Z","type":"message"}
+{"nick":"isaacs","message":";P","date":"2013-02-04T08:20:21.219Z","type":"message"}
+{"nick":"isaacs","message":"ok, the jokes are getting bad, even for me.  it's time to sleep.  g'nite.","date":"2013-02-04T08:21:04.388Z","type":"message"}
+{"nick":"isaacs","action":"&","date":"2013-02-04T08:21:06.398Z","type":"action"}
+{"nick":"LOUDBOT","message":"YOU DON'T DO ASS TO NOSE","date":"2013-02-04T08:21:07.213Z","type":"message"}
+{"nick":"isaacs","date":"2013-02-04T08:21:14.549Z","type":"part"}
+{"nick":"isaacs","date":"2013-02-04T08:21:18.209Z","type":"join"}
+{"nick":"saghul","date":"2013-02-04T08:24:52.028Z","type":"join"}
+{"nick":"indutny","message":"morning","date":"2013-02-04T08:25:16.872Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: slaap lekker","date":"2013-02-04T08:33:41.429Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Read error: Operation timed out","date":"2013-02-04T08:38:19.870Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2013-02-04T08:44:41.976Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: just broke up raw_c2s: v0.8 - 19.627; master - 18.369","date":"2013-02-04T08:59:49.444Z","type":"message"}
+{"nick":"trevnorris","message":"that's a pretty large non-js related gap that needs to be filled","date":"2013-02-04T09:00:06.067Z","type":"message"}
+{"nick":"mraleph1","date":"2013-02-04T09:04:31.893Z","type":"join"}
+{"nick":"mraleph","reason":"Read error: Connection reset by peer","date":"2013-02-04T09:04:55.845Z","type":"quit"}
+{"nick":"paddybyers_","date":"2013-02-04T09:18:38.797Z","type":"join"}
+{"nick":"paddybyers","reason":"Read error: Operation timed out","date":"2013-02-04T09:21:11.053Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2013-02-04T09:21:11.586Z","type":"nick"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-02-04T09:43:06.262Z","type":"quit"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-02-04T10:14:55.605Z","type":"quit"}
+{"nick":"wolfeidau","date":"2013-02-04T10:17:08.595Z","type":"join"}
+{"nick":"hz","date":"2013-02-04T11:25:41.448Z","type":"join"}
+{"nick":"stagas","date":"2013-02-04T11:50:11.193Z","type":"join"}
+{"nick":"MI6","reason":"Ping timeout: 252 seconds","date":"2013-02-04T12:27:50.067Z","type":"quit"}
+{"nick":"stephank","reason":"Ping timeout: 252 seconds","date":"2013-02-04T12:27:50.586Z","type":"quit"}
+{"nick":"tellnes","reason":"Remote host closed the connection","date":"2013-02-04T12:27:50.587Z","type":"quit"}
+{"nick":"stephank","date":"2013-02-04T12:28:54.326Z","type":"join"}
+{"nick":"tellnes","date":"2013-02-04T12:29:13.473Z","type":"join"}
+{"nick":"stagas_","date":"2013-02-04T12:40:41.270Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 245 seconds","date":"2013-02-04T12:43:21.067Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-02-04T12:43:21.957Z","type":"nick"}
+{"nick":"indutny","message":"piscisaureus_: hoya","date":"2013-02-04T12:53:06.202Z","type":"message"}
+{"nick":"indutny","message":"I like russian developers","date":"2013-02-04T12:53:10.533Z","type":"message"}
+{"nick":"indutny","message":"they just told me","date":"2013-02-04T12:53:13.794Z","type":"message"}
+{"nick":"indutny","message":"\"There's a problem with Request/Response classes in node.js... we can't extend them and add our own methods\"","date":"2013-02-04T12:53:36.470Z","type":"message"}
+{"nick":"indutny","message":"meh","date":"2013-02-04T12:53:39.473Z","type":"message"}
+{"nick":"indutny","message":"Why people are looking at the problem from only one side","date":"2013-02-04T12:53:54.240Z","type":"message"}
+{"nick":"stagas","message":"sure they can","date":"2013-02-04T12:54:20.419Z","type":"message"}
+{"nick":"indutny","message":"well, there's a problem with this solution","date":"2013-02-04T12:54:40.465Z","type":"message"}
+{"nick":"indutny","message":"and it'll happen pretty soon","date":"2013-02-04T12:54:50.061Z","type":"message"}
+{"nick":"stagas","message":"what is that?","date":"2013-02-04T12:54:59.053Z","type":"message"}
+{"nick":"indutny","message":"because extending prototypes always leads to problems","date":"2013-02-04T12:55:05.516Z","type":"message"}
+{"nick":"indutny","message":"like method name clashes","date":"2013-02-04T12:55:14.973Z","type":"message"}
+{"nick":"indutny","message":"and also all other modules will observe side-effects","date":"2013-02-04T12:55:27.705Z","type":"message"}
+{"nick":"stagas","message":"I suppose you need to be careful and it is what you actually need to do","date":"2013-02-04T12:56:02.595Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-02-04T12:56:10.711Z","type":"message"}
+{"nick":"indutny","message":"not a promotion","date":"2013-02-04T12:56:15.311Z","type":"message"}
+{"nick":"indutny","message":"but I think flatiron handles this in a best way","date":"2013-02-04T12:56:21.041Z","type":"message"}
+{"nick":"indutny","message":"you just extend your app","date":"2013-02-04T12:56:35.432Z","type":"message"}
+{"nick":"indutny","message":"and methods of your app always have access to this.req and this.res","date":"2013-02-04T12:56:44.208Z","type":"message"}
+{"nick":"stagas","message":"yeah that's one way, I usually add stuff in middleware in express so it's instance methods, a bit of an overhead but meh","date":"2013-02-04T12:58:38.912Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-02-04T12:58:54.765Z","type":"message"}
+{"nick":"indutny","message":"this is another way","date":"2013-02-04T12:59:02.218Z","type":"message"}
+{"nick":"Ralt","reason":"Read error: Operation timed out","date":"2013-02-04T12:59:11.099Z","type":"quit"}
+{"nick":"stagas","message":"I suppose that kills the hidden classes in v8","date":"2013-02-04T12:59:31.527Z","type":"message"}
+{"nick":"stagas","message":"but js allows me to do it so I do it","date":"2013-02-04T12:59:38.774Z","type":"message"}
+{"nick":"stagas","message":":P","date":"2013-02-04T12:59:40.774Z","type":"message"}
+{"nick":"Ralt","date":"2013-02-04T12:59:43.924Z","type":"join"}
+{"nick":"indutny","message":"yes","date":"2013-02-04T13:00:14.585Z","type":"message"}
+{"nick":"indutny","message":"it kills them","date":"2013-02-04T13:00:16.724Z","type":"message"}
+{"nick":"indutny","message":"pretty hard","date":"2013-02-04T13:00:19.215Z","type":"message"}
+{"nick":"stagas","message":"it's the compiler's problem, it should find out that I'm adding these constant stuff all the time and optimize it","date":"2013-02-04T13:01:33.050Z","type":"message"}
+{"nick":"indutny","message":"well, it works :)","date":"2013-02-04T13:01:57.208Z","type":"message"}
+{"nick":"indutny","message":"my visions of this thing","date":"2013-02-04T13:02:11.251Z","type":"message"}
+{"nick":"indutny","message":"there's C and dynamic languages","date":"2013-02-04T13:02:17.446Z","type":"message"}
+{"nick":"indutny","message":"if your code is close to C (i.e. everything is static) - its compiler job to make it as fast as possible (nearly C)","date":"2013-02-04T13:02:44.924Z","type":"message"}
+{"nick":"indutny","message":"if its very dynamic - do not blame compiler","date":"2013-02-04T13:02:51.840Z","type":"message"}
+{"nick":"indutny","message":"you've traded code-style for speed","date":"2013-02-04T13:03:06.179Z","type":"message"}
+{"nick":"stagas","message":"yes but repeatedly adding the same x,y,z properties to object A on every instance of it is something that can be addressed, it's not random stuff","date":"2013-02-04T13:05:08.323Z","type":"message"}
+{"nick":"stagas","message":"and it may be doing that already I don't know","date":"2013-02-04T13:05:42.830Z","type":"message"}
+{"nick":"stagas","message":"I notice things getting faster in the browser after a bit","date":"2013-02-04T13:05:50.030Z","type":"message"}
+{"nick":"stagas","message":"chrome","date":"2013-02-04T13:05:53.171Z","type":"message"}
+{"nick":"indutny","message":"stagas: its ok and it works","date":"2013-02-04T13:06:00.455Z","type":"message"}
+{"nick":"indutny","message":"if node wouldn't use req and res before your middleware","date":"2013-02-04T13:06:09.842Z","type":"message"}
+{"nick":"indutny","message":"but actually it still might work pretty fast","date":"2013-02-04T13:06:24.700Z","type":"message"}
+{"nick":"indutny","message":"but it'll use Polymorphic caches","date":"2013-02-04T13:06:31.240Z","type":"message"}
+{"nick":"indutny","message":"which are a bit slower if contains multiple hidden classes","date":"2013-02-04T13:06:40.153Z","type":"message"}
+{"nick":"stagas","message":"I see so it's not ideal but not entirely crap","date":"2013-02-04T13:07:00.180Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2013-02-04T13:07:11.688Z","type":"message"}
+{"nick":"indutny","message":"exactly","date":"2013-02-04T13:07:13.153Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-02-04T13:10:51.393Z","type":"join"}
+{"nick":"stagas","message":"I recently saw a jonathan blow talk and he was advocating to never optimize anything before it's an issue, and in 99,9% of the time it's going to be ok. it just kills your work flow, makes the code harder to mantain, you introduce bugs. better to just write simple stuff","date":"2013-02-04T13:10:56.419Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2013-02-04T13:11:44.559Z","type":"message"}
+{"nick":"indutny","message":"exactly","date":"2013-02-04T13:11:46.585Z","type":"message"}
+{"nick":"jokester","reason":"Remote host closed the connection","date":"2013-02-04T13:17:47.082Z","type":"quit"}
+{"nick":"stagas","message":"indutny: this is the talk it's very interesting he makes some valid points not just for games http://the-witness.net/news/2011/06/how-to-program-independent-games/","date":"2013-02-04T13:18:55.474Z","type":"message"}
+{"nick":"hz","reason":"Ping timeout: 264 seconds","date":"2013-02-04T13:23:00.451Z","type":"quit"}
+{"nick":"indutny","message":"added to bookmarks","date":"2013-02-04T13:23:50.308Z","type":"message"}
+{"nick":"indutny","message":"will watch later","date":"2013-02-04T13:23:52.104Z","type":"message"}
+{"nick":"indutny","message":"hopefully","date":"2013-02-04T13:23:53.795Z","type":"message"}
+{"nick":"hz","date":"2013-02-04T13:31:21.466Z","type":"join"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2013-02-04T13:35:30.663Z","type":"quit"}
+{"nick":"sgallagh","date":"2013-02-04T13:45:23.472Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2013-02-04T13:55:54.186Z","type":"quit"}
+{"nick":"bnoordhuis","message":"next_permutation in js is only 6x slower than the optmized c++ version","date":"2013-02-04T14:00:59.066Z","type":"message"}
+{"nick":"bnoordhuis","message":"not bad, v8","date":"2013-02-04T14:01:02.265Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2013-02-04T14:01:54.421Z","type":"message"}
+{"nick":"stagas","date":"2013-02-04T14:03:55.922Z","type":"join"}
+{"nick":"loladiro","date":"2013-02-04T14:05:31.514Z","type":"join"}
+{"nick":"jmar777","date":"2013-02-04T14:07:21.271Z","type":"join"}
+{"nick":"stagas","reason":"Quit: ChatZilla 0.9.89-rdmsoft [XULRunner 1.9.0.17/2009122204]","date":"2013-02-04T14:33:22.203Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-04T14:47:58.511Z","type":"quit"}
+{"nick":"loladiro","date":"2013-02-04T14:49:48.296Z","type":"join"}
+{"nick":"indutny","message":"whoa","date":"2013-02-04T14:54:05.669Z","type":"message"}
+{"nick":"indutny","message":"cryptostreams2 are almost working","date":"2013-02-04T14:54:14.763Z","type":"message"}
+{"nick":"c4milo","date":"2013-02-04T14:55:56.448Z","type":"join"}
+{"nick":"roxlu_","message":"indutny: what are cryptostreams?","date":"2013-02-04T15:02:21.938Z","type":"message"}
+{"nick":"`3rdEden","new_nick":"`3E|BRB","date":"2013-02-04T15:04:44.661Z","type":"nick"}
+{"nick":"c4milo_","date":"2013-02-04T15:07:59.992Z","type":"join"}
+{"nick":"c4milo_","reason":"Remote host closed the connection","date":"2013-02-04T15:24:18.211Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-02-04T15:24:19.831Z","type":"quit"}
+{"nick":"`3E|BRB","new_nick":"`3rdEden","date":"2013-02-04T15:30:57.956Z","type":"nick"}
+{"nick":"felixge","date":"2013-02-04T15:34:39.434Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-02-04T15:43:39.980Z","type":"join"}
+{"nick":"MI6","date":"2013-02-04T15:46:19.991Z","type":"join"}
+{"nick":"indexzero","date":"2013-02-04T15:48:01.269Z","type":"join"}
+{"nick":"stagas","date":"2013-02-04T15:48:44.388Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-04T15:52:56.184Z","type":"quit"}
+{"nick":"loladiro","date":"2013-02-04T15:57:14.598Z","type":"join"}
