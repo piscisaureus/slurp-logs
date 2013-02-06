@@ -552,3 +552,889 @@
 {"nick":"isaacs","message":"the only benefit of ondata is that it doesn't call buffer.slice","date":"2013-02-05T15:59:36.893Z","type":"message"}
 {"nick":"isaacs","message":"but then we call buffer.slice anyway to put it into the parser","date":"2013-02-05T15:59:47.083Z","type":"message"}
 {"nick":"isaacs","message":"right?","date":"2013-02-05T15:59:48.953Z","type":"message"}
+{"nick":"isaacs","message":"and read() will only get slower if you have more chunks built up","date":"2013-02-05T16:00:02.583Z","type":"message"}
+{"nick":"indutny","message":"nope","date":"2013-02-05T16:00:02.955Z","type":"message"}
+{"nick":"isaacs","message":"oh, it's parser.write(chunk, start, length) or something?","date":"2013-02-05T16:00:11.323Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2013-02-05T16:00:15.362Z","type":"message"}
+{"nick":"isaacs","message":"i see","date":"2013-02-05T16:00:17.462Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2013-02-05T16:00:18.132Z","type":"message"}
+{"nick":"indutny","message":"let me try it first","date":"2013-02-05T16:00:23.180Z","type":"message"}
+{"nick":"isaacs","message":"i think maybe that's why ondata = \"don't even put stuff into the Readable thingies\"","date":"2013-02-05T16:00:41.082Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2013-02-05T16:01:17.467Z","type":"message"}
+{"nick":"indutny","message":"I wonder how it works with net.Socket","date":"2013-02-05T16:01:22.693Z","type":"message"}
+{"nick":"indutny","message":"it should be accumulating a lot of data","date":"2013-02-05T16:01:34.720Z","type":"message"}
+{"nick":"indutny","message":"because noone ever reads it","date":"2013-02-05T16:01:41.451Z","type":"message"}
+{"nick":"indutny","message":"isaacs: just tried, calling .read() fixes that test","date":"2013-02-05T16:02:00.008Z","type":"message"}
+{"nick":"isaacs","message":"indutny: in net.js:","date":"2013-02-05T16:02:26.211Z","type":"message"}
+{"nick":"isaacs","message":"    var ret = true;","date":"2013-02-05T16:02:26.851Z","type":"message"}
+{"nick":"isaacs","message":"    if (self.ondata) self.ondata(buffer, offset, end);","date":"2013-02-05T16:02:26.977Z","type":"message"}
+{"nick":"isaacs","message":"    else ret = self.push(buffer.slice(offset, end));","date":"2013-02-05T16:02:26.977Z","type":"message"}
+{"nick":"indutny","message":"oooh","date":"2013-02-05T16:02:30.576Z","type":"message"}
+{"nick":"indutny","message":"aaaah","date":"2013-02-05T16:02:32.528Z","type":"message"}
+{"nick":"indutny","message":"oh god","date":"2013-02-05T16:02:35.562Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-02-05T16:02:40.278Z","type":"message"}
+{"nick":"indutny","message":"sorry for my next message","date":"2013-02-05T16:02:49.092Z","type":"message"}
+{"nick":"indutny","message":"this is so fucking retarded shit","date":"2013-02-05T16:02:54.692Z","type":"message"}
+{"nick":"indutny","message":"I spent 2 nights trying to figure it out","date":"2013-02-05T16:03:00.984Z","type":"message"}
+{"nick":"dap","date":"2013-02-05T16:03:16.154Z","type":"join"}
+{"nick":"isaacs","message":"i'm sorry.  it does suck a lot.","date":"2013-02-05T16:03:25.320Z","type":"message"}
+{"nick":"isaacs","message":"also, in http.js:     if (self.onend) self.once('end', self.onend);","date":"2013-02-05T16:03:33.871Z","type":"message"}
+{"nick":"isaacs","message":"er, no, in net.js","date":"2013-02-05T16:03:42.400Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2013-02-05T16:03:46.673Z","type":"message"}
+{"nick":"isaacs","message":"which is silly, because it should just be adding 'end' handlers in http.js","date":"2013-02-05T16:04:06.140Z","type":"message"}
+{"nick":"isaacs","message":"oh well","date":"2013-02-05T16:04:08.200Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2013-02-05T16:04:19.361Z","type":"message"}
+{"nick":"indutny","message":"I think I just got mad","date":"2013-02-05T16:04:37.317Z","type":"message"}
+{"nick":"indutny","message":"ok, running tests now","date":"2013-02-05T16:04:44.927Z","type":"message"}
+{"nick":"indutny","message":"hopefully they'll work fine now","date":"2013-02-05T16:04:49.188Z","type":"message"}
+{"nick":"indutny","message":"ah, still other fails","date":"2013-02-05T16:04:59.085Z","type":"message"}
+{"nick":"indutny","message":"s/fails/are failing/","date":"2013-02-05T16:05:06.498Z","type":"message"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2013-02-05T16:05:43.023Z","type":"quit"}
+{"nick":"hz","date":"2013-02-05T16:06:59.099Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs: fs.createReadStream(filename, { bufferSize: 42 }) no longer works, you need to set the low/high watermarks as well","date":"2013-02-05T16:13:16.572Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that a bug/regression or ?","date":"2013-02-05T16:13:20.791Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: \"no longer works\" how?","date":"2013-02-05T16:13:38.944Z","type":"message"}
+{"nick":"isaacs","message":"what happens?","date":"2013-02-05T16:13:40.574Z","type":"message"}
+{"nick":"bnoordhuis","message":"it just reads everything in one big chunk","date":"2013-02-05T16:13:52.299Z","type":"message"}
+{"nick":"bnoordhuis","message":"unless you set highWaterMark: 42 as well","date":"2013-02-05T16:14:11.966Z","type":"message"}
+{"nick":"isaacs","message":"ohh","date":"2013-02-05T16:14:17.404Z","type":"message"}
+{"nick":"isaacs","message":"hm.","date":"2013-02-05T16:14:19.153Z","type":"message"}
+{"nick":"isaacs","message":"i'm not sure if that's a bug or a feature :)","date":"2013-02-05T16:14:31.204Z","type":"message"}
+{"nick":"isaacs","message":"when do you want to read smaller pieces of a file than you have room for?","date":"2013-02-05T16:14:40.333Z","type":"message"}
+{"nick":"bnoordhuis","message":"unit tests :)","date":"2013-02-05T16:14:47.104Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it's bufferSize","date":"2013-02-05T16:15:05.133Z","type":"message"}
+{"nick":"isaacs","message":"not chunkSixze","date":"2013-02-05T16:15:07.129Z","type":"message"}
+{"nick":"isaacs","message":"  this.bufferSize = options.bufferSize || 16 * 1024;","date":"2013-02-05T16:15:09.293Z","type":"message"}
+{"nick":"isaacs","message":"oh, that's what your'e using.","date":"2013-02-05T16:15:28.953Z","type":"message"}
+{"nick":"isaacs","message":"nvm","date":"2013-02-05T16:15:29.423Z","type":"message"}
+{"nick":"sgallagh","date":"2013-02-05T16:15:42.310Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: um... i'm seeing it calling fs.read() with the bufferSize arg.","date":"2013-02-05T16:20:37.270Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: what's the problem, exactly?","date":"2013-02-05T16:20:43.019Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: let me see if i can turn it into a standalone test case","date":"2013-02-05T16:21:03.179Z","type":"message"}
+{"nick":"bnoordhuis","message":"(it's from a test suite from one of my modules)","date":"2013-02-05T16:21:11.727Z","type":"message"}
+{"nick":"isaacs","message":"https://gist.github.com/4715523","date":"2013-02-05T16:21:30.619Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: ohh, you mean that the 'data' event gets all of it in one blob?","date":"2013-02-05T16:22:05.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yes","date":"2013-02-05T16:22:10.652Z","type":"message"}
+{"nick":"isaacs","message":"ok.","date":"2013-02-05T16:22:14.159Z","type":"message"}
+{"nick":"isaacs","message":"i see that.","date":"2013-02-05T16:22:15.758Z","type":"message"}
+{"nick":"isaacs","message":"hm.","date":"2013-02-05T16:22:20.888Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay. no need for a test case then?","date":"2013-02-05T16:22:28.608Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: so, the reason is that it will keep calling _read until it has enough to make it to the lowWaterMark","date":"2013-02-05T16:22:53.259Z","type":"message"}
+{"nick":"bnoordhuis","message":"i figured it was something like that :)","date":"2013-02-05T16:23:16.492Z","type":"message"}
+{"nick":"bnoordhuis","message":"for the record, it's not a big issue for me","date":"2013-02-05T16:23:37.601Z","type":"message"}
+{"nick":"bnoordhuis","message":"but i thought i'd mention it","date":"2013-02-05T16:23:41.538Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-05T16:24:05.709Z","type":"message"}
+{"nick":"isaacs","message":"i think that the \"special\" default water level marks in fs streams are actually a bad idea.","date":"2013-02-05T16:24:19.639Z","type":"message"}
+{"nick":"isaacs","message":"it hurts performance.","date":"2013-02-05T16:24:22.656Z","type":"message"}
+{"nick":"isaacs","message":"and you can always override them anyway","date":"2013-02-05T16:24:33.719Z","type":"message"}
+{"nick":"isaacs","message":"the lowWaterMark should be 0 by default for all streams.","date":"2013-02-05T16:24:48.088Z","type":"message"}
+{"nick":"isaacs","message":"that would fix your issue","date":"2013-02-05T16:24:52.408Z","type":"message"}
+{"nick":"isaacs","message":"also, it makes a big impact on that fs.WriteStream regression","date":"2013-02-05T16:25:02.740Z","type":"message"}
+{"nick":"isaacs","message":"qv: https://gist.github.com/4715559","date":"2013-02-05T16:25:16.191Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, seems reasonable","date":"2013-02-05T16:25:32.877Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: dinner","date":"2013-02-05T16:27:29.796Z","type":"quit"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T16:27:33.256Z","type":"quit"}
+{"nick":"isaacs","message":"k","date":"2013-02-05T16:29:36.165Z","type":"message"}
+{"nick":"isaacs","message":"i'll send a PR today or tomorrow for that.","date":"2013-02-05T16:29:49.365Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: first, i'm going to polish up the \"move makeCallback back to C++\" patches.","date":"2013-02-05T16:30:12.975Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that the main culprit?","date":"2013-02-05T16:30:39.575Z","type":"message"}
+{"nick":"bnoordhuis","message":"re perf regressions, i mean","date":"2013-02-05T16:30:55.042Z","type":"message"}
+{"nick":"tjfontaine","message":"it's about half the regression in the raw benchs, from what I saw last night","date":"2013-02-05T16:32:34.646Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, it's the culprit that isn't lib/net.js","date":"2013-02-05T16:34:45.862Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: er, lib/*.js really","date":"2013-02-05T16:34:50.962Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, good","date":"2013-02-05T16:35:09.425Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but we can't possibly get the require('net') benches as fast as v0.8 while the process.binding('tcp_wrap') benches are so much slower.","date":"2013-02-05T16:35:32.241Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: the fact that they're even close is actually kind of impressive.","date":"2013-02-05T16:35:42.462Z","type":"message"}
+{"nick":"bnoordhuis","message":"wait, so process.binding('tcp_wrap') has become slower independent of makeCallback?","date":"2013-02-05T16:36:26.646Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: no, process.binding('tcp_wrap') has become slower *because of* makeCallback","date":"2013-02-05T16:36:41.531Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah right, that makes more sense","date":"2013-02-05T16:36:53.002Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: src/tcp_wrap.cc calls node::MakeCallback","date":"2013-02-05T16:36:54.711Z","type":"message"}
+{"nick":"isaacs","message":"which calls process._makeCallback","date":"2013-02-05T16:36:59.485Z","type":"message"}
+{"nick":"isaacs","message":"another approach, which also made a dent, was to go through and change all the things that call makecallback, so that they all have a domain member 100% of the time, and are more consistent in their signatures, etc.","date":"2013-02-05T16:37:43.212Z","type":"message"}
+{"nick":"isaacs","message":"that lets v8 optimize the function better.","date":"2013-02-05T16:37:51.050Z","type":"message"}
+{"nick":"isaacs","message":"but it's so easy to deopt it, it's really not worth it.","date":"2013-02-05T16:37:57.070Z","type":"message"}
+{"nick":"isaacs","message":"and it's a gigantic change.","date":"2013-02-05T16:38:01.880Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: another issue with moving it back to C++ is that we now call process._tickCallback on every call to MakeCallback","date":"2013-02-05T16:39:08.579Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: and that function has some... issues.","date":"2013-02-05T16:39:14.959Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but one thing at a time.","date":"2013-02-05T16:39:21.729Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: we can probably rework things a bit so that we call that function less often, and so that it's more optimizable.","date":"2013-02-05T16:39:57.229Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: or, fuckit, port that to C++ as well.  ALL THE JAVASCRIPTS GET C++'ED!","date":"2013-02-05T16:40:11.103Z","type":"message"}
+{"nick":"isaacs","message":"(probably not actually winful)","date":"2013-02-05T16:40:21.779Z","type":"message"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2013-02-05T16:44:21.054Z","type":"quit"}
+{"nick":"indutny","message":"isaacs: another question","date":"2013-02-05T16:46:59.197Z","type":"message"}
+{"nick":"indutny","message":"isaacs: should I emit 'close' after 'error'?","date":"2013-02-05T16:47:05.642Z","type":"message"}
+{"nick":"isaacs","message":"indutny: 'error' = \"All bets are off.\"","date":"2013-02-05T16:47:21.897Z","type":"message"}
+{"nick":"isaacs","message":"indutny: so, i mean, if you feel like it, sure.","date":"2013-02-05T16:47:29.405Z","type":"message"}
+{"nick":"isaacs","message":"indutny: emit whatever you want after 'error'","date":"2013-02-05T16:47:35.095Z","type":"message"}
+{"nick":"sgallagh","date":"2013-02-05T16:47:44.638Z","type":"join"}
+{"nick":"indutny","message":"it seems that it isn't playing nicely with http","date":"2013-02-05T16:48:09.706Z","type":"message"}
+{"nick":"indutny","message":"it emits another error :)","date":"2013-02-05T16:48:18.402Z","type":"message"}
+{"nick":"indutny","message":"socket hangup","date":"2013-02-05T16:48:24.289Z","type":"message"}
+{"nick":"indutny","message":"wait","date":"2013-02-05T16:49:31.869Z","type":"message"}
+{"nick":"indutny","message":"there's more than this","date":"2013-02-05T16:49:35.237Z","type":"message"}
+{"nick":"indutny","message":"I think its my fault","date":"2013-02-05T16:49:39.646Z","type":"message"}
+{"nick":"indutny","message":"nvm","date":"2013-02-05T16:49:59.675Z","type":"message"}
+{"nick":"trevnorris","date":"2013-02-05T16:52:19.226Z","type":"join"}
+{"nick":"loladiro","date":"2013-02-05T16:55:39.860Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2013-02-05T16:56:24.466Z","type":"quit"}
+{"nick":"isaacs","message":"indutny: i've gotta go to ride trains to meetings.  i'll bbiab","date":"2013-02-05T16:57:35.659Z","type":"message"}
+{"nick":"isaacs","action":"&","date":"2013-02-05T16:57:38.098Z","type":"action"}
+{"nick":"LOUDBOT","message":"I'VE HAD ENOUGH OF YOUR INSOLENCE AND WOULD LIKE TO SUBSCRIBE TO YOUR NEWSLETTER","date":"2013-02-05T16:57:38.563Z","type":"message"}
+{"nick":"indutny","message":"see ya","date":"2013-02-05T16:57:54.278Z","type":"message"}
+{"nick":"isaacs","message":"oh, also, 0.9.9 today.  no tls fixes, no perf fixes, just the stuff that's landed rightnow","date":"2013-02-05T16:58:16.808Z","type":"message"}
+{"nick":"isaacs","message":"k, /me away fer reals","date":"2013-02-05T16:58:27.327Z","type":"message"}
+{"nick":"indutny","message":"k","date":"2013-02-05T16:58:36.581Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: can't build 94d2ad0. posted inline.","date":"2013-02-05T16:59:31.254Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: ?","date":"2013-02-05T16:59:48.501Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 244 seconds","date":"2013-02-05T16:59:52.259Z","type":"quit"}
+{"nick":"trevnorris","message":"bnoordhuis: GH-4714","date":"2013-02-05T17:00:04.981Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: oh? why is that?","date":"2013-02-05T17:00:25.233Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: \"../src/v8_typed_array.cc:322:49: error: 'WeakCallback' is a private member of '::ArrayBuffer'\"","date":"2013-02-05T17:00:39.854Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah","date":"2013-02-05T17:00:55.305Z","type":"message"}
+{"nick":"bnoordhuis","message":"what version of gcc is that?","date":"2013-02-05T17:00:59.249Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: clang 3.2","date":"2013-02-05T17:01:05.066Z","type":"message"}
+{"nick":"bnoordhuis","message":"do you have gcc on your machine?","date":"2013-02-05T17:01:17.059Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-02-05T17:01:20.347Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah well, nvm","date":"2013-02-05T17:01:28.916Z","type":"message"}
+{"nick":"bnoordhuis","message":"it should compile with clang","date":"2013-02-05T17:01:45.035Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: hm... what's up with clang? compiles fine with gcc 4.7.","date":"2013-02-05T17:02:40.858Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's arguably a gcc bug because WeakCallback is indeed private and TypedArray is not a friend class","date":"2013-02-05T17:04:04.030Z","type":"message"}
+{"nick":"trevnorris","message":"heh, ok","date":"2013-02-05T17:04:14.826Z","type":"message"}
+{"nick":"brson","date":"2013-02-05T17:04:17.449Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 272 seconds","date":"2013-02-05T17:05:16.848Z","type":"quit"}
+{"nick":"bnoordhuis","message":"trevnorris: https://github.com/bnoordhuis/node/commit/1ea342f <- does that work?","date":"2013-02-05T17:05:37.951Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: also I was wondering, do you think it would be worth anyones time to make it copy on write?","date":"2013-02-05T17:05:40.405Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can't really enforce that in v8","date":"2013-02-05T17:06:11.133Z","type":"message"}
+{"nick":"bnoordhuis","message":"you'd have to drop down to os specific hackery","date":"2013-02-05T17:06:25.882Z","type":"message"}
+{"nick":"tjfontaine","message":"hm ok","date":"2013-02-05T17:06:44.082Z","type":"message"}
+{"nick":"bnoordhuis","message":"and you'd have to keep the old object alive until the new one is gc'd","date":"2013-02-05T17:06:56.474Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2013-02-05T17:07:00.636Z","type":"message"}
+{"nick":"tjfontaine","message":"more work than desirable","date":"2013-02-05T17:07:07.334Z","type":"message"}
+{"nick":"bnoordhuis","message":"yep","date":"2013-02-05T17:07:10.804Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: works","date":"2013-02-05T17:07:25.162Z","type":"message"}
+{"nick":"bnoordhuis","message":"cool","date":"2013-02-05T17:07:32.120Z","type":"message"}
+{"nick":"tjfontaine","message":"memset and memcpy, I'm not sure we ever want Buffer to be backed by TypedArray :)","date":"2013-02-05T17:07:32.610Z","type":"message"}
+{"nick":"bnoordhuis","message":"now to decide if it's something we want :)","date":"2013-02-05T17:07:37.039Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: i was thinking the same thing :)","date":"2013-02-05T17:07:44.140Z","type":"message"}
+{"nick":"bnoordhuis","message":"not to mention the zeroing of new arrays","date":"2013-02-05T17:08:11.591Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-02-05T17:08:29.638Z","type":"join"}
+{"nick":"ryah","message":"if node was invented today it would only be typedarrys","date":"2013-02-05T17:08:34.034Z","type":"message"}
+{"nick":"ryah","message":"that's for sure","date":"2013-02-05T17:08:42.418Z","type":"message"}
+{"nick":"bradleymeck","message":"would be nice...","date":"2013-02-05T17:09:02.779Z","type":"message"}
+{"nick":"bradleymeck","message":"isaacs: is there some sort of race that was fixed from npm 1.2.2 to 1.2.4?","date":"2013-02-05T17:09:17.658Z","type":"message"}
+{"nick":"trevnorris","message":"well, you have to remember that a spec for handling binary data is still in the works.","date":"2013-02-05T17:09:30.543Z","type":"message"}
+{"nick":"trevnorris","message":"so if node was created 2 years from now, it probably would use that instead.","date":"2013-02-05T17:09:42.391Z","type":"message"}
+{"nick":"ryah","message":"what spec is that?","date":"2013-02-05T17:09:55.295Z","type":"message"}
+{"nick":"bradleymeck","message":"ryah: either way, blobs are very painful to use for now and they are how you actually deal with stuff usually","date":"2013-02-05T17:10:18.980Z","type":"message"}
+{"nick":"trevnorris","message":"ryah: http://wiki.ecmascript.org/doku.php?id=harmony:binary_data","date":"2013-02-05T17:10:36.193Z","type":"message"}
+{"nick":"bnoordhuis","message":"ryah: you're in NYC now aren't you?","date":"2013-02-05T17:12:23.979Z","type":"message"}
+{"nick":"bnoordhuis","message":"bert and i are in SF next week","date":"2013-02-05T17:12:34.115Z","type":"message"}
+{"nick":"Benvie","message":"it's planned for binary data to build on top of typed arrays, which will recently fully specified in the ES6 spec","date":"2013-02-05T17:12:38.489Z","type":"message"}
+{"nick":"Benvie","message":"which was","date":"2013-02-05T17:12:46.600Z","type":"message"}
+{"nick":"ryah","message":"bnoordhuis: ye","date":"2013-02-05T17:12:51.882Z","type":"message"}
+{"nick":"ryah","message":"s","date":"2013-02-05T17:12:55.800Z","type":"message"}
+{"nick":"bnoordhuis","message":"too bad","date":"2013-02-05T17:12:57.508Z","type":"message"}
+{"nick":"ryah","message":"indeed","date":"2013-02-05T17:13:03.574Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: for how long are you staying there?","date":"2013-02-05T17:13:58.378Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: you doing a conference or something? i'll have to drop by.","date":"2013-02-05T17:14:08.718Z","type":"message"}
+{"nick":"indutny","message":"ryah: are you living there now?","date":"2013-02-05T17:14:08.975Z","type":"message"}
+{"nick":"ryah","message":"yes","date":"2013-02-05T17:14:12.596Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: just a couple of days","date":"2013-02-05T17:14:22.361Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: not a conference, a business meeting :/","date":"2013-02-05T17:14:31.505Z","type":"message"}
+{"nick":"indutny","message":"ryah: nice, hopefully, we'll visit NY at Feb 18 or later","date":"2013-02-05T17:14:42.174Z","type":"message"}
+{"nick":"bnoordhuis","message":"but if you're in SF, you're free to drop by","date":"2013-02-05T17:14:49.119Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ugh. isn't that like a 10 hour flight?","date":"2013-02-05T17:15:05.497Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: If I'll visit US, I'll be in SF :)","date":"2013-02-05T17:15:09.753Z","type":"message"}
+{"nick":"indutny","message":"but that'll be later","date":"2013-02-05T17:15:12.209Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: yes, longer even","date":"2013-02-05T17:15:21.068Z","type":"message"}
+{"nick":"ryah","message":"indutny: hit me up when youre here - we can grab a beer or something","date":"2013-02-05T17:15:47.007Z","type":"message"}
+{"nick":"trevnorris","message":"ryah: you in sf?","date":"2013-02-05T17:15:59.286Z","type":"message"}
+{"nick":"tjfontaine","message":"it's 5.5 from ohio, so it better bet longer for bnoordhuis :)","date":"2013-02-05T17:15:59.501Z","type":"message"}
+{"nick":"ryah","message":"trevnorris: ny","date":"2013-02-05T17:16:19.489Z","type":"message"}
+{"nick":"trevnorris","message":"... yeah. *facepalm*","date":"2013-02-05T17:17:00.144Z","type":"message"}
+{"nick":"trevnorris","action":"finds it difficult to read irc and code.","date":"2013-02-05T17:17:29.919Z","type":"action"}
+{"nick":"bnoordhuis","action":"is off to dinner","date":"2013-02-05T17:19:24.388Z","type":"action"}
+{"nick":"indutny","message":"haha","date":"2013-02-05T17:19:47.431Z","type":"message"}
+{"nick":"indutny","message":"ryah: sure","date":"2013-02-05T17:19:49.559Z","type":"message"}
+{"nick":"indutny","message":"though, I'm still not sure if we'll go there","date":"2013-02-05T17:20:00.994Z","type":"message"}
+{"nick":"indutny","message":"depends on many things","date":"2013-02-05T17:20:08.410Z","type":"message"}
+{"nick":"indutny","message":"I should be able to tell this more definitely tomorrow","date":"2013-02-05T17:20:19.991Z","type":"message"}
+{"nick":"ryah","message":"so when is 0.10 being released?","date":"2013-02-05T17:25:56.310Z","type":"message"}
+{"nick":"tjfontaine","message":"probably a couple weeks","date":"2013-02-05T17:26:14.652Z","type":"message"}
+{"nick":"tjfontaine","message":"another .9 this week","date":"2013-02-05T17:26:21.856Z","type":"message"}
+{"nick":"indutny","message":"there're a lot of things to do before this","date":"2013-02-05T17:26:24.658Z","type":"message"}
+{"nick":"ryah","message":"too long between stables","date":"2013-02-05T17:26:31.085Z","type":"message"}
+{"nick":"indutny","message":"yes","date":"2013-02-05T17:26:34.539Z","type":"message"}
+{"nick":"indutny","message":"but streams2 you know","date":"2013-02-05T17:26:37.804Z","type":"message"}
+{"nick":"indutny","message":"and performance regressions","date":"2013-02-05T17:26:46.851Z","type":"message"}
+{"nick":"ryah","message":"yeah...","date":"2013-02-05T17:26:47.101Z","type":"message"}
+{"nick":"bradleymeck","message":"indutny: whats the regression at right now, still over 10%?","date":"2013-02-05T17:28:07.430Z","type":"message"}
+{"nick":"bradleymeck","action":"has not checked in a while","date":"2013-02-05T17:28:17.627Z","type":"action"}
+{"nick":"indutny","message":"bradleymeck: I'm not fully aware of it, you better isaacs and trevnorris","date":"2013-02-05T17:28:28.728Z","type":"message"}
+{"nick":"indutny","message":"it seems that we've some things to fix","date":"2013-02-05T17:28:36.043Z","type":"message"}
+{"nick":"indutny","message":"to return it back to 0.8","date":"2013-02-05T17:28:47.177Z","type":"message"}
+{"nick":"indutny","message":"but I don't know any numbers","date":"2013-02-05T17:28:59.995Z","type":"message"}
+{"nick":"ryah","message":"people ever bench against 0.6?","date":"2013-02-05T17:29:36.933Z","type":"message"}
+{"nick":"ryah","message":"or 0.4 ?","date":"2013-02-05T17:29:46.302Z","type":"message"}
+{"nick":"ryah","message":"0.4 was fast","date":"2013-02-05T17:29:55.687Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-05T17:29:57.812Z","type":"quit"}
+{"nick":"mikeal","date":"2013-02-05T17:30:28.528Z","type":"join"}
+{"nick":"indutny","message":"ryah: well, we've benched it when we was releasing 0.6 and 0.8 respectively","date":"2013-02-05T17:30:36.572Z","type":"message"}
+{"nick":"indutny","message":"so I don't think there're any real need to do this","date":"2013-02-05T17:30:46.238Z","type":"message"}
+{"nick":"indutny","message":"just make it as fast as 0.8 is","date":"2013-02-05T17:30:51.333Z","type":"message"}
+{"nick":"indutny","message":"or even faster :)","date":"2013-02-05T17:30:53.788Z","type":"message"}
+{"nick":"indutny","message":"that's the goal","date":"2013-02-05T17:30:55.924Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-02-05T17:31:36.137Z","type":"quit"}
+{"nick":"trevnorris","message":"ryah: been working on a more comprehensive benchmark suit: https://github.com/joyent/node/pull/4656","date":"2013-02-05T17:31:46.263Z","type":"message"}
+{"nick":"CoverSlide","message":"well didn't v0.8 have a tls regression?","date":"2013-02-05T17:32:03.875Z","type":"message"}
+{"nick":"indutny","message":"CoverSlide: in speed?","date":"2013-02-05T17:32:22.921Z","type":"message"}
+{"nick":"indutny","message":"I guess no","date":"2013-02-05T17:32:28.024Z","type":"message"}
+{"nick":"indutny","message":"we've improved a lot of things","date":"2013-02-05T17:32:31.297Z","type":"message"}
+{"nick":"indutny","message":"also","date":"2013-02-05T17:32:32.270Z","type":"message"}
+{"nick":"CoverSlide","message":"i think mjr complained about that","date":"2013-02-05T17:32:32.396Z","type":"message"}
+{"nick":"indutny","message":"tell me about that","date":"2013-02-05T17:32:38.178Z","type":"message"}
+{"nick":"indutny","message":"I'm working with him :)","date":"2013-02-05T17:32:41.283Z","type":"message"}
+{"nick":"CoverSlide","message":"well yeah","date":"2013-02-05T17:32:55.178Z","type":"message"}
+{"nick":"trevnorris","message":"right now on linux i'm seeing a 10% regression using tcp_wrap directly,  and ~15% regression using the js api.","date":"2013-02-05T17:33:11.871Z","type":"message"}
+{"nick":"tjfontaine","message":"with the makecallback change it's closer to 5% for tcp_wrap correct?","date":"2013-02-05T17:33:32.522Z","type":"message"}
+{"nick":"indutny","message":"CoverSlide: hopefully I'll get this fixed either in patch versions of 0.10","date":"2013-02-05T17:33:34.734Z","type":"message"}
+{"nick":"indutny","message":"or in 0.12","date":"2013-02-05T17:33:36.095Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: yeah. though imho that's still not the best way.","date":"2013-02-05T17:34:10.927Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: calling back and forth from cc to js is bad mojo.","date":"2013-02-05T17:34:41.397Z","type":"message"}
+{"nick":"tjfontaine","message":"no arguments there","date":"2013-02-05T17:34:52.463Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: something is going on in v8 though. mem usage when using streams is about double of what it was.","date":"2013-02-05T17:37:03.273Z","type":"message"}
+{"nick":"trevnorris","message":"well. tried to benchmark against v0.6.20, but process.hrtime() doesn't exist.","date":"2013-02-05T17:39:09.950Z","type":"message"}
+{"nick":"tjfontaine","message":"ya you'll have to monkeypatch something in for that","date":"2013-02-05T17:39:45.147Z","type":"message"}
+{"nick":"indexzero","date":"2013-02-05T17:59:52.214Z","type":"join"}
+{"nick":"ryah","message":"trevnorris: sweet","date":"2013-02-05T18:02:26.530Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-02-05T18:03:13.842Z","type":"join"}
+{"nick":"trevnorris","message":"whoot! finally created a prime number generator in js that's only 50% slower than optimized c. https://gist.github.com/trevnorris/3955671","date":"2013-02-05T18:05:31.342Z","type":"message"}
+{"nick":"trevnorris","message":"ryah: thanks. it's making it easy to script recording times over n commits.","date":"2013-02-05T18:06:15.158Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-02-05T18:06:17.959Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-05T18:06:23.281Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2013-02-05T18:06:30.368Z","type":"quit"}
+{"nick":"loladiro","date":"2013-02-05T18:07:06.170Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: that took me months to perfect. the one that brought it together was the `(x - (x % 8)) / 8`","date":"2013-02-05T18:07:22.218Z","type":"message"}
+{"nick":"brson","date":"2013-02-05T18:07:27.349Z","type":"join"}
+{"nick":"trevnorris","message":"that allowed the generator to be inlined.","date":"2013-02-05T18:07:29.846Z","type":"message"}
+{"nick":"trevnorris","message":"(instead of just using ~~(x/8))","date":"2013-02-05T18:07:46.122Z","type":"message"}
+{"nick":"tjfontaine","message":"hm I wonder if you should tell them about that","date":"2013-02-05T18:08:32.020Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: might help. when they detect a conversion from non-Smi they run a series of tests to check the type of value it is.","date":"2013-02-05T18:09:39.429Z","type":"message"}
+{"nick":"trevnorris","message":"e.g. isFinite","date":"2013-02-05T18:09:42.657Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2013-02-05T18:09:51.946Z","type":"message"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-02-05T18:13:50.395Z","type":"nick"}
+{"nick":"ryah","message":"trevnorris: have you seen chrome's benchmark stuff?","date":"2013-02-05T18:14:57.837Z","type":"message"}
+{"nick":"ryah","message":"trevnorris: they're buildbot graphs and what not","date":"2013-02-05T18:15:08.362Z","type":"message"}
+{"nick":"ryah","message":"*thier","date":"2013-02-05T18:15:17.424Z","type":"message"}
+{"nick":"trevnorris","message":"ryah: don't think I have.","date":"2013-02-05T18:15:32.328Z","type":"message"}
+{"nick":"CoverSlide","message":"I like Mozilla's arewefastyet thing","date":"2013-02-05T18:15:52.430Z","type":"message"}
+{"nick":"CoverSlide","message":"but it's got fewer details","date":"2013-02-05T18:16:23.693Z","type":"message"}
+{"nick":"trevnorris","message":"CoverSlide: yeah. they have that on a big screen in the office.","date":"2013-02-05T18:16:24.035Z","type":"message"}
+{"nick":"ryah","message":"ttp://build.chromium.org/f/chromium/perf/dashboard/overview.html","date":"2013-02-05T18:16:32.994Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-02-05T18:16:49.306Z","type":"join"}
+{"nick":"trevnorris","message":"ryah: thanks for sharing. never seen those before.","date":"2013-02-05T18:17:25.138Z","type":"message"}
+{"nick":"CoverSlide","message":"why did node stop using buildbot?","date":"2013-02-05T18:17:47.324Z","type":"message"}
+{"nick":"indutny","message":"good question","date":"2013-02-05T18:18:02.763Z","type":"message"}
+{"nick":"indutny","message":"but I don't have answer","date":"2013-02-05T18:18:06.877Z","type":"message"}
+{"nick":"indutny","message":"github is down","date":"2013-02-05T18:19:23.484Z","type":"message"}
+{"nick":"indutny","message":"nice","date":"2013-02-05T18:19:24.494Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-02-05T18:30:10.890Z","type":"join"}
+{"nick":"isaacs","message":"indutny: node's buildbot was running on no.de, and no one was keeping it updated.","date":"2013-02-05T18:35:48.446Z","type":"message"}
+{"nick":"isaacs","message":"indutny: it had broken quite a long time ago","date":"2013-02-05T18:35:54.295Z","type":"message"}
+{"nick":"indutny","message":"ok, so answer is - noone cares enough :P","date":"2013-02-05T18:36:06.561Z","type":"message"}
+{"nick":"isaacs","message":"indutny: basically.","date":"2013-02-05T18:36:11.655Z","type":"message"}
+{"nick":"isaacs","message":"indutny: no one cares enough to stop doing other things instead of that.","date":"2013-02-05T18:36:20.095Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T18:36:21.937Z","type":"join"}
+{"nick":"indutny","message":"well yeah","date":"2013-02-05T18:36:34.571Z","type":"message"}
+{"nick":"isaacs","message":"indutny: we all care.  but i think time and attention is the limiting factor.","date":"2013-02-05T18:36:37.775Z","type":"message"}
+{"nick":"indutny","message":"we wasn't thinking about performance that much before","date":"2013-02-05T18:36:43.162Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-05T18:41:39.905Z","type":"join"}
+{"nick":"trevnorris","message":"bnoordhuis: think you're the best to ask. doesn't it add overhead to always check .IsEmpty() every time MakeCallback is called?","date":"2013-02-05T18:42:14.286Z","type":"message"}
+{"nick":"indutny","message":"nope","date":"2013-02-05T18:42:34.092Z","type":"message"}
+{"nick":"indutny","message":"its almost no-op","date":"2013-02-05T18:42:39.351Z","type":"message"}
+{"nick":"indutny","message":"  V8_INLINE(bool IsEmpty() const) { return val_ == 0; }","date":"2013-02-05T18:42:51.718Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: ^","date":"2013-02-05T18:43:00.848Z","type":"message"}
+{"nick":"trevnorris","message":"ok. so if there's a hit it's probably unmeasurable.","date":"2013-02-05T18:43:16.752Z","type":"message"}
+{"nick":"indutny","message":"there're no hit :)","date":"2013-02-05T18:43:38.106Z","type":"message"}
+{"nick":"indutny","message":"Array::New() and","date":"2013-02-05T18:43:44.182Z","type":"message"}
+{"nick":"indutny","message":"Call() occupies most of the time","date":"2013-02-05T18:43:51.099Z","type":"message"}
+{"nick":"indutny","message":"checking one pointer's value is really no-op here","date":"2013-02-05T18:44:07.190Z","type":"message"}
+{"nick":"trevnorris","message":"ah... yeah. i've never had good performance experience using ->Set","date":"2013-02-05T18:45:10.327Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-02-05T18:45:11.495Z","type":"quit"}
+{"nick":"indutny","message":"its pretty slow","date":"2013-02-05T18:45:26.304Z","type":"message"}
+{"nick":"indutny","message":"slower than doing the same thing in js","date":"2013-02-05T18:45:32.051Z","type":"message"}
+{"nick":"indutny","message":"I mean","date":"2013-02-05T18:45:42.095Z","type":"message"}
+{"nick":"indutny","message":"its much slower","date":"2013-02-05T18:45:45.528Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-02-05T18:46:05.253Z","type":"join"}
+{"nick":"indutny","message":"though, I think if you really want to be confident in it - you'll need to benchmark it","date":"2013-02-05T18:46:05.989Z","type":"message"}
+{"nick":"indutny","message":"since its just my assumption","date":"2013-02-05T18:46:11.146Z","type":"message"}
+{"nick":"trevnorris","message":"does TryCatch add much like it does in js?","date":"2013-02-05T18:46:23.085Z","type":"message"}
+{"nick":"indutny","message":"obj.prop = val in js should use some inline caching","date":"2013-02-05T18:46:24.607Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: not that much","date":"2013-02-05T18:46:44.871Z","type":"message"}
+{"nick":"indutny","message":"but keep in mind that you don't have any inline optimizations","date":"2013-02-05T18:47:01.865Z","type":"message"}
+{"nick":"indutny","message":"and JIT code has","date":"2013-02-05T18:47:07.506Z","type":"message"}
+{"nick":"indutny","message":"so doing a lot of stuff with js objects in C++ is pretty slow anyway","date":"2013-02-05T18:47:21.539Z","type":"message"}
+{"nick":"indutny","message":"slower than in js","date":"2013-02-05T18:47:27.446Z","type":"message"}
+{"nick":"isaacs","message":"yeah, it's rare that C++ js code is faster than JS js code","date":"2013-02-05T18:48:56.207Z","type":"message"}
+{"nick":"isaacs","message":"(why this makecallback stuff is so surprising, actually)","date":"2013-02-05T18:49:04.257Z","type":"message"}
+{"nick":"indutny","message":"isaacs: I think the problem is not in js code","date":"2013-02-05T18:49:31.822Z","type":"message"}
+{"nick":"indutny","message":"isaacs: the problem is that we've added a lot of code to it","date":"2013-02-05T18:49:38.936Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2013-02-05T18:49:39.132Z","type":"message"}
+{"nick":"indutny","message":"like building arrays","date":"2013-02-05T18:49:49.961Z","type":"message"}
+{"nick":"trevnorris","message":"so, why is a call made to MakeCallback just to make a call to _makeCallback?","date":"2013-02-05T18:49:58.812Z","type":"message"}
+{"nick":"indutny","message":"and doing weird stuff with arguments","date":"2013-02-05T18:50:01.232Z","type":"message"}
+{"nick":"isaacs","message":"indutny: well, V8 is flopping around optimizing and then de-optimizing process._makeCallback","date":"2013-02-05T18:50:12.536Z","type":"message"}
+{"nick":"indutny","message":"that's the problem, yes","date":"2013-02-05T18:50:21.331Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: that's because of the domain stuff.","date":"2013-02-05T18:50:28.655Z","type":"message"}
+{"nick":"isaacs","message":"indutny: the change to move from fn.apply(obj, args) to obj[fn](...) helped, but not THAT much","date":"2013-02-05T18:50:39.646Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: not only that.","date":"2013-02-05T18:50:44.996Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: moving it to C++ helps the tcp_raw a lot.","date":"2013-02-05T18:50:52.966Z","type":"message"}
+{"nick":"isaacs","message":"the other change is the nextTick changes.","date":"2013-02-05T18:51:04.876Z","type":"message"}
+{"nick":"trevnorris","message":"i just meant as far as _makeCallback deoptimizing.","date":"2013-02-05T18:51:10.333Z","type":"message"}
+{"nick":"indutny","message":"isaacs: http://blog.indutny.com/f/fs-0.9.7.svg","date":"2013-02-05T18:51:12.972Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: it had more to do with the fact that it was always a different kind of object coming in.","date":"2013-02-05T18:51:37.156Z","type":"message"}
+{"nick":"indutny","message":"I did it 2-3 weeks ago","date":"2013-02-05T18:51:46.080Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: and the args array was always a different length.","date":"2013-02-05T18:51:47.505Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2013-02-05T18:51:50.125Z","type":"message"}
+{"nick":"isaacs","message":"indutny: what's this?","date":"2013-02-05T18:51:54.195Z","type":"message"}
+{"nick":"indutny","message":"flamegraph of fs benchmark","date":"2013-02-05T18:52:06.790Z","type":"message"}
+{"nick":"indutny","message":"interesting thing","date":"2013-02-05T18:52:13.805Z","type":"message"}
+{"nick":"indutny","message":"watch at bars right above node`_ZN4nodeL5AfterEP7uv_fs_s","date":"2013-02-05T18:52:18.652Z","type":"message"}
+{"nick":"indutny","message":"Array::New(), Object:Get...","date":"2013-02-05T18:52:28.464Z","type":"message"}
+{"nick":"indutny","message":"they're all called from MakeCallback","date":"2013-02-05T18:52:32.725Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i mean, what's the benchmark?","date":"2013-02-05T18:53:07.944Z","type":"message"}
+{"nick":"indutny","message":"fs-readfile.js","date":"2013-02-05T18:53:18.634Z","type":"message"}
+{"nick":"isaacs","message":"k","date":"2013-02-05T18:54:08.724Z","type":"message"}
+{"nick":"isaacs","message":"indutny: add it to the list :)","date":"2013-02-05T18:54:19.414Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: won't all functions run that are passed to _makeCallback be in cc land?","date":"2013-02-05T18:55:34.000Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: yes.","date":"2013-02-05T18:57:08.033Z","type":"message"}
+{"nick":"isaacs","message":"wel, actually, no, not the function.","date":"2013-02-05T18:57:25.001Z","type":"message"}
+{"nick":"isaacs","message":"it's getting passed FROM cc land, but the function is generally always *defined* in JS","date":"2013-02-05T18:57:37.152Z","type":"message"}
+{"nick":"isaacs","message":"except a few rare cases in crypto, iirc","date":"2013-02-05T18:57:53.111Z","type":"message"}
+{"nick":"trevnorris","message":"ok, so generally cc is passing a js fn back to js to run then return the results back to cc?","date":"2013-02-05T18:58:32.101Z","type":"message"}
+{"nick":"mmalecki","message":"isaacs: hey. any chance we could get https://github.com/isaacs/npm/issues/3133 pushed to node?","date":"2013-02-05T18:58:50.997Z","type":"message"}
+{"nick":"isaacs","message":"no","date":"2013-02-05T18:58:51.260Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: yes.","date":"2013-02-05T18:59:10.580Z","type":"message"}
+{"nick":"isaacs","message":"(the no was for trevnorris :)","date":"2013-02-05T18:59:14.940Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: we don't return the results to cc, afaik","date":"2013-02-05T18:59:25.620Z","type":"message"}
+{"nick":"isaacs","message":"oh, i guess we do return scope.Close(ret)","date":"2013-02-05T18:59:41.022Z","type":"message"}
+{"nick":"isaacs","message":"but whatever, that doesn't matter.","date":"2013-02-05T18:59:51.121Z","type":"message"}
+{"nick":"isaacs","message":"nothing ever actually looks at the return value.","date":"2013-02-05T18:59:57.035Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-05T19:00:07.013Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: https://github.com/joyent/node/blob/master/src/node.cc#L1115","date":"2013-02-05T19:00:48.927Z","type":"message"}
+{"nick":"isaacs","message":"ok.  so, there's one case where it does matter :)","date":"2013-02-05T19:01:15.200Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: guess what i'm thinking is there's a lot of back and forth for one of the hottest code paths.","date":"2013-02-05T19:02:00.565Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: so, i'm going to try to be data-driven about this.","date":"2013-02-05T19:02:30.800Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: tcp_raw gets better moving it to c++.  http_simple et al dotn' get worse.  for each change from here on, it needs a benchmark that outputs <label>:<number> where the <number> gets bigger with the result, and no other numbers get smaller.","date":"2013-02-05T19:03:12.589Z","type":"message"}
+{"nick":"isaacs","message":"(or at least, not much smaller, and not without understanding why)","date":"2013-02-05T19:03:27.669Z","type":"message"}
+{"nick":"isaacs","message":"we don't have to be slaves to local maxima","date":"2013-02-05T19:03:35.829Z","type":"message"}
+{"nick":"isaacs","message":"indutny: yes, that can improve a lot.","date":"2013-02-05T19:03:46.489Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T19:04:05.175Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: and that makes sense because you're removing a hop to and from js-land.","date":"2013-02-05T19:04:10.754Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: yep.","date":"2013-02-05T19:04:15.868Z","type":"message"}
+{"nick":"isaacs","message":"well, there's still a hop","date":"2013-02-05T19:04:20.928Z","type":"message"}
+{"nick":"isaacs","message":"it just happens later.","date":"2013-02-05T19:04:24.318Z","type":"message"}
+{"nick":"sgallagh","reason":"Ping timeout: 240 seconds","date":"2013-02-05T19:04:30.305Z","type":"quit"}
+{"nick":"isaacs","message":"so, V8 is not opting and deopting process._makeCallback a lot","date":"2013-02-05T19:04:32.868Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-05T19:05:10.755Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2013-02-05T19:05:27.137Z","type":"quit"}
+{"nick":"mikeal","date":"2013-02-05T19:05:36.835Z","type":"join"}
+{"nick":"piscisaureus_","date":"2013-02-05T19:06:03.497Z","type":"join"}
+{"nick":"trevnorris","message":"ok. it's coming together.","date":"2013-02-05T19:06:08.138Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: well, i'm feeling pretty done with PR-4656, and am going to wait for your patch to land before doing much with readable streams.","date":"2013-02-05T19:07:39.758Z","type":"message"}
+{"nick":"trevnorris","message":"i'm going to try working .splice() out of _tickCallback. it's just annoying me.","date":"2013-02-05T19:08:40.757Z","type":"message"}
+{"nick":"lohkey","date":"2013-02-05T19:08:53.554Z","type":"join"}
+{"nick":"bradleymeck","reason":"Ping timeout: 255 seconds","date":"2013-02-05T19:09:32.653Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: oh, and you were right about calling a function w/ wrong number of args. was something crazy like 131x's slower.","date":"2013-02-05T19:09:53.291Z","type":"message"}
+{"nick":"mikeal","reason":"Ping timeout: 255 seconds","date":"2013-02-05T19:09:59.834Z","type":"quit"}
+{"nick":"mmalecki","message":"isaacs: would a pull request make it happen faster :) ?","date":"2013-02-05T19:11:24.123Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-02-05T19:13:46.571Z","type":"join"}
+{"nick":"Ralt_","date":"2013-02-05T19:19:07.235Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-05T19:26:42.928Z","type":"quit"}
+{"nick":"mikeal","date":"2013-02-05T19:28:46.984Z","type":"join"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2013-02-05T19:31:31.053Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-02-05T19:31:53.139Z","type":"quit"}
+{"nick":"TheJH","reason":"Ping timeout: 252 seconds","date":"2013-02-05T19:31:57.365Z","type":"quit"}
+{"nick":"trevnorris","message":"_tickCallback is right out of quantum mechanics. it works when I try to log what's going on, but fails when I remove the log.","date":"2013-02-05T19:36:02.884Z","type":"message"}
+{"nick":"CoverSlide","message":"Schroedinger's callback","date":"2013-02-05T19:37:24.646Z","type":"message"}
+{"nick":"trevnorris","message":"dude, seriously. anytime I console.log from nextTick, or _tickCallback it works. but when they're removed it fails....","date":"2013-02-05T19:40:16.824Z","type":"message"}
+{"nick":"CoverSlide","message":"maybe try using process.stdout.write","date":"2013-02-05T19:40:50.918Z","type":"message"}
+{"nick":"trevnorris","message":"ah. good one.","date":"2013-02-05T19:42:06.216Z","type":"message"}
+{"nick":"trevnorris","message":"so StartTickSpinner has a comment referencing ev_prepare, but thought bnoordhuis told me ev was removed or some such?","date":"2013-02-05T19:44:45.818Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 245 seconds","date":"2013-02-05T19:45:51.144Z","type":"quit"}
+{"nick":"tjfontaine","message":"it was, but not all comments may be up to date","date":"2013-02-05T19:48:07.234Z","type":"message"}
+{"nick":"trevnorris","message":"ok, good enough.","date":"2013-02-05T19:48:23.326Z","type":"message"}
+{"nick":"TheJH","date":"2013-02-05T19:54:05.892Z","type":"join"}
+{"nick":"indutny","message":"isaacs: I've nice idea","date":"2013-02-05T19:54:06.769Z","type":"message"}
+{"nick":"indutny","message":"about how to make reviewing more challenging","date":"2013-02-05T19:54:11.843Z","type":"message"}
+{"nick":"indutny","message":"for every LGTM comment we should add +1 to member's score","date":"2013-02-05T19:54:31.002Z","type":"message"}
+{"nick":"indutny","message":"but if merged commit has introduced error later we should -1.5 from member's score","date":"2013-02-05T19:54:56.809Z","type":"message"}
+{"nick":"tjfontaine","message":"so what would your score be? :)","date":"2013-02-05T19:55:09.077Z","type":"message"}
+{"nick":"indutny","message":"I hope it'll be positive :)","date":"2013-02-05T19:55:26.717Z","type":"message"}
+{"nick":"indutny","message":"but it'll be motivating anyway","date":"2013-02-05T19:56:00.610Z","type":"message"}
+{"nick":"tjfontaine","message":"I think things like gerrit and rietveld have similar concepts","date":"2013-02-05T19:56:41.404Z","type":"message"}
+{"nick":"sblom","date":"2013-02-05T19:57:21.841Z","type":"join"}
+{"nick":"indutny","message":"really?","date":"2013-02-05T19:58:00.237Z","type":"message"}
+{"nick":"indutny","message":"haven't used it from maintainer's side","date":"2013-02-05T19:58:10.603Z","type":"message"}
+{"nick":"sblom","message":"isaacs: I've tried to trick the new installer into installing x64 and x86 side by side like you have and it has resisted completely.","date":"2013-02-05T20:00:22.782Z","type":"message"}
+{"nick":"trevnorris","message":"in Tick _tickCallback is gotten every time using `process->Get(...)`, but since it shouldn't change can't it just be gotten once?","date":"2013-02-05T20:00:52.030Z","type":"message"}
+{"nick":"sblom","message":"isaacs: It's not the end of the world if others can do what you've done, obviously. :)","date":"2013-02-05T20:01:35.129Z","type":"message"}
+{"nick":"sblom","message":"isaacs: But it really bothers me that I can't figure out how it's even possible for you to have done it.","date":"2013-02-05T20:01:53.438Z","type":"message"}
+{"nick":"sblom","message":"piscisaureus_: do you have any feedback on http://github.com/joyent/node/issues/4694","date":"2013-02-05T20:02:37.396Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-02-05T20:02:42.868Z","type":"join"}
+{"nick":"sblom","message":"(installer patch)","date":"2013-02-05T20:02:43.441Z","type":"message"}
+{"nick":"sgallagh","date":"2013-02-05T20:06:46.366Z","type":"join"}
+{"nick":"stagas","date":"2013-02-05T20:08:02.525Z","type":"join"}
+{"nick":"`3rdEden","reason":"Ping timeout: 272 seconds","date":"2013-02-05T20:11:28.713Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-02-05T20:17:17.960Z","type":"join"}
+{"nick":"stagas_","date":"2013-02-05T20:20:18.958Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 276 seconds","date":"2013-02-05T20:21:30.404Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-02-05T20:21:43.553Z","type":"nick"}
+{"nick":"isaacs","message":"mmalecki: i always pull in the new npm before a release.","date":"2013-02-05T20:24:31.886Z","type":"message"}
+{"nick":"isaacs","message":"mmalecki: so don't sweat it.  if it's in npm, it'llbe in the next node release.","date":"2013-02-05T20:24:42.965Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-02-05T20:27:31.316Z","type":"join"}
+{"nick":"indutny","message":"isaacs: yay","date":"2013-02-05T20:27:33.148Z","type":"message"}
+{"nick":"indutny","message":"isaacs: tests are passing","date":"2013-02-05T20:27:36.609Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2013-02-05T20:27:37.399Z","type":"message"}
+{"nick":"indutny","message":"let me run it once again for sure","date":"2013-02-05T20:27:41.356Z","type":"message"}
+{"nick":"indutny","message":"but it seems that I'm done with cryptostreams","date":"2013-02-05T20:27:48.066Z","type":"message"}
+{"nick":"indutny","action":"is crossing fingers","date":"2013-02-05T20:28:51.877Z","type":"action"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-02-05T20:29:52.035Z","type":"quit"}
+{"nick":"indutny","message":"YESSS","date":"2013-02-05T20:30:15.331Z","type":"message"}
+{"nick":"indutny","message":"only pummel tests left","date":"2013-02-05T20:30:40.025Z","type":"message"}
+{"nick":"hz","date":"2013-02-05T20:31:28.453Z","type":"join"}
+{"nick":"indutny","message":"interesting","date":"2013-02-05T20:34:36.695Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-02-05T20:34:40.563Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: is test-https-ci-reneg-attack.js timing sensitive?","date":"2013-02-05T20:34:43.713Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: i don't think so. why?","date":"2013-02-05T20:34:53.278Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-02-05T20:34:57.968Z","type":"message"}
+{"nick":"indutny","message":"I get 18 renegotiations instead of expected 17","date":"2013-02-05T20:35:08.488Z","type":"message"}
+{"nick":"indutny","message":"and reneg limit relies on timing","date":"2013-02-05T20:35:29.064Z","type":"message"}
+{"nick":"indutny","message":"as far as I can see in tls.js","date":"2013-02-05T20:35:33.067Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's right. i thought you meant timing sensitive as in milli- or microseconds","date":"2013-02-05T20:36:01.406Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-02-05T20:36:17.891Z","type":"message"}
+{"nick":"indutny","message":"I think I can safely ignore this","date":"2013-02-05T20:36:24.141Z","type":"message"}
+{"nick":"indutny","message":"considering that I haven't touched that code anyway :)","date":"2013-02-05T20:36:31.960Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: have a moment for a ? about uv_idle_start?","date":"2013-02-05T20:36:41.093Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: sure. what's up?","date":"2013-02-05T20:36:49.869Z","type":"message"}
+{"nick":"paddybyers","reason":"Read error: Connection reset by peer","date":"2013-02-05T20:37:35.445Z","type":"quit"}
+{"nick":"trevnorris","message":"bnoordhuis: StartTickSpinner is called and runs uv_idle_start, but that's only reached after a function has been passed to process.nextTick.","date":"2013-02-05T20:38:09.376Z","type":"message"}
+{"nick":"trevnorris","message":"so is uv_idle_start meant to begin idling node?","date":"2013-02-05T20:38:41.837Z","type":"message"}
+{"nick":"bnoordhuis","message":"well","date":"2013-02-05T20:38:49.891Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's something of a misnomer, really","date":"2013-02-05T20:38:58.156Z","type":"message"}
+{"nick":"bnoordhuis","message":"an idle handle prevents libuv from blocking in the poll syscall","date":"2013-02-05T20:39:10.208Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: has anyone explained to you how the event loop works in libuv?","date":"2013-02-05T20:40:32.304Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: nope","date":"2013-02-05T20:40:50.889Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, a short primer","date":"2013-02-05T20:41:00.532Z","type":"message"}
+{"nick":"paddybyers","date":"2013-02-05T20:41:09.756Z","type":"join"}
+{"nick":"bnoordhuis","message":"libuv has handles. most deal with i/o of some kind, e.g. tcp/pipe/udp handles","date":"2013-02-05T20:41:21.121Z","type":"message"}
+{"nick":"bnoordhuis","message":"then there's timers","date":"2013-02-05T20:41:26.321Z","type":"message"}
+{"nick":"bnoordhuis","message":"and then there are assorted leftovers like idle/prepare/check handles","date":"2013-02-05T20:41:43.187Z","type":"message"}
+{"nick":"bnoordhuis","message":"when you call uv_run(), it calls the system's poll function, e.g. epoll_wait() or kevent() or whatever","date":"2013-02-05T20:42:09.363Z","type":"message"}
+{"nick":"bnoordhuis","message":"usually, it blocks indefinitely or until the next timer expires","date":"2013-02-05T20:42:25.923Z","type":"message"}
+{"nick":"bnoordhuis","message":"but if you have an idle handle, it will do a poll with a zero timeout","date":"2013-02-05T20:42:45.328Z","type":"message"}
+{"nick":"bnoordhuis","message":"iow, peek (for new events) but don't block","date":"2013-02-05T20:42:53.328Z","type":"message"}
+{"nick":"trevnorris","message":"so why would uv_idle_start be called directly after a fn was passed to nextTick?","date":"2013-02-05T20:43:14.744Z","type":"message"}
+{"nick":"trevnorris","message":"seems it wouldn't need to enter an idle state if there was something to run.","date":"2013-02-05T20:43:36.708Z","type":"message"}
+{"nick":"bnoordhuis","message":"to give node a chance to fetch new events from the system through epoll_wait/kevent/port_getn","date":"2013-02-05T20:43:43.475Z","type":"message"}
+{"nick":"bnoordhuis","message":"but without blocking when it does so","date":"2013-02-05T20:43:58.567Z","type":"message"}
+{"nick":"bnoordhuis","message":"you could accomplish the same thing with a zero timeout timer","date":"2013-02-05T20:44:07.289Z","type":"message"}
+{"nick":"trevnorris","message":"aaahhhh... the world is coming together.","date":"2013-02-05T20:44:19.309Z","type":"message"}
+{"nick":"bnoordhuis","message":"we copied the idle handle concept from libev for reasons that have been forgotten in the fog of time","date":"2013-02-05T20:44:39.784Z","type":"message"}
+{"nick":"trevnorris","message":"so uv_idle_start is async. so that means it could be out while two fn's were passed to nextTick, right?","date":"2013-02-05T20:45:16.441Z","type":"message"}
+{"nick":"trevnorris","message":"meaning, it wouldn't have needed to be run the second time.","date":"2013-02-05T20:45:30.896Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mean node calls uv_idle_start twice, once for each function that's registered with process.nextTick?","date":"2013-02-05T20:46:06.883Z","type":"message"}
+{"nick":"trevnorris","message":"it's called every time nextTick is called","date":"2013-02-05T20:46:20.209Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2013-02-05T20:46:26.981Z","type":"message"}
+{"nick":"bnoordhuis","message":"possibly inefficient but not really harmful","date":"2013-02-05T20:46:38.584Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-05T20:46:58.286Z","type":"quit"}
+{"nick":"bnoordhuis","message":"libuv has a `if (handle->active) return` guard in uv_idle_start so no harm done","date":"2013-02-05T20:47:02.106Z","type":"message"}
+{"nick":"trevnorris","message":"so, most efficiently it should only need to run once a tickQueue is finished?","date":"2013-02-05T20:47:12.287Z","type":"message"}
+{"nick":"bnoordhuis","message":"not sure if we're talking about the same thing here","date":"2013-02-05T20:48:05.662Z","type":"message"}
+{"nick":"bnoordhuis","message":"node only needs to call uv_idle_start once per tick of the event loop","date":"2013-02-05T20:48:17.115Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. on the first call to process.nextTick","date":"2013-02-05T20:48:23.366Z","type":"message"}
+{"nick":"bnoordhuis","message":"but again, calling uv_idle_start repeatedly doesn't really hurt","date":"2013-02-05T20:48:39.853Z","type":"message"}
+{"nick":"trevnorris","message":"it's being called every time process.nextTick is called.","date":"2013-02-05T20:48:47.390Z","type":"message"}
+{"nick":"trevnorris","message":"so if nextTick was called twice in the same function then it would call uv_idle_start a second time before it's had a chance to respond from the first time.","date":"2013-02-05T20:49:18.009Z","type":"message"}
+{"nick":"qmx|away","new_nick":"qmx","date":"2013-02-05T20:52:01.438Z","type":"nick"}
+{"nick":"qmx","reason":"Excess Flood","date":"2013-02-05T20:52:05.705Z","type":"quit"}
+{"nick":"stagas_","date":"2013-02-05T20:53:05.453Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 245 seconds","date":"2013-02-05T20:53:21.832Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-02-05T20:53:33.312Z","type":"nick"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-02-05T20:53:50.711Z","type":"quit"}
+{"nick":"qmx","date":"2013-02-05T20:53:55.611Z","type":"join"}
+{"nick":"bnoordhuis","message":"trevnorris: uv_idle_start just activates the handle","date":"2013-02-05T20:54:07.958Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can call it just once or a billion times, it doesn't really matter","date":"2013-02-05T20:54:33.092Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ok, so calling it multiple times doesn't hurt.","date":"2013-02-05T20:54:53.919Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's what i'm trying to convey, yes :)","date":"2013-02-05T20:55:04.738Z","type":"message"}
+{"nick":"trevnorris","message":"guess what i'm trying to figure out is where the optimal place to call it is, since calling cc from js does hurt.","date":"2013-02-05T20:55:27.214Z","type":"message"}
+{"nick":"trevnorris","message":"btw, thanks for explaining all that.","date":"2013-02-05T20:56:19.977Z","type":"message"}
+{"nick":"bnoordhuis","message":"np","date":"2013-02-05T20:56:23.586Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, if you're on linux, profile with perf","date":"2013-02-05T20:56:33.197Z","type":"message"}
+{"nick":"bnoordhuis","message":"that gives you a nice rundown of where cpu time is spent","date":"2013-02-05T20:56:41.284Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least for c++ code (i'm working on the js bit)","date":"2013-02-05T20:56:58.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"uv_idle_start and friends never show up for me so it's probably negligible","date":"2013-02-05T20:57:21.027Z","type":"message"}
+{"nick":"trevnorris","message":"dude, i've had to create a pad just to list all the ways to profile you keep telling me about.","date":"2013-02-05T20:57:50.058Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2013-02-05T20:57:56.013Z","type":"message"}
+{"nick":"bnoordhuis","message":"different tools, different uses","date":"2013-02-05T20:58:10.016Z","type":"message"}
+{"nick":"bnoordhuis","message":"perf is really great for cpu profiling","date":"2013-02-05T20:58:19.384Z","type":"message"}
+{"nick":"bnoordhuis","message":"it even tracks L1/L2 cache stalls/hits/misses for you","date":"2013-02-05T20:58:37.199Z","type":"message"}
+{"nick":"trevnorris","message":"valgrind for memory, perf for cpu, strace for system calls... any I missed?","date":"2013-02-05T20:59:00.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"provided your machine has the hardware performance counters for that, of course","date":"2013-02-05T20:59:00.624Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, that's pretty much the holy trinity","date":"2013-02-05T20:59:16.045Z","type":"message"}
+{"nick":"bnoordhuis","message":"gdb for debugging, of course","date":"2013-02-05T20:59:20.447Z","type":"message"}
+{"nick":"trevnorris","message":"yeah.... need to learn how to use that. you'd mock me endlessly if you saw how I debug.","date":"2013-02-05T21:00:00.000Z","type":"message"}
+{"nick":"tjfontaine","message":"printfs","date":"2013-02-05T21:00:10.303Z","type":"message"}
+{"nick":"tjfontaine","message":"just about anything is better than trying to debug xbox1 with the tri-color led and blinking","date":"2013-02-05T21:00:47.395Z","type":"message"}
+{"nick":"bnoordhuis","message":"haha","date":"2013-02-05T21:01:05.392Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: yes, that should be a persistent","date":"2013-02-05T21:03:39.871Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: ie, process._tickCallback should be persistent","date":"2013-02-05T21:03:53.070Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: Re the benchmark-refactor pr..","date":"2013-02-05T21:04:42.850Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: as you know, i like the idea of getting our benchmarks in order","date":"2013-02-05T21:05:11.679Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: but i think this bench_timer thing istoo complicated.","date":"2013-02-05T21:05:18.539Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: it should be more like test/common.js","date":"2013-02-05T21:05:29.279Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: i'd like for \"adding a benchmark\" to be on par with \"adding a test\" in terms of difficulty and learning curve.","date":"2013-02-05T21:05:48.569Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: and then `make bench` should run all the benchmarks, and just spit out the results of each one.","date":"2013-02-05T21:06:14.889Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: i understand, but dude it's not that easy. way more factors to take into account.","date":"2013-02-05T21:06:22.963Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: sure.","date":"2013-02-05T21:06:28.303Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: some of them can use a shared timer implementation, i mean, that's fine.","date":"2013-02-05T21:06:38.048Z","type":"message"}
+{"nick":"isaacs","message":"especially for the buffer stuff, and other tests where you want to do high-frequency testing.","date":"2013-02-05T21:06:51.048Z","type":"message"}
+{"nick":"isaacs","message":"but usually, you just want to grab process.hrtime() at the start, and then again at the end, and tell it how many ops there were, and spit out a number.","date":"2013-02-05T21:07:17.318Z","type":"message"}
+{"nick":"isaacs","message":"some common functionality clearly is needed.","date":"2013-02-05T21:07:31.438Z","type":"message"}
+{"nick":"trevnorris","message":"a lot of the current tests are just as complicated, expect you need to do things like set env vars or munge urls","date":"2013-02-05T21:08:09.772Z","type":"message"}
+{"nick":"trevnorris","message":"s/expect/except","date":"2013-02-05T21:08:20.172Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2013-02-05T21:08:23.250Z","type":"message"}
+{"nick":"isaacs","message":"i'm not excusing our current benchmark suite :)  it's beyond terrible.","date":"2013-02-05T21:08:33.074Z","type":"message"}
+{"nick":"isaacs","message":"and it's way overdue for a massive overhaul.","date":"2013-02-05T21:08:39.847Z","type":"message"}
+{"nick":"loladiro","date":"2013-02-05T21:09:08.484Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: so what is it you'd like to see changed?","date":"2013-02-05T21:09:33.490Z","type":"message"}
+{"nick":"trevnorris","message":"so far every feature exists because of a request by someone in here.","date":"2013-02-05T21:09:51.377Z","type":"message"}
+{"nick":"isaacs","message":"righ","date":"2013-02-05T21:09:55.936Z","type":"message"}
+{"nick":"isaacs","message":"and it's been a very informative exploration :)","date":"2013-02-05T21:10:09.386Z","type":"message"}
+{"nick":"isaacs","message":"and i'd like to keep you involved.","date":"2013-02-05T21:10:13.010Z","type":"message"}
+{"nick":"isaacs","message":"but i'm reading over it, and imagining myself as a new contributor trying to add a patch...","date":"2013-02-05T21:10:35.577Z","type":"message"}
+{"nick":"isaacs","message":"ading a test is soooo easy.","date":"2013-02-05T21:10:38.600Z","type":"message"}
+{"nick":"isaacs","message":"and adding a benchmark requires a lot of understanding","date":"2013-02-05T21:10:48.806Z","type":"message"}
+{"nick":"isaacs","message":"it's necessarily somewhat harder, of course.","date":"2013-02-05T21:10:54.825Z","type":"message"}
+{"nick":"isaacs","message":"but like, we should not have it parsing command line args, or doing stuff based on environmetn vars, etc.","date":"2013-02-05T21:11:20.515Z","type":"message"}
+{"nick":"isaacs","message":"it should just run a bunch of stuff, and spit out results.","date":"2013-02-05T21:11:27.645Z","type":"message"}
+{"nick":"isaacs","message":"if we want to check the simple http server with multiple different response sizes, great: benchmark/http.js can just run it wtih 1,10,1024,102400","date":"2013-02-05T21:12:00.378Z","type":"message"}
+{"nick":"isaacs","message":"you know?","date":"2013-02-05T21:12:03.876Z","type":"message"}
+{"nick":"isaacs","message":"and output multiple different lines of results.","date":"2013-02-05T21:12:13.205Z","type":"message"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-02-05T21:12:25.121Z","type":"nick"}
+{"nick":"trevnorris","message":"the cli options were for fine grain testing, but all of them are optional.","date":"2013-02-05T21:13:00.176Z","type":"message"}
+{"nick":"Ralt_","date":"2013-02-05T21:13:10.860Z","type":"join"}
+{"nick":"isaacs","message":"right","date":"2013-02-05T21:13:21.354Z","type":"message"}
+{"nick":"trevnorris","message":"for example, multiple tests will live in a single file. but as bnoordhuis pointed out if he wants to observe valgrind on one of them he can't","date":"2013-02-05T21:13:21.624Z","type":"message"}
+{"nick":"isaacs","message":"we can maybe have shared files in benchmark/lib or something, and multiple different tests that load them in with different settings.","date":"2013-02-05T21:13:47.144Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 255 seconds","date":"2013-02-05T21:14:11.644Z","type":"quit"}
+{"nick":"trevnorris","message":"yeah. I built that in. you can setup default parameters.","date":"2013-02-05T21:14:12.652Z","type":"message"}
+{"nick":"isaacs","message":"so benchmark/http-simple-1024.js would do something like require('./lib/http-simple.js')(1024), whatever.","date":"2013-02-05T21:14:15.044Z","type":"message"}
+{"nick":"trevnorris","message":"checkout benchmark/_net_callbacks.js","date":"2013-02-05T21:14:19.189Z","type":"message"}
+{"nick":"trevnorris","message":"that shows outputs specific for iterative testing and running them through make bench","date":"2013-02-05T21:14:44.472Z","type":"message"}
+{"nick":"trevnorris","message":"so all tests run in `make bench` mode by default, but then can be customized by cli options.","date":"2013-02-05T21:15:35.234Z","type":"message"}
+{"nick":"trevnorris","message":"have you tried running `make bench` with it?","date":"2013-02-05T21:16:16.341Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-05T21:16:42.412Z","type":"message"}
+{"nick":"trevnorris","message":"is that the type of output you're talking about?","date":"2013-02-05T21:16:53.144Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T21:17:10.284Z","type":"join"}
+{"nick":"isaacs","message":"sort of...","date":"2013-02-05T21:17:25.351Z","type":"message"}
+{"nick":"sgallagh","reason":"Remote host closed the connection","date":"2013-02-05T21:17:25.573Z","type":"quit"}
+{"nick":"isaacs","message":"but it'd be better to have only one thing per line","date":"2013-02-05T21:17:29.463Z","type":"message"}
+{"nick":"trevnorris","message":"talking specifically about the net benchmarks?","date":"2013-02-05T21:17:51.766Z","type":"message"}
+{"nick":"isaacs","message":"tcp_raw_c2s_max: 5.8783\\ntcp_raw_c2s_avg: 4.9025","date":"2013-02-05T21:17:59.211Z","type":"message"}
+{"nick":"isaacs","message":"etc","date":"2013-02-05T21:17:59.691Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-05T21:18:01.421Z","type":"message"}
+{"nick":"trevnorris","message":"ok. give me 1 min","date":"2013-02-05T21:18:08.960Z","type":"message"}
+{"nick":"isaacs","message":"i'm finding it a bit weird to go about adding a benchmark with this, because there's a lot of stuff to know","date":"2013-02-05T21:19:16.590Z","type":"message"}
+{"nick":"isaacs","message":"like, for example, there's a regression in fs.WriteStream","date":"2013-02-05T21:19:28.140Z","type":"message"}
+{"nick":"isaacs","message":"i can write up a demonstrative benchmark pretty easily","date":"2013-02-05T21:19:35.790Z","type":"message"}
+{"nick":"hz","date":"2013-02-05T21:19:47.507Z","type":"quit"}
+{"nick":"isaacs","message":"but i'm not sure how to use bench_timer to do it... or what the benefit would even be of that","date":"2013-02-05T21:19:57.316Z","type":"message"}
+{"nick":"trevnorris","message":"can you gist an example of what you'd use?","date":"2013-02-05T21:20:33.157Z","type":"message"}
+{"nick":"isaacs","message":"sure.","date":"2013-02-05T21:22:24.538Z","type":"message"}
+{"nick":"indutny","message":"this two-way ssl thing is melting my brain","date":"2013-02-05T21:22:26.956Z","type":"message"}
+{"nick":"indutny","message":"I've almost finished it :)","date":"2013-02-05T21:22:34.023Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: is \\n not showing up as a new line on your machine?","date":"2013-02-05T21:22:45.516Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: nono, i was using that as an example :)","date":"2013-02-05T21:22:55.947Z","type":"message"}
+{"nick":"trevnorris","message":"ah, ok.","date":"2013-02-05T21:23:03.801Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: since you can't put a literal \\n in an irc message :)","date":"2013-02-05T21:23:06.120Z","type":"message"}
+{"nick":"isaacs","message":"oh!  also, this:     var elapsed = hrtime[0] * 1e9 + hrtime[1];","date":"2013-02-05T21:23:32.857Z","type":"message"}
+{"nick":"isaacs","message":"it's better to do elapsed = hrtime[0] + hrtime[1]/1e9;","date":"2013-02-05T21:23:46.757Z","type":"message"}
+{"nick":"isaacs","message":"you can lose precision","date":"2013-02-05T21:23:56.457Z","type":"message"}
+{"nick":"isaacs","message":"better to lose precision on the nanoseconds than on the seconds :)","date":"2013-02-05T21:24:11.267Z","type":"message"}
+{"nick":"isaacs","message":"(though it's unlikely, since presumably this is a diff hrtime)","date":"2013-02-05T21:24:23.587Z","type":"message"}
+{"nick":"trevnorris","message":"ah, got it.","date":"2013-02-05T21:24:55.437Z","type":"message"}
+{"nick":"indutny","message":"time to sleep","date":"2013-02-05T21:26:16.037Z","type":"message"}
+{"nick":"indutny","message":"ttyl","date":"2013-02-05T21:26:16.367Z","type":"message"}
+{"nick":"indutny","action":"&","date":"2013-02-05T21:26:32.308Z","type":"action"}
+{"nick":"LOUDBOT","message":"WHAT THE FUCK IS UP WITH THIS JUNE 28TH CAPS LOCK DAY BULLSHIT","date":"2013-02-05T21:26:32.942Z","type":"message"}
+{"nick":"stagas","date":"2013-02-05T21:26:52.659Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: (sorry for the delay, i'm forgetting what branch this was on...)","date":"2013-02-05T21:28:37.484Z","type":"message"}
+{"nick":"trevnorris","message":"eh, no worries. a lot going on.","date":"2013-02-05T21:28:57.783Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037v0.8\u000f * \u00026b99fd2\u0002 : zlib: pass object size hint to V8  Inform V8 that the zlib context object (+1 more commits) - http://git.io/N7L44Q","date":"2013-02-05T21:29:01.127Z","type":"message"}
+{"nick":"isaacs","message":"crap.  i lost it.","date":"2013-02-05T21:29:22.565Z","type":"message"}
+{"nick":"isaacs","message":"i hadn't checked the test in, and clobbered it with a git checkout -f","date":"2013-02-05T21:29:33.673Z","type":"message"}
+{"nick":"isaacs","message":"oh well.","date":"2013-02-05T21:29:35.906Z","type":"message"}
+{"nick":"Ralt_","reason":"Remote host closed the connection","date":"2013-02-05T21:29:53.710Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 248 seconds","date":"2013-02-05T21:32:04.802Z","type":"quit"}
+{"nick":"indutny","message":"isaacs: a question :)","date":"2013-02-05T21:34:53.386Z","type":"message"}
+{"nick":"indutny","message":"isaacs: tls.CleartextStream.end() - half close or not?","date":"2013-02-05T21:35:04.065Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037v0.8\u000f * \u0002a86ebbe\u0002 : blog: remove dangling symlink  Fixes #4716. - http://git.io/YAD82Q","date":"2013-02-05T21:35:41.592Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: ping","date":"2013-02-05T21:36:26.877Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: pong","date":"2013-02-05T21:36:33.680Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: node-gyp question. what's the expected output when g++ isn't installed?","date":"2013-02-05T21:36:51.114Z","type":"message"}
+{"nick":"bnoordhuis","message":"i frequently get bug reports from people who can't install my modules","date":"2013-02-05T21:37:05.143Z","type":"message"}
+{"nick":"bnoordhuis","message":"and it usually turns out they're missing the compiler toolchain or make or something","date":"2013-02-05T21:37:21.513Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: it would probably try invoking it anyways, and then say g++ not found","date":"2013-02-05T21:37:21.643Z","type":"message"}
+{"nick":"tjfontaine","message":"or cc not found","date":"2013-02-05T21:37:30.368Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://github.com/bnoordhuis/node-heapdump/issues/6 <- example","date":"2013-02-05T21:37:38.902Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: updated. with those two changes.","date":"2013-02-05T21:37:41.967Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: the problem is that people don't know how to sift through npm/node-gyp's output","date":"2013-02-05T21:37:46.617Z","type":"message"}
+{"nick":"TooTallNate","message":"since it's so verbose","date":"2013-02-05T21:37:49.000Z","type":"message"}
+{"nick":"TooTallNate","message":"at least that's my theory","date":"2013-02-05T21:37:52.751Z","type":"message"}
+{"nick":"bnoordhuis","message":"according to the guy who reported it it says \"gyp: binding.gyp not found (cwd: /home/ubuntu/$) while trying to load binding.gyp\"","date":"2013-02-05T21:37:58.424Z","type":"message"}
+{"nick":"bnoordhuis","message":"and i didn't see it in the npm-debug.log either","date":"2013-02-05T21:38:08.697Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: that's pretty strange, i don't think i've seen that one","date":"2013-02-05T21:38:44.341Z","type":"message"}
+{"nick":"tjfontaine","message":"nor have I","date":"2013-02-05T21:38:52.120Z","type":"message"}
+{"nick":"tjfontaine","message":"cwd $ is interesting though","date":"2013-02-05T21:39:03.026Z","type":"message"}
+{"nick":"TooTallNate","message":" /home/ubuntu/$","date":"2013-02-05T21:39:14.073Z","type":"message"}
+{"nick":"TooTallNate","message":"ya, strange","date":"2013-02-05T21:39:18.924Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah. that's asking for trouble, that is :)","date":"2013-02-05T21:39:19.068Z","type":"message"}
+{"nick":"tjfontaine","message":"I know, the $ is what interests me","date":"2013-02-05T21:39:21.558Z","type":"message"}
+{"nick":"TooTallNate","message":"i think his invocation was weird perhaps","date":"2013-02-05T21:39:32.492Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: here you go: https://gist.github.com/isaacs/4717966","date":"2013-02-05T21:40:12.594Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: what's nice about this benchmark is that you can drop that file into v0.8 or master, and see changes.","date":"2013-02-05T21:40:39.696Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: incidentally, gyp gets run (and that error being returned) before g++ is even invoked","date":"2013-02-05T21:40:56.320Z","type":"message"}
+{"nick":"isaacs","message":"(printing the node version in the result is kind of silly, of course)","date":"2013-02-05T21:40:57.506Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: so it's strange that he's implying they're related","date":"2013-02-05T21:41:06.875Z","type":"message"}
+{"nick":"bnoordhuis","message":"TooTallNate: good point","date":"2013-02-05T21:41:15.666Z","type":"message"}
+{"nick":"tjfontaine","message":"lame, $ isn't the problem (at least with .8 and darwin) :P","date":"2013-02-05T21:41:26.279Z","type":"message"}
+{"nick":"TooTallNate","message":"i mean i think people sometimes clone repos, run node-gyp rebuild, but don't cd into the dir first","date":"2013-02-05T21:41:54.905Z","type":"message"}
+{"nick":"TooTallNate","message":"thus, binding.gyp not being there...","date":"2013-02-05T21:42:02.304Z","type":"message"}
+{"nick":"tjfontaine","message":"quite possible","date":"2013-02-05T21:42:18.740Z","type":"message"}
+{"nick":"tjfontaine","message":"s/possible/probable/","date":"2013-02-05T21:42:41.652Z","type":"message"}
+{"nick":"bnoordhuis","message":"you think so?","date":"2013-02-05T21:43:02.053Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: refactored my \"stream parser\" thingy into a standalone mixin module finally: https://github.com/TooTallNate/node-stream-parser","date":"2013-02-05T21:43:07.394Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't want people that clueless touching my beautiful code","date":"2013-02-05T21:43:12.010Z","type":"message"}
+{"nick":"tjfontaine","message":"I can certainly replicate it by `rm binding.gyp` :) Exception: binding.gyp not found (cwd: /Users/tjfontaine/$) while trying to load binding.gyp","date":"2013-02-05T21:43:15.465Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: it's either that or they have some weird invocation as TooTallNate suggested, like they're trying to do $HOME or something","date":"2013-02-05T21:43:59.672Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: well ya :p","date":"2013-02-05T21:44:00.716Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: :P","date":"2013-02-05T21:44:04.237Z","type":"message"}
+{"nick":"isaacs","message":"indutny: hm... it should match the net.Socket API on that.","date":"2013-02-05T21:44:08.104Z","type":"message"}
+{"nick":"indutny","message":"so, no half-close by default","date":"2013-02-05T21:44:16.725Z","type":"message"}
+{"nick":"isaacs","message":"indutny: ie, if you set allowHalfOpen, then it's true, otherwise, no","date":"2013-02-05T21:44:17.654Z","type":"message"}
+{"nick":"indutny","message":"that's how it was working","date":"2013-02-05T21:44:20.440Z","type":"message"}
+{"nick":"isaacs","message":"indutny: not for http, no","date":"2013-02-05T21:44:22.663Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: hahaha… never underestimate the user","date":"2013-02-05T21:44:27.008Z","type":"message"}
+{"nick":"isaacs","message":"indutny: for arbitrary tls.connect, whatever.","date":"2013-02-05T21:44:28.813Z","type":"message"}
+{"nick":"TooTallNate","message":"or overestimate in this case","date":"2013-02-05T21:44:31.181Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2013-02-05T21:44:34.495Z","type":"message"}
+{"nick":"indutny","message":"ok, I'll think about it","date":"2013-02-05T21:44:37.484Z","type":"message"}
+{"nick":"isaacs","message":"indutny: oh, i see, no, not by default","date":"2013-02-05T21:44:40.473Z","type":"message"}
+{"nick":"isaacs","message":"by default we don't allow halfopen","date":"2013-02-05T21:44:44.323Z","type":"message"}
+{"nick":"indutny","message":"right now I'm just trying to make it end streams gracefully","date":"2013-02-05T21:44:49.848Z","type":"message"}
+{"nick":"isaacs","message":"kewl","date":"2013-02-05T21:44:53.473Z","type":"message"}
+{"nick":"isaacs","message":"getting halfOpen right is really tricky","date":"2013-02-05T21:45:01.263Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: I mean, the username is ubuntu, and the path is $, the bar is pretty low already","date":"2013-02-05T21:45:03.938Z","type":"message"}
+{"nick":"bnoordhuis","message":"true","date":"2013-02-05T21:45:14.771Z","type":"message"}
+{"nick":"bnoordhuis","message":"streams question: is it legal to emit one more data event from your stream's end() function?","date":"2013-02-05T21:46:49.419Z","type":"message"}
+{"nick":"bnoordhuis","message":"i need to emit the leftovers (so to speak) before shutting down","date":"2013-02-05T21:47:21.646Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: this is a duplex stream?","date":"2013-02-05T21:47:27.752Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, a stream.Stream","date":"2013-02-05T21:47:37.552Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: Transform invokes a _flush callback function if deinfed","date":"2013-02-05T21:47:38.406Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, i should've mentioned that it should also work with v0.8","date":"2013-02-05T21:47:56.926Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. the old streams model","date":"2013-02-05T21:48:01.878Z","type":"message"}
+{"nick":"TooTallNate","message":"bnoordhuis: i've been using izs/readable-stream to keep backwards compat","date":"2013-02-05T21:48:07.684Z","type":"message"}
+{"nick":"TooTallNate","message":"adding it as a dep","date":"2013-02-05T21:48:19.885Z","type":"message"}
+{"nick":"TooTallNate","message":"although he needs to update it again soon","date":"2013-02-05T21:48:32.641Z","type":"message"}
+{"nick":"TooTallNate","message":" /cc isaacs ","date":"2013-02-05T21:48:34.477Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess it's conceptually a transform stream","date":"2013-02-05T21:48:36.474Z","type":"message"}
+{"nick":"bnoordhuis","message":"you write data at one end and transformed (iconv-ified) data comes out at the other end","date":"2013-02-05T21:48:50.652Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: so, for example, a benchmark/net.js could run all the differnet modes easily enough","date":"2013-02-05T21:49:03.180Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: you mean benchmark/net.js could run all the tests in benchmark/net/ ?","date":"2013-02-05T21:50:54.940Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: sure.","date":"2013-02-05T21:51:00.819Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: or we could have multiple ones, like we do for test/simple/test-http-* etc.","date":"2013-02-05T21:51:20.739Z","type":"message"}
+{"nick":"isaacs","message":"it can be somewhat flexible","date":"2013-02-05T21:51:29.739Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: so, we can still have benchmarks that take cli args, like we do with tests.  but runnign by default should do a \"spread\"","date":"2013-02-05T21:53:35.768Z","type":"message"}
+{"nick":"isaacs","message":"and each one should just be spitting out a few numbers.","date":"2013-02-05T21:53:41.207Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: then i'll need to know the default values you'll want for the net tests.","date":"2013-02-05T21:54:35.406Z","type":"message"}
+{"nick":"stagas","date":"2013-02-05T21:54:36.289Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-02-05T21:55:07.362Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: what i'm wondering is if every test also has a spread as far as the fs thoughput test, the output is going to be 1000 lines long.","date":"2013-02-05T21:56:46.058Z","type":"message"}
+{"nick":"trevnorris","message":"output of make bench, that is.","date":"2013-02-05T21:56:53.098Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: that's fine :)","date":"2013-02-05T21:56:58.497Z","type":"message"}
+{"nick":"trevnorris","message":"ok, cool.","date":"2013-02-05T21:57:10.812Z","type":"message"}
+{"nick":"isaacs","message":"if we had 1000 lines of consistently parseable and comparable benchmark outputs, then we'll have traded a very hard problem for a very easy one :)","date":"2013-02-05T21:57:34.277Z","type":"message"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-02-05T21:57:50.743Z","type":"quit"}
+{"nick":"isaacs","message":"then we can throw them in a db, break each one down with a graph, etc.","date":"2013-02-05T21:58:00.896Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-02-05T21:58:08.410Z","type":"quit"}
+{"nick":"tjfontaine","message":"amen.","date":"2013-02-05T21:58:13.161Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: now, I have a patch sitting local that runs all the net tests in two processes, but since a single one failing will cause a massive failure in automated testing.","date":"2013-02-05T21:58:19.812Z","type":"message"}
+{"nick":"trevnorris","message":"so I haven't updated the current PR with it","date":"2013-02-05T21:58:38.390Z","type":"message"}
+{"nick":"trevnorris","message":"and it hasn't been uncommon enough that I feel like it's super reliable.","date":"2013-02-05T21:59:03.616Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: yes, updating readable-stream is on my todo list","date":"2013-02-05T21:59:07.585Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: yeah, so, you can run the client and server both as children, and have the parent kill them both if anything goes awry","date":"2013-02-05T21:59:35.605Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T21:59:41.968Z","type":"quit"}
+{"nick":"trevnorris","message":"the parent dieing is where i'm having problems.","date":"2013-02-05T21:59:56.913Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: oh, well... that shouldn't happen :)","date":"2013-02-05T22:00:04.495Z","type":"message"}
+{"nick":"isaacs","message":"the parent should be very small.","date":"2013-02-05T22:00:08.585Z","type":"message"}
+{"nick":"trevnorris","message":"lol ok","date":"2013-02-05T22:00:09.040Z","type":"message"}
+{"nick":"isaacs","message":"like, one function","date":"2013-02-05T22:00:18.765Z","type":"message"}
+{"nick":"isaacs","message":"< 50 lines long","date":"2013-02-05T22:00:24.574Z","type":"message"}
+{"nick":"trevnorris","message":"is there no perf hit sharing stdio with a child process?","date":"2013-02-05T22:00:42.802Z","type":"message"}
+{"nick":"isaacs","message":"meh.  not relevantly so, and if so, it's consistent anyway.","date":"2013-02-05T22:01:04.024Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2013-02-05T22:01:10.982Z","type":"message"}
+{"nick":"isaacs","message":"we're only going for comparable benchmarks, not \"is node faster than python\" benchmarks","date":"2013-02-05T22:01:16.354Z","type":"message"}
+{"nick":"isaacs","message":"ie, \"grownup\" benchmarks, the kind used for debugging, not childish bragging benchmarks :)","date":"2013-02-05T22:01:33.234Z","type":"message"}
+{"nick":"trevnorris","message":"well. i was thinking more of \"is node as fast as c\" but it can wait. ;-)","date":"2013-02-05T22:01:46.500Z","type":"message"}
+{"nick":"isaacs","message":"as long as it's apples-to-apples, some consistent losses are fine.","date":"2013-02-05T22:01:48.754Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-05T22:02:01.636Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: so can we solidify exactly what the output should be for the different types of tests? (e.g. multi-iteration like net, single async run like fs throughput or single sync run like buffers)","date":"2013-02-05T22:03:57.153Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: let's just for now say, every line to stdout shoudl be <label>: number","date":"2013-02-05T22:04:32.172Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2013-02-05T22:04:40.692Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: we can have the benchmark runner throw if the child output doesn't comply","date":"2013-02-05T22:04:47.912Z","type":"message"}
+{"nick":"isaacs","message":"ie, whatever `make bench` does","date":"2013-02-05T22:04:52.862Z","type":"message"}
+{"nick":"trevnorris","message":"so remove the min/max/med and just print mean?","date":"2013-02-05T22:04:56.267Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T22:05:02.980Z","type":"join"}
+{"nick":"isaacs","message":"well, you can print each of those on separate lines","date":"2013-02-05T22:05:04.032Z","type":"message"}
+{"nick":"trevnorris","message":"each with the name before it?","date":"2013-02-05T22:05:21.653Z","type":"message"}
+{"nick":"isaacs","message":"blah_blah_min: 1","date":"2013-02-05T22:05:23.551Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2013-02-05T22:05:26.352Z","type":"message"}
+{"nick":"trevnorris","message":"will do","date":"2013-02-05T22:05:27.658Z","type":"message"}
+{"nick":"isaacs","message":"blah_blah_mean: 2","date":"2013-02-05T22:05:27.790Z","type":"message"}
+{"nick":"isaacs","message":"blah_blah_max: 3","date":"2013-02-05T22:05:31.451Z","type":"message"}
+{"nick":"isaacs","message":"etc.","date":"2013-02-05T22:05:32.090Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: so the buffer tests are pretty much there.","date":"2013-02-05T22:06:23.992Z","type":"message"}
+{"nick":"trevnorris","message":"it's the net tests that need some love.","date":"2013-02-05T22:06:29.854Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-05T22:06:40.489Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-05T22:07:05.249Z","type":"join"}
+{"nick":"stagas","date":"2013-02-05T22:07:20.459Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: ok, just updated the pr for that output.","date":"2013-02-05T22:08:26.715Z","type":"message"}
+{"nick":"loladiro","date":"2013-02-05T22:09:08.097Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: as for the fs throughput, two main things bench-timer can do is easily allow for multiple test types (e.g. --sizes 1, 10,1024) and","date":"2013-02-05T22:10:37.303Z","type":"message"}
+{"nick":"trevnorris","message":"can pass --iter n to run the same test n times for timing comparisons. running only once is not reliable enough to report on.","date":"2013-02-05T22:11:27.833Z","type":"message"}
+{"nick":"trevnorris","message":"also can easily add options for, say, where the output dir/file should be.","date":"2013-02-05T22:13:09.199Z","type":"message"}
+{"nick":"wolfeidau","date":"2013-02-05T22:14:46.076Z","type":"join"}
+{"nick":"rendar","date":"2013-02-05T22:17:34.246Z","type":"quit"}
+{"nick":"wolfeidau","reason":"Read error: Connection reset by peer","date":"2013-02-05T22:23:01.863Z","type":"quit"}
+{"nick":"wolfeidau","date":"2013-02-05T22:23:12.342Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T22:27:02.226Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 252 seconds","date":"2013-02-05T22:27:24.187Z","type":"quit"}
+{"nick":"TooTallNate","message":"isaacs: i think i found an API change in streams2","date":"2013-02-05T22:28:08.606Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: oh?","date":"2013-02-05T22:28:26.807Z","type":"message"}
+{"nick":"TooTallNate","message":"ya one sec, verifying","date":"2013-02-05T22:28:40.686Z","type":"message"}
+{"nick":"TooTallNate","message":"i think fs.end() used to be allowed to take a callback function","date":"2013-02-05T22:28:50.469Z","type":"message"}
+{"nick":"TooTallNate","message":"but right now, if you do .end(fn), it calls _write(fn, fn)","date":"2013-02-05T22:29:07.297Z","type":"message"}
+{"nick":"indutny","message":"isaacs: yt?","date":"2013-02-05T22:29:21.499Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T22:29:29.589Z","type":"join"}
+{"nick":"isaacs","message":"sorta","date":"2013-02-05T22:29:52.686Z","type":"message"}
+{"nick":"isaacs","message":"what's up?","date":"2013-02-05T22:29:55.175Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: yeah, bug.","date":"2013-02-05T22:30:03.395Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: patch welcome :)","date":"2013-02-05T22:30:06.486Z","type":"message"}
+{"nick":"indutny","message":"isaacs: wanna review awesome tls stuff? :)","date":"2013-02-05T22:30:12.378Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: ya totes https://github.com/joyent/node/blob/v0.8.18/lib/fs.js#L1575-L1579","date":"2013-02-05T22:30:15.501Z","type":"message"}
+{"nick":"indutny","message":"I think its ready for prime-time","date":"2013-02-05T22:30:17.285Z","type":"message"}
+{"nick":"TooTallNate","message":"ok i'll try","date":"2013-02-05T22:30:17.418Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i do want to review that.","date":"2013-02-05T22:30:32.578Z","type":"message"}
+{"nick":"isaacs","message":"indutny: sorry, putting out fires atm","date":"2013-02-05T22:30:37.855Z","type":"message"}
+{"nick":"indutny","message":"I hope not literally","date":"2013-02-05T22:30:53.495Z","type":"message"}
+{"nick":"mmalecki","message":"I just imagined isaacs running with a fire extinguisher in a datacenter","date":"2013-02-05T22:31:36.858Z","type":"message"}
+{"nick":"indutny","message":"isaacs: https://github.com/joyent/node/pull/4718","date":"2013-02-05T22:31:55.154Z","type":"message"}
+{"nick":"mmalecki","message":"it was... hilarious, so to say","date":"2013-02-05T22:31:56.860Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: btw, you may want to look at this too https://github.com/joyent/node/pull/4718","date":"2013-02-05T22:32:06.598Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yt?","date":"2013-02-05T22:32:20.274Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ih","date":"2013-02-05T22:32:27.725Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: hi again","date":"2013-02-05T22:32:31.968Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: I indeed do!","date":"2013-02-05T22:32:36.646Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: can you please take a look at it too, once you'll have some free time?","date":"2013-02-05T22:32:41.345Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://github.com/joyent/node/pull/4718 <- just in case","date":"2013-02-05T22:32:45.876Z","type":"message"}
+{"nick":"CoverSlide","message":"\"Please review very carefully, I've put a couple of obscure bugs inside this pull request to annoy you guys later on.\"","date":"2013-02-05T22:32:51.557Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: what's it about?","date":"2013-02-05T22:32:58.662Z","type":"message"}
+{"nick":"CoverSlide","message":"hahaha","date":"2013-02-05T22:32:59.521Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: about porting tls to streams2","date":"2013-02-05T22:33:09.489Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: do you need _ended?","date":"2013-02-05T22:33:17.896Z","type":"message"}
+{"nick":"mmalecki","message":"I think it should be handled by readable stream","date":"2013-02-05T22:33:27.716Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: well, _ended is interesting thing","date":"2013-02-05T22:33:52.389Z","type":"message"}
+{"nick":"mmalecki","message":"so this._readableState.ended should do it, I think...","date":"2013-02-05T22:33:54.060Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: um, maybe later","date":"2013-02-05T22:33:57.958Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: I'm trying to limit access to internal methods","date":"2013-02-05T22:34:05.213Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: you lazy man :)","date":"2013-02-05T22:34:08.534Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I spent almost one week on this","date":"2013-02-05T22:34:16.936Z","type":"message"}
+{"nick":"indutny","message":"ok, np","date":"2013-02-05T22:34:25.747Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: hey, a little respect here","date":"2013-02-05T22:34:32.086Z","type":"message"}
+{"nick":"mmalecki","message":"Ben spent almost one week being lazy","date":"2013-02-05T22:34:38.009Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: one week only?","date":"2013-02-05T22:34:54.081Z","type":"message"}
+{"nick":"bnoordhuis","message":"and it's wearing me out, i tell you","date":"2013-02-05T22:34:55.046Z","type":"message"}
+{"nick":"indutny","message":"nothing really interesting about this","date":"2013-02-05T22:35:10.912Z","type":"message"}
+{"nick":"indutny","message":"I've been lazy for last couple of years","date":"2013-02-05T22:35:17.305Z","type":"message"}
+{"nick":"indutny","message":"the trick is that I was still doing some things","date":"2013-02-05T22:35:26.450Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, I can confirm that's the trick","date":"2013-02-05T22:36:07.654Z","type":"message"}
+{"nick":"bnoordhuis","message":"principle of least energy expenditure","date":"2013-02-05T22:36:19.765Z","type":"message"}
+{"nick":"mmalecki","message":"my boss still doesn't know I haven't actually done anything in a month","date":"2013-02-05T22:36:24.657Z","type":"message"}
+{"nick":"indutny","message":"indexzero: ^^^","date":"2013-02-05T22:36:53.176Z","type":"message"}
+{"nick":"mmalecki","message":"ups, is indexzero still here? I think he is.","date":"2013-02-05T22:36:56.096Z","type":"message"}
+{"nick":"mmalecki","message":"brb, I need to go back to pretending that I work","date":"2013-02-05T22:37:22.869Z","type":"message"}
+{"nick":"indutny","message":"mmalecki: like doing random commits with whitespace changes and vague description? :)","date":"2013-02-05T22:37:49.118Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: yeah","date":"2013-02-05T22:37:57.424Z","type":"message"}
+{"nick":"indutny","message":"like this https://github.com/flatiron/cli-config/commit/81719d4b3a27f7285925b38bd45158cf42e53e09","date":"2013-02-05T22:38:04.066Z","type":"message"}
+{"nick":"mmalecki","message":"indutny: hey, this is the best commit I did the entire week, actually","date":"2013-02-05T22:38:32.574Z","type":"message"}
+{"nick":"indutny","message":"hehe","date":"2013-02-05T22:38:46.673Z","type":"message"}
+{"nick":"indutny","message":"ok ok","date":"2013-02-05T22:38:47.855Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-05T22:52:55.633Z","type":"quit"}
+{"nick":"mikeal","date":"2013-02-05T22:53:21.269Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-02-05T23:01:45.552Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-02-05T23:03:11.190Z","type":"quit"}
+{"nick":"roxlu_","message":"hi guys, I'm getting a Assertion failed: (stream->write_queue_size == 0), function uv__write, file src/unix/stream.c, line 728. ","date":"2013-02-05T23:04:32.955Z","type":"message"}
+{"nick":"roxlu_","message":"when I use uv_run(loop, UV_RUN_NOWAIT)","date":"2013-02-05T23:04:42.900Z","type":"message"}
+{"nick":"roxlu_","message":"is that correct?","date":"2013-02-05T23:04:53.719Z","type":"message"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T23:05:45.705Z","type":"quit"}
+{"nick":"bnoordhuis","message":"roxlu_: depends on what you do but probably not","date":"2013-02-05T23:09:02.276Z","type":"message"}
+{"nick":"roxlu_","message":"what's the 'stream->write_queue_size' used for?","date":"2013-02-05T23:09:21.853Z","type":"message"}
+{"nick":"roxlu_","message":"got a pretty basic tcp connection: https://gist.github.com/roxlu/9e41686f62b2387a3f2d ","date":"2013-02-05T23:10:15.458Z","type":"message"}
+{"nick":"roxlu_","message":"writing is done at line 84","date":"2013-02-05T23:11:00.329Z","type":"message"}
+{"nick":"bnoordhuis","message":"roxlu_: it's a counter that keeps track of the amount of outstanding data","date":"2013-02-05T23:11:09.157Z","type":"message"}
+{"nick":"roxlu_","message":"(I'n not entirely sure if I need to create a new write req","date":"2013-02-05T23:11:11.599Z","type":"message"}
+{"nick":"roxlu_","message":"ok","date":"2013-02-05T23:11:16.728Z","type":"message"}
+{"nick":"bnoordhuis","message":"ie.e. how much data still needs to be written out","date":"2013-02-05T23:11:16.861Z","type":"message"}
+{"nick":"roxlu_","message":"is it executed after a call to uv_write? (and could this be caused when I try to write 0 bytes? ) ","date":"2013-02-05T23:12:30.854Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T23:12:38.770Z","type":"join"}
+{"nick":"perezd","reason":"Quit: perezd","date":"2013-02-05T23:19:05.918Z","type":"quit"}
+{"nick":"bnoordhuis","message":"roxlu_: i suspect you're using memory after it's released","date":"2013-02-05T23:20:09.246Z","type":"message"}
+{"nick":"bnoordhuis","message":"that assert you're hitting means the 'pending writes' queue is empty but stream->write_queue_size != 0","date":"2013-02-05T23:20:44.739Z","type":"message"}
+{"nick":"hz","date":"2013-02-05T23:24:52.468Z","type":"join"}
+{"nick":"isaacs","message":"man, fs.watch() really sucks for stuff that has to work across multiple different platforms","date":"2013-02-05T23:25:48.561Z","type":"message"}
+{"nick":"roxlu_","message":"bnoordhuis: ah yeah it seems that that is the problem","date":"2013-02-05T23:26:08.009Z","type":"message"}
+{"nick":"roxlu_","message":"I thought data was copied","date":"2013-02-05T23:26:23.040Z","type":"message"}
+{"nick":"roxlu_","message":"how do I know if libuv has written the data I gave to uv_write? (in the write_cb ? )","date":"2013-02-05T23:26:51.156Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-05T23:32:44.561Z","type":"quit"}
+{"nick":"saghul","message":"yes, in the cb","date":"2013-02-05T23:37:20.502Z","type":"message"}
+{"nick":"indutny","message":"isaacs: tell me about that","date":"2013-02-05T23:37:34.109Z","type":"message"}
+{"nick":"indutny","message":"thankfully it works :)","date":"2013-02-05T23:37:39.364Z","type":"message"}
+{"nick":"indutny","message":"in some way","date":"2013-02-05T23:37:41.969Z","type":"message"}
+{"nick":"isaacs","message":"well... i'm seeing some odd stuff.","date":"2013-02-05T23:37:48.233Z","type":"message"}
+{"nick":"isaacs","message":"like, i have a whole bunch of watchers on the same file","date":"2013-02-05T23:37:54.074Z","type":"message"}
+{"nick":"isaacs","message":"then i delete the file","date":"2013-02-05T23:37:55.843Z","type":"message"}
+{"nick":"indutny","message":"on osx?","date":"2013-02-05T23:37:58.290Z","type":"message"}
+{"nick":"isaacs","message":"and all the watchers get a 'rename' event, BEFORE the file is gone.","date":"2013-02-05T23:38:06.253Z","type":"message"}
+{"nick":"isaacs","message":"linux","date":"2013-02-05T23:38:13.563Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2013-02-05T23:38:30.017Z","type":"message"}
+{"nick":"isaacs","message":"i'm going to replace the watcher with a setTimeout(retry)","date":"2013-02-05T23:39:14.683Z","type":"message"}
+{"nick":"isaacs","message":"and just keep retrying until the time runes out","date":"2013-02-05T23:39:23.173Z","type":"message"}
+{"nick":"isaacs","message":"*runs out","date":"2013-02-05T23:39:26.572Z","type":"message"}
+{"nick":"isaacs","message":"i was doing this cute thing where it would set up a watcher, and a timer for the \"stop waiting\" time.","date":"2013-02-05T23:39:48.840Z","type":"message"}
+{"nick":"perezd","date":"2013-02-05T23:40:06.587Z","type":"join"}
+{"nick":"roxlu_","message":"somehow my write_cb gets called in a loop whenever I do one call to uv_write","date":"2013-02-05T23:44:53.876Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-02-05T23:44:54.007Z","type":"quit"}
+{"nick":"bnoordhuis","message":"roxlu_: make sure you close the handle properly","date":"2013-02-05T23:45:34.804Z","type":"message"}
+{"nick":"roxlu_","message":"what do you mean bnoordhuis ?","date":"2013-02-05T23:45:50.131Z","type":"message"}
+{"nick":"bnoordhuis","message":"don't free the handle's memory until your close cb is called","date":"2013-02-05T23:45:50.822Z","type":"message"}
+{"nick":"roxlu_","message":"I'm not free'ing anything actually","date":"2013-02-05T23:46:12.869Z","type":"message"}
+{"nick":"bnoordhuis","message":"or reuse the memory","date":"2013-02-05T23:46:22.615Z","type":"message"}
+{"nick":"roxlu_","message":"I'm allocating on the heap .. and not free'ing as a test","date":"2013-02-05T23:46:24.495Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah okay","date":"2013-02-05T23:46:32.621Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: probably want to reopen 3872 as well","date":"2013-02-05T23:51:06.132Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm sure he'd be happy to refresh the code then","date":"2013-02-05T23:51:18.286Z","type":"message"}
+{"nick":"bnoordhuis","message":"reopened :)","date":"2013-02-05T23:51:44.769Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2013-02-05T23:51:52.841Z","type":"message"}
+{"nick":"hz","date":"2013-02-05T23:58:48.945Z","type":"quit"}
+{"nick":"TheJH","reason":"Ping timeout: 248 seconds","date":"2013-02-05T23:59:16.824Z","type":"quit"}
