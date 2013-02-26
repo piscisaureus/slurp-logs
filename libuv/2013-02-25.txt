@@ -1,0 +1,289 @@
+{"nick":"isaacs","message":"slurp: welcome back","date":"2013-02-25T18:35:04.873Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: i see!","date":"2013-02-25T18:35:29.063Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: well, eventfds are a linux thing?","date":"2013-02-25T18:35:54.720Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: yes","date":"2013-02-25T18:35:59.112Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: i see! but are they part of the epoll_*() apis?","date":"2013-02-25T18:36:16.897Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: not really. but they're part of the kernel syscall api","date":"2013-02-25T18:36:40.013Z","type":"message"}
+{"nick":"isaacs","message":"fixed","date":"2013-02-25T18:36:40.632Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: nvm","date":"2013-02-25T18:36:41.861Z","type":"message"}
+{"nick":"isaacs","message":"i'm gonna set a crontab to restart it daily","date":"2013-02-25T18:36:47.762Z","type":"message"}
+{"nick":"isaacs","message":"easier than fixing irc.js to handle netsplits","date":"2013-02-25T18:37:01.045Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: i see, can you tell me the name of those apis, so i can search and study them?","date":"2013-02-25T18:37:05.316Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: man eventfd :)","date":"2013-02-25T18:37:17.550Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: also, man 7 epoll","date":"2013-02-25T18:37:22.312Z","type":"message"}
+{"nick":"rendar","message":"oh, only eventfd() ..i see!","date":"2013-02-25T18:37:46.421Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: of course, if you don't use eventfd() you have to do the pipe trick even on linux, right?","date":"2013-02-25T18:38:04.567Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, it falls back to pipes on pre-2.6.22 kernels","date":"2013-02-25T18:38:19.902Z","type":"message"}
+{"nick":"rendar","message":"i see! cool","date":"2013-02-25T18:38:52.051Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: so basically pipes are local unix sockets (or just pipes like those for redicrect child's stdin/stdout?) whose fd is in the list of epoll() of the fds to \"listen\" for i/o, and when an operation completes, epoll_wait() returns, so the thread can execute something that is in a queue, i guess protected with a mutex or something like that..","date":"2013-02-25T18:40:56.683Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8\u000f * \u0002b0e7dbf\u0002 : http: Do not free the wrong parser on socket close  This appears to fix # - http://git.io/P-yaGg","date":"2013-02-25T18:43:43.212Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: yes, that's correct, including the mutex","date":"2013-02-25T18:43:45.387Z","type":"message"}
+{"nick":"isaacs","message":"ok, starting 0.8.21","date":"2013-02-25T18:44:04.627Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess that's the one important commit? ^","date":"2013-02-25T18:45:09.166Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: oh i see, i guess there is no need of a conditional_variable because the pipe acts like a cond. var. wakeing up the thread, right?","date":"2013-02-25T18:45:33.153Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: well, there's still a lock because there are several threads and pushing/popping from the work queue is not an atomic operation","date":"2013-02-25T18:46:14.005Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created branch v0.8.21-release - http://git.io/A-V4kg","date":"2013-02-25T18:46:30.352Z","type":"message"}
+{"nick":"bnoordhuis","message":"the critical section is rather small though and the lock is nearly uncontended","date":"2013-02-25T18:46:37.191Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least, i've never seen it pop up in profile graphs","date":"2013-02-25T18:46:53.611Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: yeah exactly","date":"2013-02-25T18:47:14.838Z","type":"message"}
+{"nick":"rendar","message":"bnoordhuis: well i was just guessing about a cond. var. that in such a scenario would be needed to wake up the thread waiting \"something\", to make it processes the queue and do the works, but this role is taken by the pipe there..","date":"2013-02-25T18:48:00.630Z","type":"message"}
+{"nick":"bnoordhuis","message":"rendar: yes, that's correct - the mutex is only to synchronize on, not to wake up the other thread","date":"2013-02-25T18:48:59.515Z","type":"message"}
+{"nick":"rendar","message":"yep","date":"2013-02-25T18:49:06.224Z","type":"message"}
+{"nick":"sblom","message":"Anybody have feedback on https://github.com/joyent/node/pull/4780 ? It keeps child_process.spawn() from trying to read stdout from an unconnected, non-existent child process.","date":"2013-02-25T18:50:07.242Z","type":"message"}
+{"nick":"sblom","message":"I don't know if, in Posix, we were depending on some side effects that are now being prevented.","date":"2013-02-25T18:50:27.696Z","type":"message"}
+{"nick":"sblom","message":"The unit tests are still passing for me on Posix, and freshly passing for me on Windows.","date":"2013-02-25T18:50:50.673Z","type":"message"}
+{"nick":"sblom","message":"The other thing that feels kinda weird to me is that I'm using pid == 0 as a test for \"something went wrong\". As far as I can tell, this is universally safe, but I was disappointed that I didn't come up with something more precise.","date":"2013-02-25T18:52:05.916Z","type":"message"}
+{"nick":"bnoordhuis","message":"sblom: when is self.pid 0?","date":"2013-02-25T18:54:25.498Z","type":"message"}
+{"nick":"bnoordhuis","message":"it seems kind of... i don't know","date":"2013-02-25T18:54:35.215Z","type":"message"}
+{"nick":"sblom","message":"On Windows, it's 0 if anything goes wrong during the spawn().","date":"2013-02-25T18:55:49.712Z","type":"message"}
+{"nick":"sblom","message":"On Posix, it shouldn't be 0 unless something really weird happened during the fork/exec.","date":"2013-02-25T18:56:04.594Z","type":"message"}
+{"nick":"bnoordhuis","message":"sblom: okay, but why null instead of stdio.handle in that case?","date":"2013-02-25T18:57:51.469Z","type":"message"}
+{"nick":"bnoordhuis","message":"stdio.handle does refer to a valid object at that point?","date":"2013-02-25T18:58:02.598Z","type":"message"}
+{"nick":"bnoordhuis","message":"(minus question mark)","date":"2013-02-25T18:58:13.488Z","type":"message"}
+{"nick":"c4milo","date":"2013-02-25T18:58:24.318Z","type":"join"}
+{"nick":"bnoordhuis","message":"there should probably be a comment explaining why","date":"2013-02-25T18:58:56.134Z","type":"message"}
+{"nick":"hz","date":"2013-02-25T18:59:25.450Z","type":"join"}
+{"nick":"sblom","message":"stdio.handle has a value, at least on Windows. And trying to touch it causes an unexpected ENOTCONN","date":"2013-02-25T18:59:38.890Z","type":"message"}
+{"nick":"sblom","message":"Well, \"unexpected\".","date":"2013-02-25T18:59:43.426Z","type":"message"}
+{"nick":"bnoordhuis","message":"what does it refer to and why the ENOTCONN? (okay, i can guess the latter)","date":"2013-02-25T19:00:52.034Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8.21-release\u000f * \u0002423e860\u0002 : 2013.02.25, Version 0.8.21 (Stable)  * http: Do not free the wrong parser - http://git.io/d3XhOw","date":"2013-02-25T19:01:13.231Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: was benchmarking your 3.16 branch (against things that don't depend on Utf8Length). it's slightly slower, and uses at least as much memory.","date":"2013-02-25T19:03:39.474Z","type":"message"}
+{"nick":"trevnorris","message":"right now it seems like 3.14 is the most performant and memory friendly so far.","date":"2013-02-25T19:04:15.631Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: that's weird","date":"2013-02-25T19:05:54.583Z","type":"message"}
+{"nick":"sblom","message":"bnoordhuis: I don't remember--I'm refreshing my memory now. I think libuv was relaying some values that it got from Windows.","date":"2013-02-25T19:05:59.754Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: how do you feel about moving to v8 3.14?","date":"2013-02-25T19:06:23.143Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: bad but i guess it's inevitable","date":"2013-02-25T19:10:36.501Z","type":"message"}
+{"nick":"bnoordhuis","message":"3.16+ is decidedly unstable","date":"2013-02-25T19:10:47.341Z","type":"message"}
+{"nick":"bnoordhuis","message":"it'll require undoing the 'default isolate' changes","date":"2013-02-25T19:12:48.034Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-02-25T19:13:00.809Z","type":"message"}
+{"nick":"isaacs","message":"and 3.15 is slower.","date":"2013-02-25T19:13:04.369Z","type":"message"}
+{"nick":"brson","date":"2013-02-25T19:13:11.691Z","type":"join"}
+{"nick":"isaacs","message":"we can do 3.14 for v0.10, and then upgrade to 3.(whenever that cons regression is fixed) for v0.12","date":"2013-02-25T19:13:58.609Z","type":"message"}
+{"nick":"isaacs","message":"sometimes it sucks living in the real world","date":"2013-02-25T19:14:20.169Z","type":"message"}
+{"nick":"sblom","message":"bnoorduis: I haven't managed to quickly remind myself--I'll do some work to convnice myself that I can't just leave those handles unset (or even forcibly unset them) if the spawn() fails.","date":"2013-02-25T19:20:36.130Z","type":"message"}
+{"nick":"sblom","message":"But I'm sure I already went down that path.","date":"2013-02-25T19:20:49.813Z","type":"message"}
+{"nick":"bnoordhuis","message":"dinner, biab","date":"2013-02-25T19:25:30.790Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 255 seconds","date":"2013-02-25T19:30:14.637Z","type":"quit"}
+{"nick":"isaacs","message":"tjfontaine: /Developer/Applications/Utilities/PackageMaker.app/Contents/MacOS/PackageMaker","date":"2013-02-25T19:31:18.161Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 256 seconds","date":"2013-02-25T19:33:25.610Z","type":"quit"}
+{"nick":"`3rdEden","reason":"Quit: brb","date":"2013-02-25T19:37:14.874Z","type":"quit"}
+{"nick":"`3rdEden","date":"2013-02-25T19:44:22.812Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2013-02-25T19:57:27.623Z","type":"quit"}
+{"nick":"brson","date":"2013-02-25T19:58:02.718Z","type":"join"}
+{"nick":"sblom","date":"2013-02-25T20:00:22.044Z","type":"part"}
+{"nick":"bnoordhuis","date":"2013-02-25T20:36:04.811Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 245 seconds","date":"2013-02-25T20:40:26.818Z","type":"quit"}
+{"nick":"txdv","date":"2013-02-25T20:53:47.745Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: dude, i'm about to flip out. got the emit() running noticeably faster, but it deopt's whenever the process emits something.","date":"2013-02-25T20:53:59.451Z","type":"message"}
+{"nick":"qmx|away","new_nick":"qmx","date":"2013-02-25T20:55:27.360Z","type":"nick"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-02-25T21:00:52.027Z","type":"quit"}
+{"nick":"isaacs","message":"trevnorris: hahahha","date":"2013-02-25T21:05:01.761Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: take a break.  walk around and try not to think about node for at least 15 minuts.","date":"2013-02-25T21:05:23.731Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: when you come back, your subconscious will either have something for you, or at least will have given up on it","date":"2013-02-25T21:05:36.491Z","type":"message"}
+{"nick":"isaacs","message":"either way, ++","date":"2013-02-25T21:05:39.521Z","type":"message"}
+{"nick":"trevnorris","message":"dude, I actually dreamed up an improved logic flow a few nights ago. that was a first.","date":"2013-02-25T21:06:09.756Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-02-25T21:07:45.537Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8.21-release\u000f * \u0002530d8c0\u0002 : 2013.02.25, Version 0.8.21 (Stable)  * http: Do not free the wrong parser (+1 more commits) - http://git.io/WP3g4w","date":"2013-02-25T21:08:18.932Z","type":"message"}
+{"nick":"benoitc","date":"2013-02-25T21:09:27.397Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: i think it's pretty likely that we'll have to roll v8 back to 3.14","date":"2013-02-25T21:12:41.708Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: it'll mean undoing the isolate stuff.","date":"2013-02-25T21:12:47.818Z","type":"message"}
+{"nick":"isaacs","message":"but meh","date":"2013-02-25T21:12:48.677Z","type":"message"}
+{"nick":"dominictarr_","date":"2013-02-25T21:12:56.694Z","type":"join"}
+{"nick":"isaacs","message":"no one actually cares about that, if it's not going to go faster,it's not worthwhile","date":"2013-02-25T21:12:57.048Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: sounds good to me. the other win is using 50% less memory. as much as i want the new toys in 3.17, 3.14 is just way more production-ish.","date":"2013-02-25T21:14:04.389Z","type":"message"}
+{"nick":"bnoordhuis","message":"i care about that :(","date":"2013-02-25T21:14:45.397Z","type":"message"}
+{"nick":"bnoordhuis","action":"weeps silently","date":"2013-02-25T21:14:58.097Z","type":"action"}
+{"nick":"isaacs","message":"bnoordhuis: there, there.","date":"2013-02-25T21:15:41.846Z","type":"message"}
+{"nick":"dominictarr","reason":"Ping timeout: 246 seconds","date":"2013-02-25T21:15:43.816Z","type":"quit"}
+{"nick":"dominictarr_","new_nick":"dominictarr","date":"2013-02-25T21:15:44.281Z","type":"nick"}
+{"nick":"isaacs","message":"bnoordhuis: when 3.17 stabilizes, it'll be required.","date":"2013-02-25T21:15:55.265Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: then you'll have the last laugh :)","date":"2013-02-25T21:15:59.626Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: passing the isolate should have improved performance noticeably. so did it just get even worse elsewhere?","date":"2013-02-25T21:16:17.075Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: it reduced the time spent in pthread_getspecific considerably so yes, there were some improvements","date":"2013-02-25T21:17:24.442Z","type":"message"}
+{"nick":"bnoordhuis","message":"but other things have become noticeably slower for some reason","date":"2013-02-25T21:17:41.308Z","type":"message"}
+{"nick":"trevnorris","message":"hm... =P","date":"2013-02-25T21:17:47.270Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: do you want to do the honors of putting us back on 3.14?","date":"2013-02-25T21:21:41.392Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it's your dog.","date":"2013-02-25T21:21:43.982Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033isaacs\u000f created tag node-v0.8.21 - http://git.io/_Z4TKQ","date":"2013-02-25T21:22:37.779Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-25T21:43:00.413Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs: ok","date":"2013-02-25T21:43:58.628Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-25T21:44:03.521Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created tag v0.8.21 - http://git.io/B815Xg","date":"2013-02-25T21:47:38.296Z","type":"message"}
+{"nick":"dominictarr_","date":"2013-02-25T21:48:13.659Z","type":"join"}
+{"nick":"dominictarr","reason":"Ping timeout: 260 seconds","date":"2013-02-25T21:51:19.635Z","type":"quit"}
+{"nick":"dominictarr_","new_nick":"dominictarr","date":"2013-02-25T21:51:19.971Z","type":"nick"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8\u000f * \u000233e8e69\u0002 : Now working on 0.8.22 (+3 more commits) - http://git.io/6kXkgg","date":"2013-02-25T21:53:05.653Z","type":"message"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-02-25T21:53:48.480Z","type":"quit"}
+{"nick":"bnoordhuis","message":"gen/debug-support.cc:41: error: ‘kTransitionsIndex’ is not a member of ‘v8::internal::DescriptorArray’","date":"2013-02-25T21:54:30.838Z","type":"message"}
+{"nick":"bnoordhuis","message":"gen/debug-support.cc:44: error: ‘MAP_TRANSITION’ was not declared in this scope","date":"2013-02-25T21:54:34.219Z","type":"message"}
+{"nick":"bnoordhuis","message":"gen/debug-support.cc:334: error: ‘kInstanceDescriptorsOrBitField3Offset’ is not a member of ‘v8::internal::Map’","date":"2013-02-25T21:54:37.302Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ i'd forgotten about - post-mortem support is broken in 3.14","date":"2013-02-25T21:54:48.046Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8\u000f * \u0002fafb67c\u0002 : ChangeLog: Missed item about EINPROGRESS (+1 more commits) - http://git.io/ncEicw","date":"2013-02-25T21:57:13.876Z","type":"message"}
+{"nick":"sblom","date":"2013-02-25T22:00:55.735Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: hm.  well, i twas broken in 3.15, too.","date":"2013-02-25T22:03:20.227Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: but indutny fixed it","date":"2013-02-25T22:03:24.047Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: yeah, i kind of fixed it","date":"2013-02-25T22:04:42.490Z","type":"message"}
+{"nick":"bnoordhuis","message":"someone at joyent should probably look at it sometime","date":"2013-02-25T22:04:59.769Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: i'll ping dap","date":"2013-02-25T22:05:08.605Z","type":"message"}
+{"nick":"isaacs","message":"dap: ping","date":"2013-02-25T22:05:17.265Z","type":"message"}
+{"nick":"dap","message":"hi","date":"2013-02-25T22:05:21.944Z","type":"message"}
+{"nick":"isaacs","message":"dap: you perhaps recall that when we updated v8 to 3.15 it broken post-morem, and indutny fixed it.","date":"2013-02-25T22:06:18.586Z","type":"message"}
+{"nick":"dap","message":"That sounds vaguely familiar.","date":"2013-02-25T22:06:28.667Z","type":"message"}
+{"nick":"isaacs","message":"dap: we're rolling V8 back to 3.14 for reasons, and bnoordhuis has re-fixed post-mortem, would you be willing to take a look?","date":"2013-02-25T22:06:40.176Z","type":"message"}
+{"nick":"dap","message":"Does the unit test for it pass?","date":"2013-02-25T22:07:39.681Z","type":"message"}
+{"nick":"indutny","message":"sup?","date":"2013-02-25T22:11:24.797Z","type":"message"}
+{"nick":"indutny","message":"uh","date":"2013-02-25T22:11:27.567Z","type":"message"}
+{"nick":"indutny","message":"I did it before","date":"2013-02-25T22:11:31.667Z","type":"message"}
+{"nick":"joyent-jenkins","message":"Project nodejs-master » ia32,nodejs-linux build #42:\u0002\u001f\u000304FAILURE\u000f in 2 min 20 sec: https://jenkins.joyent.us/job/nodejs-master/./DESTCPU=ia32,label=nodejs-linux/42/","date":"2013-02-25T22:11:59.091Z","type":"message"}
+{"nick":"tjfontaine","message":"damn linux multilib bullshit","date":"2013-02-25T22:12:22.490Z","type":"message"}
+{"nick":"rendar","date":"2013-02-25T22:12:36.636Z","type":"quit"}
+{"nick":"wolfeidau","date":"2013-02-25T22:16:01.579Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: that's right, we have a unit test for it.","date":"2013-02-25T22:17:37.229Z","type":"message"}
+{"nick":"isaacs","message":"i think it's a pummel test","date":"2013-02-25T22:17:41.719Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.8\u000f * \u000282357b8\u0002 : blog: Update with EINPROGRESS changelog item - http://git.io/3xGjOQ","date":"2013-02-25T22:17:45.108Z","type":"message"}
+{"nick":"joyent-jenkins","message":"Project nodejs-master » ia32,nodejs-smartos build #42:\u0002\u001f\u000304FAILURE\u000f in 8 min 15 sec: https://jenkins.joyent.us/job/nodejs-master/./DESTCPU=ia32,label=nodejs-smartos/42/","date":"2013-02-25T22:17:53.806Z","type":"message"}
+{"nick":"indutny","message":"jenkins","date":"2013-02-25T22:18:25.797Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: python tools/test.py pummel/test-{post,dtrace}* <-- if that works, then \\o/ i guess","date":"2013-02-25T22:18:33.889Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-02-25T22:18:44.356Z","type":"quit"}
+{"nick":"bnoordhuis","message":"isaacs: those are sunos-only, i can't test them right now","date":"2013-02-25T22:34:36.311Z","type":"message"}
+{"nick":"bnoordhuis","message":"besides, it's not like i use the postmortem tool","date":"2013-02-25T22:34:53.089Z","type":"message"}
+{"nick":"indutny","message":"v8 team doesn't care much about it","date":"2013-02-25T22:35:34.175Z","type":"message"}
+{"nick":"indutny","message":"its failing almost everytime we stop looking at it","date":"2013-02-25T22:35:45.308Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, yeah. for the same reason i don't care about it","date":"2013-02-25T22:36:23.414Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033bnoordhuis\u000f created branch downgrade-v8 - http://git.io/F8UUxA","date":"2013-02-25T22:36:40.257Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ review?","date":"2013-02-25T22:36:46.897Z","type":"message"}
+{"nick":"indutny","message":"downgrade from what?","date":"2013-02-25T22:36:55.278Z","type":"message"}
+{"nick":"indutny","message":"also","date":"2013-02-25T22:36:57.592Z","type":"message"}
+{"nick":"indutny","message":"to 3.14?","date":"2013-02-25T22:37:04.027Z","type":"message"}
+{"nick":"indutny","message":"are you serious?","date":"2013-02-25T22:37:06.636Z","type":"message"}
+{"nick":"bnoordhuis","message":"i never jest, fedor, you know that","date":"2013-02-25T22:37:52.250Z","type":"message"}
+{"nick":"bnoordhuis","message":"simple/test-stream2-objects is still failing for me but apart from that everything else passes","date":"2013-02-25T22:38:07.121Z","type":"message"}
+{"nick":"indutny","message":"is your comment about performance justified?","date":"2013-02-25T22:38:09.207Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-02-25T22:38:13.051Z","type":"message"}
+{"nick":"indutny","message":"with what?","date":"2013-02-25T22:38:17.849Z","type":"message"}
+{"nick":"bnoordhuis","message":"with cold, hard numbers","date":"2013-02-25T22:38:28.884Z","type":"message"}
+{"nick":"tjfontaine","message":"his gut","date":"2013-02-25T22:38:29.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"that too","date":"2013-02-25T22:38:33.788Z","type":"message"}
+{"nick":"indutny","message":"I mean","date":"2013-02-25T22:38:38.734Z","type":"message"}
+{"nick":"indutny","message":"gist?","date":"2013-02-25T22:38:39.619Z","type":"message"}
+{"nick":"bnoordhuis","message":"gc performance is pretty atrocious","date":"2013-02-25T22:38:46.035Z","type":"message"}
+{"nick":"indutny","message":"interesting","date":"2013-02-25T22:38:50.252Z","type":"message"}
+{"nick":"bnoordhuis","message":"also, have you seen that Utf8Length() thing?","date":"2013-02-25T22:38:52.490Z","type":"message"}
+{"nick":"indutny","message":"aa","date":"2013-02-25T22:38:55.799Z","type":"message"}
+{"nick":"indutny","message":"yep","date":"2013-02-25T22:38:57.542Z","type":"message"}
+{"nick":"indutny","message":"so is it like the only thing?","date":"2013-02-25T22:39:02.112Z","type":"message"}
+{"nick":"indutny","message":"because if it is - I can fix it","date":"2013-02-25T22:39:06.669Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, it's a number of things","date":"2013-02-25T22:39:09.923Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-02-25T22:39:12.791Z","type":"message"}
+{"nick":"indutny","message":"LGTM then","date":"2013-02-25T22:39:15.618Z","type":"message"}
+{"nick":"indutny","message":"you're so convincing","date":"2013-02-25T22:39:20.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"i also had some spurious crashes that i couldn't reproduce","date":"2013-02-25T22:39:20.757Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: ?","date":"2013-02-25T22:39:32.955Z","type":"message"}
+{"nick":"indutny","message":"its just a bit sad that we're stuck at about 3 versions","date":"2013-02-25T22:39:42.894Z","type":"message"}
+{"nick":"indutny","message":"minor","date":"2013-02-25T22:39:44.960Z","type":"message"}
+{"nick":"bnoordhuis","message":"3.18 is going to be the greatest, i can feel it!","date":"2013-02-25T22:40:04.138Z","type":"message"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-02-25T22:40:15.855Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: so wrooooong","date":"2013-02-25T22:40:27.678Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's what she said","date":"2013-02-25T22:40:53.062Z","type":"message"}
+{"nick":"bnoordhuis","message":"but it felt so right, you know?","date":"2013-02-25T22:41:00.076Z","type":"message"}
+{"nick":"bnoordhuis","message":"gah, that default ab on os x is one giant POS","date":"2013-02-25T22:41:30.940Z","type":"message"}
+{"nick":"tjfontaine","message":"that's why we added wrk? :)","date":"2013-02-25T22:41:44.710Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, but some tests still use ab","date":"2013-02-25T22:41:55.161Z","type":"message"}
+{"nick":"tjfontaine","message":"ah","date":"2013-02-25T22:42:13.107Z","type":"message"}
+{"nick":"joyent-jenkins","message":"Project nodejs-v0.8 » ia32,nodejs-linux build #11:\u0002\u001f\u000304FAILURE\u000f in 7 min 32 sec: https://jenkins.joyent.us/job/nodejs-v0.8/./DESTCPU=ia32,label=nodejs-linux/11/","date":"2013-02-25T22:42:18.181Z","type":"message"}
+{"nick":"tjfontaine","message":"joyent-jenkins: hush.","date":"2013-02-25T22:42:26.800Z","type":"message"}
+{"nick":"joyent-jenkins","message":"tjfontaine did you mean me? Unknown command 'hush.'","date":"2013-02-25T22:42:26.951Z","type":"message"}
+{"nick":"joyent-jenkins","message":"Use '!jenkins help' to get help!","date":"2013-02-25T22:42:27.451Z","type":"message"}
+{"nick":"tjfontaine","message":"blah","date":"2013-02-25T22:42:31.876Z","type":"message"}
+{"nick":"bnoordhuis","message":"!jenkins help","date":"2013-02-25T22:42:36.127Z","type":"message"}
+{"nick":"joyent-jenkins","message":"Available commands:","date":"2013-02-25T22:42:36.294Z","type":"message"}
+{"nick":"joyent-jenkins","message":"abort <job> - specify which job to abort","date":"2013-02-25T22:42:36.794Z","type":"message"}
+{"nick":"joyent-jenkins","message":"alias [<alias> [<command>]] - defines a new alias, deletes one or lists all existing aliases","date":"2013-02-25T22:42:37.294Z","type":"message"}
+{"nick":"joyent-jenkins","message":"botsnack [<snack>] - om nom nom","date":"2013-02-25T22:42:37.794Z","type":"message"}
+{"nick":"joyent-jenkins","message":"build <job> [now|<delay>[s|m|h]] [<parameterkey>=<value>]* - schedule a job build, with standard, custom or no quiet period","date":"2013-02-25T22:42:38.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"cb - list jobs which are currently in progress","date":"2013-02-25T22:42:38.794Z","type":"message"}
+{"nick":"joyent-jenkins","message":"comment <job> <build-#> <comment> - adds a description to a build","date":"2013-02-25T22:42:39.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"currentlyBuilding - list jobs which are currently in progress","date":"2013-02-25T22:42:39.795Z","type":"message"}
+{"nick":"joyent-jenkins","message":"h [<job>|-v <view>] - show the health of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:40.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"health [<job>|-v <view>] - show the health of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:40.795Z","type":"message"}
+{"nick":"joyent-jenkins","message":"jobs [<job>|-v <view>] - show the status of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:41.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"q - show the state of the build queue","date":"2013-02-25T22:42:41.795Z","type":"message"}
+{"nick":"joyent-jenkins","message":"queue - show the state of the build queue","date":"2013-02-25T22:42:42.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"s [<job>|-v <view>] - show the status of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:42.795Z","type":"message"}
+{"nick":"joyent-jenkins","message":"schedule <job> [now|<delay>[s|m|h]] [<parameterkey>=<value>]* - schedule a job build, with standard, custom or no quiet period","date":"2013-02-25T22:42:43.295Z","type":"message"}
+{"nick":"joyent-jenkins","message":"status [<job>|-v <view>] - show the status of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:43.795Z","type":"message"}
+{"nick":"joyent-jenkins","message":"\u0002\u000313testresult [<job>|-v <view>] - show the test results of a specific job, jobs in a view or all jobs","date":"2013-02-25T22:42:44.296Z","type":"message"}
+{"nick":"joyent-jenkins","message":"userstat <username> - prints information about a Jenkins user","date":"2013-02-25T22:42:44.796Z","type":"message"}
+{"nick":"joyent-jenkins","date":"2013-02-25T22:42:49.825Z","type":"quit"}
+{"nick":"bnoordhuis","message":"um, maybe make it pm that?","date":"2013-02-25T22:42:56.391Z","type":"message"}
+{"nick":"bnoordhuis","message":"(low prio)","date":"2013-02-25T22:43:03.390Z","type":"message"}
+{"nick":"tjfontaine","message":"more than likely yes","date":"2013-02-25T22:43:21.161Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm very curious what botsnack does though","date":"2013-02-25T22:43:58.211Z","type":"message"}
+{"nick":"tjfontaine","message":"probably prints \"om nom nom\"","date":"2013-02-25T22:44:12.111Z","type":"message"}
+{"nick":"bnoordhuis","message":"so much unrealized potential","date":"2013-02-25T22:44:28.782Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037master\u000f * \u000251f6e6a\u0002 : src, test: downgrade to v8 3.14 api (+2 more commits) - http://git.io/qL0pXA","date":"2013-02-25T22:46:52.856Z","type":"message"}
+{"nick":"dominictarr_","date":"2013-02-25T22:55:31.480Z","type":"join"}
+{"nick":"qmx","new_nick":"qmx|brb","date":"2013-02-25T22:56:01.403Z","type":"nick"}
+{"nick":"TheJH","reason":"Ping timeout: 252 seconds","date":"2013-02-25T22:56:12.164Z","type":"quit"}
+{"nick":"dominictarr","reason":"Ping timeout: 255 seconds","date":"2013-02-25T22:58:41.494Z","type":"quit"}
+{"nick":"dominictarr_","new_nick":"dominictarr","date":"2013-02-25T22:58:41.815Z","type":"nick"}
+{"nick":"qmx|brb","new_nick":"qmx","date":"2013-02-25T23:13:14.090Z","type":"nick"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-02-25T23:20:56.841Z","type":"quit"}
+{"nick":"roxlu","reason":"Ping timeout: 260 seconds","date":"2013-02-25T23:23:43.580Z","type":"quit"}
+{"nick":"roxlu","date":"2013-02-25T23:25:27.811Z","type":"join"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-02-25T23:27:51.002Z","type":"nick"}
+{"nick":"isaacs","message":"whoa!!","date":"2013-02-25T23:29:11.559Z","type":"message"}
+{"nick":"isaacs","message":"we can kick off jobs via irc?","date":"2013-02-25T23:29:17.259Z","type":"message"}
+{"nick":"isaacs","message":"botsnack your face","date":"2013-02-25T23:29:32.349Z","type":"message"}
+{"nick":"isaacs","message":"!botsnack your face","date":"2013-02-25T23:29:35.699Z","type":"message"}
+{"nick":"isaacs","message":"!jenkins botsnack your face","date":"2013-02-25T23:29:44.499Z","type":"message"}
+{"nick":"isaacs","message":"??","date":"2013-02-25T23:29:47.529Z","type":"message"}
+{"nick":"isaacs","message":"!botsnack","date":"2013-02-25T23:29:53.259Z","type":"message"}
+{"nick":"isaacs","message":"!jenkins help","date":"2013-02-25T23:29:58.169Z","type":"message"}
+{"nick":"tjfontaine","message":"heh, it's gone I turned off the old one","date":"2013-02-25T23:30:04.929Z","type":"message"}
+{"nick":"isaacs","message":"LOUDBOT: search jenkins","date":"2013-02-25T23:30:39.668Z","type":"message"}
+{"nick":"LOUDBOT","message":"isaacs: <aaron:#dongtown> T DEVELOPER: IF YOU CAN'T ADD YOUR THIRD-PARTY PERL MODULE TO THE JENKINS JOB THAT BUILDS THAT SHIT INTO RPMS FOR YOU, YOUR SHIT WON'T GET DEPLOYED","date":"2013-02-25T23:30:40.063Z","type":"message"}
+{"nick":"isaacs","message":"LOUDBOT: search jenkins","date":"2013-02-25T23:30:50.068Z","type":"message"}
+{"nick":"LOUDBOT","message":"isaacs: <aaron:#dongtown> T DEVELOPER: IF YOU CAN'T ADD YOUR THIRD-PARTY PERL MODULE TO THE JENKINS JOB THAT BUILDS THAT SHIT INTO RPMS FOR YOU, YOUR SHIT WON'T GET DEPLOYED","date":"2013-02-25T23:30:50.482Z","type":"message"}
+{"nick":"isaacs","message":"LOUDBOT: next","date":"2013-02-25T23:30:53.278Z","type":"message"}
+{"nick":"LOUDBOT","message":"isaacs: <p_g_p:#mefi> I'M NOT GOING TO LIE TO YOU JENKINS: I'M GOING TO LIE TO YOU","date":"2013-02-25T23:30:53.532Z","type":"message"}
+{"nick":"nodejs-ci","date":"2013-02-25T23:30:58.381Z","type":"join"}
+{"nick":"isaacs","message":"LOUDBOT: next","date":"2013-02-25T23:30:59.871Z","type":"message"}
+{"nick":"LOUDBOT","message":">:| I DON'T FUCKING KNOW!","date":"2013-02-25T23:31:00.073Z","type":"message"}
+{"nick":"isaacs","message":"LOUDBOT: next","date":"2013-02-25T23:31:08.488Z","type":"message"}
+{"nick":"LOUDBOT","message":"isaacs: <p_g_p:#mefi> I'M NOT GOING TO LIE TO YOU JENKINS: I'M GOING TO LIE TO YOU","date":"2013-02-25T23:31:08.938Z","type":"message"}
+{"nick":"tjfontaine","message":"nodejs-ci: botsnack","date":"2013-02-25T23:31:13.308Z","type":"message"}
+{"nick":"isaacs","message":"!jenkins botsnack","date":"2013-02-25T23:31:20.628Z","type":"message"}
+{"nick":"isaacs","message":"nodejs-ci: help","date":"2013-02-25T23:31:25.238Z","type":"message"}
+{"nick":"isaacs","message":"!jenkins help","date":"2013-02-25T23:31:28.508Z","type":"message"}
+{"nick":"isaacs","message":"hmm...","date":"2013-02-25T23:31:30.788Z","type":"message"}
+{"nick":"tjfontaine","message":"wonder what it's waiting on","date":"2013-02-25T23:31:30.934Z","type":"message"}
+{"nick":"hz","date":"2013-02-25T23:31:41.172Z","type":"quit"}
+{"nick":"tjfontaine","message":"nodejs-ci: help","date":"2013-02-25T23:32:02.510Z","type":"message"}
+{"nick":"tjfontaine","message":"it's so polite it just doesn't respond","date":"2013-02-25T23:32:12.491Z","type":"message"}
+{"nick":"nodejs-ci","reason":"Client Quit","date":"2013-02-25T23:32:47.180Z","type":"quit"}
+{"nick":"trevnorris","message":"ugh. forgot 3.14 has all those \"private field\" warnings when compiling.","date":"2013-02-25T23:40:02.967Z","type":"message"}
+{"nick":"bnoordhuis","message":"what warnings?","date":"2013-02-25T23:40:40.837Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm presuming clang is being more verbose than gcc would be","date":"2013-02-25T23:41:41.564Z","type":"message"}
+{"nick":"tjfontaine","message":"clang++","date":"2013-02-25T23:41:44.625Z","type":"message"}
+{"nick":"trevnorris","message":"yup","date":"2013-02-25T23:42:18.715Z","type":"message"}
+{"nick":"trevnorris","message":"like: deps/v8/src/store-buffer.h:229:9: warning: private field 'heap_' is not used","date":"2013-02-25T23:42:36.565Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-02-25T23:43:58.203Z","type":"quit"}
+{"nick":"tjfontaine","message":"I wish I could spell","date":"2013-02-25T23:44:26.166Z","type":"message"}
+{"nick":"mikeal","date":"2013-02-25T23:45:12.665Z","type":"join"}
+{"nick":"tjfontaine","message":"bnoordhuis: btw I think you broke the build (on smartos)","date":"2013-02-25T23:48:12.902Z","type":"message"}
+{"nick":"tjfontaine","message":"dtrace: failed to compile script src/v8ustack.d: line 228: failed to resolve V8DBG_SMISHIFTSIZE: Unknown variable name","date":"2013-02-25T23:48:21.739Z","type":"message"}
+{"nick":"tjfontaine","message":"presuming the v8 revert has happened","date":"2013-02-25T23:48:39.878Z","type":"message"}
+{"nick":"loladiro","date":"2013-02-25T23:49:55.841Z","type":"join"}
+{"nick":"bnoordhuis","message":"it has","date":"2013-02-25T23:49:59.324Z","type":"message"}
+{"nick":"bnoordhuis","message":"--without-dtrace works?","date":"2013-02-25T23:50:15.396Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: ^","date":"2013-02-25T23:50:20.167Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: lemme check","date":"2013-02-25T23:50:38.488Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: yup, it built cleanly","date":"2013-02-25T23:52:12.178Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: you know, i've no idea where that variable lives","date":"2013-02-25T23:52:53.765Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, src/v8abbr.h","date":"2013-02-25T23:53:11.944Z","type":"message"}
+{"nick":"tjfontaine","message":"istr indutny making changes to accomodate 64bit that were related?","date":"2013-02-25T23:53:39.457Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-02-25T23:53:45.220Z","type":"message"}
+{"nick":"bnoordhuis","message":"what happens when you revert f9afb3f01002e5667a0df80ee784af0dfe2305c2 ?","date":"2013-02-25T23:53:51.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh and 3b715edda97c8edfd95cc1fb8d31f92cef6bcc52 too","date":"2013-02-25T23:54:37.463Z","type":"message"}
+{"nick":"tjfontaine","message":"ugh all the whitespace changes","date":"2013-02-25T23:55:42.058Z","type":"message"}
