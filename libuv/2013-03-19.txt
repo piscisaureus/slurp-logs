@@ -1,0 +1,324 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-03-19T00:00:01.535Z","type":"quit"}
+{"nick":"ircretary","date":"2013-03-19T00:00:09.589Z","type":"join"}
+{"nick":"tjfontaine","message":"so the question is what's causing it to evaluate `.stack` such that you're losing your .message","date":"2013-03-19T00:00:52.670Z","type":"message"}
+{"nick":"trevnorris","message":"we're not loosing our .message","date":"2013-03-19T00:01:47.652Z","type":"message"}
+{"nick":"trevnorris","message":"> var e = new Error('first');","date":"2013-03-19T00:01:52.197Z","type":"message"}
+{"nick":"trevnorris","message":"> e.message","date":"2013-03-19T00:01:57.106Z","type":"message"}
+{"nick":"trevnorris","message":"'first'","date":"2013-03-19T00:02:00.671Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: re the backtrace thing, to make debugging easier for users","date":"2013-03-19T00:02:01.162Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's disabled now though","date":"2013-03-19T00:02:07.524Z","type":"message"}
+{"nick":"tjfontaine","message":"it's lost in the sense that .stack is already been called and you won't get your custom message","date":"2013-03-19T00:02:11.985Z","type":"message"}
+{"nick":"bnoordhuis","message":"in v0.10 that is, not in master","date":"2013-03-19T00:02:15.168Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: yeah. the stack message is being generated only once, when the Error is instantiated. that's what you're saying right?","date":"2013-03-19T00:03:24.806Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: hm? like in this specific case, or is there a bigger \"backtrace\" thing used in node?","date":"2013-03-19T00:04:07.276Z","type":"message"}
+{"nick":"tjfontaine","message":"`.stack` is being evaluated before `.message =`, but that doesn't seem possible from lib/ so I'm guessing this must be in src/","date":"2013-03-19T00:04:39.847Z","type":"message"}
+{"nick":"qmx|away","new_nick":"qmx","date":"2013-03-19T00:05:08.323Z","type":"nick"}
+{"nick":"trevnorris","message":"bnoordhuis: i'm not sure why the backtrace thing is even necessary. i changed it to throw in the returned function, not with the backtrace and it gave the same info, plus some.","date":"2013-03-19T00:05:11.068Z","type":"message"}
+{"nick":"tjfontaine","message":"oh I'll be damned, DEBUG is set in this test :)","date":"2013-03-19T00:06:28.386Z","type":"message"}
+{"nick":"tjfontaine","message":"things you should look at before trying to find the problem","date":"2013-03-19T00:06:42.574Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: i'm confused. .stack is evaluated on instantiation.","date":"2013-03-19T00:07:44.623Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: check this https://gist.github.com/trevnorris/5192265","date":"2013-03-19T00:08:22.260Z","type":"message"}
+{"nick":"trevnorris","message":"i'd have imagined that the stack trace would have shown 'a' being thrown from blahblah()","date":"2013-03-19T00:08:45.389Z","type":"message"}
+{"nick":"trevnorris","message":"but it shows it was thrown from where it was instantiated.","date":"2013-03-19T00:08:55.759Z","type":"message"}
+{"nick":"tjfontaine","message":"yes, that's common way to capture debugging info","date":"2013-03-19T00:09:07.660Z","type":"message"}
+{"nick":"tjfontaine","message":"which is why that rethrow is there","date":"2013-03-19T00:09:26.506Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. and like you pointed out. the stack is evaluated with \"MarkOneShotGetter\" from \"captureStackTrace\"","date":"2013-03-19T00:10:00.595Z","type":"message"}
+{"nick":"trevnorris","message":"so the stack will never be reevaluated.","date":"2013-03-19T00:10:08.226Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, but where is `.stack` being called here? :P","date":"2013-03-19T00:10:26.893Z","type":"message"}
+{"nick":"trevnorris","message":"hm? in captureStackTrace they're getting the stack with \"var stack = %CollectStackTrace(obj...\"","date":"2013-03-19T00:11:47.648Z","type":"message"}
+{"nick":"tjfontaine","message":"no, I mean in fs","date":"2013-03-19T00:11:55.110Z","type":"message"}
+{"nick":"kazupon","date":"2013-03-19T00:11:57.384Z","type":"join"}
+{"nick":"trevnorris","message":"it's not.","date":"2013-03-19T00:12:09.997Z","type":"message"}
+{"nick":"tjfontaine","message":"we don't set .message later anywhere else?","date":"2013-03-19T00:12:25.504Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. we set .message later, but never use .stack.","date":"2013-03-19T00:12:38.190Z","type":"message"}
+{"nick":"trevnorris","message":"but only in that one spot (realize that's what you were asking)","date":"2013-03-19T00:12:57.970Z","type":"message"}
+{"nick":"tjfontaine","message":"so where are we using .stack now?","date":"2013-03-19T00:12:58.444Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2013-03-19T00:13:04.239Z","type":"message"}
+{"nick":"trevnorris","message":"we aren't","date":"2013-03-19T00:13:05.740Z","type":"message"}
+{"nick":"tjfontaine","message":"so v8 just doesn't allow delayed message anymore I guess","date":"2013-03-19T00:13:34.919Z","type":"message"}
+{"nick":"trevnorris","message":"exactly","date":"2013-03-19T00:13:42.246Z","type":"message"}
+{"nick":"trevnorris","message":"as of commit 076470e5 (3.16.6)","date":"2013-03-19T00:13:48.293Z","type":"message"}
+{"nick":"tjfontaine","message":"well if you knew that why did you send me bouncing around on all this :P","date":"2013-03-19T00:14:12.241Z","type":"message"}
+{"nick":"trevnorris","message":"(well, um. that's from the official git mirror)","date":"2013-03-19T00:14:15.830Z","type":"message"}
+{"nick":"trevnorris","message":"oh, sorry. i didn't realize that until half way through this myself.","date":"2013-03-19T00:14:33.787Z","type":"message"}
+{"nick":"trevnorris","message":"then I guess I didn't communicate it :(","date":"2013-03-19T00:14:48.403Z","type":"message"}
+{"nick":"tjfontaine","message":"what a weird set of osx failures, I've never seen the write's fail like that before http://jenkins.nodejs.org/job/node-pullrequest/66/DESTCPU=ia32,label=osx/tapTestReport/","date":"2013-03-19T00:16:00.629Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033piscisaureus\u000f created tag node-v0.5.6 - http://git.io/4RW6tg","date":"2013-03-19T00:16:29.070Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: so will it be disabled in master anytime soon? i have a fix for it now.","date":"2013-03-19T00:16:44.602Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 245 seconds","date":"2013-03-19T00:18:03.169Z","type":"quit"}
+{"nick":"trevnorris","message":"oh wait, nm.","date":"2013-03-19T00:18:58.138Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: just to confirm this stupidity: http://code.google.com/p/v8/issues/detail?id=2559","date":"2013-03-19T00:23:57.091Z","type":"message"}
+{"nick":"tjfontaine","message":"right ENOTABUG","date":"2013-03-19T00:24:39.285Z","type":"message"}
+{"nick":"tjfontaine","message":"so it's just a matter of changing wtf","date":"2013-03-19T00:24:56.385Z","type":"message"}
+{"nick":"trevnorris","message":"well, either it doesn't show the message, or it doesn't show the correct stack trace.","date":"2013-03-19T00:25:30.872Z","type":"message"}
+{"nick":"trevnorris","message":"so setting .message later is set in not a few places. anyone have an idea how to deal with this?","date":"2013-03-19T00:27:55.610Z","type":"message"}
+{"nick":"bnoordhuis","message":"aww. apparently clang doesn't support register void** rbp asm(\"%rbp\");","date":"2013-03-19T00:30:52.375Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least, not the version that ships with xcode","date":"2013-03-19T00:31:05.518Z","type":"message"}
+{"nick":"trevnorris","message":"is that 3.2?","date":"2013-03-19T00:31:44.533Z","type":"message"}
+{"nick":"bnoordhuis","message":"Apple LLVM version 4.2 (clang-425.0.24) (based on LLVM 3.2svn)","date":"2013-03-19T00:32:26.744Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Read error: Operation timed out","date":"2013-03-19T00:32:30.617Z","type":"quit"}
+{"nick":"bnoordhuis","message":"but no worries, __asm__ __volatile__ (\"mov %%rbp, %0\" : \"=g\" (rbp)); works","date":"2013-03-19T00:33:00.324Z","type":"message"}
+{"nick":"trevnorris","message":"wtf. glad you know that","date":"2013-03-19T00:33:22.425Z","type":"message"}
+{"nick":"trevnorris","message":"and thanks for the review.","date":"2013-03-19T00:34:19.631Z","type":"message"}
+{"nick":"bnoordhuis","message":"np","date":"2013-03-19T00:34:24.103Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: two runs in a row your ciphers patch had http://jenkins.nodejs.org/job/node-pullrequest/DESTCPU=ia32,label=osx/lastCompletedBuild/tapTestReport/ added the writefloat writedouble failure, but I'm not sure why","date":"2013-03-19T00:34:25.554Z","type":"message"}
+{"nick":"bnoordhuis","message":"err?","date":"2013-03-19T00:34:32.725Z","type":"message"}
+{"nick":"trevnorris","message":"oh,","date":"2013-03-19T00:34:50.824Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's so unrelated i can't even think of a good analogy","date":"2013-03-19T00:34:54.263Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. that's a known issue, but nothing to do with the ciphers patch...","date":"2013-03-19T00:35:10.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, the nan bug?","date":"2013-03-19T00:35:25.871Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: what compiler does it use?","date":"2013-03-19T00:35:41.068Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-03-19T00:35:52.477Z","type":"quit"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-03-19T00:36:39.752Z","type":"quit"}
+{"nick":"sblom","message":"Feedback on http://github.com/joyent/node/pull/5709 ?","date":"2013-03-19T00:45:14.435Z","type":"message"}
+{"nick":"sblom","message":"(Fixes 4 unit tests on my machine--looks like our Jenkins server doesn't see any of these particular failures.)","date":"2013-03-19T00:45:40.305Z","type":"message"}
+{"nick":"sblom","message":"Erm, ","date":"2013-03-19T00:47:48.863Z","type":"message"}
+{"nick":"sblom","message":"https://github.com/joyent/node/pull/5079","date":"2013-03-19T00:47:49.860Z","type":"message"}
+{"nick":"sblom","message":"finger-paste fail.","date":"2013-03-19T00:48:06.294Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: clang","date":"2013-03-19T00:55:35.395Z","type":"message"}
+{"nick":"tjfontaine","message":"I wonder what's changed such that it starts popping up now? or the test is actually now writing floats and doubles","date":"2013-03-19T00:56:25.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: there's a bug in ia32 clang w.r.t. nan handling","date":"2013-03-19T01:00:58.400Z","type":"message"}
+{"nick":"tjfontaine","message":"right, but why am I just now hitting it on osx?","date":"2013-03-19T01:01:15.990Z","type":"message"}
+{"nick":"bnoordhuis","message":"i don't know. you tell me :)","date":"2013-03-19T01:01:28.232Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe","date":"2013-03-19T01:02:00.114Z","type":"message"}
+{"nick":"tjfontaine","message":"i will whence I return home","date":"2013-03-19T01:02:15.964Z","type":"message"}
+{"nick":"dominictarr","reason":"Read error: Connection reset by peer","date":"2013-03-19T01:12:33.177Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-03-19T01:12:54.380Z","type":"join"}
+{"nick":"kazupon","date":"2013-03-19T01:14:35.000Z","type":"join"}
+{"nick":"wolfeidau","reason":"Read error: Connection reset by peer","date":"2013-03-19T01:17:11.695Z","type":"quit"}
+{"nick":"wolfeidau","date":"2013-03-19T01:17:19.118Z","type":"join"}
+{"nick":"abraxas","date":"2013-03-19T01:17:19.798Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 272 seconds","date":"2013-03-19T01:19:52.683Z","type":"quit"}
+{"nick":"dominictarr","reason":"Read error: Connection reset by peer","date":"2013-03-19T01:20:07.887Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-03-19T01:20:33.317Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-03-19T01:29:02.206Z","type":"quit"}
+{"nick":"sblom","date":"2013-03-19T01:29:13.754Z","type":"quit"}
+{"nick":"bnoordhuis","message":"/Users/bnoordhuis/src/v8/tmp/stacktrace(0x10ebff000): Trace(v8::Arguments const&)(0x10ec01570 0x10ec01581)","date":"2013-03-19T01:40:11.910Z","type":"message"}
+{"nick":"bnoordhuis","message":"/Users/bnoordhuis/src/v8/out/x64.debug/libv8.dylib(0x10ec0a000): v8::internal::MaybeObject* v8::internal::HandleApiCallHelper<false>(v8::internal::(anonymous namespace)::BuiltinArguments<(v8::internal::BuiltinExtraArguments)1>, v8::internal::Isolate*)(0x10ec82ff0 0x10ec83405)","date":"2013-03-19T01:40:14.782Z","type":"message"}
+{"nick":"bnoordhuis","message":"/Users/bnoordhuis/src/v8/out/x64.debug/libv8.dylib(0x10ec0a000): v8::internal::Builtin_Impl_HandleApiCall(v8::internal::(anonymous namespace)::BuiltinArguments<(v8::internal::BuiltinExtraArguments)1>, v8::internal::Isolate*)(0x10ec82fb0 0x10ec82fe3)","date":"2013-03-19T01:40:18.883Z","type":"message"}
+{"nick":"bnoordhuis","message":"/Users/bnoordhuis/src/v8/out/x64.debug/libv8.dylib(0x10ec0a000): v8::internal::Builtin_HandleApiCall(v8::internal::(anonymous namespace)::BuiltinArguments<(v8::internal::BuiltinExtraArguments)1>, v8::internal::Isolate*)(0x10ec7c710 0x10ec7c78c)","date":"2013-03-19T01:40:22.823Z","type":"message"}
+{"nick":"bnoordhuis","message":"Stub:CEntryStub(0x25834db062a0:0x25834db062ee)","date":"2013-03-19T01:40:26.893Z","type":"message"}
+{"nick":"bnoordhuis","message":"LazyCompile:~hop(0x25834db2d400:0x25834db2d423)","date":"2013-03-19T01:40:29.513Z","type":"message"}
+{"nick":"bnoordhuis","message":"LazyCompile:~next(0x25834db2d320:0x25834db2d343)","date":"2013-03-19T01:40:31.927Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ my stack walker works :)","date":"2013-03-19T01:40:34.398Z","type":"message"}
+{"nick":"cjd","message":"that is awesome","date":"2013-03-19T01:42:04.194Z","type":"message"}
+{"nick":"bnoordhuis","message":"https://gist.github.com/bnoordhuis/5192966 <- gist","date":"2013-03-19T01:42:51.727Z","type":"message"}
+{"nick":"cjd","message":"there's a gnu thing which does it","date":"2013-03-19T01:42:54.907Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mean backtrace_symbols()?","date":"2013-03-19T01:43:08.913Z","type":"message"}
+{"nick":"cjd","message":"maybe","date":"2013-03-19T01:43:26.068Z","type":"message"}
+{"nick":"cjd","message":"\"libunwind\" comes vaguely to mind","date":"2013-03-19T01:43:34.224Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh right, that too","date":"2013-03-19T01:43:40.845Z","type":"message"}
+{"nick":"bnoordhuis","message":"but neither understands v8 stack frames","date":"2013-03-19T01:43:48.200Z","type":"message"}
+{"nick":"bnoordhuis","message":"this one does :)","date":"2013-03-19T01:43:51.093Z","type":"message"}
+{"nick":"cjd","message":"aha","date":"2013-03-19T01:44:17.989Z","type":"message"}
+{"nick":"cjd","message":"I tried libunwind but scrapped it because it couldn't resolve line numbers and offsets are unfun","date":"2013-03-19T01:45:14.758Z","type":"message"}
+{"nick":"cjd","message":"esp. when everybody compiles it themselves","date":"2013-03-19T01:45:22.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"wasn't that due to lack of debug symbols?","date":"2013-03-19T01:45:57.176Z","type":"message"}
+{"nick":"cjd","message":"I had debug symbols, perhaps I wasn't using the right functions","date":"2013-03-19T01:46:14.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess that's the next step for my stack walker but that means pulling in libelf and libdw","date":"2013-03-19T01:46:15.342Z","type":"message"}
+{"nick":"cjd","message":"might look into it again","date":"2013-03-19T01:46:17.638Z","type":"message"}
+{"nick":"cjd","message":"I haven't had a segfault report in a long time but I get occasional assertion fails","date":"2013-03-19T01:46:54.829Z","type":"message"}
+{"nick":"bnoordhuis","message":"we get them all the time in node","date":"2013-03-19T01:47:21.246Z","type":"message"}
+{"nick":"bnoordhuis","message":"mostly due to bad add-ons","date":"2013-03-19T01:47:25.028Z","type":"message"}
+{"nick":"cjd","message":"/nod","date":"2013-03-19T01:47:29.797Z","type":"message"}
+{"nick":"bnoordhuis","message":"but people still open issues in the bug tracker :(","date":"2013-03-19T01:47:44.831Z","type":"message"}
+{"nick":"cjd","message":"yeap","date":"2013-03-19T01:47:53.579Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm hoping this will make it easier to weed out bogus bug reports","date":"2013-03-19T01:47:56.898Z","type":"message"}
+{"nick":"cjd","message":"CLOSED: TAINTED ADDON, NOT GPL <evil grin>","date":"2013-03-19T01:48:25.363Z","type":"message"}
+{"nick":"bnoordhuis","message":"more like the other way around :)","date":"2013-03-19T01:49:17.746Z","type":"message"}
+{"nick":"cjd","message":"heh","date":"2013-03-19T01:49:24.108Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay, time i went to bed. have fun","date":"2013-03-19T01:49:46.012Z","type":"message"}
+{"nick":"cjd","message":"gn","date":"2013-03-19T01:49:48.844Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 252 seconds","date":"2013-03-19T01:54:20.943Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-19T02:00:16.898Z","type":"quit"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-03-19T02:04:40.646Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-03-19T02:06:55.669Z","type":"nick"}
+{"nick":"benoitc","date":"2013-03-19T02:09:04.870Z","type":"join"}
+{"nick":"brson_","reason":"Quit: leaving","date":"2013-03-19T02:14:04.508Z","type":"quit"}
+{"nick":"tjfontaine","message":"ircretary: tell bnoordhuis upon reflection on the ride home I know what changed, and it was me :)","date":"2013-03-19T02:18:37.395Z","type":"message"}
+{"nick":"ircretary","message":"tjfontaine: I'll be sure to tell bnoordhuis","date":"2013-03-19T02:18:37.603Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-03-19T02:26:14.988Z","type":"nick"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-03-19T02:34:29.181Z","type":"quit"}
+{"nick":"cjd","message":"ircretary: tell bnoordhuis maybe useful https://github.com/mirrors/gcc/blob/master/libbacktrace/backtrace.h","date":"2013-03-19T02:36:05.585Z","type":"message"}
+{"nick":"ircretary","message":"cjd: I'll be sure to tell bnoordhuis","date":"2013-03-19T02:36:05.797Z","type":"message"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-19T02:37:22.742Z","type":"quit"}
+{"nick":"stagas","date":"2013-03-19T02:37:56.866Z","type":"join"}
+{"nick":"kazupon","date":"2013-03-19T02:38:19.925Z","type":"join"}
+{"nick":"benoitc","date":"2013-03-19T02:40:34.419Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-03-19T02:41:17.545Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 272 seconds","date":"2013-03-19T02:44:06.680Z","type":"quit"}
+{"nick":"loladiro","date":"2013-03-19T02:53:51.930Z","type":"join"}
+{"nick":"bradleymeck","date":"2013-03-19T02:55:11.569Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2013-03-19T02:56:13.834Z","type":"quit"}
+{"nick":"stagas_","date":"2013-03-19T02:57:28.298Z","type":"join"}
+{"nick":"loladiro","reason":"Ping timeout: 252 seconds","date":"2013-03-19T02:58:26.414Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 272 seconds","date":"2013-03-19T02:58:40.763Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-03-19T02:59:06.598Z","type":"join"}
+{"nick":"stagas","date":"2013-03-19T02:59:22.937Z","type":"join"}
+{"nick":"bnoordhuis","date":"2013-03-19T03:00:22.663Z","type":"join"}
+{"nick":"loladiro","date":"2013-03-19T03:00:30.902Z","type":"join"}
+{"nick":"erickt","date":"2013-03-19T03:01:51.523Z","type":"join"}
+{"nick":"stagas_","reason":"Ping timeout: 246 seconds","date":"2013-03-19T03:01:53.081Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 272 seconds","date":"2013-03-19T03:05:38.721Z","type":"quit"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-03-19T03:14:28.482Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-03-19T03:22:19.095Z","type":"quit"}
+{"nick":"mikeal","date":"2013-03-19T03:38:07.383Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-19T03:52:15.804Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-19T03:58:08.390Z","type":"join"}
+{"nick":"kazupon","date":"2013-03-19T04:00:11.384Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-03-19T04:00:12.051Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-03-19T04:02:57.523Z","type":"join"}
+{"nick":"arlolra","date":"2013-03-19T04:16:03.137Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-03-19T04:16:22.111Z","type":"quit"}
+{"nick":"mikeal","date":"2013-03-19T04:17:06.647Z","type":"join"}
+{"nick":"mikeal","reason":"Read error: Connection reset by peer","date":"2013-03-19T04:17:45.127Z","type":"quit"}
+{"nick":"mikeal1","date":"2013-03-19T04:17:48.358Z","type":"join"}
+{"nick":"mikeal1","reason":"Quit: Leaving.","date":"2013-03-19T04:30:33.573Z","type":"quit"}
+{"nick":"mikeal","date":"2013-03-19T04:31:10.661Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2013-03-19T04:31:35.406Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-03-19T04:32:58.483Z","type":"quit"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-03-19T04:36:11.840Z","type":"nick"}
+{"nick":"arlolra","reason":"Quit: Linkinus - http://linkinus.com","date":"2013-03-19T04:41:30.672Z","type":"quit"}
+{"nick":"trevnorris","date":"2013-03-19T04:42:27.617Z","type":"join"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-03-19T04:42:54.042Z","type":"quit"}
+{"nick":"mikeal","date":"2013-03-19T04:43:31.517Z","type":"join"}
+{"nick":"loladiro","date":"2013-03-19T04:48:09.433Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2013-03-19T04:55:56.751Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-19T04:57:57.057Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-19T05:02:09.538Z","type":"join"}
+{"nick":"AvianFlu","reason":"Read error: Connection reset by peer","date":"2013-03-19T05:14:50.485Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-03-19T05:15:19.405Z","type":"join"}
+{"nick":"trevnorris","message":"ircretary: hi","date":"2013-03-19T05:18:53.547Z","type":"message"}
+{"nick":"ircretary","message":"trevnorris: Hello :)","date":"2013-03-19T05:18:53.763Z","type":"message"}
+{"nick":"tjfontaine","message":"I do love node and the module ecosystem at times","date":"2013-03-19T05:19:42.998Z","type":"message"}
+{"nick":"tjfontaine","message":"being able to server.on('NotFound', function (req, res) { proxy.proxyRequest(req, res); })","date":"2013-03-19T05:20:13.241Z","type":"message"}
+{"nick":"tjfontaine","message":"it's just so simple","date":"2013-03-19T05:20:18.277Z","type":"message"}
+{"nick":"trevnorris","message":"with the upgrade to 3.17, module authors will need access to the isolate. you guys think they should just get it via \"Isolate* isolate = Isolate::GetCurrent()\", or should node_isolate be exposed in node.h?","date":"2013-03-19T05:23:36.507Z","type":"message"}
+{"nick":"tjfontaine","message":"when you say Isolate::GetCurrent() you mean the v8 getter?","date":"2013-03-19T05:24:16.418Z","type":"message"}
+{"nick":"tjfontaine","message":"or a new node getter?","date":"2013-03-19T05:24:36.734Z","type":"message"}
+{"nick":"tjfontaine","message":"I would probably vote for node::GetIsolate() as compared to people having the static node_isolate","date":"2013-03-19T05:25:31.046Z","type":"message"}
+{"nick":"trevnorris","message":"Isolate::GetCurrent() is a new api which allows you to get the isolate of the current context. and since node only has one isolate, it will always point to node_isolate.","date":"2013-03-19T05:28:39.058Z","type":"message"}
+{"nick":"trevnorris","message":"(it's new since 3.14, i think...)","date":"2013-03-19T05:29:00.278Z","type":"message"}
+{"nick":"trevnorris","message":"cool. i'll need to update the docs showing these steps so authors don't get deprecation warnings all over the place.","date":"2013-03-19T05:29:42.711Z","type":"message"}
+{"nick":"tjfontaine","message":"well","date":"2013-03-19T05:29:48.632Z","type":"message"}
+{"nick":"tjfontaine","message":"I don't think v8::Isolate::GetCurrent is ideal, I would say node::GetIsolate makes more sense, as generally the compiler would be able to inline the latter","date":"2013-03-19T05:30:41.382Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-03-19T05:32:51.402Z","type":"quit"}
+{"nick":"tjfontaine","message":"trevnorris: for comparison consider uv_default_loop() vs uv.h expossing default_loop_ptr","date":"2013-03-19T05:35:29.742Z","type":"message"}
+{"nick":"trevnorris","message":"would it basically be: \"Isolate* node::GetIsolate() { return node::node_isolate; }\" ?","date":"2013-03-19T05:39:41.828Z","type":"message"}
+{"nick":"tjfontaine","message":"ya","date":"2013-03-19T05:43:07.924Z","type":"message"}
+{"nick":"trevnorris","message":"how would we expose that w/o also exposing node::node_isolate?","date":"2013-03-19T05:44:13.618Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-03-19T05:44:35.068Z","type":"nick"}
+{"nick":"tjfontaine","message":"by not including it in the namespace? or by specifying its visibility","date":"2013-03-19T05:45:58.893Z","type":"message"}
+{"nick":"tjfontaine","message":"by leaving it in node_internals and having node::GetIsolate in node.h :)","date":"2013-03-19T05:46:50.239Z","type":"message"}
+{"nick":"trevnorris","message":"oh, so simply including a header doesn't expose everything in the header? i'm such a newb...","date":"2013-03-19T05:48:55.749Z","type":"message"}
+{"nick":"tjfontaine","message":"well, at the very least if it's in node_internals.h it's less than public and you can change without worrying about who you screw over","date":"2013-03-19T05:50:09.413Z","type":"message"}
+{"nick":"trevnorris","message":"wait. what? node_object_wrap.h can get access to node::node_isolate by simply including node.h and using \"extern v8::Isolate* node_isolate;\" (at least that's what bn had me do)","date":"2013-03-19T05:51:01.994Z","type":"message"}
+{"nick":"trevnorris","message":"ok, i'm not going to worry about it. you c++ experts let me know what the best solution is and i'll just do it. :)","date":"2013-03-19T05:52:53.371Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: though there's been no consensus on what to do about the Error message thing. any ideas? i mean... we could go so far as to manipulate the stack string for DEBUG outputs, but...","date":"2013-03-19T05:55:38.148Z","type":"message"}
+{"nick":"tjfontaine","message":"manipulate it how?","date":"2013-03-19T05:59:17.475Z","type":"message"}
+{"nick":"trevnorris","message":"please don't laugh, but: \"var st = err.stack.split('\\n'); st[0] = 'Error: ' + err.message; err.stack = st.join('\\n');\"","date":"2013-03-19T06:02:43.887Z","type":"message"}
+{"nick":"tjfontaine","message":"stack is immutable","date":"2013-03-19T06:02:58.599Z","type":"message"}
+{"nick":"tjfontaine","message":"isn't it?","date":"2013-03-19T06:03:04.087Z","type":"message"}
+{"nick":"mmalecki","new_nick":"mmalecki[zzz]","date":"2013-03-19T06:03:40.856Z","type":"nick"}
+{"nick":"trevnorris","message":"> var er = new Error; er.stack = 'hi'; throw er;","date":"2013-03-19T06:03:54.909Z","type":"message"}
+{"nick":"trevnorris","message":"hi","date":"2013-03-19T06:03:55.530Z","type":"message"}
+{"nick":"tjfontaine","message":"what an inconsistent api","date":"2013-03-19T06:04:45.714Z","type":"message"}
+{"nick":"trevnorris","message":"yeah... making life real fun right now.","date":"2013-03-19T06:05:32.217Z","type":"message"}
+{"nick":"tjfontaine","message":"I woudl imagine that you wouldn't be able to modify the stack in future releases","date":"2013-03-19T06:06:09.037Z","type":"message"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-03-19T06:07:51.711Z","type":"quit"}
+{"nick":"kevireilly","reason":"Remote host closed the connection","date":"2013-03-19T06:08:09.737Z","type":"quit"}
+{"nick":"trevnorris","message":"what I don't get is that .stack isn't anywhere in the ecmascript 262 standard I can find.","date":"2013-03-19T06:08:33.761Z","type":"message"}
+{"nick":"trevnorris","message":"here's the discussion on it's usage: http://mozilla.6506.n7.nabble.com/Error-stack-td106557.html","date":"2013-03-19T06:09:27.940Z","type":"message"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-19T06:11:10.904Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-19T06:14:09.783Z","type":"join"}
+{"nick":"kevireilly","date":"2013-03-19T06:14:23.181Z","type":"join"}
+{"nick":"jguerrero","reason":"Quit: jguerrero","date":"2013-03-19T06:18:14.084Z","type":"quit"}
+{"nick":"trevnorris","message":"hm. well. didn't think that upgrading v8 would have gotten hung up on something like this.","date":"2013-03-19T06:22:30.361Z","type":"message"}
+{"nick":"cjd","message":"ahh the benefits of being a BDFL","date":"2013-03-19T06:27:31.764Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I wouldn't necessarily call this a hang-up, it's just an annoyance that will have to be accepted or worked around, the hangup would be more on general perf :)","date":"2013-03-19T06:28:14.465Z","type":"message"}
+{"nick":"wolfeidau","date":"2013-03-19T06:28:46.705Z","type":"join"}
+{"nick":"indutny","message":"morning","date":"2013-03-19T06:57:31.600Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-03-19T06:58:40.619Z","type":"nick"}
+{"nick":"trevnorris","message":"tjfontaine: yeah. guess my ocd is getting the better of me here.","date":"2013-03-19T07:00:53.976Z","type":"message"}
+{"nick":"trevnorris","message":"but i'll make Errors my bitch https://gist.github.com/trevnorris/5194222","date":"2013-03-19T07:01:02.348Z","type":"message"}
+{"nick":"trevnorris","message":"one problem. sec.","date":"2013-03-19T07:04:01.311Z","type":"message"}
+{"nick":"trevnorris","message":"^ indutny: consider throwing in the above to make debugger error messages work properly? ;-)","date":"2013-03-19T07:06:27.233Z","type":"message"}
+{"nick":"indutny","message":"too hacky","date":"2013-03-19T07:06:51.961Z","type":"message"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-03-19T07:07:26.039Z","type":"quit"}
+{"nick":"trevnorris","message":"lol. and so much more.","date":"2013-03-19T07:07:48.967Z","type":"message"}
+{"nick":"kevireilly","message":"trevnorris: 24 is just setting 23 again","date":"2013-03-19T07:08:08.262Z","type":"message"}
+{"nick":"trevnorris","message":"no, don't worry. i'd be worried about node if something like that made it in.","date":"2013-03-19T07:08:10.216Z","type":"message"}
+{"nick":"kevireilly","message":"isn't throwing errors in node a no no?","date":"2013-03-19T07:08:43.320Z","type":"message"}
+{"nick":"trevnorris","message":"kevireilly: yeah. that's actually an important thing.","date":"2013-03-19T07:08:51.185Z","type":"message"}
+{"nick":"trevnorris","message":"this specific hack is for the debugger.","date":"2013-03-19T07:09:06.340Z","type":"message"}
+{"nick":"kevireilly","message":"ah gotcha","date":"2013-03-19T07:09:13.630Z","type":"message"}
+{"nick":"cjd","message":"need to change the message on an error after it's thrown?","date":"2013-03-19T07:09:50.988Z","type":"message"}
+{"nick":"trevnorris","message":"cjd: yeah, for proper stack traces.","date":"2013-03-19T07:10:02.695Z","type":"message"}
+{"nick":"cjd","message":"err","date":"2013-03-19T07:10:31.210Z","type":"message"}
+{"nick":"trevnorris","message":"check out test-fs-readfile-error.js and fs.js function rethrow().","date":"2013-03-19T07:10:46.851Z","type":"message"}
+{"nick":"trevnorris","message":"for a better stacktrace when you're returning a function it's better to instantiate the error in the parent.","date":"2013-03-19T07:11:38.483Z","type":"message"}
+{"nick":"trevnorris","message":"then throw it in the return.","date":"2013-03-19T07:11:44.318Z","type":"message"}
+{"nick":"trevnorris","message":"otherwise you can't tell where the returned function came from.","date":"2013-03-19T07:11:53.518Z","type":"message"}
+{"nick":"kristate","date":"2013-03-19T07:12:53.168Z","type":"join"}
+{"nick":"trevnorris","message":"also w/o the functionality \"assert.throws\" can fail (since it sets the message later)","date":"2013-03-19T07:12:54.258Z","type":"message"}
+{"nick":"cjd","message":"I get the idea","date":"2013-03-19T07:13:02.682Z","type":"message"}
+{"nick":"cjd","message":"throw + rethrow","date":"2013-03-19T07:13:06.943Z","type":"message"}
+{"nick":"cjd","message":"yeah","date":"2013-03-19T07:13:08.079Z","type":"message"}
+{"nick":"cjd","message":"perhaps add a C++ tool to rethrow which digs down into the nasties of V8 and doctors up the exception?","date":"2013-03-19T07:13:35.969Z","type":"message"}
+{"nick":"cjd","message":"because rethrow is always bad but painfully common","date":"2013-03-19T07:14:00.040Z","type":"message"}
+{"nick":"trevnorris","message":"i dunno. waiting for someone like isaacs or indutny or bnoorduis to give me an idea. i'm all out. =P","date":"2013-03-19T07:14:20.010Z","type":"message"}
+{"nick":"cjd","message":"hmm","date":"2013-03-19T07:14:33.924Z","type":"message"}
+{"nick":"trevnorris","message":"*bnoordhuis","date":"2013-03-19T07:14:36.422Z","type":"message"}
+{"nick":"cjd","message":"do js errors actually work the same as C++ exceptions?","date":"2013-03-19T07:14:54.603Z","type":"message"}
+{"nick":"cjd","message":"unwinding the stack and dwarf and all that fun","date":"2013-03-19T07:15:07.581Z","type":"message"}
+{"nick":"kevireilly","message":"trevnorris: new Error('foo').stack gives you the backtrace","date":"2013-03-19T07:15:13.469Z","type":"message"}
+{"nick":"trevnorris","message":"kevireilly: yeah. and before 3.16.6 if you set the message before calling the .stack getter then it would use the new message in the stack trace.","date":"2013-03-19T07:15:49.925Z","type":"message"}
+{"nick":"trevnorris","message":"but they took it out.","date":"2013-03-19T07:15:54.739Z","type":"message"}
+{"nick":"trevnorris","message":"cjd: i dunno.","date":"2013-03-19T07:16:22.213Z","type":"message"}
+{"nick":"cjd","message":"ahh","date":"2013-03-19T07:16:28.707Z","type":"message"}
+{"nick":"cjd","message":"so you want partial stack but with altered message","date":"2013-03-19T07:16:44.125Z","type":"message"}
+{"nick":"cjd","message":"errno","date":"2013-03-19T07:16:49.868Z","type":"message"}
+{"nick":"cjd","message":"full stack, altered message","date":"2013-03-19T07:16:56.577Z","type":"message"}
+{"nick":"cjd","message":"there we go","date":"2013-03-19T07:17:00.335Z","type":"message"}
+{"nick":"trevnorris","message":"yeah.","date":"2013-03-19T07:17:08.591Z","type":"message"}
+{"nick":"trevnorris","message":"that's what i'm forcing here: https://gist.github.com/trevnorris/5194222","date":"2013-03-19T07:17:30.661Z","type":"message"}
+{"nick":"cjd","message":"mhm","date":"2013-03-19T07:17:35.837Z","type":"message"}
+{"nick":"trevnorris","message":"but i'd never want anything like that anywhere.","date":"2013-03-19T07:17:45.494Z","type":"message"}
+{"nick":"cjd","message":"meh","date":"2013-03-19T07:17:59.999Z","type":"message"}
+{"nick":"cjd","message":"IMO rigid design patterns do more damage than hacks","date":"2013-03-19T07:18:15.954Z","type":"message"}
+{"nick":"cjd","message":"*shrug*","date":"2013-03-19T07:18:18.735Z","type":"message"}
+{"nick":"cjd","message":"well","date":"2013-03-19T07:18:36.923Z","type":"message"}
+{"nick":"cjd","message":"promiscuity of information does the most damage","date":"2013-03-19T07:18:50.440Z","type":"message"}
+{"nick":"cjd","message":"so people complain about tabs and spaces while making everything globally reachable and singleton :|","date":"2013-03-19T07:19:18.410Z","type":"message"}
+{"nick":"cjd","message":"can you throw non-errors? :)","date":"2013-03-19T07:20:14.609Z","type":"message"}
+{"nick":"trevnorris","message":"http://www.devthought.com/2011/12/22/a-string-is-not-an-error/","date":"2013-03-19T07:20:29.300Z","type":"message"}
+{"nick":"cjd","message":"throw { stack:...., message:.... };","date":"2013-03-19T07:21:23.161Z","type":"message"}
+{"nick":"cjd","message":":)","date":"2013-03-19T07:21:25.007Z","type":"message"}
+{"nick":"cjd","message":"but yeah, the subtleties would kill you","date":"2013-03-19T07:21:43.283Z","type":"message"}
+{"nick":"kevireilly","message":"damn there is a way to pass multiple items and i cant remember now","date":"2013-03-19T07:21:59.880Z","type":"message"}
+{"nick":"cjd","message":"stack is readonly?","date":"2013-03-19T07:22:16.541Z","type":"message"}
+{"nick":"trevnorris","message":"no","date":"2013-03-19T07:22:19.621Z","type":"message"}
+{"nick":"cjd","message":"so alter stack instead of message?","date":"2013-03-19T07:22:33.738Z","type":"message"}
+{"nick":"trevnorris","message":"neither is message. it's just that the stack string is generated at instantiation, but not after that.","date":"2013-03-19T07:22:41.504Z","type":"message"}
+{"nick":"trevnorris","message":"no slick way to do this. the problem is on v8's side.","date":"2013-03-19T07:23:20.034Z","type":"message"}
+{"nick":"cjd","message":"catch (e) { e.message = ...; e.stack = e.stack.replace(/old message/, e.message);","date":"2013-03-19T07:23:52.754Z","type":"message"}
+{"nick":"cjd","message":"somewhat similar to your solution","date":"2013-03-19T07:24:42.357Z","type":"message"}
+{"nick":"trevnorris","message":"heh. ecmascript 262 15.11.4.4 repeats the same step twice. oops","date":"2013-03-19T07:25:51.982Z","type":"message"}
+{"nick":"kristate","reason":"Remote host closed the connection","date":"2013-03-19T07:25:57.751Z","type":"quit"}
+{"nick":"trevnorris","message":"screw it. i've spent too many hours on this stupidity.","date":"2013-03-19T07:26:38.335Z","type":"message"}
+{"nick":"cjd","message":"is there something wrong w/ changing the stack as a string?","date":"2013-03-19T07:26:55.921Z","type":"message"}
+{"nick":"cjd","message":"other than uglyness","date":"2013-03-19T07:27:01.262Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. that wold all work internally and stuff. just stupid that other people who are using that technique will also hit the same problem","date":"2013-03-19T07:28:13.667Z","type":"message"}
+{"nick":"cjd","message":"yeah, rethrowing is bad","date":"2013-03-19T07:28:28.625Z","type":"message"}
+{"nick":"cjd","message":"java makes error types immutable for some reason..","date":"2013-03-19T07:28:50.352Z","type":"message"}
+{"nick":"cjd","message":"somethign about best practice","date":"2013-03-19T07:28:59.971Z","type":"message"}
+{"nick":"trevnorris","message":"unfortunately it's the only way to get a decent stack trace sometimes.","date":"2013-03-19T07:29:00.208Z","type":"message"}
+{"nick":"trevnorris","message":"ugh","date":"2013-03-19T07:29:03.457Z","type":"message"}
+{"nick":"cjd","message":"I'd say change the stack as a string, if someone doesn't like it then it's their problem :)","date":"2013-03-19T07:29:35.121Z","type":"message"}
+{"nick":"cjd","message":"spending days hacking through assembly generators doesn't put features in the user's hand","date":"2013-03-19T07:30:08.186Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-03-19T07:30:12.101Z","type":"join"}
+{"nick":"rendar","date":"2013-03-19T07:31:56.621Z","type":"join"}
+{"nick":"indutny","message":"isaacs: evening?","date":"2013-03-19T07:32:17.814Z","type":"message"}
+{"nick":"trevnorris","message":"ah ha! i see why AssertionError isn't printing the message. think I have a fix for it.","date":"2013-03-19T07:40:16.393Z","type":"message"}
+{"nick":"csaoh","date":"2013-03-19T07:45:03.526Z","type":"join"}
+{"nick":"csaoh","reason":"Client Quit","date":"2013-03-19T07:47:58.420Z","type":"quit"}
