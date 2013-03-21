@@ -1,0 +1,278 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-03-21T00:00:01.371Z","type":"quit"}
+{"nick":"ircretary","date":"2013-03-21T00:00:08.661Z","type":"join"}
+{"nick":"trevnorris","message":"the big issue is finding out when the memory can be reused. calling the MakeWeakCallback for every allocation makes it run 27x's slower, and use 5x's the memory.","date":"2013-03-21T00:00:24.323Z","type":"message"}
+{"nick":"tjfontaine","message":"oh i thought that part was already solved","date":"2013-03-21T00:01:22.483Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-03-21T00:01:23.336Z","type":"message"}
+{"nick":"cjd","message":"what does make weak do? instruct the GC to collect the trash?","date":"2013-03-21T00:03:16.140Z","type":"message"}
+{"nick":"tjfontaine","message":"weak means v8 calls your cb when it's doing gc","date":"2013-03-21T00:03:34.916Z","type":"message"}
+{"nick":"cjd","message":"ahh","date":"2013-03-21T00:03:42.881Z","type":"message"}
+{"nick":"trevnorris","message":"MakeWeakCallback is a function callback called when the Handle is about to be garbage collected","date":"2013-03-21T00:03:47.546Z","type":"message"}
+{"nick":"tjfontaine","message":"basically the notification from the vm that no more references to the object are held","date":"2013-03-21T00:03:53.083Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: what i've been trying to figure out is how v8 figures out when handles can be cleaned up as quickly as it does.","date":"2013-03-21T00:04:03.143Z","type":"message"}
+{"nick":"trevnorris","message":"and why it's so much slower when we want to know.","date":"2013-03-21T00:04:20.536Z","type":"message"}
+{"nick":"cjd","message":"^^that part is bl@ck majik","date":"2013-03-21T00:04:26.301Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #46 \u00034FAILURE\u000f smartos-ia32 (3/563) linux-x64 (1/563) osx-ia32 (2/563) windows-x64 (5/563) windows-ia32 (5/563) http://jenkins.nodejs.org/job/nodejs-v0.10/46/","date":"2013-03-21T00:04:28.765Z","type":"message"}
+{"nick":"tjfontaine","message":"I hate you so much windows","date":"2013-03-21T00:04:44.465Z","type":"message"}
+{"nick":"cjd","message":"welcome to the universe","date":"2013-03-21T00:05:08.821Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: wouldn't it be great if v8::Handle had a ::refcount or something? :)","date":"2013-03-21T00:08:22.913Z","type":"message"}
+{"nick":"cjd","message":"refcounts don't work because loops","date":"2013-03-21T00:08:37.599Z","type":"message"}
+{"nick":"tjfontaine","message":"that's not my point, I meant for what he's trying to accomplish avoiding the makeweak mess","date":"2013-03-21T00:09:14.461Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: exactly. and the fact that Persisting the Handle requires it to be Disposed. but it still remains in memory for a time afterwards.","date":"2013-03-21T00:09:48.101Z","type":"message"}
+{"nick":"trevnorris","message":"those two operations also kill you.","date":"2013-03-21T00:09:55.758Z","type":"message"}
+{"nick":"cjd","message":"I'm still really in the dark about how this works.... V8 allocates internally but you want to allocate on it's behalf?","date":"2013-03-21T00:10:57.074Z","type":"message"}
+{"nick":"trevnorris","message":"cjd: v8 creates a Handle (pointer to a js object) and we allocate external memory which we attach to the Handle.","date":"2013-03-21T00:11:56.737Z","type":"message"}
+{"nick":"trevnorris","message":"when we're required to Persist the Handle, and pass MakeWeakCallback, in which it's required to free the external memory.","date":"2013-03-21T00:12:49.935Z","type":"message"}
+{"nick":"dominictarr","date":"2013-03-21T00:16:14.816Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: wonder if it's possible to make a kinda persistent HandleScope, instead of persisting each handle.","date":"2013-03-21T00:18:17.691Z","type":"message"}
+{"nick":"cjd","message":"ok so all v8 allocation goes through you","date":"2013-03-21T00:18:30.002Z","type":"message"}
+{"nick":"cjd","message":"thought maybe you were just allocating stuff for buffers and things which are external to the actual js","date":"2013-03-21T00:19:24.700Z","type":"message"}
+{"nick":"tjfontaine","message":"cjd: no, v8 is responsible for allocating its own data, but one can attach an external pointer, which then you can also specify a callback for when v8 would free it","date":"2013-03-21T00:19:27.511Z","type":"message"}
+{"nick":"cjd","message":"ahhh","date":"2013-03-21T00:19:38.298Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-03-21T00:19:44.852Z","type":"quit"}
+{"nick":"tjfontaine","message":"trevnorris: dunno, you need to spend some quality time with a v8 dev on your issue :)","date":"2013-03-21T00:20:02.268Z","type":"message"}
+{"nick":"tjfontaine","message":"github, stop fucking hanging up on me","date":"2013-03-21T00:20:24.491Z","type":"message"}
+{"nick":"trevnorris","message":"seriously. i should walk over to google and knock on their door","date":"2013-03-21T00:20:25.146Z","type":"message"}
+{"nick":"cjd","message":"so you can be like \"v8 gimme a Int8Array\" and then ref that from the handle and pile all of your C++ crap into that array","date":"2013-03-21T00:20:26.702Z","type":"message"}
+{"nick":"tjfontaine","message":"it's more like v8 gimmie Object, here's its prototype, also here's an external pointer to attach to it","date":"2013-03-21T00:21:36.619Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: well there is HandleScope::NumberOFHandles. but that is for the entire context.","date":"2013-03-21T00:32:15.968Z","type":"message"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-03-21T00:36:49.868Z","type":"quit"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-03-21T00:39:00.952Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-03-21T00:40:54.473Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-03-21T00:42:24.746Z","type":"join"}
+{"nick":"dominictarr","reason":"Client Quit","date":"2013-03-21T00:42:48.990Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.10\u000f * \u00023dd7938\u0002 : npm: upgrade to 1.2.15 - http://git.io/uEH-XQ","date":"2013-03-21T00:50:11.031Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: it makes me delighted to see a benchmark/common.js script that i didn't write :) <3","date":"2013-03-21T00:53:30.615Z","type":"message"}
+{"nick":"loladiro","date":"2013-03-21T00:53:37.189Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2013-03-21T00:54:23.284Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2013-03-21T01:00:33.669Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-03-21T01:04:31.549Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #47 \u00037UNSTABLE\u000f smartos-ia32 (1/563) osx-x64 (1/563) osx-ia32 (4/563) windows-x64 (5/563) windows-ia32 (5/563) http://jenkins.nodejs.org/job/nodejs-v0.10/47/","date":"2013-03-21T01:08:47.255Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-03-21T01:12:41.849Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f created branch v0.10.1-release - http://git.io/gLMpgw","date":"2013-03-21T01:15:17.722Z","type":"message"}
+{"nick":"stagas","date":"2013-03-21T01:15:38.309Z","type":"join"}
+{"nick":"erickt","date":"2013-03-21T01:16:37.397Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-03-21T01:33:13.866Z","type":"nick"}
+{"nick":"stagas_","date":"2013-03-21T01:34:59.055Z","type":"join"}
+{"nick":"abraxas","date":"2013-03-21T01:37:24.254Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2013-03-21T01:38:14.044Z","type":"quit"}
+{"nick":"stagas","date":"2013-03-21T01:38:44.673Z","type":"join"}
+{"nick":"stagas_","reason":"Ping timeout: 260 seconds","date":"2013-03-21T01:40:25.036Z","type":"quit"}
+{"nick":"kazupon","date":"2013-03-21T01:41:20.142Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-03-21T01:44:49.763Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2013-03-21T01:48:06.570Z","type":"quit"}
+{"nick":"stagas_","date":"2013-03-21T01:48:08.850Z","type":"join"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-03-21T01:48:13.839Z","type":"nick"}
+{"nick":"indexzero","date":"2013-03-21T01:49:08.499Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 245 seconds","date":"2013-03-21T02:08:44.911Z","type":"quit"}
+{"nick":"stagas","date":"2013-03-21T02:09:09.762Z","type":"join"}
+{"nick":"kazupon","date":"2013-03-21T02:13:39.130Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 255 seconds","date":"2013-03-21T02:13:59.564Z","type":"quit"}
+{"nick":"stagas_","date":"2013-03-21T02:15:23.299Z","type":"join"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-03-21T02:15:27.363Z","type":"nick"}
+{"nick":"stagas_","date":"2013-03-21T02:17:59.398Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-03-21T02:18:34.734Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 252 seconds","date":"2013-03-21T02:20:17.169Z","type":"quit"}
+{"nick":"stagas","date":"2013-03-21T02:21:26.257Z","type":"join"}
+{"nick":"stagas__","date":"2013-03-21T02:23:04.172Z","type":"join"}
+{"nick":"stagas_","reason":"Ping timeout: 256 seconds","date":"2013-03-21T02:24:26.123Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2013-03-21T02:25:54.643Z","type":"quit"}
+{"nick":"stagas__","new_nick":"stagas","date":"2013-03-21T02:25:58.838Z","type":"nick"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-03-21T02:28:57.285Z","type":"quit"}
+{"nick":"stagas","date":"2013-03-21T02:30:09.582Z","type":"join"}
+{"nick":"philips","reason":"Ping timeout: 256 seconds","date":"2013-03-21T02:31:30.088Z","type":"quit"}
+{"nick":"stagas_","date":"2013-03-21T02:34:43.552Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 264 seconds","date":"2013-03-21T02:37:18.605Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-03-21T02:37:24.013Z","type":"nick"}
+{"nick":"bradleymeck","date":"2013-03-21T02:49:50.646Z","type":"join"}
+{"nick":"dominictarr","date":"2013-03-21T03:04:48.160Z","type":"join"}
+{"nick":"nsm","reason":"Quit: nsm","date":"2013-03-21T03:10:38.785Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2013-03-21T03:10:48.075Z","type":"quit"}
+{"nick":"philips","date":"2013-03-21T03:16:21.496Z","type":"join"}
+{"nick":"mikeal","date":"2013-03-21T03:27:53.871Z","type":"join"}
+{"nick":"isaacs","message":"tjfontaine: that's weird... some of those tests i can't get to fail, but jenkins shows them failing pretty reliably, it looks like.","date":"2013-03-21T03:28:22.863Z","type":"message"}
+{"nick":"tjfontaine","message":"which one where","date":"2013-03-21T03:29:02.026Z","type":"message"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T03:30:03.637Z","type":"quit"}
+{"nick":"tjfontaine","message":"the writefloat/double is probably because you haven't ./configure --dest-cpu=ia32","date":"2013-03-21T03:30:34.355Z","type":"message"}
+{"nick":"qmx","new_nick":"qmx|away","date":"2013-03-21T03:31:08.674Z","type":"nick"}
+{"nick":"benoitc","date":"2013-03-21T03:32:25.367Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-03-21T03:35:27.133Z","type":"quit"}
+{"nick":"kazupon","date":"2013-03-21T03:36:18.078Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-03-21T03:40:34.756Z","type":"quit"}
+{"nick":"cjd","message":"https://github.com/v8/v8/blob/master/src/heap.cc#L3691 <-- might do what you're looking for re quickly collected slab","date":"2013-03-21T03:47:19.149Z","type":"message"}
+{"nick":"hz","date":"2013-03-21T03:47:39.810Z","type":"quit"}
+{"nick":"stagas__","date":"2013-03-21T03:49:42.623Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 276 seconds","date":"2013-03-21T03:50:18.432Z","type":"quit"}
+{"nick":"stagas__","new_nick":"stagas","date":"2013-03-21T03:50:21.656Z","type":"nick"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-03-21T03:51:46.457Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2013-03-21T03:54:54.301Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T03:57:16.917Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-21T04:03:26.882Z","type":"join"}
+{"nick":"philips","reason":"Ping timeout: 258 seconds","date":"2013-03-21T04:05:55.779Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-03-21T04:06:05.215Z","type":"quit"}
+{"nick":"philips","date":"2013-03-21T04:07:36.937Z","type":"join"}
+{"nick":"kazupon","date":"2013-03-21T04:08:37.006Z","type":"join"}
+{"nick":"bnoordhuis","date":"2013-03-21T04:17:18.207Z","type":"join"}
+{"nick":"loladiro","date":"2013-03-21T04:18:49.232Z","type":"join"}
+{"nick":"mikeal","date":"2013-03-21T04:19:27.672Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2013-03-21T04:20:38.666Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2013-03-21T04:21:29.166Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T04:24:25.691Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-21T04:31:57.680Z","type":"join"}
+{"nick":"dominictarr","reason":"Ping timeout: 260 seconds","date":"2013-03-21T04:37:10.044Z","type":"quit"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T04:40:13.450Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-03-21T04:40:46.293Z","type":"join"}
+{"nick":"erickt","reason":"Quit: erickt","date":"2013-03-21T04:46:54.204Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-21T04:47:27.731Z","type":"join"}
+{"nick":"trevnorris","date":"2013-03-21T04:52:51.798Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-03-21T04:58:18.147Z","type":"nick"}
+{"nick":"philips","reason":"Read error: Operation timed out","date":"2013-03-21T05:01:53.912Z","type":"quit"}
+{"nick":"abraxas","date":"2013-03-21T05:02:31.715Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-03-21T05:02:46.185Z","type":"join"}
+{"nick":"mikeal","date":"2013-03-21T05:03:15.594Z","type":"join"}
+{"nick":"trevnorris","message":"well i figured out what's kicking the crap out of WriteAscii.","date":"2013-03-21T05:03:15.894Z","type":"message"}
+{"nick":"trevnorris","message":"one freakin command is making 2x's slower.","date":"2013-03-21T05:03:26.621Z","type":"message"}
+{"nick":"trevnorris","message":"wonder if they'd accept a patch","date":"2013-03-21T05:07:49.906Z","type":"message"}
+{"nick":"cjd","message":"what was it?","date":"2013-03-21T05:12:09.931Z","type":"message"}
+{"nick":"cjd","message":"oh btw","date":"2013-03-21T05:12:38.229Z","type":"message"}
+{"nick":"cjd","message":"23:47 < cjd> https://github.com/v8/v8/blob/master/src/heap.cc#L3691 <-- might do what you're looking for re quickly collected slab","date":"2013-03-21T05:12:39.262Z","type":"message"}
+{"nick":"cjd","message":"maybe I'm off base here but this seems like what you're looking for","date":"2013-03-21T05:12:51.789Z","type":"message"}
+{"nick":"cjd","message":"how do you test the patch?","date":"2013-03-21T05:13:01.932Z","type":"message"}
+{"nick":"kevireilly","date":"2013-03-21T05:13:24.012Z","type":"join"}
+{"nick":"trevnorris","message":"cjd: in api.cc WriteAscii runs \"str->HasOnlyAsciiChars()\".","date":"2013-03-21T05:15:35.696Z","type":"message"}
+{"nick":"trevnorris","message":"when I commented it out it runs 2x's faster","date":"2013-03-21T05:15:46.579Z","type":"message"}
+{"nick":"cjd","message":"ahh yeap","date":"2013-03-21T05:15:58.216Z","type":"message"}
+{"nick":"cjd","message":"so how do you check?","date":"2013-03-21T05:16:24.917Z","type":"message"}
+{"nick":"cjd","message":"on a per-char basis?","date":"2013-03-21T05:16:31.536Z","type":"message"}
+{"nick":"trevnorris","message":"i'd like a passable options like ONLY_HAS_ASCII, which tells v8 we know it only has ascii chars.","date":"2013-03-21T05:17:05.128Z","type":"message"}
+{"nick":"trevnorris","message":"when I say 2x's i meant against the net benchmark","date":"2013-03-21T05:17:19.699Z","type":"message"}
+{"nick":"trevnorris","message":"you  can run the benchmark by \"./node benchmark/net/tcp-raw-c2s.js len=65530 type=asc dur=5\"","date":"2013-03-21T05:17:30.474Z","type":"message"}
+{"nick":"cjd","message":"how does HasOnlyAsciiChars check?","date":"2013-03-21T05:17:39.041Z","type":"message"}
+{"nick":"trevnorris","message":"i'm looking now","date":"2013-03-21T05:17:47.911Z","type":"message"}
+{"nick":"cjd","action":"bets examine each char","date":"2013-03-21T05:18:16.095Z","type":"action"}
+{"nick":"trevnorris","message":"wow. that's convoluted. need to take a few notes on this","date":"2013-03-21T05:21:57.259Z","type":"message"}
+{"nick":"cjd","message":"big switch statement at the beginning and end?","date":"2013-03-21T05:22:16.233Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-03-21T05:24:38.362Z","type":"quit"}
+{"nick":"cjd","message":"where is it defined?","date":"2013-03-21T05:24:47.697Z","type":"message"}
+{"nick":"cjd","message":"I can't find it searching v8","date":"2013-03-21T05:24:52.577Z","type":"message"}
+{"nick":"trevnorris","message":"cjd: here's the breakdown: https://gist.github.com/trevnorris/5210873","date":"2013-03-21T05:28:12.745Z","type":"message"}
+{"nick":"cjd","message":"hrm","date":"2013-03-21T05:30:39.864Z","type":"message"}
+{"nick":"cjd","message":"map() ?","date":"2013-03-21T05:30:42.638Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. figuring that out right now","date":"2013-03-21T05:33:17.305Z","type":"message"}
+{"nick":"cjd","message":"not sure if reinterpret_cast imparts overhead","date":"2013-03-21T05:35:44.479Z","type":"message"}
+{"nick":"cjd","message":"it looks to me like something that should be compiling down to nothing isn't","date":"2013-03-21T05:39:03.111Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-03-21T05:44:25.408Z","type":"nick"}
+{"nick":"philips","date":"2013-03-21T05:45:22.056Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-03-21T05:45:55.372Z","type":"quit"}
+{"nick":"cjd","message":"perhaps the creation of a MapWord on the stack adds the extra cost","date":"2013-03-21T06:03:22.969Z","type":"message"}
+{"nick":"cjd","message":"return MapWord(reinterpret_cast<uintptr_t>(READ_FIELD(this, kMapOffset)));","date":"2013-03-21T06:03:50.824Z","type":"message"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-03-21T06:07:19.637Z","type":"quit"}
+{"nick":"cjd","message":"oic","date":"2013-03-21T06:09:40.835Z","type":"message"}
+{"nick":"cjd","message":"MapWord is a pointer, it points to a map which is stored elsewhere in memory","date":"2013-03-21T06:09:57.822Z","type":"message"}
+{"nick":"cjd","message":"somewhere else in memory -> likely page fault","date":"2013-03-21T06:10:22.551Z","type":"message"}
+{"nick":"trevnorris","message":"interesting.","date":"2013-03-21T06:20:30.638Z","type":"message"}
+{"nick":"cjd","message":"re your memory allocator, how were you benchmarking that?","date":"2013-03-21T06:24:44.823Z","type":"message"}
+{"nick":"cjd","message":"also where is ::Alloc called from?","date":"2013-03-21T06:24:55.185Z","type":"message"}
+{"nick":"cjd","message":"somewhere in js I assume","date":"2013-03-21T06:25:04.737Z","type":"message"}
+{"nick":"trevnorris","message":"cjd: yeah. if you build the branch you can get to it by \"process.binding('arraydata').Alloc\"","date":"2013-03-21T06:26:25.329Z","type":"message"}
+{"nick":"trevnorris","message":"i'm still working on moving Buffer allocations over to see if it offers an improvement.","date":"2013-03-21T06:28:25.182Z","type":"message"}
+{"nick":"cjd","message":"ahh ic","date":"2013-03-21T06:28:48.113Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-03-21T06:29:02.732Z","type":"nick"}
+{"nick":"cjd","message":"what does it return? a Int8Array?","date":"2013-03-21T06:29:15.646Z","type":"message"}
+{"nick":"cjd","message":"or i guess you call it with something and it becomes an array","date":"2013-03-21T06:29:37.816Z","type":"message"}
+{"nick":"cjd","message":"got a 1 liner for how it's called?","date":"2013-03-21T06:29:50.452Z","type":"message"}
+{"nick":"trevnorris","message":"either \"Alloc(n)\" or \"Alloc(obj, n)\"","date":"2013-03-21T06:30:11.465Z","type":"message"}
+{"nick":"cjd","message":"ok and it returns a Int8Array ?","date":"2013-03-21T06:30:58.531Z","type":"message"}
+{"nick":"cjd","message":"or like a quasi-string?","date":"2013-03-21T06:31:04.679Z","type":"message"}
+{"nick":"trevnorris","message":"it's the simplest version of an Int8Array that you can get","date":"2013-03-21T06:31:25.237Z","type":"message"}
+{"nick":"trevnorris","message":"no properties, no prototype. just an object pointing to external memory","date":"2013-03-21T06:31:39.242Z","type":"message"}
+{"nick":"cjd","message":"ok so my question is why does the memory need to be external since you're just allocating it anyway","date":"2013-03-21T06:32:15.832Z","type":"message"}
+{"nick":"trevnorris","message":"oh, and it's Uint8","date":"2013-03-21T06:32:38.261Z","type":"message"}
+{"nick":"trevnorris","message":"external as in outside of the v8 heap. external memory is not constrained by v8's max heap size (~1.5GB)","date":"2013-03-21T06:33:40.375Z","type":"message"}
+{"nick":"cjd","message":"ahh ok","date":"2013-03-21T06:34:00.272Z","type":"message"}
+{"nick":"cjd","message":"no way to up that limit?","date":"2013-03-21T06:34:15.172Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. but there's another reason.","date":"2013-03-21T06:34:27.353Z","type":"message"}
+{"nick":"trevnorris","message":"the pointer is passed to libuv which handles all the low level stuff.","date":"2013-03-21T06:34:49.723Z","type":"message"}
+{"nick":"trevnorris","message":"if it was alloc'd in the v8 heap then libuv couldn't get access to it.","date":"2013-03-21T06:35:08.080Z","type":"message"}
+{"nick":"cjd","message":"mhm","date":"2013-03-21T06:35:08.243Z","type":"message"}
+{"nick":"cjd","message":"really?","date":"2013-03-21T06:35:14.487Z","type":"message"}
+{"nick":"cjd","message":"you can't take a big buffer from v8land and fill it with crap in libuv?","date":"2013-03-21T06:35:46.436Z","type":"message"}
+{"nick":"cjd","message":"that seems ideal","date":"2013-03-21T06:36:10.179Z","type":"message"}
+{"nick":"trevnorris","message":"Handles in v8 don't stay in a fixed position. the gc constantly is moving the data around. so everything must go through the Handle.","date":"2013-03-21T06:36:27.586Z","type":"message"}
+{"nick":"trevnorris","message":"and those are freakishly slow","date":"2013-03-21T06:36:32.371Z","type":"message"}
+{"nick":"cjd","message":"ok","date":"2013-03-21T06:36:46.336Z","type":"message"}
+{"nick":"trevnorris","message":"external memory stays fixed, much easier to deal with.","date":"2013-03-21T06:36:51.502Z","type":"message"}
+{"nick":"cjd","message":"buuut it doesn't free quickly","date":"2013-03-21T06:37:04.190Z","type":"message"}
+{"nick":"trevnorris","message":"hm? you mean the whole MakeWeakCallback thing?","date":"2013-03-21T06:37:28.095Z","type":"message"}
+{"nick":"cjd","message":"well.. the free operation can never beat GC","date":"2013-03-21T06:37:46.098Z","type":"message"}
+{"nick":"cjd","message":"think about it this way","date":"2013-03-21T06:38:34.605Z","type":"message"}
+{"nick":"cjd","message":"when there's a page load of something which hits the server","date":"2013-03-21T06:38:49.353Z","type":"message"}
+{"nick":"cjd","message":"it allocates a crapton of memory","date":"2013-03-21T06:38:55.290Z","type":"message"}
+{"nick":"cjd","message":"when it's done sending off the page, it looks for anything which was persisted","date":"2013-03-21T06:39:19.827Z","type":"message"}
+{"nick":"cjd","message":"it might even do it through the handle facility","date":"2013-03-21T06:39:29.274Z","type":"message"}
+{"nick":"cjd","message":"so when you do like   global.key = string;","date":"2013-03-21T06:39:43.925Z","type":"message"}
+{"nick":"cjd","message":"string becomes tenured","date":"2013-03-21T06:39:50.893Z","type":"message"}
+{"nick":"cjd","message":"then it goes through and grabs out the tenured stuff and cans the rest","date":"2013-03-21T06:40:05.426Z","type":"message"}
+{"nick":"cjd","message":"no callbacks, no worried","date":"2013-03-21T06:40:09.558Z","type":"message"}
+{"nick":"trevnorris","message":"v8 doesn't have a way to receive data from an external resource (e.g. network) except from external memory allocations.","date":"2013-03-21T06:40:17.659Z","type":"message"}
+{"nick":"cjd","message":"that doesn't sound right","date":"2013-03-21T06:40:48.834Z","type":"message"}
+{"nick":"trevnorris","message":"it's how v8 communicates","date":"2013-03-21T06:40:56.221Z","type":"message"}
+{"nick":"trevnorris","message":"even d8 uses it","date":"2013-03-21T06:41:00.075Z","type":"message"}
+{"nick":"cjd","action":"would break the rules on this one","date":"2013-03-21T06:41:13.565Z","type":"action"}
+{"nick":"cjd","message":"there are 2 approaches","date":"2013-03-21T06:41:57.816Z","type":"message"}
+{"nick":"trevnorris","message":"v8 has no api that allows you to allocate raw memory from it's own heap using a Handle.","date":"2013-03-21T06:42:07.873Z","type":"message"}
+{"nick":"cjd","message":"#1 is you take a uint8array and find the backing buffer by tracing the handle and then fill it with crap","date":"2013-03-21T06:42:43.365Z","type":"message"}
+{"nick":"cjd","message":"#2 is you call internal functions to allocate a new uint8array and then fill it and return it","date":"2013-03-21T06:43:21.548Z","type":"message"}
+{"nick":"cjd","message":"I'd go with #1 since it's less invasive","date":"2013-03-21T06:43:32.136Z","type":"message"}
+{"nick":"trevnorris","message":"v8 doesn't natively handle Uint8Array's.","date":"2013-03-21T06:43:36.884Z","type":"message"}
+{"nick":"trevnorris","message":"Chrome, d8 and node have all needed to implement their own","date":"2013-03-21T06:43:47.723Z","type":"message"}
+{"nick":"cjd","message":"ahh","date":"2013-03-21T06:43:51.968Z","type":"message"}
+{"nick":"trevnorris","message":"using SetIndexedPropertiesToExternalArrayData against an external allocation","date":"2013-03-21T06:44:00.337Z","type":"message"}
+{"nick":"cjd","message":"then take a string :)","date":"2013-03-21T06:44:16.341Z","type":"message"}
+{"nick":"trevnorris","message":"strings are immutable","date":"2013-03-21T06:44:23.675Z","type":"message"}
+{"nick":"cjd","message":"not in C++ :)","date":"2013-03-21T06:44:32.094Z","type":"message"}
+{"nick":"trevnorris","message":"hm? you mean like \"char* str = new char[100]\" ?","date":"2013-03-21T06:44:56.526Z","type":"message"}
+{"nick":"cjd","message":"mmm","date":"2013-03-21T06:45:28.898Z","type":"message"}
+{"nick":"cjd","message":"lemme think","date":"2013-03-21T06:45:31.854Z","type":"message"}
+{"nick":"cjd","message":"maybe array is easier","date":"2013-03-21T06:45:35.434Z","type":"message"}
+{"nick":"trevnorris","message":"oh no. Array is actually just an Object with a wrapper","date":"2013-03-21T06:46:04.964Z","type":"message"}
+{"nick":"trevnorris","message":"and in c++ land, all values will go in as doubles","date":"2013-03-21T06:46:21.999Z","type":"message"}
+{"nick":"cjd","message":"ahh so no guaranteed storage space","date":"2013-03-21T06:46:24.722Z","type":"message"}
+{"nick":"trevnorris","message":"(in js crankshaft can detect Smi values and optimzie for those)","date":"2013-03-21T06:46:38.607Z","type":"message"}
+{"nick":"trevnorris","message":"yeah.","date":"2013-03-21T06:46:42.641Z","type":"message"}
+{"nick":"cjd","message":"var data = Array(1024);  <-- doesn't preallocate a bunch of space?","date":"2013-03-21T06:46:51.499Z","type":"message"}
+{"nick":"trevnorris","message":"no","date":"2013-03-21T06:46:55.184Z","type":"message"}
+{"nick":"cjd","message":"bastards :P","date":"2013-03-21T06:47:00.608Z","type":"message"}
+{"nick":"trevnorris","message":"because it doesn't know what each of those elements are going to be","date":"2013-03-21T06:47:12.000Z","type":"message"}
+{"nick":"trevnorris","message":"if the values are Smi then it will point to them directly","date":"2013-03-21T06:47:21.409Z","type":"message"}
+{"nick":"cjd","message":"mhm","date":"2013-03-21T06:47:36.547Z","type":"message"}
+{"nick":"trevnorris","message":"otherwise it will allocate memory elsewhere on the heap and add a pointer","date":"2013-03-21T06:47:40.127Z","type":"message"}
+{"nick":"trevnorris","message":"but that's only if it's done through js","date":"2013-03-21T06:47:49.456Z","type":"message"}
+{"nick":"cjd","message":"hah","date":"2013-03-21T06:47:50.873Z","type":"message"}
+{"nick":"trevnorris","message":"in cc you don't have that luxury","date":"2013-03-21T06:47:59.454Z","type":"message"}
+{"nick":"trevnorris","message":"getting values from an Array in c++ is a very very painful thing","date":"2013-03-21T06:48:27.444Z","type":"message"}
+{"nick":"cjd","message":"planB is to #import this bastard https://github.com/v8/v8/blob/master/src/heap.cc#L3691","date":"2013-03-21T06:48:39.108Z","type":"message"}
+{"nick":"cjd","message":"*#include","date":"2013-03-21T06:48:46.597Z","type":"message"}
+{"nick":"cjd","message":"C++, Java, no difference :P","date":"2013-03-21T06:48:55.526Z","type":"message"}
+{"nick":"trevnorris","message":"another benefit of external allocations is that you can set the allocation type (e.g. kExternalUnsignedByteArray)","date":"2013-03-21T06:49:21.036Z","type":"message"}
+{"nick":"trevnorris","message":"then writing to it like an array is hella fast","date":"2013-03-21T06:49:28.663Z","type":"message"}
+{"nick":"trevnorris","message":"and can't import that. it's part of the \"v8::internal\" namespace which can be changed at any time","date":"2013-03-21T06:50:19.022Z","type":"message"}
+{"nick":"cjd","message":"fast / clean / safe  pick 2","date":"2013-03-21T06:51:10.740Z","type":"message"}
+{"nick":"trevnorris","message":"lol","date":"2013-03-21T06:51:19.429Z","type":"message"}
+{"nick":"cjd","message":"could offer them a patch to allocate things using their allocator if they want it","date":"2013-03-21T06:51:53.168Z","type":"message"}
+{"nick":"cjd","message":"if they don't then maintain a patchset if the node guys are willing","date":"2013-03-21T06:52:19.373Z","type":"message"}
+{"nick":"cjd","message":"no pull, no patchset, then live with slow","date":"2013-03-21T06:52:28.854Z","type":"message"}
+{"nick":"trevnorris","message":"ircretary: tell isaacs i've opened an issue about WriteAscii being so slow. either option would double the current speed of net type=asc benchs (http://code.google.com/p/v8/issues/detail?id=2588)","date":"2013-03-21T06:58:37.573Z","type":"message"}
+{"nick":"ircretary","message":"trevnorris: I'll be sure to tell isaacs","date":"2013-03-21T06:58:37.733Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-03-21T07:06:25.397Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-03-21T07:06:35.186Z","type":"quit"}
+{"nick":"trevnorris","message":"there. just wrote up a quick patch that helps us gain the ascii regression back. hopefully they take it","date":"2013-03-21T07:14:03.457Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-03-21T07:17:34.313Z","type":"join"}
+{"nick":"rendar","date":"2013-03-21T07:28:31.299Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T07:32:21.645Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-21T07:36:27.163Z","type":"join"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-03-21T07:37:21.735Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-03-21T07:38:28.637Z","type":"quit"}
+{"nick":"benoitc","date":"2013-03-21T07:42:27.375Z","type":"join"}
+{"nick":"csaoh","date":"2013-03-21T07:53:36.177Z","type":"join"}
+{"nick":"trevnorris","reason":"Quit: Leaving","date":"2013-03-21T07:53:43.612Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-03-21T07:57:35.667Z","type":"join"}
