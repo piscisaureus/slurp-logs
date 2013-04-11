@@ -1,0 +1,242 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-04-11T00:00:01.361Z","type":"quit"}
+{"nick":"ircretary","date":"2013-04-11T00:00:08.718Z","type":"join"}
+{"nick":"Domenic__","date":"2013-04-11T00:05:35.117Z","type":"join"}
+{"nick":"Raynos","message":"substack: what's a good way to tell the dart core team \"your streams without backpressure is a disaster waiting to happen\"","date":"2013-04-11T00:05:39.576Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: ^, actually is \"stream without backpressure\" really a disaster?","date":"2013-04-11T00:05:58.535Z","type":"message"}
+{"nick":"substack","message":"aren't they pull-streams?","date":"2013-04-11T00:06:47.562Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: they do backpressure, i thought.","date":"2013-04-11T00:07:11.887Z","type":"message"}
+{"nick":"Raynos","message":"they are push streams","date":"2013-04-11T00:07:24.835Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: the ones that don't do backpressure are buffered seekable streams","date":"2013-04-11T00:07:28.511Z","type":"message"}
+{"nick":"isaacs","message":"but i mean, whatver, that's buffering all your shit up anyway","date":"2013-04-11T00:07:54.497Z","type":"message"}
+{"nick":"isaacs","message":"at least, that's how i thought it worked","date":"2013-04-11T00:07:59.641Z","type":"message"}
+{"nick":"substack","message":"I have a use-case to mess with the new streams stuff finally now","date":"2013-04-11T00:08:41.639Z","type":"message"}
+{"nick":"substack","message":"first I'm going to publish it as classic streams","date":"2013-04-11T00:08:48.687Z","type":"message"}
+{"nick":"substack","message":"but using streams2 will prevent unnecessary buffering","date":"2013-04-11T00:09:07.072Z","type":"message"}
+{"nick":"Raynos","message":"oh ok they do pause","date":"2013-04-11T00:09:12.163Z","type":"message"}
+{"nick":"Raynos","message":"false alarm.","date":"2013-04-11T00:09:14.666Z","type":"message"}
+{"nick":"Raynos","message":"its just hard to find in their docs -.-","date":"2013-04-11T00:09:30.771Z","type":"message"}
+{"nick":"Domenic__","reason":"Ping timeout: 264 seconds","date":"2013-04-11T00:10:18.156Z","type":"quit"}
+{"nick":"Raynos","message":"isaacs: idea, make all streams support `.close()`","date":"2013-04-11T00:12:24.463Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: what's close() do if it isn't a thing that closes?","date":"2013-04-11T00:13:31.299Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: are there any Readable streams where it would not make sense for them to have a close()","date":"2013-04-11T00:13:35.255Z","type":"message"}
+{"nick":"Raynos","message":"Oh wait duplex transforms >_<","date":"2013-04-11T00:13:48.613Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: :)","date":"2013-04-11T00:13:58.448Z","type":"message"}
+{"nick":"Raynos","message":"yeah I live in lazy land >_<","date":"2013-04-11T00:14:10.783Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: zlib streams have a .close() method","date":"2013-04-11T00:14:20.211Z","type":"message"}
+{"nick":"Raynos","message":"where there is just Readable.pipe(Writable) and no duplexes","date":"2013-04-11T00:14:23.837Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: but it should only be called when both sides are done.","date":"2013-04-11T00:14:30.873Z","type":"message"}
+{"nick":"Raynos","message":"Ok what about this","date":"2013-04-11T00:14:55.626Z","type":"message"}
+{"nick":"Raynos","message":"Duplex.close() means","date":"2013-04-11T00:14:58.516Z","type":"message"}
+{"nick":"isaacs","message":"fs streams have a destroy(), which closes the fd","date":"2013-04-11T00:15:01.867Z","type":"message"}
+{"nick":"isaacs","message":"same for sockets","date":"2013-04-11T00:15:04.254Z","type":"message"}
+{"nick":"Raynos","message":"if there is any data left in the buffer just kill it","date":"2013-04-11T00:15:06.140Z","type":"message"}
+{"nick":"isaacs","message":"that's destroy()","date":"2013-04-11T00:15:12.321Z","type":"message"}
+{"nick":"isaacs","message":"what you probably want is destroySoon()","date":"2013-04-11T00:15:19.337Z","type":"message"}
+{"nick":"Raynos","message":"does fs.createReadStream().close() clean up the fd ?","date":"2013-04-11T00:15:22.443Z","type":"message"}
+{"nick":"isaacs","message":"s/close/destroy/ yeah","date":"2013-04-11T00:15:29.216Z","type":"message"}
+{"nick":"Raynos","message":"I just want an ABORT thing","date":"2013-04-11T00:15:33.384Z","type":"message"}
+{"nick":"Raynos","message":"which is like pause","date":"2013-04-11T00:15:36.275Z","type":"message"}
+{"nick":"isaacs","message":"naming things is hard.","date":"2013-04-11T00:15:37.116Z","type":"message"}
+{"nick":"Raynos","message":"but it actually means deallocate all resources and die","date":"2013-04-11T00:15:45.302Z","type":"message"}
+{"nick":"isaacs","message":"you want destroy()","date":"2013-04-11T00:15:48.677Z","type":"message"}
+{"nick":"Raynos","message":"so whats the difference between close() and destroy()","date":"2013-04-11T00:16:02.142Z","type":"message"}
+{"nick":"Raynos","message":"other then \"oops naming is hard and back compat\"","date":"2013-04-11T00:16:07.810Z","type":"message"}
+{"nick":"isaacs","message":"so, you have destroy() and destroySoon()","date":"2013-04-11T00:17:43.036Z","type":"message"}
+{"nick":"isaacs","message":"destroySoon() should really be renamed to close()","date":"2013-04-11T00:17:50.608Z","type":"message"}
+{"nick":"isaacs","message":"what it means is, write the remainder of what you have, and then destroy() once it's flushed out","date":"2013-04-11T00:18:07.676Z","type":"message"}
+{"nick":"rvagg","message":"so destroy() should just cancel anything in process? discard buffers etc.?","date":"2013-04-11T00:19:04.755Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: I'm talking about Readable's","date":"2013-04-11T00:20:19.528Z","type":"message"}
+{"nick":"isaacs","message":"sure, but you can't have method called \"close\" on readables, that does a different thing on writables, because duplexes.","date":"2013-04-11T00:21:03.647Z","type":"message"}
+{"nick":"sorensen","message":"random question","date":"2013-04-11T00:21:24.603Z","type":"message"}
+{"nick":"sorensen","message":"wtf is the order of npm installs","date":"2013-04-11T00:21:28.480Z","type":"message"}
+{"nick":"sorensen","message":"seems ranom","date":"2013-04-11T00:21:39.516Z","type":"message"}
+{"nick":"sorensen","message":"random*","date":"2013-04-11T00:21:41.144Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 4, free: 21]","date":"2013-04-11T00:21:42.303Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: oh ok","date":"2013-04-11T00:21:56.513Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: it's kinda random","date":"2013-04-11T00:22:08.446Z","type":"message"}
+{"nick":"Raynos","message":"so there is no close, thats just a bad name, there is only destroy & destroySoon","date":"2013-04-11T00:22:10.683Z","type":"message"}
+{"nick":"Raynos","message":"and they work on Readable's ?","date":"2013-04-11T00:22:13.607Z","type":"message"}
+{"nick":"sorensen","message":"so glad lol","date":"2013-04-11T00:22:15.696Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: more approrpiately, it's parallel","date":"2013-04-11T00:22:16.986Z","type":"message"}
+{"nick":"sorensen","message":"im not crazy","date":"2013-04-11T00:22:18.564Z","type":"message"}
+{"nick":"sorensen","message":"ah","date":"2013-04-11T00:22:21.892Z","type":"message"}
+{"nick":"sorensen","message":"explains it","date":"2013-04-11T00:22:25.227Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: so, depends on the vagaries of disks and https","date":"2013-04-11T00:22:28.816Z","type":"message"}
+{"nick":"Raynos","message":"for a Readable if you call destroySoon do you have to deplete the internal buffer by calling read() until it returns null before it closes sockets & fds ?","date":"2013-04-11T00:22:36.606Z","type":"message"}
+{"nick":"sorensen","message":"parallel is all i needed ;) thanks","date":"2013-04-11T00:22:44.931Z","type":"message"}
+{"nick":"isaacs","message":"there is no concept of destroySoon for a Readable, relaly","date":"2013-04-11T00:22:52.598Z","type":"message"}
+{"nick":"isaacs","message":"\"soon\", what?","date":"2013-04-11T00:22:56.048Z","type":"message"}
+{"nick":"isaacs","message":"what is \"soon\"?","date":"2013-04-11T00:23:00.325Z","type":"message"}
+{"nick":"sorensen","message":"hot dam i'm excited for nodeconf","date":"2013-04-11T00:23:16.905Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: most of the time, we just close when we get the EOF chunk","date":"2013-04-11T00:23:21.485Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: :D","date":"2013-04-11T00:23:26.660Z","type":"message"}
+{"nick":"chrisdickinson","action":"will be there too!","date":"2013-04-11T00:23:34.290Z","type":"action"}
+{"nick":"sorensen","message":"first time goin, couldnt make it last year","date":"2013-04-11T00:23:38.775Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: what if I want to readFiveLines(fd) ?","date":"2013-04-11T00:23:40.366Z","type":"message"}
+{"nick":"sorensen","message":"woo! beer is on isaac!","date":"2013-04-11T00:23:55.801Z","type":"message"}
+{"nick":"sorensen","message":":D","date":"2013-04-11T00:23:57.270Z","type":"message"}
+{"nick":"Raynos","message":"because thats the header of the file and dependending on the header I either read the content or abort","date":"2013-04-11T00:24:00.562Z","type":"message"}
+{"nick":"isaacs","message":"please don't get beer on me...","date":"2013-04-11T00:24:07.104Z","type":"message"}
+{"nick":"sorensen","message":"oh its happening","date":"2013-04-11T00:24:15.938Z","type":"message"}
+{"nick":"sorensen","message":"\"yes sir, tab under the name isaac\"","date":"2013-04-11T00:24:25.295Z","type":"message"}
+{"nick":"sorensen","message":"\"shots for everyone, yes i'm sure","date":"2013-04-11T00:24:35.061Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: nodeconf won't have \"tabs\" exactly.","date":"2013-04-11T00:24:37.950Z","type":"message"}
+{"nick":"sorensen","message":";)","date":"2013-04-11T00:24:38.662Z","type":"message"}
+{"nick":"isaacs","message":"sorensen: have you ever been to summer camp?","date":"2013-04-11T00:24:45.455Z","type":"message"}
+{"nick":"sorensen","message":"no","date":"2013-04-11T00:24:49.799Z","type":"message"}
+{"nick":"sorensen","message":"just messing around","date":"2013-04-11T00:24:53.626Z","type":"message"}
+{"nick":"sorensen","message":"but no","date":"2013-04-11T00:24:57.380Z","type":"message"}
+{"nick":"isaacs","message":"it'll be more like coolers with bottles that you just open","date":"2013-04-11T00:24:58.775Z","type":"message"}
+{"nick":"isaacs","message":"in the woods, around a campfire","date":"2013-04-11T00:25:05.094Z","type":"message"}
+{"nick":"sorensen","message":"aww","date":"2013-04-11T00:25:05.218Z","type":"message"}
+{"nick":"isaacs","message":"for realsies","date":"2013-04-11T00:25:09.676Z","type":"message"}
+{"nick":"sorensen","message":"i do know about that","date":"2013-04-11T00:25:11.320Z","type":"message"}
+{"nick":"isaacs","message":"coyotes and shit","date":"2013-04-11T00:25:15.283Z","type":"message"}
+{"nick":"sorensen","message":"grew up in nebraska after all","date":"2013-04-11T00:25:17.225Z","type":"message"}
+{"nick":"isaacs","message":"deer","date":"2013-04-11T00:25:18.973Z","type":"message"}
+{"nick":"isaacs","message":"see, you know the deal :)","date":"2013-04-11T00:25:26.563Z","type":"message"}
+{"nick":"sorensen","message":"it'll be like home","date":"2013-04-11T00:25:27.267Z","type":"message"}
+{"nick":"isaacs","message":"but with trees and hills, so not so much like nebraska","date":"2013-04-11T00:25:37.539Z","type":"message"}
+{"nick":"isaacs","message":"but yeah","date":"2013-04-11T00:25:38.423Z","type":"message"}
+{"nick":"sorensen","message":"well, very much like nebraska ;)","date":"2013-04-11T00:25:46.063Z","type":"message"}
+{"nick":"isaacs","message":"where does nebraska have hills?","date":"2013-04-11T00:26:05.473Z","type":"message"}
+{"nick":"sorensen","message":"eas","date":"2013-04-11T00:26:10.076Z","type":"message"}
+{"nick":"sorensen","message":"east*","date":"2013-04-11T00:26:11.452Z","type":"message"}
+{"nick":"isaacs","message":"ohhhh...","date":"2013-04-11T00:26:15.032Z","type":"message"}
+{"nick":"chrisdickinson","message":"sort of like east kansas / missouri, huh?","date":"2013-04-11T00:26:20.842Z","type":"message"}
+{"nick":"sorensen","message":"like... omaha","date":"2013-04-11T00:26:20.998Z","type":"message"}
+{"nick":"isaacs","message":"i had relatives in lincoln a while ago","date":"2013-04-11T00:26:22.073Z","type":"message"}
+{"nick":"sorensen","message":"yeap","date":"2013-04-11T00:26:24.583Z","type":"message"}
+{"nick":"sorensen","message":"lincoln a bit flat","date":"2013-04-11T00:26:28.437Z","type":"message"}
+{"nick":"isaacs","message":"was pretty flat.","date":"2013-04-11T00:26:30.554Z","type":"message"}
+{"nick":"chrisdickinson","action":"is from east kansas","date":"2013-04-11T00:26:33.725Z","type":"action"}
+{"nick":"sorensen","message":"eastern nebraska gets towards the bluffs of iowa","date":"2013-04-11T00:26:41.028Z","type":"message"}
+{"nick":"chrisdickinson","message":"i think i've accidentally wound up in nebraska before","date":"2013-04-11T00:26:44.787Z","type":"message"}
+{"nick":"sorensen","message":"chrisdickinson: midwest!","date":"2013-04-11T00:26:47.863Z","type":"message"}
+{"nick":"chrisdickinson","message":"yeah, lawrence ks :D","date":"2013-04-11T00:26:58.795Z","type":"message"}
+{"nick":"isaacs","message":"it was just slightly flatter than 2d euclidian space","date":"2013-04-11T00:26:59.873Z","type":"message"}
+{"nick":"sorensen","message":"lol","date":"2013-04-11T00:27:06.175Z","type":"message"}
+{"nick":"sorensen","message":"it all varies","date":"2013-04-11T00:27:15.513Z","type":"message"}
+{"nick":"isaacs","message":"and not really trees.","date":"2013-04-11T00:27:23.266Z","type":"message"}
+{"nick":"sorensen","message":"for whatever reason i remember omaha being on a list of hilliest cities","date":"2013-04-11T00:27:27.253Z","type":"message"}
+{"nick":"sorensen","message":"lincoln... *sigh*","date":"2013-04-11T00:27:39.095Z","type":"message"}
+{"nick":"isaacs","action":"lives in Oakland, near SF","date":"2013-04-11T00:27:43.022Z","type":"action"}
+{"nick":"chrisdickinson","message":"isaacs: the only thing of note i saw in west kansas on the drive to oregon was a single ditch, full of broken down 1950's pickup trucks.","date":"2013-04-11T00:27:44.931Z","type":"message"}
+{"nick":"sorensen","message":"i like oakland","date":"2013-04-11T00:27:53.140Z","type":"message"}
+{"nick":"isaacs","message":"y'all ain't got nothin on hills.","date":"2013-04-11T00:27:56.047Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2013-04-11T00:28:00.251Z","type":"message"}
+{"nick":"sorensen","message":"shiiiiit","date":"2013-04-11T00:28:02.284Z","type":"message"}
+{"nick":"sorensen","message":"could drive a stick in SF due to my omaha training","date":"2013-04-11T00:28:17.766Z","type":"message"}
+{"nick":"sorensen","message":"in the dam snow","date":"2013-04-11T00:28:19.802Z","type":"message"}
+{"nick":"sorensen","message":"yall dont know bout hills","date":"2013-04-11T00:28:26.149Z","type":"message"}
+{"nick":"sorensen","message":":P","date":"2013-04-11T00:28:36.556Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: http://nodejs.org/api/fs.html#fs_class_fs_readstream readstream does not have a close / destroy or destroySoon documented","date":"2013-04-11T00:28:44.144Z","type":"message"}
+{"nick":"sorensen","message":"what i love most about oakland is that the city of oakland is nicer than the city of SF","date":"2013-04-11T00:29:04.101Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: yeah, it has a destroy, but not a destroySoon","date":"2013-04-11T00:29:08.261Z","type":"message"}
+{"nick":"sorensen","message":"crazy nice building","date":"2013-04-11T00:29:12.778Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: not sure if it's documented","date":"2013-04-11T00:29:13.771Z","type":"message"}
+{"nick":"Raynos","message":"isaacs: so to clarify again in your mind does \"destroySoon\" and \"close\" mean the same thing?","date":"2013-04-11T00:29:29.357Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: it's in the javascript low-level API docs.","date":"2013-04-11T00:29:30.050Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: yeah, i guess so","date":"2013-04-11T00:29:39.880Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: but both are app-specific","date":"2013-04-11T00:29:45.606Z","type":"message"}
+{"nick":"Raynos","message":"where is the low-level API docs?","date":"2013-04-11T00:29:47.550Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: https://github.com/joyent/node/tree/master/lib/","date":"2013-04-11T00:30:07.201Z","type":"message"}
+{"nick":"Raynos","message":"oh.","date":"2013-04-11T00:30:16.198Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: the docs that we write in javascript","date":"2013-04-11T00:30:17.196Z","type":"message"}
+{"nick":"Raynos","message":"so its in the code :P","date":"2013-04-11T00:30:19.494Z","type":"message"}
+{"nick":"isaacs","message":";P","date":"2013-04-11T00:30:19.780Z","type":"message"}
+{"nick":"mbalho","message":"the sf hobart building is like the crappier version of the oakland cathedral building","date":"2013-04-11T00:30:22.654Z","type":"message"}
+{"nick":"isaacs","message":"sf has more stuff","date":"2013-04-11T00:30:32.290Z","type":"message"}
+{"nick":"isaacs","message":"like a crazy cat person, their carpets reeking of urine, and old photographs and rotten garbage from last month.","date":"2013-04-11T00:30:55.397Z","type":"message"}
+{"nick":"sorensen","message":"i do love sf","date":"2013-04-11T00:31:31.934Z","type":"message"}
+{"nick":"sorensen","message":"probably since i grew up in the midwest","date":"2013-04-11T00:31:40.518Z","type":"message"}
+{"nick":"Raynos","message":"oh interesting","date":"2013-04-11T00:31:43.431Z","type":"message"}
+{"nick":"Raynos","message":"you can't close() a stream, that's for servers","date":"2013-04-11T00:31:49.249Z","type":"message"}
+{"nick":"sorensen","message":"have an uncle that does city planning in SF","date":"2013-04-11T00:31:50.259Z","type":"message"}
+{"nick":"jez0990","message":"nodeconf","date":"2013-04-11T00:49:07.411Z","type":"message"}
+{"nick":"jez0990","message":"hmm","date":"2013-04-11T00:49:23.363Z","type":"message"}
+{"nick":"mbalho","message":"go!","date":"2013-04-11T00:50:00.965Z","type":"message"}
+{"nick":"Raynos","message":"always go","date":"2013-04-11T00:53:14.896Z","type":"message"}
+{"nick":"Raynos","message":"nodeconf is a must","date":"2013-04-11T00:53:26.253Z","type":"message"}
+{"nick":"isaacs","message":"Raynos: right, servers have close()","date":"2013-04-11T00:57:49.812Z","type":"message"}
+{"nick":"Guest55310","date":"2013-04-11T01:05:56.860Z","type":"quit"}
+{"nick":"fallsemo1","reason":"Quit: Leaving.","date":"2013-04-11T01:09:03.935Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 42]","date":"2013-04-11T01:21:42.206Z","type":"message"}
+{"nick":"jxson","reason":"Ping timeout: 256 seconds","date":"2013-04-11T01:22:32.476Z","type":"quit"}
+{"nick":"ralphtheninja","reason":"Ping timeout: 260 seconds","date":"2013-04-11T01:24:52.002Z","type":"quit"}
+{"nick":"devaholic","date":"2013-04-11T01:34:16.461Z","type":"join"}
+{"nick":"thl0","date":"2013-04-11T01:42:42.969Z","type":"join"}
+{"nick":"Domenic__","date":"2013-04-11T01:46:25.970Z","type":"join"}
+{"nick":"ins0mnia","date":"2013-04-11T02:05:26.400Z","type":"join"}
+{"nick":"thl0","message":"so substack, could we use deep-is in difflet since in that case seems to make more sense?","date":"2013-04-11T02:06:36.947Z","type":"message"}
+{"nick":"thl0","message":"i.e. you wouldn't want to see a diff indicator when you do 'diff(NaN, NaN)'","date":"2013-04-11T02:07:05.694Z","type":"message"}
+{"nick":"Domenic__","message":"thl0 enable issues on deep-is","date":"2013-04-11T02:08:21.003Z","type":"message"}
+{"nick":"Domenic__","message":"also make it work so that deepIs(-0, +0) === false","date":"2013-04-11T02:08:36.402Z","type":"message"}
+{"nick":"mikolalysenko","message":"why are all the red black tree libraries in npm useless?","date":"2013-04-11T02:09:28.121Z","type":"message"}
+{"nick":"mikolalysenko","message":"they all give you find, but none of them has a working lower_bound","date":"2013-04-11T02:09:42.027Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is the whole point of using a tree in the first place?","date":"2013-04-11T02:09:50.598Z","type":"message"}
+{"nick":"thl0","message":"Domenic__: done","date":"2013-04-11T02:09:56.662Z","type":"message"}
+{"nick":"thl0","message":"Domenic__: why?","date":"2013-04-11T02:10:05.899Z","type":"message"}
+{"nick":"mikolalysenko","message":"if I didn't care about successor/predecessor queries I'd use a hash (end rant)","date":"2013-04-11T02:10:10.429Z","type":"message"}
+{"nick":"thl0","message":"is that bc Objec.is works that way?","date":"2013-04-11T02:10:16.851Z","type":"message"}
+{"nick":"ins0mnia","reason":"Remote host closed the connection","date":"2013-04-11T02:12:08.083Z","type":"quit"}
+{"nick":"timoxley","date":"2013-04-11T02:16:54.744Z","type":"join"}
+{"nick":"stlsaint","reason":"Quit: leaving","date":"2013-04-11T02:18:39.150Z","type":"quit"}
+{"nick":"rowbit","message":"Daily usage stats: [developer: 33, free: 1307]","date":"2013-04-11T02:21:42.301Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 1, free: 27]","date":"2013-04-11T02:21:43.145Z","type":"message"}
+{"nick":"thl0","reason":"Remote host closed the connection","date":"2013-04-11T02:42:12.028Z","type":"quit"}
+{"nick":"niftylettuce","message":"isaacs: can you help with this? https://github.com/nodejitsu/node-http-proxy/issues/399","date":"2013-04-11T02:42:44.969Z","type":"message"}
+{"nick":"niftylettuce","message":"isaacs: i noticed that crypto/tls now requires a \".pfx\" file apparently in 0.10.x","date":"2013-04-11T02:42:58.241Z","type":"message"}
+{"nick":"niftylettuce","message":"isaacs: so all my my existing ssl setup is flawed without this pfx stuff, not certain how to create","date":"2013-04-11T02:43:16.695Z","type":"message"}
+{"nick":"thl0","date":"2013-04-11T02:43:54.381Z","type":"join"}
+{"nick":"thl0","reason":"Remote host closed the connection","date":"2013-04-11T02:44:46.838Z","type":"quit"}
+{"nick":"Benvie","reason":"Ping timeout: 264 seconds","date":"2013-04-11T02:46:24.433Z","type":"quit"}
+{"nick":"Benvie","date":"2013-04-11T02:54:06.467Z","type":"join"}
+{"nick":"mmckegg","date":"2013-04-11T02:57:10.585Z","type":"part"}
+{"nick":"Raynos","message":"miko: write a good one!","date":"2013-04-11T02:59:28.205Z","type":"message"}
+{"nick":"Raynos","message":"also how do you \"know\" that red black trees are good at lower bounds","date":"2013-04-11T02:59:51.714Z","type":"message"}
+{"nick":"Raynos","message":"I dont even know what lower bound means wrt trees","date":"2013-04-11T02:59:59.156Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 24]","date":"2013-04-11T03:21:42.237Z","type":"message"}
+{"nick":"mikolalysenko","message":"Raynos: basically balanced binary trees are a way to store dynamic ordered sequences","date":"2013-04-11T03:25:52.786Z","type":"message"}
+{"nick":"mikolalysenko","message":"and the main thing you get with an oredered sequence is that you can binary search it in O(log n) to find lower bounds","date":"2013-04-11T03:26:19.000Z","type":"message"}
+{"nick":"mikolalysenko","message":"so if you want the items that come before and immediately after some query, you can figure that out","date":"2013-04-11T03:26:49.321Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is slower and more expensive than a hash table, but you can answer stronger queries","date":"2013-04-11T03:27:03.982Z","type":"message"}
+{"nick":"mikolalysenko","message":"however, when I look in npm none of the balanced binary search tree libraries implement bounds queries!","date":"2013-04-11T03:27:37.012Z","type":"message"}
+{"nick":"mikolalysenko","message":"which means that all they end up being is just a crappy version of a hash table","date":"2013-04-11T03:27:46.629Z","type":"message"}
+{"nick":"mikolalysenko","message":"if all you can do is insert/delete/find, then you are strictly better off using a hash:  why would you ever bother with a tree?","date":"2013-04-11T03:28:11.591Z","type":"message"}
+{"nick":"Domenic__","message":"thl0: yes, and of course the deeper reason for that is because that's how the ES spec works.","date":"2013-04-11T03:30:54.938Z","type":"message"}
+{"nick":"mikolalysenko","message":"actually, I just found one that looks good but it had a weird name:  https://npmjs.org/package/leafy","date":"2013-04-11T03:33:16.555Z","type":"message"}
+{"nick":"mikolalysenko","message":"wait, never mind.  It is still terrible","date":"2013-04-11T03:34:36.524Z","type":"message"}
+{"nick":"mikolalysenko","message":"the findLessThan/findGreaterThan methods return arrays of elements","date":"2013-04-11T03:34:50.809Z","type":"message"}
+{"nick":"mikolalysenko","message":"which means if you use them in a loop, you will do O(n^2) work","date":"2013-04-11T03:35:00.872Z","type":"message"}
+{"nick":"mikolalysenko","message":"retarded...","date":"2013-04-11T03:35:04.330Z","type":"message"}
+{"nick":"Raynos","message":"write one ;)","date":"2013-04-11T03:53:21.970Z","type":"message"}
+{"nick":"dominictarr","date":"2013-04-11T03:58:44.098Z","type":"join"}
+{"nick":"dominictarr","reason":"Client Quit","date":"2013-04-11T03:59:49.924Z","type":"quit"}
+{"nick":"niftylettuce","message":"isaacs: https://github.com/nodejitsu/node-http-proxy/issues/399#issuecomment-16216048 it looks like there are some recent changes to the crypto module that might have caused the break","date":"2013-04-11T04:13:18.826Z","type":"message"}
+{"nick":"niftylettuce","message":"not sure which one though https://github.com/joyent/node/commits/v0.10.2-release/lib/crypto.js","date":"2013-04-11T04:15:00.907Z","type":"message"}
+{"nick":"niftylettuce","message":"im on 0.10.2","date":"2013-04-11T04:15:08.546Z","type":"message"}
+{"nick":"jxson","date":"2013-04-11T04:15:27.907Z","type":"join"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2013-04-11T04:18:17.457Z","type":"quit"}
+{"nick":"kenperkins","date":"2013-04-11T04:19:11.851Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 26]","date":"2013-04-11T04:21:42.296Z","type":"message"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2013-04-11T04:32:09.395Z","type":"quit"}
+{"nick":"jcrugzz","reason":"Ping timeout: 245 seconds","date":"2013-04-11T04:33:19.960Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-04-11T04:35:13.374Z","type":"quit"}
+{"nick":"fallsemo","date":"2013-04-11T04:45:49.906Z","type":"join"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2013-04-11T04:57:08.343Z","type":"quit"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-04-11T05:05:11.608Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 13, free: 31]","date":"2013-04-11T05:21:42.185Z","type":"message"}
+{"nick":"jcrugzz","date":"2013-04-11T05:38:47.340Z","type":"join"}
+{"nick":"thatguydan","date":"2013-04-11T05:49:33.626Z","type":"join"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2013-04-11T05:58:12.948Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 246 seconds","date":"2013-04-11T06:02:16.773Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-04-11T06:05:27.987Z","type":"nick"}
+{"nick":"jcrugzz","reason":"Ping timeout: 256 seconds","date":"2013-04-11T06:08:40.558Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 22]","date":"2013-04-11T06:21:42.258Z","type":"message"}
+{"nick":"fallsemo","reason":"Quit: Leaving.","date":"2013-04-11T06:39:53.511Z","type":"quit"}
+{"nick":"timoxley","date":"2013-04-11T07:06:07.767Z","type":"join"}
+{"nick":"mikolalysenko","date":"2013-04-11T07:08:57.085Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2013-04-11T07:13:20.007Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 10, free: 28]","date":"2013-04-11T07:21:42.160Z","type":"message"}
+{"nick":"jxson","reason":"Ping timeout: 240 seconds","date":"2013-04-11T07:41:33.725Z","type":"quit"}
