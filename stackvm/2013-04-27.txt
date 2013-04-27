@@ -1,0 +1,188 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-04-27T00:00:01.013Z","type":"quit"}
+{"nick":"ircretary","date":"2013-04-27T00:00:08.730Z","type":"join"}
+{"nick":"mbalho","message":"its emitting strings into jsonstream","date":"2013-04-27T00:00:38.024Z","type":"message"}
+{"nick":"mbalho","message":"and jsonstream is saying Object #<Int32Array> has no method 'slice'","date":"2013-04-27T00:00:45.285Z","type":"message"}
+{"nick":"substack","message":"because it doesn't","date":"2013-04-27T00:01:56.103Z","type":"message"}
+{"nick":"substack","message":"test for .slice before using slice ops","date":"2013-04-27T00:02:04.567Z","type":"message"}
+{"nick":"substack","message":"it's in jsonparse I think","date":"2013-04-27T00:02:12.845Z","type":"message"}
+{"nick":"substack","message":"or else instance patch the int32array with a slice method","date":"2013-04-27T00:02:26.677Z","type":"message"}
+{"nick":"mbalho","message":".subarray","date":"2013-04-27T00:02:33.894Z","type":"message"}
+{"nick":"mikeal","message":"the crazy thing i'm seeing is, when JSONStream stops parsing, http-response stops emitting data","date":"2013-04-27T00:03:22.270Z","type":"message"}
+{"nick":"mikeal","message":"which doesn't make any fucking sense","date":"2013-04-27T00:03:31.700Z","type":"message"}
+{"nick":"mikeal","message":"and there is no exception","date":"2013-04-27T00:03:37.327Z","type":"message"}
+{"nick":"mikeal","message":"i even did this little trick","date":"2013-04-27T00:04:41.142Z","type":"message"}
+{"nick":"mikeal","message":"https://gist.github.com/mikeal/5471250","date":"2013-04-27T00:04:41.845Z","type":"message"}
+{"nick":"mikeal","message":"to see if it was pausing the stream or something","date":"2013-04-27T00:04:52.758Z","type":"message"}
+{"nick":"mikeal","message":"but that wasn't it","date":"2013-04-27T00:04:56.611Z","type":"message"}
+{"nick":"mbalho","message":"heres the commit that made it break with typed arrays https://github.com/creationix/jsonparse/commit/fba4e12ddaa502abf37067e23232a6e12ac3f09b","date":"2013-04-27T00:05:39.678Z","type":"message"}
+{"nick":"mikeal","message":"haha, substack needs to check for .slice before doing slice ops :)","date":"2013-04-27T00:06:34.242Z","type":"message"}
+{"nick":"mikeal","message":"you know what tho","date":"2013-04-27T00:06:39.518Z","type":"message"}
+{"nick":"mikeal","message":"the browserify Buffer shim should just add slice","date":"2013-04-27T00:06:52.527Z","type":"message"}
+{"nick":"mbalho","message":"jsonstream has never worked (to my knowledge) with the Buffer shim","date":"2013-04-27T00:07:20.574Z","type":"message"}
+{"nick":"mikeal","message":"where does that shim exist? i'll just patch it","date":"2013-04-27T00:07:23.055Z","type":"message"}
+{"nick":"mbalho","message":"it used to work with any typed arrays","date":"2013-04-27T00:07:25.380Z","type":"message"}
+{"nick":"mbalho","message":"and it still just uses int32arrays","date":"2013-04-27T00:07:32.033Z","type":"message"}
+{"nick":"mikeal","message":"this isn't fixing my issue","date":"2013-04-27T00:10:42.218Z","type":"message"}
+{"nick":"mikeal","message":"i patched the local jsonparse and it's still a problem","date":"2013-04-27T00:10:50.191Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: is there any way to refresh a lockfile? with your lockfile module?","date":"2013-04-27T00:13:52.023Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: my guess is that jsonparse is fucked up","date":"2013-04-27T00:15:18.199Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: im testing locally and seeing lots of typed arrays getting passed into it, like thousands per second, but my CPU gets pegged","date":"2013-04-27T00:16:04.339Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: but the older versions of jsonparse worked fine with typed arrays, e.g. http://max.ic.ht/oakland_assessor/_design/streaming-xhr/_rewrite","date":"2013-04-27T00:17:37.669Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: i think part of the problem is that there arent browser tests for jsonparse","date":"2013-04-27T00:17:46.600Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: yea verified thats the problem, if you git checkout af8a5d49cfada1b51ec65d0be39d30d0671fd40c jsonparse it fixes things","date":"2013-04-27T00:20:09.525Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: just gotta undo substacks changes","date":"2013-04-27T00:20:23.366Z","type":"message"}
+{"nick":"mikeal","message":"the whole test passes?","date":"2013-04-27T00:21:02.988Z","type":"message"}
+{"nick":"mbalho","message":"i dunno it started printing out shit tons of json objects","date":"2013-04-27T00:21:24.698Z","type":"message"}
+{"nick":"mbalho","message":"whereas before it printed out 2","date":"2013-04-27T00:21:32.885Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: \"refresh\" a lockfile?  not sure what that means..","date":"2013-04-27T00:22:07.195Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: you mean, make it not-stale?","date":"2013-04-27T00:22:13.412Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: yea","date":"2013-04-27T00:22:23.328Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: npm install touch","date":"2013-04-27T00:22:26.611Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: and lockfile checks the atime? I thought it checked the ctime","date":"2013-04-27T00:23:05.765Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: any time you do anything to a file, ctime is updated.","date":"2013-04-27T00:23:24.172Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: read, write, or change anything","date":"2013-04-27T00:23:29.607Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: thanks","date":"2013-04-27T00:23:37.086Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: so, touch(filename, cb) will update the ctime to now, no matter what times you set as atime and mtime","date":"2013-04-27T00:23:49.221Z","type":"message"}
+{"nick":"defunctzombie","message":"coo","date":"2013-04-27T00:24:00.680Z","type":"message"}
+{"nick":"defunctzombie","message":"I am trying to make an email queue thingy that works cross process","date":"2013-04-27T00:24:30.926Z","type":"message"}
+{"nick":"jcrugzz","reason":"Ping timeout: 264 seconds","date":"2013-04-27T00:24:42.113Z","type":"quit"}
+{"nick":"defunctzombie","message":"using simple files versus a central db or some such","date":"2013-04-27T00:24:47.170Z","type":"message"}
+{"nick":"defunctzombie","message":"most of the time, emails go out right away, but sometimes email providers have failures","date":"2013-04-27T00:25:09.619Z","type":"message"}
+{"nick":"mikeal","message":"mbalho: did you send a pull request?","date":"2013-04-27T00:25:14.710Z","type":"message"}
+{"nick":"defunctzombie","message":"and I want to make sure those emails are sent","date":"2013-04-27T00:25:14.861Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: send a pull request to what?","date":"2013-04-27T00:25:36.689Z","type":"message"}
+{"nick":"mikeal","message":"jsonparse","date":"2013-04-27T00:26:04.328Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: nah i dont know how to fix it against master, i just pointed out that downgrading fixes jsonstream","date":"2013-04-27T00:26:22.512Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: you should write a jsonparse browser test and fix it and i'll update the dep in jsonstream","date":"2013-04-27T00:27:01.948Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: im not smart enough to read creationix's code","date":"2013-04-27T00:27:19.712Z","type":"message"}
+{"nick":"mikeal","message":"hahaha","date":"2013-04-27T00:27:26.049Z","type":"message"}
+{"nick":"mbalho","message":"mikeal: in jsonstream i was doing chunk.slice = chunk.subarray on master and it wasn't fixing things so i think it goes deeper than just the presence of .slice","date":"2013-04-27T00:28:26.776Z","type":"message"}
+{"nick":"mikeal","message":"yeah, i did something simliar","date":"2013-04-27T00:28:43.955Z","type":"message"}
+{"nick":"mikeal","message":"i think i'm giving up on this now","date":"2013-04-27T00:31:30.745Z","type":"message"}
+{"nick":"mikeal","message":"eventually we're integrating engineio and then i can write them one at a time over that","date":"2013-04-27T00:32:37.168Z","type":"message"}
+{"nick":"jxson_","reason":"Remote host closed the connection","date":"2013-04-27T00:37:18.199Z","type":"quit"}
+{"nick":"st_luke","date":"2013-04-27T00:39:53.786Z","type":"join"}
+{"nick":"st_luke","message":"Domenic_","date":"2013-04-27T00:40:00.443Z","type":"message"}
+{"nick":"st_luke","message":"Domenic_: what i was gonna say is i dont think you can just basically wrap it an an ee and have it have the same safety as gracefully ending the process. i might be wrong.","date":"2013-04-27T00:43:21.428Z","type":"message"}
+{"nick":"jibay","reason":"Quit: Leaving","date":"2013-04-27T00:47:03.919Z","type":"quit"}
+{"nick":"st_luke","message":"isaacs: fantastical is awesome but i remember why i never really liked it when i first tried it. that damn menu bar icon","date":"2013-04-27T00:49:40.162Z","type":"message"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2013-04-27T00:52:08.888Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-04-27T00:56:18.244Z","type":"nick"}
+{"nick":"jesusabdullah","message":"sup st_luke","date":"2013-04-27T00:57:08.004Z","type":"message"}
+{"nick":"jesusabdullah","message":"too bad to hear about empire :(","date":"2013-04-27T00:57:15.446Z","type":"message"}
+{"nick":"no9","reason":"Ping timeout: 256 seconds","date":"2013-04-27T00:58:42.280Z","type":"quit"}
+{"nick":"st_luke","message":"i dont really want to talk about any of that shit anymore actually.","date":"2013-04-27T01:08:35.504Z","type":"message"}
+{"nick":"st_luke","message":"its stupid, i shouldnt have said anything. in fact i shouldnt even use the computer when i first wake up, i should wait a few hours before i hate the world less.","date":"2013-04-27T01:09:35.236Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-04-27T01:09:36.780Z","type":"quit"}
+{"nick":"kevino80","date":"2013-04-27T01:12:00.645Z","type":"join"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2013-04-27T01:17:09.083Z","type":"quit"}
+{"nick":"nicholas_","date":"2013-04-27T01:18:02.692Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-04-27T01:19:17.691Z","type":"quit"}
+{"nick":"jcrugzz","date":"2013-04-27T01:27:58.169Z","type":"join"}
+{"nick":"jxson","date":"2013-04-27T01:28:25.979Z","type":"join"}
+{"nick":"jxson","reason":"Remote host closed the connection","date":"2013-04-27T01:32:12.348Z","type":"quit"}
+{"nick":"mikeal","date":"2013-04-27T01:49:42.591Z","type":"join"}
+{"nick":"st_luke","date":"2013-04-27T01:50:29.896Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 264 seconds","date":"2013-04-27T01:59:00.426Z","type":"quit"}
+{"nick":"crank","reason":"Ping timeout: 260 seconds","date":"2013-04-27T02:23:00.049Z","type":"quit"}
+{"nick":"thl0","date":"2013-04-27T02:27:16.440Z","type":"join"}
+{"nick":"st_luke","reason":"Read error: Connection reset by peer","date":"2013-04-27T02:32:27.835Z","type":"quit"}
+{"nick":"st_luke_","date":"2013-04-27T02:32:34.015Z","type":"join"}
+{"nick":"crank","date":"2013-04-27T02:38:28.127Z","type":"join"}
+{"nick":"shama","date":"2013-04-27T02:46:33.651Z","type":"join"}
+{"nick":"jcrugzz","reason":"Ping timeout: 258 seconds","date":"2013-04-27T02:56:09.978Z","type":"quit"}
+{"nick":"st_luke_","reason":"Remote host closed the connection","date":"2013-04-27T02:56:25.978Z","type":"quit"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2013-04-27T03:05:00.466Z","type":"quit"}
+{"nick":"stlsaint","date":"2013-04-27T03:09:39.915Z","type":"join"}
+{"nick":"st_luke","date":"2013-04-27T03:19:39.076Z","type":"join"}
+{"nick":"thl0","reason":"Remote host closed the connection","date":"2013-04-27T03:30:57.512Z","type":"quit"}
+{"nick":"shuaib","date":"2013-04-27T03:43:48.011Z","type":"join"}
+{"nick":"ralphtheninja","reason":"Read error: Operation timed out","date":"2013-04-27T03:43:59.068Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-04-27T03:50:07.355Z","type":"nick"}
+{"nick":"fallsemo","date":"2013-04-27T03:50:49.544Z","type":"join"}
+{"nick":"defunctzombie","message":"st_luke: what happened?","date":"2013-04-27T03:50:59.965Z","type":"message"}
+{"nick":"jcrugzz","date":"2013-04-27T04:03:08.454Z","type":"join"}
+{"nick":"dominictarr","date":"2013-04-27T04:03:42.654Z","type":"join"}
+{"nick":"dominictarr","reason":"Client Quit","date":"2013-04-27T04:03:56.995Z","type":"quit"}
+{"nick":"st_luke","message":"defunctzombie: im at ga now","date":"2013-04-27T04:05:14.978Z","type":"message"}
+{"nick":"st_luke","message":"its empty so i can deal with it","date":"2013-04-27T04:05:21.773Z","type":"message"}
+{"nick":"defunctzombie","message":"hahaha","date":"2013-04-27T04:05:28.205Z","type":"message"}
+{"nick":"jcrugzz","reason":"Ping timeout: 245 seconds","date":"2013-04-27T04:07:31.340Z","type":"quit"}
+{"nick":"fallsemo","reason":"Quit: Leaving.","date":"2013-04-27T04:09:45.070Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-04-27T04:17:25.447Z","type":"nick"}
+{"nick":"st_luke","reason":"Read error: Connection reset by peer","date":"2013-04-27T04:20:31.431Z","type":"quit"}
+{"nick":"st_luke","date":"2013-04-27T04:20:56.603Z","type":"join"}
+{"nick":"jesusabdullah","message":"hey st_luke","date":"2013-04-27T05:14:10.616Z","type":"message"}
+{"nick":"jesusabdullah","message":"ugh I hate it when I make commit mistakes it is the worst thing","date":"2013-04-27T05:14:43.466Z","type":"message"}
+{"nick":"jesusabdullah","message":"well maybe not the worst thing but up there","date":"2013-04-27T05:14:49.965Z","type":"message"}
+{"nick":"st_luke","message":"rebase?","date":"2013-04-27T05:17:11.862Z","type":"message"}
+{"nick":"jesusabdullah","message":"yeah exactly","date":"2013-04-27T05:17:16.437Z","type":"message"}
+{"nick":"st_luke","message":"--amend is nice","date":"2013-04-27T05:17:36.799Z","type":"message"}
+{"nick":"jesusabdullah","message":"\"oh yeah this is totally cool\" \"oh a straightforward rebase\" *forget to sanity check* *git push* *realize I accidentally the code","date":"2013-04-27T05:17:39.896Z","type":"message"}
+{"nick":"jesusabdullah","message":"yeah it is I use it all the time","date":"2013-04-27T05:17:45.475Z","type":"message"}
+{"nick":"jesusabdullah","message":"but --force is NOT so nice","date":"2013-04-27T05:17:49.626Z","type":"message"}
+{"nick":"jesusabdullah","message":"as marak once said, only jedis should force push","date":"2013-04-27T05:17:58.956Z","type":"message"}
+{"nick":"jesusabdullah","message":"maybe I should work on kyhttp tonight, get new A1 zazzle posters up","date":"2013-04-27T05:18:33.575Z","type":"message"}
+{"nick":"st_luke","message":"you can force push if nobody is looking","date":"2013-04-27T05:19:05.323Z","type":"message"}
+{"nick":"jesusabdullah","message":"yeah I tried that","date":"2013-04-27T05:20:01.605Z","type":"message"}
+{"nick":"jesusabdullah","message":"veeery dangerous","date":"2013-04-27T05:20:04.855Z","type":"message"}
+{"nick":"jesusabdullah","message":"lol","date":"2013-04-27T05:20:06.086Z","type":"message"}
+{"nick":"jesusabdullah","message":"github irc bots are always watching","date":"2013-04-27T05:20:22.625Z","type":"message"}
+{"nick":"jesusabdullah","message":"how are you?","date":"2013-04-27T05:20:39.945Z","type":"message"}
+{"nick":"st_luke","message":"tell that robot to go fuck itself","date":"2013-04-27T05:23:15.596Z","type":"message"}
+{"nick":"fotoverite_","date":"2013-04-27T05:25:23.518Z","type":"join"}
+{"nick":"fotoverite","reason":"Ping timeout: 256 seconds","date":"2013-04-27T05:26:15.031Z","type":"quit"}
+{"nick":"fotoverite_","new_nick":"fotoverite","date":"2013-04-27T05:26:15.176Z","type":"nick"}
+{"nick":"jesusabdullah","message":"st_luke: yeah basically lol","date":"2013-04-27T05:27:48.055Z","type":"message"}
+{"nick":"jesusabdullah","message":"fotoverite: hello!","date":"2013-04-27T05:27:50.735Z","type":"message"}
+{"nick":"jesusabdullah","message":"oh man today was a good day","date":"2013-04-27T05:27:57.455Z","type":"message"}
+{"nick":"jesusabdullah","message":"(I think)","date":"2013-04-27T05:28:06.975Z","type":"message"}
+{"nick":"st_luke","message":"if someone is going through your commit logs to find things to harass you about then they're not writing enough code","date":"2013-04-27T05:28:55.414Z","type":"message"}
+{"nick":"jesusabdullah","message":"hah","date":"2013-04-27T05:36:44.785Z","type":"message"}
+{"nick":"jesusabdullah","message":"I should find the time to figure out that login screen thing","date":"2013-04-27T05:37:35.085Z","type":"message"}
+{"nick":"jesusabdullah","message":"too bad I'm kinda tired right now","date":"2013-04-27T05:37:40.505Z","type":"message"}
+{"nick":"jesusabdullah","message":"oh man oh man Data Center Tycoon is gonna be awesome","date":"2013-04-27T05:37:55.645Z","type":"message"}
+{"nick":"jesusabdullah","message":"bahhh I should just make this run locally, screw telnet/friends","date":"2013-04-27T05:38:51.025Z","type":"message"}
+{"nick":"jesusabdullah","message":"I want unicode dammit","date":"2013-04-27T05:39:21.595Z","type":"message"}
+{"nick":"jesusabdullah","message":"and a whole mess of other things","date":"2013-04-27T05:39:26.105Z","type":"message"}
+{"nick":"nk109","date":"2013-04-27T05:57:55.981Z","type":"join"}
+{"nick":"tmcw","date":"2013-04-27T05:59:52.861Z","type":"join"}
+{"nick":"st_luke","message":"isaacs: is there a way to have ircretary resend me something?","date":"2013-04-27T06:01:26.337Z","type":"message"}
+{"nick":"isaacs","message":"st_luke: nope.  once it's sent, it's gone.","date":"2013-04-27T06:01:39.824Z","type":"message"}
+{"nick":"st_luke","message":"isaacs: never mind, i thought i wasnt logging for a sec","date":"2013-04-27T06:01:47.476Z","type":"message"}
+{"nick":"isaacs","message":"st_luke: i'd recommend irssi or something so you can scrollback forever.","date":"2013-04-27T06:01:58.434Z","type":"message"}
+{"nick":"isaacs","message":"or log everything, i guess :)","date":"2013-04-27T06:02:02.593Z","type":"message"}
+{"nick":"st_luke","message":"i usually just log everything but i thought it had turned it off for a sec, which have sucked","date":"2013-04-27T06:02:20.697Z","type":"message"}
+{"nick":"stagas","date":"2013-04-27T06:03:32.221Z","type":"join"}
+{"nick":"isaacs","message":"yes, indeed.","date":"2013-04-27T06:04:42.449Z","type":"message"}
+{"nick":"st_luke","message":"isaacs: anyway to follow up on url parsing, iOS does `appname://[optional path]`","date":"2013-04-27T06:05:09.942Z","type":"message"}
+{"nick":"isaacs","message":"st_luke: ok","date":"2013-04-27T06:05:21.509Z","type":"message"}
+{"nick":"isaacs","message":"st_luke: does it have hostname:relpath bits?","date":"2013-04-27T06:05:32.575Z","type":"message"}
+{"nick":"isaacs","message":"my_funkay_appz://blerg:blorp","date":"2013-04-27T06:05:45.802Z","type":"message"}
+{"nick":"isaacs","message":"or is it just completely arbitrary after the ://?","date":"2013-04-27T06:05:52.041Z","type":"message"}
+{"nick":"st_luke","message":"it's different, it does like","date":"2013-04-27T06:06:34.005Z","type":"message"}
+{"nick":"st_luke","message":"after the ://","date":"2013-04-27T06:06:38.965Z","type":"message"}
+{"nick":"st_luke","message":"you just specify a path/like/this","date":"2013-04-27T06:06:58.611Z","type":"message"}
+{"nick":"st_luke","message":"or you can do what's sorta like get values in a url","date":"2013-04-27T06:07:16.350Z","type":"message"}
+{"nick":"st_luke","message":"actually exactly like get values...just encoded","date":"2013-04-27T06:07:51.713Z","type":"message"}
+{"nick":"st_luke","message":"but it doesn't look like it does hostname:relpath stuff :(","date":"2013-04-27T06:08:02.884Z","type":"message"}
+{"nick":"tmcw","reason":"Remote host closed the connection","date":"2013-04-27T06:09:58.180Z","type":"quit"}
+{"nick":"isaacs","message":"i see","date":"2013-04-27T06:13:11.156Z","type":"message"}
+{"nick":"shuaib","reason":"Ping timeout: 252 seconds","date":"2013-04-27T06:26:43.511Z","type":"quit"}
+{"nick":"shuaib","date":"2013-04-27T06:30:22.350Z","type":"join"}
+{"nick":"mikeal","date":"2013-04-27T06:37:49.101Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-04-27T06:50:15.180Z","type":"quit"}
+{"nick":"crank","reason":"Ping timeout: 252 seconds","date":"2013-04-27T06:50:55.336Z","type":"quit"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-04-27T07:01:58.465Z","type":"quit"}
+{"nick":"shuaib","reason":"Ping timeout: 260 seconds","date":"2013-04-27T07:07:11.923Z","type":"quit"}
+{"nick":"shuaib","date":"2013-04-27T07:11:41.452Z","type":"join"}
+{"nick":"nk109","reason":"Quit: laters...","date":"2013-04-27T07:15:21.708Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-04-27T07:18:29.569Z","type":"quit"}
+{"nick":"tmcw","date":"2013-04-27T07:20:35.006Z","type":"join"}
+{"nick":"crank","date":"2013-04-27T07:21:01.991Z","type":"join"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2013-04-27T07:24:41.223Z","type":"quit"}
+{"nick":"tmcw","reason":"Ping timeout: 258 seconds","date":"2013-04-27T07:25:14.997Z","type":"quit"}
+{"nick":"nicholas_","reason":"Ping timeout: 256 seconds","date":"2013-04-27T07:39:28.545Z","type":"quit"}
+{"nick":"cianomaidin","date":"2013-04-27T07:54:29.056Z","type":"join"}
+{"nick":"jesusabdullah","message":"https://gist.github.com/jesusabdullah/0557e3111bfae35a9907","date":"2013-04-27T07:54:51.233Z","type":"message"}
+{"nick":"jesusabdullah","message":":3","date":"2013-04-27T07:54:53.533Z","type":"message"}
