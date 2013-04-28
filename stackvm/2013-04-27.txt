@@ -354,3 +354,470 @@
 {"nick":"dominictarr","message":"don't break the abstractions.","date":"2013-04-27T15:56:07.951Z","type":"message"}
 {"nick":"ralphtheninja","message":"exactly, don't assume shit is working in a certain way","date":"2013-04-27T15:56:33.201Z","type":"message"}
 {"nick":"dominictarr","message":"yeah, because then you depend on that.","date":"2013-04-27T15:56:47.440Z","type":"message"}
+{"nick":"dguttman","date":"2013-04-27T16:00:26.696Z","type":"join"}
+{"nick":"defunctzombie","message":"isaacs: either I am not using 'touch' properly or my options to lockfile.lock are wrong","date":"2013-04-27T16:02:01.450Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: I have lockfile.lock with { wait: 5000, stale: 2000 }","date":"2013-04-27T16:02:13.871Z","type":"message"}
+{"nick":"defunctzombie","message":"and a setInterval for 1000 that touches the lockfile","date":"2013-04-27T16:02:24.941Z","type":"message"}
+{"nick":"defunctzombie","message":"however, when I run two processes, the second one seems to acquire the lockfile","date":"2013-04-27T16:02:46.229Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: hold on, lemme remember how lockfile works :)","date":"2013-04-27T16:03:15.476Z","type":"message"}
+{"nick":"defunctzombie","message":":)","date":"2013-04-27T16:03:20.087Z","type":"message"}
+{"nick":"isaacs","message":"the two processes start at the same time?","date":"2013-04-27T16:04:04.114Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: \"yes\"","date":"2013-04-27T16:04:14.661Z","type":"message"}
+{"nick":"defunctzombie","message":"I am using cluster","date":"2013-04-27T16:04:17.504Z","type":"message"}
+{"nick":"isaacs","message":"heh","date":"2013-04-27T16:04:25.860Z","type":"message"}
+{"nick":"isaacs","message":"ok","date":"2013-04-27T16:04:26.549Z","type":"message"}
+{"nick":"defunctzombie","message":"to do some basic testing with multiprocess","date":"2013-04-27T16:04:27.272Z","type":"message"}
+{"nick":"isaacs","message":"so, it sounds like, there IS a race, then","date":"2013-04-27T16:04:40.597Z","type":"message"}
+{"nick":"isaacs","message":"\"wait\" = \"wait this many ms after a failure before trying again\"","date":"2013-04-27T16:04:52.546Z","type":"message"}
+{"nick":"isaacs","message":"\"stale\" = \"if it's this many ms old, fuckit, just delete the lock and try again now\"","date":"2013-04-27T16:05:05.138Z","type":"message"}
+{"nick":"defunctzombie","message":"right","date":"2013-04-27T16:05:09.767Z","type":"message"}
+{"nick":"defunctzombie","message":"that much I got","date":"2013-04-27T16:05:20.602Z","type":"message"}
+{"nick":"isaacs","message":"but touch will be *creating* the file if it doesn't exist.","date":"2013-04-27T16:05:21.589Z","type":"message"}
+{"nick":"defunctzombie","message":"so based on that I think my numbers to the options are reasonable","date":"2013-04-27T16:05:37.888Z","type":"message"}
+{"nick":"defunctzombie","message":"well, the file does exist","date":"2013-04-27T16:05:42.411Z","type":"message"}
+{"nick":"defunctzombie","message":"I do the touch inside the lockfile.lock function","date":"2013-04-27T16:05:55.930Z","type":"message"}
+{"nick":"isaacs","message":"right, but you want to delete it and create it anew anyway","date":"2013-04-27T16:05:57.229Z","type":"message"}
+{"nick":"isaacs","message":"oic.","date":"2013-04-27T16:06:04.413Z","type":"message"}
+{"nick":"defunctzombie","message":"so I only touch if the process is the one that got the lockfile","date":"2013-04-27T16:06:23.215Z","type":"message"}
+{"nick":"isaacs","message":"locfile.lock(f, function(er) { setInterval(touch.sync.bind(touch, f),1000) })","date":"2013-04-27T16:06:24.665Z","type":"message"}
+{"nick":"isaacs","message":"or whatever","date":"2013-04-27T16:06:36.233Z","type":"message"}
+{"nick":"isaacs","message":"probably not sync :)","date":"2013-04-27T16:06:38.258Z","type":"message"}
+{"nick":"dominictarr","message":"defunctzombie: what if you make each process wait a random amount of time?","date":"2013-04-27T16:06:54.430Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: dominictarr: let me throw up a failing minimal example on the gist","date":"2013-04-27T16:07:13.206Z","type":"message"}
+{"nick":"cianomaidin","reason":"Quit: cianomaidin","date":"2013-04-27T16:07:15.222Z","type":"quit"}
+{"nick":"defunctzombie","message":"so we have something to look at","date":"2013-04-27T16:07:17.170Z","type":"message"}
+{"nick":"jcrugzz","date":"2013-04-27T16:10:02.742Z","type":"join"}
+{"nick":"defunctzombie","message":"isaacs: dominictarr: https://gist.github.com/shtylman/5473617","date":"2013-04-27T16:10:22.878Z","type":"message"}
+{"nick":"defunctzombie","message":"npm install touch lockfile debug","date":"2013-04-27T16:10:55.940Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: yeah:","date":"2013-04-27T16:12:20.137Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue got lock 53282 +0ms","date":"2013-04-27T16:12:21.936Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:22.153Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:22.301Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:22.301Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:24.182Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:26.703Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue got lock 53281 +0ms","date":"2013-04-27T16:12:29.277Z","type":"message"}
+{"nick":"isaacs","message":"  local-queue refeshing lockfile +1s","date":"2013-04-27T16:12:31.805Z","type":"message"}
+{"nick":"isaacs","message":"so, that's odd.","date":"2013-04-27T16:12:34.290Z","type":"message"}
+{"nick":"isaacs","message":"why does the second one pick up the lock...","date":"2013-04-27T16:12:36.862Z","type":"message"}
+{"nick":"defunctzombie","message":"right","date":"2013-04-27T16:13:05.824Z","type":"message"}
+{"nick":"cianomaidin","date":"2013-04-27T16:14:45.629Z","type":"join"}
+{"nick":"defunctzombie","message":"it may be that wait is not checking for stale?","date":"2013-04-27T16:15:11.962Z","type":"message"}
+{"nick":"isaacs","message":"reading through lockfile now","date":"2013-04-27T16:15:19.252Z","type":"message"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2013-04-27T16:15:35.464Z","type":"quit"}
+{"nick":"defunctzombie","message":"isaacs: https://github.com/isaacs/lockfile/blob/master/lockfile.js#L168","date":"2013-04-27T16:16:45.017Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: https://github.com/isaacs/lockfile/blob/master/lockfile.js#L182","date":"2013-04-27T16:16:56.447Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: I don't see that checking the stale stuff","date":"2013-04-27T16:17:05.934Z","type":"message"}
+{"nick":"defunctzombie","message":"oh nvm","date":"2013-04-27T16:17:15.258Z","type":"message"}
+{"nick":"defunctzombie","message":"that will call the lock above again","date":"2013-04-27T16:17:22.189Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2013-04-27T16:17:37.605Z","type":"message"}
+{"nick":"isaacs","message":"so, wait = \"check every 10ms until N ms have passed\"","date":"2013-04-27T16:18:07.847Z","type":"message"}
+{"nick":"defunctzombie","message":"right","date":"2013-04-27T16:19:08.682Z","type":"message"}
+{"nick":"defunctzombie","message":"I guess you do that to not hold up the process?","date":"2013-04-27T16:19:37.838Z","type":"message"}
+{"nick":"cianomaidin","reason":"Read error: Connection reset by peer","date":"2013-04-27T16:19:38.061Z","type":"quit"}
+{"nick":"defunctzombie","message":"and to get the lock as soon as it becomes available","date":"2013-04-27T16:19:58.299Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-04-27T16:20:17.975Z","type":"message"}
+{"nick":"isaacs","message":"it should probably do randomized backoff","date":"2013-04-27T16:20:27.325Z","type":"message"}
+{"nick":"isaacs","message":"magic numbers are failsome","date":"2013-04-27T16:20:41.641Z","type":"message"}
+{"nick":"defunctzombie","message":"but even with the code as it is now","date":"2013-04-27T16:20:47.529Z","type":"message"}
+{"nick":"defunctzombie","message":"it shouldn't be re-locking","date":"2013-04-27T16:20:55.473Z","type":"message"}
+{"nick":"defunctzombie","message":"seems like the stale check fails","date":"2013-04-27T16:21:01.748Z","type":"message"}
+{"nick":"isaacs","action":"still reading..","date":"2013-04-27T16:22:21.278Z","type":"action"}
+{"nick":"isaacs","message":"defunctzombie: found it","date":"2013-04-27T16:23:34.391Z","type":"message"}
+{"nick":"isaacs","message":"multiple errors called \"er\" making things confusing in a closre","date":"2013-04-27T16:23:46.984Z","type":"message"}
+{"nick":"isaacs","message":"HOORAY FOR HORROR JAVASCRIPT!","date":"2013-04-27T16:24:01.738Z","type":"message"}
+{"nick":"LOUDBOT","message":"WHY DID THE FISH NEED AN ASPIRIN? HE HAD A HADDOCK!","date":"2013-04-27T16:24:02.179Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: thanks for the test, wrapping it up now, will release a new version shortly","date":"2013-04-27T16:24:19.827Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: awesome! thank you :)","date":"2013-04-27T16:25:04.862Z","type":"message"}
+{"nick":"dominictarr","message":"isaacs: how come if I npm install X","date":"2013-04-27T16:25:20.055Z","type":"message"}
+{"nick":"dominictarr","message":"and then go and shasum ~/.npm/X/1.0.0/package.tgz","date":"2013-04-27T16:25:43.242Z","type":"message"}
+{"nick":"isaacs","action":"knows where this is going...","date":"2013-04-27T16:25:56.553Z","type":"action"}
+{"nick":"dominictarr","message":"I get a different hash than in the repo?","date":"2013-04-27T16:25:57.592Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: yeah.  great question!","date":"2013-04-27T16:26:02.270Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: legacy bug!","date":"2013-04-27T16:26:06.896Z","type":"message"}
+{"nick":"isaacs","message":"which requires a massive rewrite to fix.","date":"2013-04-27T16:26:11.829Z","type":"message"}
+{"nick":"isaacs","message":"it's a result of some giant nasty garbage code that works around differences in system tar impls","date":"2013-04-27T16:26:29.248Z","type":"message"}
+{"nick":"isaacs","message":"of course, now all that code is extraneous and stupid","date":"2013-04-27T16:26:39.783Z","type":"message"}
+{"nick":"isaacs","message":"but, ripping it out is a massive undertaking","date":"2013-04-27T16:26:44.849Z","type":"message"}
+{"nick":"dominictarr","message":"right because that was before zlib in core","date":"2013-04-27T16:26:57.996Z","type":"message"}
+{"nick":"dominictarr","message":"and node-tar","date":"2013-04-27T16:27:01.402Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: this is why i say, \"the worst part of npm is the part where it downloads a package and then puts it in a place\"","date":"2013-04-27T16:27:10.896Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: that's the part i'm referring to","date":"2013-04-27T16:27:19.326Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: lib/cache.js","date":"2013-04-27T16:27:26.364Z","type":"message"}
+{"nick":"dominictarr","message":"right","date":"2013-04-27T16:27:31.040Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: if you ever feel nostalgic for the smell of a southeast asian ghetto, read through that code ;)","date":"2013-04-27T16:27:46.671Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: it's not badly written, but it IS *very* badly conceived","date":"2013-04-27T16:28:16.578Z","type":"message"}
+{"nick":"isaacs","message":"because it's working around constraints that no longer exist, so it's just pointless stupidity all over the goddamn place.","date":"2013-04-27T16:28:34.034Z","type":"message"}
+{"nick":"dominictarr","message":"so, I notice that curl registry…./X-1.0.0.tgz | shasum","date":"2013-04-27T16:28:50.590Z","type":"message"}
+{"nick":"isaacs","message":"garbage and fish rotting in the syn","date":"2013-04-27T16:28:52.985Z","type":"message"}
+{"nick":"dominictarr","message":"gives the correct hash","date":"2013-04-27T16:28:56.166Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2013-04-27T16:28:59.569Z","type":"message"}
+{"nick":"isaacs","message":"the hash in the registry IS the hash of the file that was uploaded","date":"2013-04-27T16:29:06.550Z","type":"message"}
+{"nick":"isaacs","message":"but then i download that file, check the hash, then re-pack it into the cache which changes the hash","date":"2013-04-27T16:29:34.431Z","type":"message"}
+{"nick":"dominictarr","message":"oh.","date":"2013-04-27T16:29:46.590Z","type":"message"}
+{"nick":"isaacs","message":"really, npm should not ever need or use a temp file","date":"2013-04-27T16:29:47.070Z","type":"message"}
+{"nick":"isaacs","message":"but it DID when it used system tar","date":"2013-04-27T16:29:53.892Z","type":"message"}
+{"nick":"isaacs","message":"because i had to clean up various bullshit artifacts that would break things","date":"2013-04-27T16:30:02.339Z","type":"message"}
+{"nick":"isaacs","message":"since gnutar and bsdtar and posix tar have been locked in a bloody war for ages","date":"2013-04-27T16:30:23.041Z","type":"message"}
+{"nick":"cianomaidin","date":"2013-04-27T16:30:24.688Z","type":"join"}
+{"nick":"dominictarr","message":"right - so when installing from cache does it check that it's the right hash?","date":"2013-04-27T16:30:34.661Z","type":"message"}
+{"nick":"isaacs","message":"they're all super opinionated and crazy","date":"2013-04-27T16:30:35.928Z","type":"message"}
+{"nick":"isaacs","message":"FROM the cache?  no.  it checks when it goes into the cahce.","date":"2013-04-27T16:30:49.604Z","type":"message"}
+{"nick":"isaacs","message":"this is also why shrinkwrap can't give you byte-level consistency","date":"2013-04-27T16:30:59.988Z","type":"message"}
+{"nick":"dominictarr","message":"and then trusts the cache","date":"2013-04-27T16:31:01.553Z","type":"message"}
+{"nick":"isaacs","message":"i'd like it to, but need to fix that","date":"2013-04-27T16:31:06.086Z","type":"message"}
+{"nick":"isaacs","message":"yes, it trusts the cache","date":"2013-04-27T16:31:08.189Z","type":"message"}
+{"nick":"dominictarr","message":"right I get it","date":"2013-04-27T16:31:21.299Z","type":"message"}
+{"nick":"isaacs","message":"the shasums today are only really a guarantee against in-transit fuckups","date":"2013-04-27T16:31:21.833Z","type":"message"}
+{"nick":"dominictarr","message":"of course","date":"2013-04-27T16:31:34.553Z","type":"message"}
+{"nick":"isaacs","message":"i'd like them to eventually be on par wiht git sha's","date":"2013-04-27T16:31:47.136Z","type":"message"}
+{"nick":"isaacs","message":"like, a checksum guarantees the sameness of a thing forever.","date":"2013-04-27T16:32:04.460Z","type":"message"}
+{"nick":"isaacs","message":"and you can pass it around","date":"2013-04-27T16:32:10.041Z","type":"message"}
+{"nick":"dominictarr","message":"yes. that is a good idea.","date":"2013-04-27T16:32:23.555Z","type":"message"}
+{"nick":"isaacs","message":"name@version guarantees same-intent, but not same-bytes","date":"2013-04-27T16:32:29.861Z","type":"message"}
+{"nick":"dominictarr","message":"you could even have name@hash","date":"2013-04-27T16:32:38.445Z","type":"message"}
+{"nick":"cianomaidin","reason":"Client Quit","date":"2013-04-27T16:32:45.450Z","type":"quit"}
+{"nick":"dominictarr","message":"I know one person who would use that.","date":"2013-04-27T16:32:48.943Z","type":"message"}
+{"nick":"isaacs","message":"maybe...","date":"2013-04-27T16:32:58.454Z","type":"message"}
+{"nick":"dominictarr","message":"it would be annoying for everyone else, though","date":"2013-04-27T16:33:04.730Z","type":"message"}
+{"nick":"isaacs","message":"really, that's what shrinkwrap should effectively do","date":"2013-04-27T16:33:13.601Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-04-27T16:33:22.655Z","type":"quit"}
+{"nick":"isaacs","message":"ie, when you install, it should stash the shasum of the thing you installed","date":"2013-04-27T16:33:25.448Z","type":"message"}
+{"nick":"isaacs","message":"(like it resolves git urls etc now)","date":"2013-04-27T16:33:31.874Z","type":"message"}
+{"nick":"isaacs","message":"then shrinkwrap should lock that in","date":"2013-04-27T16:33:40.507Z","type":"message"}
+{"nick":"mikolalysenko","date":"2013-04-27T16:34:01.960Z","type":"join"}
+{"nick":"dominictarr","message":"right - so the cache would look like .git/objects instead of package/version/package.tgz","date":"2013-04-27T16:34:44.421Z","type":"message"}
+{"nick":"isaacs","message":"well, the cache would probably still look the same","date":"2013-04-27T16:37:08.083Z","type":"message"}
+{"nick":"isaacs","message":"but like, when you install something in node_modules, i overwrite the package.json with my own cleaned-up and added-to data","date":"2013-04-27T16:37:28.328Z","type":"message"}
+{"nick":"isaacs","message":"there's stuff like _from, _resolved, etc.","date":"2013-04-27T16:37:37.332Z","type":"message"}
+{"nick":"isaacs","message":"could put a _checksum there, as well","date":"2013-04-27T16:37:43.783Z","type":"message"}
+{"nick":"dominictarr","message":"in that case, it would be good to check if someone has edited the files","date":"2013-04-27T16:38:13.061Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 252 seconds","date":"2013-04-27T16:38:26.927Z","type":"quit"}
+{"nick":"dominictarr","message":"maybe add another file that is the hash of the installed module so you can tell if it's clean.","date":"2013-04-27T16:38:59.086Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: sure, but that'd mean hashing every file, etc.","date":"2013-04-27T16:42:43.925Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: if you want that, check your modules into git","date":"2013-04-27T16:42:48.993Z","type":"message"}
+{"nick":"dominictarr","message":"well, yes. it could just be an external tool.","date":"2013-04-27T16:43:38.024Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-04-27T16:45:06.099Z","type":"quit"}
+{"nick":"isaacs","message":"defunctzombie: ugh.  so, turns out, we only get second precision on osx for ctime.  i think subsecond precision landed in master for some operating systems recently.","date":"2013-04-27T16:48:47.733Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: i fixed the bug, but making the test pass reliably is a pita :)","date":"2013-04-27T16:49:00.866Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: ie, effectively \"stale\" MUST be a multiple of 1000 to work as intended.  that sucks.","date":"2013-04-27T16:49:22.951Z","type":"message"}
+{"nick":"mikeal","date":"2013-04-27T16:50:58.938Z","type":"join"}
+{"nick":"dominictarr","message":"could the process just write the current time into the file?","date":"2013-04-27T16:51:47.027Z","type":"message"}
+{"nick":"dominictarr","message":"and or pick a random number + a time?","date":"2013-04-27T16:52:10.170Z","type":"message"}
+{"nick":"shuaib","reason":"Quit: Computer has gone to sleep.","date":"2013-04-27T16:52:20.624Z","type":"quit"}
+{"nick":"juliangruber","message":"substack: BTSync is crazy fast","date":"2013-04-27T16:57:13.767Z","type":"message"}
+{"nick":"stagas","date":"2013-04-27T16:57:28.263Z","type":"join"}
+{"nick":"defunctzombie","message":"btsync is awesome","date":"2013-04-27T16:57:31.754Z","type":"message"}
+{"nick":"juliangruber","message":"true that","date":"2013-04-27T16:59:58.223Z","type":"message"}
+{"nick":"dominictarr","message":"hmm, very interesting.","date":"2013-04-27T17:01:26.972Z","type":"message"}
+{"nick":"jcrugzz","reason":"Ping timeout: 258 seconds","date":"2013-04-27T17:09:02.353Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-04-27T17:10:02.839Z","type":"quit"}
+{"nick":"dominictarr","message":"hey isaacs how many npm users are there? does anyone know?","date":"2013-04-27T17:15:44.701Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: nah, that sucks, because then i have to read the file","date":"2013-04-27T17:23:20.041Z","type":"message"}
+{"nick":"isaacs","message":"defunctzombie: lockfile 0.3.1 has the fix","date":"2013-04-27T17:23:29.907Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: define \"users\"","date":"2013-04-27T17:23:50.543Z","type":"message"}
+{"nick":"dominictarr","message":"well, there are ~8000 people who publish","date":"2013-04-27T17:24:15.216Z","type":"message"}
+{"nick":"dominictarr","message":"unique ip addresses that download modules?","date":"2013-04-27T17:24:30.452Z","type":"message"}
+{"nick":"defunctzombie","message":"isaacs: confirmed the fix works","date":"2013-04-27T17:25:00.915Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: almost 9000 actually","date":"2013-04-27T17:25:06.055Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: but i don't track unique hits.","date":"2013-04-27T17:25:13.015Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: we are up to well over a million downloads a day","date":"2013-04-27T17:25:29.947Z","type":"message"}
+{"nick":"dominictarr","message":"do you know how much GB the registry handles?","date":"2013-04-27T17:25:43.494Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: the total registry is around 64GB these days","date":"2013-04-27T17:25:56.377Z","type":"message"}
+{"nick":"dominictarr","message":"but how much is transferred","date":"2013-04-27T17:26:14.409Z","type":"message"}
+{"nick":"isaacs","message":"dominictarr: every month, the @iriscouch twitter says the npm stats in terms of q/s, transfer, etc.","date":"2013-04-27T17:26:18.975Z","type":"message"}
+{"nick":"isaacs","message":"oh, i guess, not throughput","date":"2013-04-27T17:26:50.342Z","type":"message"}
+{"nick":"isaacs","message":"just q/s","date":"2013-04-27T17:26:51.956Z","type":"message"}
+{"nick":"isaacs","message":"https://twitter.com/iriscouch/status/318720493349912578","date":"2013-04-27T17:27:04.354Z","type":"message"}
+{"nick":"dominictarr","message":"hmm, and a lot of those are 304s","date":"2013-04-27T17:27:20.189Z","type":"message"}
+{"nick":"mikolalysenko","date":"2013-04-27T17:34:02.410Z","type":"join"}
+{"nick":"juliangruber","message":"woah 40% monthly growth","date":"2013-04-27T17:35:48.511Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 276 seconds","date":"2013-04-27T17:39:33.449Z","type":"quit"}
+{"nick":"mikeal","date":"2013-04-27T17:40:16.830Z","type":"join"}
+{"nick":"juliangruber","message":"hm, although I'm syncing to laptops in the same lan with BTSync, speed is only 100-200 kB/s","date":"2013-04-27T17:47:45.969Z","type":"message"}
+{"nick":"juliangruber","message":"and it should search the lan","date":"2013-04-27T17:47:59.118Z","type":"message"}
+{"nick":"zero_coder","date":"2013-04-27T17:48:27.850Z","type":"join"}
+{"nick":"dguttman","date":"2013-04-27T17:56:04.025Z","type":"join"}
+{"nick":"evbogue","date":"2013-04-27T17:58:42.794Z","type":"join"}
+{"nick":"zero_coder","reason":"Quit: Leaving","date":"2013-04-27T18:04:15.565Z","type":"quit"}
+{"nick":"mikeal","reason":"Ping timeout: 252 seconds","date":"2013-04-27T18:05:53.515Z","type":"quit"}
+{"nick":"thl0","reason":"Remote host closed the connection","date":"2013-04-27T18:21:10.240Z","type":"quit"}
+{"nick":"mikeal","date":"2013-04-27T18:30:17.392Z","type":"join"}
+{"nick":"mikolalysenko","date":"2013-04-27T18:34:29.466Z","type":"join"}
+{"nick":"evbogue","reason":"Ping timeout: 258 seconds","date":"2013-04-27T18:34:54.090Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-04-27T18:35:40.616Z","type":"nick"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2013-04-27T18:38:46.421Z","type":"quit"}
+{"nick":"jesusabdullah","message":"ugh are people really having shit fits over callbacks again","date":"2013-04-27T18:42:32.327Z","type":"message"}
+{"nick":"jesusabdullah","message":"what is this I dont even","date":"2013-04-27T18:42:37.087Z","type":"message"}
+{"nick":"ins0mnia","date":"2013-04-27T18:47:00.707Z","type":"join"}
+{"nick":"ins0mnia","message":"ralphtheninja: ping","date":"2013-04-27T18:47:26.603Z","type":"message"}
+{"nick":"vitor-br","date":"2013-04-27T18:57:52.520Z","type":"join"}
+{"nick":"ralphtheninja","message":"ins0mnia: pooooong","date":"2013-04-27T19:00:16.602Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: we're going to barbecue some meat for JSON!!!","date":"2013-04-27T19:00:52.757Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: humans are invited!!","date":"2013-04-27T19:01:34.653Z","type":"message"}
+{"nick":"ralphtheninja","message":"ins0mnia: hehehe","date":"2013-04-27T19:04:02.167Z","type":"message"}
+{"nick":"ralphtheninja","message":"even humans that don't eat meat? :)","date":"2013-04-27T19:04:15.783Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: Ofcourse! we can always barbecue vegetables and tomatos :)","date":"2013-04-27T19:04:47.707Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: We leave the meat for non-humans :)","date":"2013-04-27T19:05:01.175Z","type":"message"}
+{"nick":"ralphtheninja","message":"and halloumi! nom nom","date":"2013-04-27T19:05:08.894Z","type":"message"}
+{"nick":"ralphtheninja","message":"hehe","date":"2013-04-27T19:05:14.030Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: haha","date":"2013-04-27T19:05:17.190Z","type":"message"}
+{"nick":"ins0mnia","message":"ralphtheninja: will pm you :)","date":"2013-04-27T19:05:30.158Z","type":"message"}
+{"nick":"mikolalysenko","date":"2013-04-27T19:34:48.439Z","type":"join"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-04-27T19:38:00.943Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 264 seconds","date":"2013-04-27T19:39:48.429Z","type":"quit"}
+{"nick":"thl0","date":"2013-04-27T19:42:46.824Z","type":"join"}
+{"nick":"fotoverite","message":"anyone going to be around in portland tomorrow?","date":"2013-04-27T19:43:17.216Z","type":"message"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2013-04-27T19:46:47.393Z","type":"quit"}
+{"nick":"Nexxy","message":"FOTOVERITE WHAT KIND OF QUESTION IS THAT","date":"2013-04-27T19:54:23.083Z","type":"message"}
+{"nick":"LOUDBOT","message":"IF YOU DON'T LIKE IT PATCHES ARE WELCOME","date":"2013-04-27T19:54:23.534Z","type":"message"}
+{"nick":"Nexxy","message":"DAMN FUCKING RIGHT","date":"2013-04-27T19:54:33.498Z","type":"message"}
+{"nick":"LOUDBOT","message":"\"I REFUSE TO SPEAK SPANISH THIS LANGUAGE IS SLOW AND BACKWARDS\"","date":"2013-04-27T19:54:34.049Z","type":"message"}
+{"nick":"Nexxy","message":"btw I am portland","date":"2013-04-27T19:55:08.542Z","type":"message"}
+{"nick":"substack","message":"you ARE portland","date":"2013-04-27T19:56:41.641Z","type":"message"}
+{"nick":"Nexxy","message":"yes.","date":"2013-04-27T19:56:46.061Z","type":"message"}
+{"nick":"substack","message":"this city THIS CITY","date":"2013-04-27T19:56:55.605Z","type":"message"}
+{"nick":"Nexxy","message":"all of it.","date":"2013-04-27T19:56:55.945Z","type":"message"}
+{"nick":"substack","message":"BELONGS TO ME. IT IS ME.","date":"2013-04-27T19:57:01.531Z","type":"message"}
+{"nick":"LOUDBOT","message":"ARE YOU SHITTING ME","date":"2013-04-27T19:57:02.069Z","type":"message"}
+{"nick":"Nexxy","message":"IT IS INSIDE ME","date":"2013-04-27T19:57:09.246Z","type":"message"}
+{"nick":"LOUDBOT","message":"JOSIAH WAIT YOU HAVEN'T STUDIED FOR THE 6666.66 DOW GET","date":"2013-04-27T19:57:09.774Z","type":"message"}
+{"nick":"substack","message":"no LOUDBOT I am super serial","date":"2013-04-27T19:57:22.942Z","type":"message"}
+{"nick":"substack","message":"one thing after the next","date":"2013-04-27T19:57:35.858Z","type":"message"}
+{"nick":"Nexxy","message":"rofl @ dow get","date":"2013-04-27T19:57:37.579Z","type":"message"}
+{"nick":"Nexxy","message":"oh 4chan","date":"2013-04-27T19:57:46.200Z","type":"message"}
+{"nick":"substack","message":"in order, serially","date":"2013-04-27T19:57:54.527Z","type":"message"}
+{"nick":"Nexxy","message":"sometimes you of order just have fuck to shit up","date":"2013-04-27T19:58:41.356Z","type":"message"}
+{"nick":"chrisdickinson","message":"substack: question: if i wanted to see about adding a flag, similar to \"browser\" or \"transform\", to package.json and have module-deps pay attention to it, how would i go about that?","date":"2013-04-27T20:00:21.621Z","type":"message"}
+{"nick":"chrisdickinson","message":"(i'm trying to add a \"noDependencies\" or \"vendor\" flag so it'll skip the detective bit for large files that are known to contain no \"require\" statements)","date":"2013-04-27T20:00:48.948Z","type":"message"}
+{"nick":"chrisdickinson","message":"e.g., three.js or jquery","date":"2013-04-27T20:00:57.637Z","type":"message"}
+{"nick":"dominictarr","message":"what if there was another way?","date":"2013-04-27T20:11:17.661Z","type":"message"}
+{"nick":"dominictarr","message":"this is because parsing is slow, right - what if you hashed the file and remembered what it depended on?","date":"2013-04-27T20:12:04.555Z","type":"message"}
+{"nick":"chrisdickinson","message":"dominictarr: also possible, but that implies we'd have to store that info somewhere","date":"2013-04-27T20:13:21.333Z","type":"message"}
+{"nick":"dominictarr","message":"browserify used to have a cache...","date":"2013-04-27T20:13:46.670Z","type":"message"}
+{"nick":"thl0","message":"chrisdickinson: couldn't you just add the file: https://github.com/substack/node-browserify#baddfile","date":"2013-04-27T20:18:31.697Z","type":"message"}
+{"nick":"thl0","message":"granted you don't want to require it later (i.e. just use globals)","date":"2013-04-27T20:18:49.601Z","type":"message"}
+{"nick":"chrisdickinson","message":"thl0: looking for a way to do this in a sane fashion -- i.e., built in to browserify","date":"2013-04-27T20:18:54.387Z","type":"message"}
+{"nick":"thl0","message":"you could try browserify-shim","date":"2013-04-27T20:19:17.715Z","type":"message"}
+{"nick":"chrisdickinson","message":"so that people repackaging things that they know don't have deps can note that and browserify will skip parsing those files","date":"2013-04-27T20:19:35.126Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: is it ok for a scuttelbutt stream to emit multiple sync events even if both models are empty?","date":"2013-04-27T20:19:41.263Z","type":"message"}
+{"nick":"thl0","message":"chrisdickinson: although b-shim would still cause file to be parsed","date":"2013-04-27T20:20:11.093Z","type":"message"}
+{"nick":"dominictarr","message":"is that happening?","date":"2013-04-27T20:20:11.936Z","type":"message"}
+{"nick":"thl0","message":"looks like we need the b-cache back ^^ substack","date":"2013-04-27T20:20:37.029Z","type":"message"}
+{"nick":"juliangruber","message":"mbalho: what about weekly hangouts about the progress and future of levelup on sunday?","date":"2013-04-27T20:21:32.964Z","type":"message"}
+{"nick":"mbalho","message":"juliangruber: as in google hangouts?","date":"2013-04-27T20:21:58.748Z","type":"message"}
+{"nick":"juliangruber","message":"mbalho: yes","date":"2013-04-27T20:22:06.868Z","type":"message"}
+{"nick":"juliangruber","message":"or skype or whatever","date":"2013-04-27T20:22:10.549Z","type":"message"}
+{"nick":"mbalho","message":"juliangruber: im busy tomorrow but thats not a bad idea in general","date":"2013-04-27T20:22:30.492Z","type":"message"}
+{"nick":"dominictarr","message":"chrisdickinson: actually, having a noparse option would solve https://github.com/substack/node-browserify/issues/374","date":"2013-04-27T20:22:35.267Z","type":"message"}
+{"nick":"chrisdickinson","message":"oo","date":"2013-04-27T20:22:50.611Z","type":"message"}
+{"nick":"juliangruber","message":"mbalho: cool :)","date":"2013-04-27T20:23:22.892Z","type":"message"}
+{"nick":"juliangruber","message":"mbalho: what timezone are you in?","date":"2013-04-27T20:24:24.427Z","type":"message"}
+{"nick":"mbalho","message":"juliangruber: PST (USWEST)","date":"2013-04-27T20:25:40.495Z","type":"message"}
+{"nick":"mikolalysenko","date":"2013-04-27T20:27:46.799Z","type":"join"}
+{"nick":"juliangruber","message":"dominictarr: those multiple syncs are happening with level-scuttlebutt","date":"2013-04-27T20:28:00.141Z","type":"message"}
+{"nick":"chrisdickinson","message":"dominictarr: if you get a chance, you check into what creationix is doing with moonslice","date":"2013-04-27T20:28:22.377Z","type":"message"}
+{"nick":"chrisdickinson","message":"seems somewhat similar to what you've been working on with streams","date":"2013-04-27T20:28:37.044Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: that's what's going over the wire: https://gist.github.com/juliangruber/dff3b8906452253b9aff","date":"2013-04-27T20:28:39.155Z","type":"message"}
+{"nick":"dominictarr","message":"chrisdickinson: link?","date":"2013-04-27T20:28:56.132Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: Document is a local crdt doc and Server is a crdt doc behin a net.server and stored in leveldb","date":"2013-04-27T20:29:08.031Z","type":"message"}
+{"nick":"dominictarr","message":"juliangruber: are you sure those are from the same scuttlebutt?","date":"2013-04-27T20:29:34.604Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-04-27T20:29:39.491Z","type":"join"}
+{"nick":"chrisdickinson","message":"dominictarr: think it's all in this repo; this is the example he linked to me https://github.com/creationix/moonslice-node/blob/master/lib/joy.js","date":"2013-04-27T20:29:39.860Z","type":"message"}
+{"nick":"fallsemo","reason":"Quit: Leaving.","date":"2013-04-27T20:30:22.540Z","type":"quit"}
+{"nick":"dominictarr","message":"oh, that looks a lot like the stuff raynos and I have been playing with.","date":"2013-04-27T20:30:26.865Z","type":"message"}
+{"nick":"chrisdickinson","message":"i thought so","date":"2013-04-27T20:31:24.562Z","type":"message"}
+{"nick":"chrisdickinson","message":"anyway, you might have a chat; i think he's trying to convince me to reimplement/implement things in terms of those kinds of streams","date":"2013-04-27T20:31:57.024Z","type":"message"}
+{"nick":"chrisdickinson","message":"i *think*.","date":"2013-04-27T20:32:00.295Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 245 seconds","date":"2013-04-27T20:34:12.242Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-04-27T20:36:18.009Z","type":"join"}
+{"nick":"kevino80","date":"2013-04-27T20:40:50.987Z","type":"join"}
+{"nick":"AvianFlu_","date":"2013-04-27T20:42:30.337Z","type":"join"}
+{"nick":"AvianFlu_","reason":"Read error: Connection reset by peer","date":"2013-04-27T20:44:26.027Z","type":"quit"}
+{"nick":"AvianFlu_","date":"2013-04-27T20:44:58.486Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 246 seconds","date":"2013-04-27T20:45:28.833Z","type":"quit"}
+{"nick":"fotoverite","message":"Nexxy: well you were in philly three days ago","date":"2013-04-27T20:46:31.992Z","type":"message"}
+{"nick":"fotoverite","message":"If you up for it lets get some drinks or something tomorrow.","date":"2013-04-27T20:46:55.136Z","type":"message"}
+{"nick":"fotoverite","message":"Damn railsconf","date":"2013-04-27T20:46:57.508Z","type":"message"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2013-04-27T20:48:34.669Z","type":"quit"}
+{"nick":"ins0mnia","reason":"Remote host closed the connection","date":"2013-04-27T20:48:48.674Z","type":"quit"}
+{"nick":"AvianFlu_","reason":"Ping timeout: 268 seconds","date":"2013-04-27T20:52:24.509Z","type":"quit"}
+{"nick":"st_luke","date":"2013-04-27T20:53:58.362Z","type":"join"}
+{"nick":"st_luke","message":"CONTROL FLOW","date":"2013-04-27T20:55:10.137Z","type":"message"}
+{"nick":"LOUDBOT","message":"PAY ATTENTION TO YOUR OWN BEHAVIOUR","date":"2013-04-27T20:55:10.303Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-04-27T20:56:25.612Z","type":"join"}
+{"nick":"ins0mnia","date":"2013-04-27T21:02:36.532Z","type":"join"}
+{"nick":"juliangruber","message":"woah, I'm in the top 25 of npmtop now. Not that it would matter...:D","date":"2013-04-27T21:03:08.286Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: the multiple sync thing was my fault","date":"2013-04-27T21:03:34.172Z","type":"message"}
+{"nick":"ralphtheninja","message":"juliangruber: I'm probably in the 25 bottom .. but I'm fine with it :D","date":"2013-04-27T21:04:35.717Z","type":"message"}
+{"nick":"dominictarr","message":"the tail gets really flat","date":"2013-04-27T21:08:12.856Z","type":"message"}
+{"nick":"dominictarr","message":"there are thousands with 1 module","date":"2013-04-27T21:08:20.604Z","type":"message"}
+{"nick":"chrisdickinson","message":"juliangruber: welcome :D","date":"2013-04-27T21:08:37.489Z","type":"message"}
+{"nick":"chrisdickinson","message":"juliangruber: mikolalysenko is going to pass me soon, but after i did all of those git projects i rose up to #8","date":"2013-04-27T21:09:08.641Z","type":"message"}
+{"nick":"juliangruber","message":"chrisdickinson: how far is your git project anyways?","date":"2013-04-27T21:11:44.351Z","type":"message"}
+{"nick":"juliangruber","message":":)","date":"2013-04-27T21:11:47.968Z","type":"message"}
+{"nick":"chrisdickinson","message":"going well :)","date":"2013-04-27T21:11:51.518Z","type":"message"}
+{"nick":"chrisdickinson","message":"got a little winded after inflate","date":"2013-04-27T21:11:55.340Z","type":"message"}
+{"nick":"chrisdickinson","message":"but am getting back in the saddle","date":"2013-04-27T21:12:01.906Z","type":"message"}
+{"nick":"chrisdickinson","message":"creationix is starting now too","date":"2013-04-27T21:12:05.247Z","type":"message"}
+{"nick":"chrisdickinson","message":"am currently working on creating packfiles","date":"2013-04-27T21:12:29.740Z","type":"message"}
+{"nick":"juliangruber","message":"maybe there should be a npmtop that counts stars instead of module count, or a score depending on stars and dependent modules","date":"2013-04-27T21:12:32.599Z","type":"message"}
+{"nick":"chrisdickinson","message":"so that i can do the \"push\" part of things","date":"2013-04-27T21:12:40.029Z","type":"message"}
+{"nick":"juliangruber","message":"oh, awesome","date":"2013-04-27T21:12:45.277Z","type":"message"}
+{"nick":"dominictarr","message":"the key is small modules","date":"2013-04-27T21:12:46.401Z","type":"message"}
+{"nick":"shama","date":"2013-04-27T21:12:46.546Z","type":"join"}
+{"nick":"juliangruber","message":"yeah, I noticed :D","date":"2013-04-27T21:12:55.125Z","type":"message"}
+{"nick":"dominictarr","message":"should probably do an anaylsis on the the kb output","date":"2013-04-27T21:13:08.193Z","type":"message"}
+{"nick":"dominictarr","message":"another thing that will be interesting, is the graph of who uses who's modules?","date":"2013-04-27T21:15:56.328Z","type":"message"}
+{"nick":"jesusabdullah","message":"AvianFlu: I made something fun http://imgur.com/n89dnJh","date":"2013-04-27T21:16:10.418Z","type":"message"}
+{"nick":"jesusabdullah","message":"AvianFlu: That's everything there is right now, only 'help' works but WHATEVER","date":"2013-04-27T21:16:23.188Z","type":"message"}
+{"nick":"AvianFlu","message":"jesusabdullah: I'm really glad you're working on that for realz","date":"2013-04-27T21:16:48.878Z","type":"message"}
+{"nick":"AvianFlu","message":"cause that looks leet","date":"2013-04-27T21:16:53.531Z","type":"message"}
+{"nick":"AvianFlu","message":"brb poking internet with stick","date":"2013-04-27T21:18:28.265Z","type":"message"}
+{"nick":"jesusabdullah","message":"AvianFlu: ^__^","date":"2013-04-27T21:20:21.148Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 264 seconds","date":"2013-04-27T21:23:00.428Z","type":"quit"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2013-04-27T21:23:27.350Z","type":"quit"}
+{"nick":"Nexxy","message":"fotoverite, possibly!","date":"2013-04-27T21:24:57.180Z","type":"message"}
+{"nick":"jesusabdullah","message":"hey Nexxy","date":"2013-04-27T21:31:44.058Z","type":"message"}
+{"nick":"Nexxy","message":"jesusabdullah, hey :D","date":"2013-04-27T21:32:56.686Z","type":"message"}
+{"nick":"jesusabdullah","message":"what up?","date":"2013-04-27T21:33:05.558Z","type":"message"}
+{"nick":"Nexxy","message":"various nefarious activities","date":"2013-04-27T21:33:23.922Z","type":"message"}
+{"nick":"jesusabdullah","message":"oh good","date":"2013-04-27T21:33:29.028Z","type":"message"}
+{"nick":"Nexxy","message":"y tu?","date":"2013-04-27T21:33:29.179Z","type":"message"}
+{"nick":"jesusabdullah","message":"uhhh","date":"2013-04-27T21:33:32.268Z","type":"message"}
+{"nick":"jesusabdullah","message":"lots of stuff, yet not very much, weird week","date":"2013-04-27T21:33:44.638Z","type":"message"}
+{"nick":"jesusabdullah","message":"working on this app, there are a few critical issues I have to sort out but they're hard","date":"2013-04-27T21:34:01.218Z","type":"message"}
+{"nick":"jesusabdullah","message":"hard for me anyway","date":"2013-04-27T21:34:04.698Z","type":"message"}
+{"nick":"Nexxy","message":"you can do it","date":"2013-04-27T21:34:17.117Z","type":"message"}
+{"nick":"Nexxy","message":"I have faith in you","date":"2013-04-27T21:34:19.778Z","type":"message"}
+{"nick":"jesusabdullah","message":"spent like an hour hacking up a demo ui for data center tycoon late last night, that was cool","date":"2013-04-27T21:34:22.288Z","type":"message"}
+{"nick":"jesusabdullah","message":"I'm glad someone has faith :)","date":"2013-04-27T21:34:26.888Z","type":"message"}
+{"nick":"Nexxy","message":"you do too","date":"2013-04-27T21:34:41.034Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: I'll install chromeos on my old mbpro in the next days, as the main os","date":"2013-04-27T21:34:56.241Z","type":"message"}
+{"nick":"dominictarr","message":"cool!","date":"2013-04-27T21:35:09.107Z","type":"message"}
+{"nick":"jesusabdullah","message":"sometimes Nexxy, sometimes","date":"2013-04-27T21:35:18.789Z","type":"message"}
+{"nick":"jesusabdullah","message":"I have to admit, there are times when I don't habeeb in myself","date":"2013-04-27T21:35:39.938Z","type":"message"}
+{"nick":"Nexxy","message":"yeah I get that a lot too","date":"2013-04-27T21:35:54.948Z","type":"message"}
+{"nick":"jesusabdullah","message":"also going on a CSI Miami binge","date":"2013-04-27T21:36:03.318Z","type":"message"}
+{"nick":"jesusabdullah","message":"Horatio Caine is inherently funny","date":"2013-04-27T21:36:09.088Z","type":"message"}
+{"nick":"jesusabdullah","message":"always makes me think of Dangeresque from Homestar Runner","date":"2013-04-27T21:36:18.698Z","type":"message"}
+{"nick":"jesusabdullah","message":"\"I'm in a CAR right now but I can DRIVE it to the OFFICE\"","date":"2013-04-27T21:36:29.688Z","type":"message"}
+{"nick":"jesusabdullah","message":"especially the CSI:LV cross-over","date":"2013-04-27T21:37:08.748Z","type":"message"}
+{"nick":"jesusabdullah","message":"\"Yo. The name's Dangeresque.\" \"WHAAAA\"","date":"2013-04-27T21:37:16.848Z","type":"message"}
+{"nick":"jesusabdullah","message":"Oh, Nexxy, there's a movement to start a makerspace out here, that's pretty cool","date":"2013-04-27T21:38:03.768Z","type":"message"}
+{"nick":"jesusabdullah","message":"I've been hanging out with those guys","date":"2013-04-27T21:38:08.098Z","type":"message"}
+{"nick":"Nexxy","message":"out where? :o","date":"2013-04-27T21:43:20.914Z","type":"message"}
+{"nick":"Nexxy","message":"there is one here but it's horrible","date":"2013-04-27T21:43:43.474Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-04-27T21:44:32.646Z","type":"join"}
+{"nick":"Nexxy","message":"see that's what I'm saying, but AvianFlu just won't listen to me","date":"2013-04-27T21:45:11.389Z","type":"message"}
+{"nick":"jesusabdullah","message":"Nexxy: Anchorage, AK","date":"2013-04-27T21:45:14.428Z","type":"message"}
+{"nick":"Nexxy","message":"woops","date":"2013-04-27T21:45:16.126Z","type":"message"}
+{"nick":"jesusabdullah","message":"Yeah man, fuckin----","date":"2013-04-27T21:45:21.158Z","type":"message"}
+{"nick":"Nexxy","message":"sweet!","date":"2013-04-27T21:45:46.175Z","type":"message"}
+{"nick":"Nexxy","message":"you should do it","date":"2013-04-27T21:45:55.004Z","type":"message"}
+{"nick":"jesusabdullah","message":"They're down to help me rebuild my reprap","date":"2013-04-27T21:46:08.908Z","type":"message"}
+{"nick":"Nexxy","message":"that's awesome","date":"2013-04-27T21:46:15.237Z","type":"message"}
+{"nick":"jesusabdullah","message":"but of course I'm really slow to do anything","date":"2013-04-27T21:46:17.418Z","type":"message"}
+{"nick":"jesusabdullah","message":">_<","date":"2013-04-27T21:46:19.588Z","type":"message"}
+{"nick":"Nexxy","message":"well stop it","date":"2013-04-27T21:46:22.544Z","type":"message"}
+{"nick":"Nexxy","message":"AIN'T NOTHIN' TO IT... BUT TO DO IT","date":"2013-04-27T21:46:45.938Z","type":"message"}
+{"nick":"LOUDBOT","message":"LESSON OF THE DAY: DO NOT CONVERSE WITH EMOS","date":"2013-04-27T21:46:46.516Z","type":"message"}
+{"nick":"Nexxy","message":"http://www.youtube.com/watch?v=7_l-6KsxVjc","date":"2013-04-27T21:47:01.848Z","type":"message"}
+{"nick":"jesusabdullah","message":"yeah well I'm a lazy person and I get caught up in bullshit","date":"2013-04-27T21:47:36.569Z","type":"message"}
+{"nick":"jesusabdullah","message":"that's how I roll","date":"2013-04-27T21:47:39.531Z","type":"message"}
+{"nick":"Nexxy","message":"untrue!","date":"2013-04-27T21:47:47.379Z","type":"message"}
+{"nick":"AvianFlu","message":"OH GOD WHAT DID I DO NOW","date":"2013-04-27T21:47:57.828Z","type":"message"}
+{"nick":"LOUDBOT","message":"SHOOT THE SWITCHES TO OPEN THE LOCK!","date":"2013-04-27T21:47:57.994Z","type":"message"}
+{"nick":"Nexxy","message":"WHAT IS THIS QUAKE","date":"2013-04-27T21:48:07.381Z","type":"message"}
+{"nick":"LOUDBOT","message":"BUT HE EVIDENTLY STILL LIKED IT BECAUSE HE KEEPS COMING BACK","date":"2013-04-27T21:48:08.419Z","type":"message"}
+{"nick":"jesusabdullah","message":"well thanks for saying so Nexxy","date":"2013-04-27T21:48:23.749Z","type":"message"}
+{"nick":"jesusabdullah","message":"\"well that somebody....just got our attention.\" YEEEAAAAAAHHHHHHHHHHHHH","date":"2013-04-27T21:48:39.869Z","type":"message"}
+{"nick":"jesusabdullah","message":"best character on this show hands down is Speed","date":"2013-04-27T21:48:55.479Z","type":"message"}
+{"nick":"Nexxy","message":"IMO lazy is a manifestation of depression (most of the time)","date":"2013-04-27T21:48:56.803Z","type":"message"}
+{"nick":"jesusabdullah","message":"obviously","date":"2013-04-27T21:48:57.300Z","type":"message"}
+{"nick":"jesusabdullah","message":"you see right through me nexxy :S","date":"2013-04-27T21:49:08.511Z","type":"message"}
+{"nick":"Nexxy","message":"<3","date":"2013-04-27T21:49:12.095Z","type":"message"}
+{"nick":"Nexxy","message":"or maybe I just see a bit of myself in you","date":"2013-04-27T21:49:23.959Z","type":"message"}
+{"nick":"jesusabdullah","message":"That reminds me","date":"2013-04-27T21:49:44.563Z","type":"message"}
+{"nick":"jesusabdullah","message":"http://www.quickmeme.com/meme/3tsy6m/","date":"2013-04-27T21:49:45.958Z","type":"message"}
+{"nick":"Nexxy","message":"haha","date":"2013-04-27T21:49:57.503Z","type":"message"}
+{"nick":"jesusabdullah","message":"inorite","date":"2013-04-27T21:50:00.418Z","type":"message"}
+{"nick":"Nexxy","message":"... yeah","date":"2013-04-27T21:50:01.558Z","type":"message"}
+{"nick":"jesusabdullah","message":"it's the small things","date":"2013-04-27T21:50:05.468Z","type":"message"}
+{"nick":"Nexxy","message":"that was a constant struggle for me hwen I lived on the 13th floor","date":"2013-04-27T21:50:17.977Z","type":"message"}
+{"nick":"jesusabdullah","message":"ouch","date":"2013-04-27T21:50:22.358Z","type":"message"}
+{"nick":"Nexxy","message":"you saw how nice and blank and white the walls were!","date":"2013-04-27T21:50:43.659Z","type":"message"}
+{"nick":"jesusabdullah","message":"very nice :)","date":"2013-04-27T21:50:53.448Z","type":"message"}
+{"nick":"jesusabdullah","message":"My place is a total dump right now","date":"2013-04-27T21:50:58.848Z","type":"message"}
+{"nick":"jesusabdullah","message":"how's the kiddo Nexxy ?","date":"2013-04-27T21:51:35.121Z","type":"message"}
+{"nick":"Nexxy","message":"he's pretty awesome","date":"2013-04-27T21:51:43.548Z","type":"message"}
+{"nick":"jesusabdullah","message":"haha I bet","date":"2013-04-27T21:51:49.253Z","type":"message"}
+{"nick":"Nexxy","message":"right now he's singing in his crib","date":"2013-04-27T21:51:51.587Z","type":"message"}
+{"nick":"Nexxy","message":"waiting for his naptime to be over","date":"2013-04-27T21:52:00.485Z","type":"message"}
+{"nick":"jesusabdullah","message":"I see","date":"2013-04-27T21:52:23.291Z","type":"message"}
+{"nick":"Nexxy","message":"he's also getting really good @ piano!","date":"2013-04-27T21:52:32.340Z","type":"message"}
+{"nick":"Nexxy","message":"he has his own with 4 whole keys","date":"2013-04-27T21:52:37.736Z","type":"message"}
+{"nick":"jesusabdullah","message":"aww :3","date":"2013-04-27T21:52:56.191Z","type":"message"}
+{"nick":"Nexxy","message":"and he can play them individually now","date":"2013-04-27T21:53:00.472Z","type":"message"}
+{"nick":"Nexxy","message":"with his finger instead of his fist","date":"2013-04-27T21:53:05.352Z","type":"message"}
+{"nick":"jesusabdullah","message":"has he graduated to a toddler?","date":"2013-04-27T21:53:27.001Z","type":"message"}
+{"nick":"Nexxy","message":"yeah technically I guess so","date":"2013-04-27T21:53:34.098Z","type":"message"}
+{"nick":"Nexxy","message":"he's 9 months","date":"2013-04-27T21:53:40.024Z","type":"message"}
+{"nick":"jesusabdullah","message":"ahh","date":"2013-04-27T21:53:44.151Z","type":"message"}
+{"nick":"jesusabdullah","message":"so not quite yet, getting there","date":"2013-04-27T21:53:47.791Z","type":"message"}
+{"nick":"Nexxy","message":"http://instagram.com/p/XtOzDwk7nx/","date":"2013-04-27T21:54:25.008Z","type":"message"}
+{"nick":"jesusabdullah","message":"A-Rod just found a hair! >:o","date":"2013-04-27T21:54:26.888Z","type":"message"}
+{"nick":"jesusabdullah","message":"leet baby haxxor","date":"2013-04-27T21:54:41.318Z","type":"message"}
+{"nick":"Nexxy","message":"mhmm","date":"2013-04-27T21:54:48.532Z","type":"message"}
+{"nick":"Nexxy","message":"he's mastered the power button","date":"2013-04-27T21:54:53.179Z","type":"message"}
+{"nick":"jesusabdullah","message":"excellent","date":"2013-04-27T21:55:05.108Z","type":"message"}
+{"nick":"Nexxy","message":"and we figured out how to make it say the letters on the keys","date":"2013-04-27T21:55:31.389Z","type":"message"}
+{"nick":"Nexxy","message":"outloud","date":"2013-04-27T21:55:33.203Z","type":"message"}
+{"nick":"Nexxy","message":"so I type things for him like","date":"2013-04-27T21:55:38.463Z","type":"message"}
+{"nick":"Nexxy","message":"OMGWTFLOL","date":"2013-04-27T21:55:41.180Z","type":"message"}
+{"nick":"jesusabdullah","message":"ahahaha","date":"2013-04-27T21:55:44.248Z","type":"message"}
+{"nick":"evbogue","date":"2013-04-27T21:56:11.790Z","type":"join"}
+{"nick":"Nexxy","message":"we should sample it","date":"2013-04-27T21:56:37.254Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-04-27T21:58:25.855Z","type":"quit"}
+{"nick":"jesusabdullah","message":"yeah probably","date":"2013-04-27T21:59:19.868Z","type":"message"}
+{"nick":"juliangruber","message":"look ma, modules all over the place: http://cl.ly/image/082f0r1X3h2a","date":"2013-04-27T22:11:28.809Z","type":"message"}
+{"nick":"juliangruber","message":"that's for a page for a bank I'm writing","date":"2013-04-27T22:11:40.284Z","type":"message"}
+{"nick":"juliangruber","message":"with modules from substack defunctzombie_zz dominictarr mbalho me Raynos isaacs :)","date":"2013-04-27T22:13:14.835Z","type":"message"}
+{"nick":"juliangruber","message":"thanks guys","date":"2013-04-27T22:13:17.844Z","type":"message"}
+{"nick":"dominictarr","message":"heh! a bank!","date":"2013-04-27T22:15:14.179Z","type":"message"}
+{"nick":"juliangruber","message":"dominictarr: I'll anounce which one it is when it's released...but it's a big one :)","date":"2013-04-27T22:16:09.450Z","type":"message"}
+{"nick":"fotoverite","reason":"Quit: fotoverite","date":"2013-04-27T22:18:28.231Z","type":"quit"}
+{"nick":"no9","reason":"Ping timeout: 268 seconds","date":"2013-04-27T22:37:14.442Z","type":"quit"}
+{"nick":"no9","date":"2013-04-27T22:48:47.839Z","type":"join"}
+{"nick":"nicholasf","reason":"Read error: Connection reset by peer","date":"2013-04-27T22:49:32.224Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-04-27T22:49:38.532Z","type":"join"}
+{"nick":"nicholasf","date":"2013-04-27T22:50:03.582Z","type":"join"}
+{"nick":"substack","message":"juliangruber: awesome!","date":"2013-04-27T22:50:04.963Z","type":"message"}
+{"nick":"AvianFlu","reason":"Read error: Connection reset by peer","date":"2013-04-27T22:51:37.487Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-04-27T22:52:08.621Z","type":"join"}
+{"nick":"AvianFlu_","date":"2013-04-27T22:53:41.071Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 264 seconds","date":"2013-04-27T22:56:36.427Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-04-27T22:56:53.110Z","type":"join"}
+{"nick":"AvianFlu_","reason":"Ping timeout: 256 seconds","date":"2013-04-27T22:58:19.876Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Read error: Connection reset by peer","date":"2013-04-27T23:01:38.351Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-04-27T23:02:22.978Z","type":"join"}
+{"nick":"AvianFlu_","date":"2013-04-27T23:04:08.807Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 246 seconds","date":"2013-04-27T23:06:52.802Z","type":"quit"}
+{"nick":"timoxley","date":"2013-04-27T23:07:02.836Z","type":"join"}
+{"nick":"vitor-br","reason":"Ping timeout: 256 seconds","date":"2013-04-27T23:07:40.666Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2013-04-27T23:11:31.068Z","type":"nick"}
+{"nick":"dominictarr","message":"we have a lot of modules to write","date":"2013-04-27T23:11:58.990Z","type":"message"}
+{"nick":"dominictarr","message":"need to catch up with these numbers http://www.pureoxygenmobile.com/how-many-apps-in-each-app-store/","date":"2013-04-27T23:12:07.412Z","type":"message"}
+{"nick":"ins0mnia","reason":"Remote host closed the connection","date":"2013-04-27T23:14:09.951Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-04-27T23:21:00.622Z","type":"quit"}
+{"nick":"fallsemo","date":"2013-04-27T23:24:04.068Z","type":"join"}
+{"nick":"fotoverite","date":"2013-04-27T23:26:45.906Z","type":"join"}
+{"nick":"vitor-br","date":"2013-04-27T23:28:56.758Z","type":"join"}
+{"nick":"tmcw","reason":"Remote host closed the connection","date":"2013-04-27T23:43:44.353Z","type":"quit"}
+{"nick":"juliangruber","message":"you mean modules==applications?","date":"2013-04-27T23:43:55.693Z","type":"message"}
+{"nick":"yorick","reason":"Read error: Connection reset by peer","date":"2013-04-27T23:46:30.332Z","type":"quit"}
+{"nick":"kevino80","date":"2013-04-27T23:51:46.660Z","type":"join"}
+{"nick":"thl0","reason":"Remote host closed the connection","date":"2013-04-27T23:54:23.457Z","type":"quit"}
+{"nick":"vitor-br","reason":"Ping timeout: 272 seconds","date":"2013-04-27T23:55:24.744Z","type":"quit"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2013-04-27T23:58:50.703Z","type":"quit"}
+{"nick":"vitor-br","date":"2013-04-27T23:59:32.041Z","type":"join"}
