@@ -48,3 +48,96 @@
 {"nick":"juliangruber","message":"does levelup/db work with the cluster module?","date":"2013-05-06T07:12:15.433Z","type":"message"}
 {"nick":"juliangruber","message":"I imagine the master owning the db and each fork hosting a multilevel server","date":"2013-05-06T07:12:30.791Z","type":"message"}
 {"nick":"rvagg","message":"yeah, that'd be the only way to do it since they really are separate processes","date":"2013-05-06T07:57:41.145Z","type":"message"}
+{"nick":"dominictarr","date":"2013-05-06T08:20:26.790Z","type":"join"}
+{"nick":"ChrisPartridge","reason":"Ping timeout: 264 seconds","date":"2013-05-06T08:44:36.792Z","type":"quit"}
+{"nick":"levelbot","reason":"Remote host closed the connection","date":"2013-05-06T08:52:51.900Z","type":"quit"}
+{"nick":"levelbot","date":"2013-05-06T08:53:08.315Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-05-06T09:01:58.221Z","type":"quit"}
+{"nick":"juliangruber","message":"rvagg: but you haven't tried that out?","date":"2013-05-06T09:45:25.956Z","type":"message"}
+{"nick":"rvagg","message":"nope","date":"2013-05-06T09:45:39.678Z","type":"message"}
+{"nick":"juliangruber","message":"ok, I will","date":"2013-05-06T09:46:04.289Z","type":"message"}
+{"nick":"juliangruber","message":"although you can't share variables","date":"2013-05-06T09:53:38.437Z","type":"message"}
+{"nick":"juliangruber","message":"so I'll try ipc between master and clients, only the master having a reference to the db","date":"2013-05-06T09:53:58.038Z","type":"message"}
+{"nick":"juliangruber","message":"4k ops/s, ha :D","date":"2013-05-06T10:18:33.121Z","type":"message"}
+{"nick":"juliangruber","message":"i didn't know ipc was so slow","date":"2013-05-06T10:19:24.776Z","type":"message"}
+{"nick":"rvagg","message":"yeah, it's basically like a network stream that has to stringify everything","date":"2013-05-06T10:19:51.895Z","type":"message"}
+{"nick":"juliangruber","message":"ok","date":"2013-05-06T10:22:25.566Z","type":"message"}
+{"nick":"juliangruber","message":"so, it really looks like ~15k ops/s is the fastest rpc we can write for leveldb in node","date":"2013-05-06T10:24:23.099Z","type":"message"}
+{"nick":"juliangruber","message":"I'm super tempted to try the same in go or C","date":"2013-05-06T10:24:38.462Z","type":"message"}
+{"nick":"juliangruber","message":"with dominictarr's level-master replication we can have way higher throughput with multilevel of course","date":"2013-05-06T10:29:50.872Z","type":"message"}
+{"nick":"st_luke","message":"juliangruber: I think I just wrote the same thing you were writing, gist?","date":"2013-05-06T10:30:29.149Z","type":"message"}
+{"nick":"juliangruber","message":"st_luke: https://gist.github.com/juliangruber/5524370","date":"2013-05-06T10:31:35.469Z","type":"message"}
+{"nick":"juliangruber","message":"just does rpc over ipc","date":"2013-05-06T10:31:54.755Z","type":"message"}
+{"nick":"st_luke","message":"ahh i was doing it a little differently","date":"2013-05-06T10:32:35.642Z","type":"message"}
+{"nick":"st_luke","message":"so this is kinda poorly documented in the cluster docs","date":"2013-05-06T10:32:41.467Z","type":"message"}
+{"nick":"juliangruber","message":"gist? :)","date":"2013-05-06T10:32:47.036Z","type":"message"}
+{"nick":"juliangruber","message":"what throughput did you get?","date":"2013-05-06T10:33:15.942Z","type":"message"}
+{"nick":"st_luke","message":"i just wrote it up really quick and didnt do any testing on it","date":"2013-05-06T10:37:13.245Z","type":"message"}
+{"nick":"st_luke","message":"https://gist.github.com/st-luke/5524385","date":"2013-05-06T10:37:28.880Z","type":"message"}
+{"nick":"st_luke","message":"could be really bad perf for all i know :)","date":"2013-05-06T10:37:44.386Z","type":"message"}
+{"nick":"juliangruber","message":"hmmm","date":"2013-05-06T10:38:49.944Z","type":"message"}
+{"nick":"juliangruber","message":"it's doing all the work on the master","date":"2013-05-06T10:39:03.968Z","type":"message"}
+{"nick":"juliangruber","message":"ah","date":"2013-05-06T10:39:21.075Z","type":"message"}
+{"nick":"juliangruber","message":"the slave does all the tcp stuff perhaps?","date":"2013-05-06T10:39:33.807Z","type":"message"}
+{"nick":"juliangruber","message":"no i don't think so","date":"2013-05-06T10:40:00.226Z","type":"message"}
+{"nick":"juliangruber","message":"with a language like c or go you could have multiple threads that each do the multilevel thing and access a leveldb instance that's protected by a mutex lock","date":"2013-05-06T10:41:22.968Z","type":"message"}
+{"nick":"juliangruber","message":"it would be super awesome to be able to expose a leveldb over multilevel from c but do all the other things in javascript, including adding plugins","date":"2013-05-06T10:42:10.196Z","type":"message"}
+{"nick":"juliangruber","message":"^ this","date":"2013-05-06T10:42:15.008Z","type":"message"}
+{"nick":"juliangruber","message":"should I try this in Go or C first?","date":"2013-05-06T10:43:19.127Z","type":"message"}
+{"nick":"st_luke","message":"java","date":"2013-05-06T10:45:23.594Z","type":"message"}
+{"nick":"juliangruber","message":":D","date":"2013-05-06T10:45:40.519Z","type":"message"}
+{"nick":"juliangruber","message":"visual basic","date":"2013-05-06T10:45:50.081Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: what is the issue?","date":"2013-05-06T11:01:31.787Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: speed speed speed","date":"2013-05-06T11:01:42.478Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Where is the bottleneck?","date":"2013-05-06T11:02:13.505Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Just read back over the conversation","date":"2013-05-06T11:04:43.564Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: serializing perhaps","date":"2013-05-06T11:04:46.667Z","type":"message"}
+{"nick":"juliangruber","message":"it was kinda hard finding the bottleneck with dtrace","date":"2013-05-06T11:05:00.680Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Yeah kinda like a needle in a haystack","date":"2013-05-06T11:05:21.050Z","type":"message"}
+{"nick":"wolfeidau","message":"have you tried zeroing in on each part?","date":"2013-05-06T11:05:46.427Z","type":"message"}
+{"nick":"wolfeidau","message":"so take leveldb out of the picture, how much data can you get between node processes using cluster","date":"2013-05-06T11:06:14.872Z","type":"message"}
+{"nick":"werle","date":"2013-05-06T11:06:54.103Z","type":"join"}
+{"nick":"wolfeidau","message":"I aways find graphing stuff helps, like memory use and cpu through the life cycle of a test","date":"2013-05-06T11:07:06.531Z","type":"message"}
+{"nick":"wolfeidau","message":"You start to see patterns","date":"2013-05-06T11:07:18.683Z","type":"message"}
+{"nick":"st_luke","message":"taking leveldb out of the picture is difficult because your decisions when using cluster in node are so impacted by level's one process connection","date":"2013-05-06T11:09:41.162Z","type":"message"}
+{"nick":"juliangruber","message":"hm true","date":"2013-05-06T11:12:25.485Z","type":"message"}
+{"nick":"juliangruber","message":"test multilevel by providing a fake db to it","date":"2013-05-06T11:12:35.158Z","type":"message"}
+{"nick":"juliangruber","message":"will do","date":"2013-05-06T11:12:36.557Z","type":"message"}
+{"nick":"rvagg","message":"test msgpak too, I bet that thing can't be too efficient, even if it saves bytes","date":"2013-05-06T11:13:46.344Z","type":"message"}
+{"nick":"wolfeidau","message":"mspack is pretty damn fast","date":"2013-05-06T11:14:00.037Z","type":"message"}
+{"nick":"juliangruber","message":"it uses the js version of msgpack","date":"2013-05-06T11:14:21.306Z","type":"message"}
+{"nick":"wolfeidau","message":"it is one of the fastest binary encodings around, it takes a lot of short cuts","date":"2013-05-06T11:14:21.663Z","type":"message"}
+{"nick":"wolfeidau","message":"but again worth checking :)","date":"2013-05-06T11:14:41.139Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: have you played iwth node-profiler?","date":"2013-05-06T11:15:19.822Z","type":"message"}
+{"nick":"wolfeidau","message":"https://github.com/bnoordhuis/node-profiler","date":"2013-05-06T11:15:40.748Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: not yet","date":"2013-05-06T11:15:42.899Z","type":"message"}
+{"nick":"wolfeidau","message":"the output was featured in that v8 tuning video floating around","date":"2013-05-06T11:16:03.610Z","type":"message"}
+{"nick":"wolfeidau","message":"if you do make sure you grab my patch :)","date":"2013-05-06T11:16:14.591Z","type":"message"}
+{"nick":"wolfeidau","message":"as v8 changed some of the attributes in teh logs and broke it","date":"2013-05-06T11:16:35.220Z","type":"message"}
+{"nick":"wolfeidau","message":"it will tell you about what routines are using the most time, a classic is regex's","date":"2013-05-06T11:17:44.678Z","type":"message"}
+{"nick":"wolfeidau","message":"or overruns of numbers, which as far as i understand impact v8","date":"2013-05-06T11:18:07.266Z","type":"message"}
+{"nick":"wolfeidau","message":"as in overruning 7bit signed or whatever it is","date":"2013-05-06T11:18:30.386Z","type":"message"}
+{"nick":"juliangruber","message":"with a fake db multilevel does ~20k ops/s (vs. 15k ops/s with the real db)","date":"2013-05-06T11:21:11.431Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: sweet, I'll do that","date":"2013-05-06T11:21:41.964Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: I'll benchmark multilevel with the fake db","date":"2013-05-06T11:22:06.272Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: so fake as in no operations ?","date":"2013-05-06T11:22:23.232Z","type":"message"}
+{"nick":"juliangruber","message":"the fake db is just { get : function (key, cb) { cb(null, 'bar') }, put : function (key, value, cb) { cb() } }","date":"2013-05-06T11:22:37.280Z","type":"message"}
+{"nick":"wolfeidau","message":"yepo cool","date":"2013-05-06T11:22:44.451Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Using the node-profiler can be a bit anoying","date":"2013-05-06T11:23:40.951Z","type":"message"}
+{"nick":"wolfeidau","message":"I will do a gist for you","date":"2013-05-06T11:24:00.695Z","type":"message"}
+{"nick":"juliangruber","message":"<3!!","date":"2013-05-06T11:24:35.348Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Sorry took me a min to work out installing npm module from a github branch https://gist.github.com/wolfeidau/5524680","date":"2013-05-06T11:45:36.228Z","type":"message"}
+{"nick":"wolfeidau","message":"juliangruber: Was installing master and cussing cause it wasn't working :P","date":"2013-05-06T11:46:00.321Z","type":"message"}
+{"nick":"juliangruber","message":"wolfeidau: sweeet","date":"2013-05-06T11:48:49.412Z","type":"message"}
+{"nick":"juliangruber","message":"I'll do this later today","date":"2013-05-06T11:48:55.745Z","type":"message"}
+{"nick":"wolfeidau","message":"np if it works for you make sure you +1 the pull request :)","date":"2013-05-06T11:49:55.572Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-06T12:38:57.337Z","type":"quit"}
+{"nick":"juliangruber","message":"wolfeidau: which pull request?","date":"2013-05-06T13:04:09.107Z","type":"message"}
+{"nick":"rvagg","message":"juliangruber: he has one to the node-profiler project","date":"2013-05-06T13:08:58.635Z","type":"message"}
+{"nick":"rvagg","message":"juliangruber: https://github.com/bnoordhuis/node-profiler/pull/12","date":"2013-05-06T13:09:08.279Z","type":"message"}
+{"nick":"juliangruber","message":"rvagg: thanks","date":"2013-05-06T13:34:39.361Z","type":"message"}
+{"nick":"werle","reason":"Quit: Leaving.","date":"2013-05-06T13:54:24.414Z","type":"quit"}
+{"nick":"werle","date":"2013-05-06T14:25:22.724Z","type":"join"}
+{"nick":"owen1","reason":"Ping timeout: 245 seconds","date":"2013-05-06T15:09:13.393Z","type":"quit"}
+{"nick":"Pwnna","date":"2013-05-06T15:53:01.388Z","type":"join"}
+{"nick":"owen1","date":"2013-05-06T15:53:57.584Z","type":"join"}
