@@ -220,3 +220,359 @@
 {"nick":"bnoordhuis","message":"i can live with refd. it's internal anyway, right?","date":"2013-05-16T15:59:08.618Z","type":"message"}
 {"nick":"tjfontaine","message":"ya","date":"2013-05-16T15:59:15.170Z","type":"message"}
 {"nick":"tjfontaine","message":"I was just going to feel bad for isaacs trying to debug what is and isn't ref'd without having to compare against ._getActiveHandles :)","date":"2013-05-16T15:59:55.296Z","type":"message"}
+{"nick":"isaacs","message":"hahah","date":"2013-05-16T16:02:07.029Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: i'm a pro at getActiveHandles now.","date":"2013-05-16T16:02:14.147Z","type":"message"}
+{"nick":"isaacs","message":"but it would be really nice if we started a convention of doing this.handle.type = 'net.Socket' or something","date":"2013-05-16T16:02:35.469Z","type":"message"}
+{"nick":"tjfontaine","message":"yesterday I really confused myself by unref'ing and o0'ing at why they weren't in ActiveHandles ...","date":"2013-05-16T16:03:04.823Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: doesn't this.handle.constructor.name work?","date":"2013-05-16T16:03:07.159Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: sort of","date":"2013-05-16T16:03:20.443Z","type":"message"}
+{"nick":"isaacs","message":"you have the .owner reference","date":"2013-05-16T16:03:25.628Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh wait, you want the owning object","date":"2013-05-16T16:03:27.075Z","type":"message"}
+{"nick":"isaacs","message":"usualy that's enough","date":"2013-05-16T16:03:28.878Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-05-16T16:03:31.522Z","type":"message"}
+{"nick":"bnoordhuis","message":"right. owner works for most everything except timers","date":"2013-05-16T16:03:49.401Z","type":"message"}
+{"nick":"isaacs","message":"in a sizeable app, oyu may have something hanging around, and not really know what it is","date":"2013-05-16T16:03:52.248Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: speaking of which, unrefing a socket doesn't unref the timeout timer.","date":"2013-05-16T16:04:03.379Z","type":"message"}
+{"nick":"isaacs","message":"(maybe i mentioned that before?  i'm still pre-coffee...)","date":"2013-05-16T16:04:10.284Z","type":"message"}
+{"nick":"bnoordhuis","message":"you mentioned that :)","date":"2013-05-16T16:04:12.295Z","type":"message"}
+{"nick":"tjfontaine","message":"and it's definitely a bug :)","date":"2013-05-16T16:04:18.975Z","type":"message"}
+{"nick":"bnoordhuis","message":"a regular timer isn't backed by a Timer bindings object","date":"2013-05-16T16:05:29.096Z","type":"message"}
+{"nick":"bnoordhuis","message":"and you probably don't want to create one for each tcp connection","date":"2013-05-16T16:05:39.160Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: right, but on http/s servers, we do socket.setTimeout(120000) or whatever","date":"2013-05-16T16:06:33.901Z","type":"message"}
+{"nick":"isaacs","message":"and that puts it in a list, right?","date":"2013-05-16T16:06:38.700Z","type":"message"}
+{"nick":"isaacs","message":"when we unref() that socket, it still keeps the event loop open","date":"2013-05-16T16:06:58.782Z","type":"message"}
+{"nick":"tjfontaine","message":"well regular timeouts promote to a full Timer on an .unref could do similar logic for the socket stuff","date":"2013-05-16T16:07:58.145Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-05-16T16:08:19.904Z","type":"join"}
+{"nick":"isaacs","message":"tjfontaine: if presumably unref is rare, i guess.","date":"2013-05-16T16:08:29.549Z","type":"message"}
+{"nick":"isaacs","message":"on the server, at least.","date":"2013-05-16T16:08:32.815Z","type":"message"}
+{"nick":"isaacs","message":"and socket.setTimeout() is probably rare on the client?","date":"2013-05-16T16:08:39.678Z","type":"message"}
+{"nick":"isaacs","message":"i'm guessing hardly anyone ever does something other than the default.","date":"2013-05-16T16:08:49.798Z","type":"message"}
+{"nick":"tjfontaine","message":"unref is certainly a rare case today, and that's why the setTimeout.unref works like that","date":"2013-05-16T16:09:17.397Z","type":"message"}
+{"nick":"bnoordhuis","message":"we can split up lib/timers.js in user facing code and something internal that never refs","date":"2013-05-16T16:11:43.560Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess core never wants a timer that's attached to some other object to ref the event loop","date":"2013-05-16T16:12:07.882Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: that's a good idea.","date":"2013-05-16T16:12:15.612Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: what else do we use timers for?","date":"2013-05-16T16:12:32.783Z","type":"message"}
+{"nick":"isaacs","message":"i mean, for real Timer timers","date":"2013-05-16T16:12:40.011Z","type":"message"}
+{"nick":"isaacs","message":"we just have one for each setTimeout/Interval list, right?","date":"2013-05-16T16:12:58.851Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2013-05-16T16:13:07.652Z","type":"message"}
+{"nick":"tjfontaine","message":"afaik net.js is the only one using the timers.active() stuff","date":"2013-05-16T16:13:29.050Z","type":"message"}
+{"nick":"tjfontaine","message":"actually we have 1:1 for Inteval","date":"2013-05-16T16:13:43.660Z","type":"message"}
+{"nick":"tjfontaine","message":"*interval","date":"2013-05-16T16:13:46.516Z","type":"message"}
+{"nick":"isaacs","message":"and timers.active() is pretty expensive.","date":"2013-05-16T16:13:51.277Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: well, until yesterday","date":"2013-05-16T16:13:59.509Z","type":"message"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-05-16T16:14:02.062Z","type":"quit"}
+{"nick":"isaacs","message":"bnoordhuis: what happened yesterday?","date":"2013-05-16T16:14:08.656Z","type":"message"}
+{"nick":"bnoordhuis","message":"yesterday i fixed all the bugs","date":"2013-05-16T16:14:19.130Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-05-16T16:14:29.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"okay okay, just one actually","date":"2013-05-16T16:14:30.146Z","type":"message"}
+{"nick":"kevinswiber","date":"2013-05-16T16:14:35.262Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: in case you're wondering: 22533c0 timers: fix setInterval() assert","date":"2013-05-16T16:15:27.672Z","type":"message"}
+{"nick":"tjfontaine","message":"hm did that land on v0.10?","date":"2013-05-16T16:16:14.010Z","type":"message"}
+{"nick":"tjfontaine","message":"I guess I didn't realize that","date":"2013-05-16T16:16:26.936Z","type":"message"}
+{"nick":"tjfontaine","action":"makes note to keep track of target branch when reviewing","date":"2013-05-16T16:18:04.734Z","type":"action"}
+{"nick":"bnoordhuis","message":"hah","date":"2013-05-16T16:18:21.081Z","type":"message"}
+{"nick":"bnoordhuis","message":"it was a bug fix for a c++ assert","date":"2013-05-16T16:18:30.968Z","type":"message"}
+{"nick":"bnoordhuis","message":"hence targeted at v0.10","date":"2013-05-16T16:18:40.590Z","type":"message"}
+{"nick":"kevinswiber","reason":"Ping timeout: 264 seconds","date":"2013-05-16T16:19:18.184Z","type":"quit"}
+{"nick":"tjfontaine","message":"right, it's just a change in what setInterval returns in the stable side, I wonder if that will freak anyone out","date":"2013-05-16T16:19:33.316Z","type":"message"}
+{"nick":"tjfontaine","message":"they should be interfacing with clearInterval anyway","date":"2013-05-16T16:19:53.826Z","type":"message"}
+{"nick":"isaacs","message":"oh, right, i did see this","date":"2013-05-16T16:21:46.326Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: don't forget to update your scrum","date":"2013-05-16T16:22:59.895Z","type":"message"}
+{"nick":"bnoordhuis","message":"dinner, biab","date":"2013-05-16T16:23:13.248Z","type":"message"}
+{"nick":"dannycoates","date":"2013-05-16T16:23:42.645Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-16T16:26:12.261Z","type":"quit"}
+{"nick":"kazupon","date":"2013-05-16T16:26:26.912Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2013-05-16T16:26:54.036Z","type":"quit"}
+{"nick":"kazupon","date":"2013-05-16T16:27:14.752Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-05-16T16:29:03.820Z","type":"nick"}
+{"nick":"isaacs","message":"so, the sock/timer unref() thing is a simple enough bug.  i'll just post it.  and it's not relevant to this http stuff.","date":"2013-05-16T16:31:19.094Z","type":"message"}
+{"nick":"nsm","date":"2013-05-16T16:31:38.094Z","type":"join"}
+{"nick":"tjfontaine","message":"yup","date":"2013-05-16T16:32:12.277Z","type":"message"}
+{"nick":"qard","date":"2013-05-16T16:46:32.074Z","type":"join"}
+{"nick":"csaoh","reason":"Quit: csaoh","date":"2013-05-16T16:46:46.128Z","type":"quit"}
+{"nick":"`3rdEden","date":"2013-05-16T16:47:55.014Z","type":"join"}
+{"nick":"TooTallNate","reason":"Read error: Connection reset by peer","date":"2013-05-16T16:50:04.620Z","type":"quit"}
+{"nick":"brson","date":"2013-05-16T16:50:59.192Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-05-16T16:55:32.285Z","type":"nick"}
+{"nick":"amartens","date":"2013-05-16T16:59:13.330Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-05-16T17:05:38.757Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-05-16T17:11:23.793Z","type":"nick"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-05-16T17:14:02.204Z","type":"nick"}
+{"nick":"kevinswiber","date":"2013-05-16T17:26:12.280Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-05-16T17:28:22.685Z","type":"quit"}
+{"nick":"trevnorris","message":"afternoon","date":"2013-05-16T17:50:39.337Z","type":"message"}
+{"nick":"tjfontaine","message":"heya","date":"2013-05-16T17:51:01.359Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-05-16T17:53:25.517Z","type":"join"}
+{"nick":"trevnorris","message":"bnoordhuis: 5489 is a strange one. that problem on master or v0.10? (or both)","date":"2013-05-16T17:55:30.780Z","type":"message"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-05-16T18:05:15.908Z","type":"quit"}
+{"nick":"`3rdEden","date":"2013-05-16T18:14:58.027Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-05-16T18:23:55.918Z","type":"nick"}
+{"nick":"bnoordhuis","message":"trevnorris: tested with v0.10 but probably in master too","date":"2013-05-16T18:24:05.718Z","type":"message"}
+{"nick":"abraxas","date":"2013-05-16T18:24:06.108Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2013-05-16T18:28:44.928Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2013-05-16T18:33:03.831Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-05-16T18:33:35.686Z","type":"nick"}
+{"nick":"hueniverse","reason":"Quit: Leaving.","date":"2013-05-16T18:37:32.969Z","type":"quit"}
+{"nick":"hueniverse","date":"2013-05-16T18:37:43.930Z","type":"join"}
+{"nick":"trevnorris","message":"so i'm giving my first node talk next month. now that I'm the \"node dude\" anyone that emails mozilla about getting a node speaker are forwarded to me.","date":"2013-05-16T18:39:27.442Z","type":"message"}
+{"nick":"amartens","message":"could be a worse problem to have","date":"2013-05-16T18:39:56.905Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Bert Belder\u000f \u00037v0.10\u000f * \u0002d182e45\u0002 : windows: make uv_spawn not fail under job control - http://git.io/M8O1Rg","date":"2013-05-16T18:40:21.162Z","type":"message"}
+{"nick":"trevnorris","message":"don't get me wrong, i'm not complaining. just new to the idea that i'd be teaching other devs about node.","date":"2013-05-16T18:41:51.702Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-v0.10\u0002: #63 \u00037UNSTABLE\u000f smartos (2/186) windows (4/187) http://jenkins.nodejs.org/job/libuv-v0.10/63/","date":"2013-05-16T18:42:34.165Z","type":"message"}
+{"nick":"piscisaureus_","date":"2013-05-16T18:42:36.053Z","type":"join"}
+{"nick":"tjfontaine","message":"so we introduced a bug I see","date":"2013-05-16T18:42:43.896Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: how?","date":"2013-05-16T18:42:59.006Z","type":"message"}
+{"nick":"tjfontaine","message":"berts last commit","date":"2013-05-16T18:43:07.379Z","type":"message"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-05-16T18:43:10.796Z","type":"quit"}
+{"nick":"trevnorris","message":"oh, to libuv","date":"2013-05-16T18:43:34.518Z","type":"message"}
+{"nick":"kevinswiber","date":"2013-05-16T18:43:43.387Z","type":"join"}
+{"nick":"piscisaureus_","message":"tjfontaine: very edge casey","date":"2013-05-16T18:45:08.145Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: but sblom mentioned it","date":"2013-05-16T18:45:16.314Z","type":"message"}
+{"nick":"tjfontaine","message":"piscisaureus_: sblom brought this up yesterday, I thought my test with 2k8r2 was ok","date":"2013-05-16T18:45:31.822Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: you might want to upgrade libuv again before releasing 0.10.7","date":"2013-05-16T18:45:46.011Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: kk","date":"2013-05-16T18:45:59.788Z","type":"message"}
+{"nick":"piscisaureus_","message":"tjfontaine: sblim should read the comments I added :)","date":"2013-05-16T18:46:11.738Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe","date":"2013-05-16T18:46:21.162Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-v0.10-gyp\u0002: #27 \u00037UNSTABLE\u000f smartos-x64 (2/186) windows-ia32 (3/187) linux-x64 (1/186) smartos-ia32 (2/186) windows-x64 (4/187) http://jenkins.nodejs.org/job/libuv-v0.10-gyp/27/","date":"2013-05-16T18:47:15.697Z","type":"message"}
+{"nick":"kevinswiber","reason":"Ping timeout: 256 seconds","date":"2013-05-16T18:47:57.096Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-node-integration\u0002: #58 \u00037UNSTABLE\u000f smartos-x64 (2/584) osx-x64 (1/584) osx-ia32 (1/584) http://jenkins.nodejs.org/job/libuv-node-integration/58/","date":"2013-05-16T18:55:50.229Z","type":"message"}
+{"nick":"kevinswiber","date":"2013-05-16T18:57:23.689Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-05-16T18:57:58.548Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: would you consider it a good enough change to accept if I manage to remove the slaballocator w/o any performance regression, or would you require an improvement?","date":"2013-05-16T18:58:20.324Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: if there's no perf regression, that's what's important.","date":"2013-05-16T18:58:47.991Z","type":"message"}
+{"nick":"trevnorris","message":"coolio. almost there.","date":"2013-05-16T18:58:55.631Z","type":"message"}
+{"nick":"`3rdEden","date":"2013-05-16T18:58:58.020Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: improvement is great, too.","date":"2013-05-16T18:58:58.375Z","type":"message"}
+{"nick":"isaacs","message":"of course.","date":"2013-05-16T18:59:00.389Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-05-16T18:59:10.751Z","type":"quit"}
+{"nick":"stagas_","date":"2013-05-16T18:59:13.121Z","type":"join"}
+{"nick":"inolen","date":"2013-05-16T18:59:55.209Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: so w/ the new buffer.dispose() if a dev uses that on a net stream perf increases between 15-35%. problem right now are all those tiny http headers.","date":"2013-05-16T19:00:14.373Z","type":"message"}
+{"nick":"trevnorris","message":"so that's creating a small regression in the http simple tests.","date":"2013-05-16T19:00:22.049Z","type":"message"}
+{"nick":"trevnorris","message":"working on that now","date":"2013-05-16T19:00:38.040Z","type":"message"}
+{"nick":"stagas","reason":"Ping timeout: 252 seconds","date":"2013-05-16T19:01:11.156Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2013-05-16T19:01:22.587Z","type":"nick"}
+{"nick":"trevnorris","action":"&","date":"2013-05-16T19:02:05.869Z","type":"action"}
+{"nick":"LOUDBOT","message":"ENGINEERS ARE NOT GOOD AT DEALING WITH CUSTOMERS","date":"2013-05-16T19:02:06.285Z","type":"message"}
+{"nick":"tjfontaine","message":"amen.","date":"2013-05-16T19:02:23.067Z","type":"message"}
+{"nick":"tjfontaine","message":"man, test-pipe-unref was just broken, I have a feeling that when I look at blame I will have to punish myself","date":"2013-05-16T19:06:24.985Z","type":"message"}
+{"nick":"tjfontaine","message":"but of course","date":"2013-05-16T19:06:46.481Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Bert Belder\u000f \u00037v0.10\u000f * \u00024f61ab2\u0002 : windows: make uv_spawn not fail under job control - http://git.io/30_NdA","date":"2013-05-16T19:30:02.385Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-v0.10\u0002: #64 \u00037UNSTABLE\u000f smartos (2/186) windows (4/187) http://jenkins.nodejs.org/job/libuv-v0.10/64/","date":"2013-05-16T19:32:27.430Z","type":"message"}
+{"nick":"benoitc","reason":"Excess Flood","date":"2013-05-16T19:33:33.017Z","type":"quit"}
+{"nick":"st_luke","date":"2013-05-16T19:34:45.993Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-v0.10-gyp\u0002: #28 \u00034FAILURE\u000f smartos-x64 (2/186) http://jenkins.nodejs.org/job/libuv-v0.10-gyp/28/","date":"2013-05-16T19:37:08.454Z","type":"message"}
+{"nick":"normanm","date":"2013-05-16T19:37:33.764Z","type":"join"}
+{"nick":"benoitc","date":"2013-05-16T19:42:43.612Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-05-16T19:45:39.599Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-node-integration\u0002: #59 \u00037UNSTABLE\u000f smartos-x64 (1/584) linux-x64 (1/584) osx-x64 (1/584) linux-ia32 (1/584) osx-ia32 (1/584) http://jenkins.nodejs.org/job/libuv-node-integration/59/","date":"2013-05-16T19:45:47.455Z","type":"message"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2013-05-16T19:48:21.459Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-05-16T19:51:18.901Z","type":"join"}
+{"nick":"`3rdEden","reason":"Remote host closed the connection","date":"2013-05-16T19:54:45.711Z","type":"quit"}
+{"nick":"normanm","reason":"Quit: Computer has gone to sleep.","date":"2013-05-16T20:00:54.281Z","type":"quit"}
+{"nick":"c4milo","date":"2013-05-16T20:12:43.791Z","type":"join"}
+{"nick":"juliangruber","date":"2013-05-16T20:15:46.049Z","type":"join"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-05-16T20:17:22.791Z","type":"quit"}
+{"nick":"kevinswiber","date":"2013-05-16T20:17:58.609Z","type":"join"}
+{"nick":"kevinswiber","reason":"Ping timeout: 256 seconds","date":"2013-05-16T20:22:34.499Z","type":"quit"}
+{"nick":"trevnorris","action":"fg","date":"2013-05-16T20:28:41.450Z","type":"action"}
+{"nick":"stolsma","reason":"Ping timeout: 264 seconds","date":"2013-05-16T20:31:54.164Z","type":"quit"}
+{"nick":"`3rdEden","date":"2013-05-16T20:35:02.753Z","type":"join"}
+{"nick":"trevnorris","action":"fg","date":"2013-05-16T20:37:08.004Z","type":"action"}
+{"nick":"tjfontaine","message":"no really process to the foreground","date":"2013-05-16T20:37:29.850Z","type":"message"}
+{"nick":"rendar_","date":"2013-05-16T20:37:37.012Z","type":"join"}
+{"nick":"trevnorris","message":"eh?","date":"2013-05-16T20:37:45.606Z","type":"message"}
+{"nick":"tjfontaine","message":"heh, poor joke, seeing you `fg` twice made me feel like you saying: \"no really, damnit, why isn't my process in the foreground\"","date":"2013-05-16T20:38:25.592Z","type":"message"}
+{"nick":"trevnorris","message":"oh, that last one went though? after I made it xchat told me I lost connection and logged in again.","date":"2013-05-16T20:39:03.310Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2013-05-16T20:41:02.450Z","type":"message"}
+{"nick":"rendar","reason":"Read error: Connection reset by peer","date":"2013-05-16T20:42:31.803Z","type":"quit"}
+{"nick":"Ralt_","date":"2013-05-16T20:47:50.829Z","type":"join"}
+{"nick":"trevnorris","message":"right now stream_wrap converts all incoming data into a Buffer then sends it through MakeCallback. What if we gave the ability to add a cc callback to which the data is passed?","date":"2013-05-16T20:48:12.337Z","type":"message"}
+{"nick":"trevnorris","message":"just seems there are cases where data comes in just to be pushed right back out to cc for processing, and by shorting that loop time could be saved.","date":"2013-05-16T20:48:48.488Z","type":"message"}
+{"nick":"tjfontaine","message":"how does that fit in for wanting to .pipe it to multiple places?","date":"2013-05-16T20:49:29.792Z","type":"message"}
+{"nick":"trevnorris","message":"the cc callback would just overwrite the default functionality. so if you use it then better know what you're doing.","date":"2013-05-16T20:50:24.407Z","type":"message"}
+{"nick":"trevnorris","message":"also doesn't mean that makecallback can't be called, but for example","date":"2013-05-16T20:50:37.379Z","type":"message"}
+{"nick":"KiNgMaR","reason":"*.net *.split","date":"2013-05-16T20:50:41.508Z","type":"quit"}
+{"nick":"Ralt","reason":"*.net *.split","date":"2013-05-16T20:50:41.648Z","type":"quit"}
+{"nick":"dsantiag_","reason":"*.net *.split","date":"2013-05-16T20:50:42.207Z","type":"quit"}
+{"nick":"Ralt_","new_nick":"Ralt","date":"2013-05-16T20:50:42.488Z","type":"nick"}
+{"nick":"trevnorris","message":"the http headers, they are placed in a Buffer just to be sent to js, to be sent right back to cc to be parsed.","date":"2013-05-16T20:51:03.041Z","type":"message"}
+{"nick":"trevnorris","message":"then the Buffer is no longer used","date":"2013-05-16T20:51:08.772Z","type":"message"}
+{"nick":"trevnorris","message":"so if instead the data could be sent directly to the parser the Buffer would never need to be created.","date":"2013-05-16T20:51:33.658Z","type":"message"}
+{"nick":"dsantiago","date":"2013-05-16T20:51:58.474Z","type":"join"}
+{"nick":"KiNgMaR","date":"2013-05-16T20:52:57.347Z","type":"join"}
+{"nick":"tjfontaine","message":"I get why you want to do it, it's pretty much the same thing needed for tls","date":"2013-05-16T20:53:06.128Z","type":"message"}
+{"nick":"trevnorris","message":"oh, heh","date":"2013-05-16T20:53:19.720Z","type":"message"}
+{"nick":"trevnorris","message":"well i need it for other stuff :)","date":"2013-05-16T20:53:29.579Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: so what if instead you worked on one of the js http parsers?","date":"2013-05-16T20:57:03.433Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I mean it's a balance, exposing a generic interface for everyone and then consuming it to show it's good, only to turn around say \"ya well, we're core we'll just skip that step\" :P","date":"2013-05-16T20:57:56.000Z","type":"message"}
+{"nick":"trevnorris","message":"lol. i understand your point. guess I figured that stream_wrap is inheritable by developers, and allowing that functionality at the cc level is ridiculously more powerful.","date":"2013-05-16T20:59:06.660Z","type":"message"}
+{"nick":"trevnorris","message":"being able to bypass the Buffer creation and MakeCallback call would increase potential throughput dramatically.","date":"2013-05-16T20:59:31.724Z","type":"message"}
+{"nick":"tjfontaine","message":"fewer boundary jumps are a net win","date":"2013-05-16T20:59:58.360Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. also figured a generic implementation could be useful elsewhere in core.","date":"2013-05-16T21:00:46.937Z","type":"message"}
+{"nick":"trevnorris","message":"and to be honest it'd be useful for some of the use cases here at mozilla","date":"2013-05-16T21:01:02.220Z","type":"message"}
+{"nick":"trevnorris","message":"e.g. a \"straight pipe\" where the data is written directly out instead of first being turned into a Buffer then written back out from js again.","date":"2013-05-16T21:01:54.511Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, those cases though are generally few, at least where you're willing to implement the work in js instead of c","date":"2013-05-16T21:03:23.388Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-05-16T21:03:41.435Z","type":"message"}
+{"nick":"tjfontaine","message":"the tls work suffers because of excessive boundary hops into ssl, which we could \"solve\" with ssl in js, but that's not nearly as likely as an http parser in js","date":"2013-05-16T21:04:08.322Z","type":"message"}
+{"nick":"trevnorris","message":"this is more of the enterprise level (tm) usage with ridiculously high throughput.","date":"2013-05-16T21:04:25.749Z","type":"message"}
+{"nick":"trevnorris","message":"didn't isaacs say he was going to move all the tls stuff into cc?","date":"2013-05-16T21:04:52.418Z","type":"message"}
+{"nick":"Benvie","date":"2013-05-16T21:05:09.724Z","type":"join"}
+{"nick":"trevnorris","message":"and I doubt a js http parser would perform as well as what's in place now","date":"2013-05-16T21:05:14.014Z","type":"message"}
+{"nick":"tjfontaine","message":"because you still have to interface with the ssl stuff, so fewer hops there does make sense","date":"2013-05-16T21:05:16.704Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: that's an unproven statement, it seems quite possible to make it as fast in js","date":"2013-05-16T21:05:40.663Z","type":"message"}
+{"nick":"`3rdEden","reason":"Quit: gnite sexies","date":"2013-05-16T21:05:48.357Z","type":"quit"}
+{"nick":"tjfontaine","message":"plus you have the jit there doing some heavy lifting for you","date":"2013-05-16T21:06:01.681Z","type":"message"}
+{"nick":"trevnorris","message":"accessing raw memory isn't the same as accessing an Array of Smi's, give me an hour and I'll see what I can do.","date":"2013-05-16T21:08:23.499Z","type":"message"}
+{"nick":"tjfontaine","message":"haha","date":"2013-05-16T21:08:36.474Z","type":"message"}
+{"nick":"tjfontaine","message":"there quite a few protocol parsers that perform quite admirably in js, and certainly hand tuned C can really crank out some work, but ya know we work on node","date":"2013-05-16T21:09:55.949Z","type":"message"}
+{"nick":"trevnorris","message":"heh, for me all that means is we create a stable user facing api. if it was more performant to do everything in cc after that i'd be ok. ;-)","date":"2013-05-16T21:11:00.944Z","type":"message"}
+{"nick":"tjfontaine","message":"when I was benchmarking c-ares vs my dns parsing, packets were arriving into js land at the same speed as reaching the ares code, and my interpretation of the entire packet was only a few percent slower than c-ares","date":"2013-05-16T21:11:55.826Z","type":"message"}
+{"nick":"tjfontaine","message":"and making buffers and streams fast[er] makes everyone happy, but I'd really hate to see us have to short circuit so hard on http","date":"2013-05-16T21:13:13.003Z","type":"message"}
+{"nick":"trevnorris","message":"oh this makes me hurt inside.","date":"2013-05-16T21:16:12.876Z","type":"message"}
+{"nick":"trevnorris","message":"ok, w/ the number of object properties that are being set in cc, a one legged cat could run faster.","date":"2013-05-16T21:16:31.282Z","type":"message"}
+{"nick":"TooTallNate","message":"trevnorris: hahaha","date":"2013-05-16T21:20:14.131Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: is 24561 your user id?","date":"2013-05-16T21:21:03.853Z","type":"message"}
+{"nick":"TooTallNate","message":"on your mac?","date":"2013-05-16T21:21:06.453Z","type":"message"}
+{"nick":"TooTallNate","message":"i got some weird permissions changes in /usr/local/lib/node_modules/npm/test/packages/npm-test-files/.npmignore after using the .pkg installer the other day","date":"2013-05-16T21:21:34.342Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: ^","date":"2013-05-16T21:21:37.779Z","type":"message"}
+{"nick":"tjfontaine","message":"o0","date":"2013-05-16T21:22:02.620Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: seriously dude.","date":"2013-05-16T21:22:09.776Z","type":"message"}
+{"nick":"TooTallNate","message":"on top of that","date":"2013-05-16T21:22:36.644Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ok, parsing out the raw strings would be faster in cc. but setting all those properties in cc in no freaking possible way could be faster than js.","date":"2013-05-16T21:22:45.630Z","type":"message"}
+{"nick":"TooTallNate","message":"i was trying to `npm install -g npm` and got the permissions error","date":"2013-05-16T21:22:50.679Z","type":"message"}
+{"nick":"TooTallNate","message":"but by then /usr/local/bin/npm was already removed :(","date":"2013-05-16T21:23:00.221Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: accessing object properties in cc vs js isn't really a fair comparison","date":"2013-05-16T21:23:07.877Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: what? the current implementation sets all the return object properties in cc. that is so freakishly slow. there's no way a js implementation couldn't be faster.","date":"2013-05-16T21:23:48.735Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: basically, you're right. I was wrong. a js implementation here would noticably faster.","date":"2013-05-16T21:24:32.908Z","type":"message"}
+{"nick":"TooTallNate","message":"time for npm curl installer","date":"2013-05-16T21:24:44.569Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: heh, I have no problems agreeing that a short circuit would be make it all fast, I just worry about the precedent it sets","date":"2013-05-16T21:25:52.258Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: well, we already allow a similar thing to be done w/ Buffers. were the user can pass their own make weak callback instead of using the default.","date":"2013-05-16T21:26:47.639Z","type":"message"}
+{"nick":"trevnorris","message":"imo adding hooks like that adds a small amount of complexity but a large amount of customizability (is that a word?)","date":"2013-05-16T21:27:22.013Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: when did you change the default log level for npm?","date":"2013-05-16T21:27:44.806Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: but those hooks are set in cc though?","date":"2013-05-16T21:28:04.512Z","type":"message"}
+{"nick":"tjfontaine","message":"unless we're passing around fptrs","date":"2013-05-16T21:28:19.141Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. the buffer callback is in cc.","date":"2013-05-16T21:28:42.976Z","type":"message"}
+{"nick":"tjfontaine","message":"I just worry about the precedent it sets when we codify: \"oh well, you should really be doing this in a module and setting this callback\"","date":"2013-05-16T21:29:59.747Z","type":"message"}
+{"nick":"trevnorris","message":"i see it this way. basically for the 98% of users the js implementation is awesome, and still fast. but for the 2%, like what we're doing at mozilla, the ability to write cc modules w/ those types of hooks is ridiculously powerful.","date":"2013-05-16T21:31:03.747Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: you've written a massive number of modules. what's you take?","date":"2013-05-16T21:31:17.077Z","type":"message"}
+{"nick":"TooTallNate","message":"trevnorris: can you catch me up?","date":"2013-05-16T21:31:40.419Z","type":"message"}
+{"nick":"tjfontaine","message":"I guess I don't really have enough context to know what other problem you're trying to solve at mozilla that gets solved by this","date":"2013-05-16T21:31:49.676Z","type":"message"}
+{"nick":"TooTallNate","message":"i haven't really been paying attention atm :p","date":"2013-05-16T21:31:50.037Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: basically, stream_wrap automatically converts incoming data to a Buffer and passes it to MakeCallback.","date":"2013-05-16T21:32:20.849Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: I would like if in a cc module we could pass an override callback that is passed the raw data, then we can do what we want w/ it.","date":"2013-05-16T21:32:44.027Z","type":"message"}
+{"nick":"TooTallNate","message":"trevnorris: so you're using stream_wrap directly in these cc modules?","date":"2013-05-16T21:33:38.072Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: the idea is to skip pas the \"create a buffer, then pass to js callback, to pass buffer to cc function, to extract data and operate on it\" when we're already writing a cc module.","date":"2013-05-16T21:33:43.633Z","type":"message"}
+{"nick":"trevnorris","message":"TooTallNate: or TCPWrap/etc.","date":"2013-05-16T21:34:01.651Z","type":"message"}
+{"nick":"trevnorris","message":"they all inherit from StreamWrap","date":"2013-05-16T21:34:08.439Z","type":"message"}
+{"nick":"TooTallNate","message":"i see","date":"2013-05-16T21:34:10.456Z","type":"message"}
+{"nick":"tjfontaine","message":"why not just use uv_ directly","date":"2013-05-16T21:34:14.832Z","type":"message"}
+{"nick":"TooTallNate","message":"i can't say i've ever used those directly in addons","date":"2013-05-16T21:34:19.175Z","type":"message"}
+{"nick":"TooTallNate","message":"i pretty much just use Buffer","date":"2013-05-16T21:34:24.572Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: it's powerful to be able to create js hooks to control the flow of operations while not needing to expose the data directly to js until it's ready.","date":"2013-05-16T21:34:56.522Z","type":"message"}
+{"nick":"tjfontaine","message":"man trying to have your cake and eat it too :)","date":"2013-05-16T21:35:10.877Z","type":"message"}
+{"nick":"TooTallNate","message":"trevnorris: i'm not totally opposed, but i don't have a very strong opinion either :)","date":"2013-05-16T21:35:15.110Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2013-05-16T21:35:40.111Z","type":"message"}
+{"nick":"trevnorris","message":"it's my birthday this weekend. damn right i'll eat all my cake!","date":"2013-05-16T21:35:52.718Z","type":"message"}
+{"nick":"tjfontaine","message":"there's no reason you can't use js to control things, just that if you really care about passing from a socket directly to some other parser the libuv route seems ideal, you could even do net.connect","date":"2013-05-16T21:36:20.115Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: sorry. you have me lost. how does the libuv route help me? you mean write my own mini stream implementation?","date":"2013-05-16T21:37:27.608Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: libuv is the mini stream implementation, if the goal is to push the bytes as fast and with as little overhead as possible just use libuv in your module","date":"2013-05-16T21:38:21.378Z","type":"message"}
+{"nick":"tjfontaine","message":"you can either make the tcp connection entirely in your module with libuv, or you can pass the streamwrap down to the module, unwrap it and start performing the uv_read_start operations","date":"2013-05-16T21:39:26.442Z","type":"message"}
+{"nick":"trevnorris","message":"can you expound on the later?","date":"2013-05-16T21:39:53.196Z","type":"message"}
+{"nick":"tjfontaine","message":"certainly","date":"2013-05-16T21:40:01.205Z","type":"message"}
+{"nick":"tjfontaine","message":"so, in your js land you net.connect which returns a net.Socket that has a ._handle, which is just a TCPWrap","date":"2013-05-16T21:40:55.868Z","type":"message"}
+{"nick":"tjfontaine","message":"you pass that to your module, and do the ::Unwrap, and then obj->handle__ is your uv_handle_t","date":"2013-05-16T21:41:34.386Z","type":"message"}
+{"nick":"trevnorris","message":"following","date":"2013-05-16T21:41:35.157Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2013-05-16T21:41:59.679Z","type":"message"}
+{"nick":"tjfontaine","message":"or rather uv_tcp_t or whatever it's called","date":"2013-05-16T21:42:07.402Z","type":"message"}
+{"nick":"tjfontaine","message":"anyway, you can then call uv_read_start which will start your reading procedure, and you can do whatever you want and use what ever allocation you want","date":"2013-05-16T21:42:41.411Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: so you're saying to reimplement StreamWrap::ReadStart","date":"2013-05-16T21:43:29.704Z","type":"message"}
+{"nick":"trevnorris","message":"reason I like StreamWrap is it handles some of the difficult guts. like the optimizations i'm doing on memory allocations.","date":"2013-05-16T21:43:58.737Z","type":"message"}
+{"nick":"tjfontaine","message":"it's not reimplement so much as doing the same thing it does for uv","date":"2013-05-16T21:43:59.080Z","type":"message"}
+{"nick":"trevnorris","message":"basically I want everything StreamWrap is doing, except for the last step of turning the data into a Buffer automatically.","date":"2013-05-16T21:44:27.344Z","type":"message"}
+{"nick":"tjfontaine","message":"basically mostly the point of streamwrap :)","date":"2013-05-16T21:44:42.943Z","type":"message"}
+{"nick":"trevnorris","message":"lol","date":"2013-05-16T21:44:49.836Z","type":"message"}
+{"nick":"tjfontaine","message":"which is what I'm saying","date":"2013-05-16T21:44:59.715Z","type":"message"}
+{"nick":"tjfontaine","message":"go ahead","date":"2013-05-16T21:45:01.762Z","type":"message"}
+{"nick":"tjfontaine","message":"make the streamwrap in js","date":"2013-05-16T21:45:05.558Z","type":"message"}
+{"nick":"tjfontaine","message":"but just don't let js call readstart","date":"2013-05-16T21:45:13.217Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: one thing I think would be useful is allow developers to extend, say, net and do stuff like:","date":"2013-05-16T21:46:42.108Z","type":"message"}
+{"nick":"trevnorris","message":"var server = net.createServer(function(c) { ...","date":"2013-05-16T21:47:12.044Z","type":"message"}
+{"nick":"trevnorris","message":"c.transform1(); c.transform2();","date":"2013-05-16T21:47:24.078Z","type":"message"}
+{"nick":"trevnorris","message":"then when you receive the data it's already gone through both transformations.","date":"2013-05-16T21:47:52.271Z","type":"message"}
+{"nick":"trevnorris","message":"if we had a hook into streamwrap it'd be totally do-able.","date":"2013-05-16T21:48:11.516Z","type":"message"}
+{"nick":"tjfontaine","message":"everything you described can be done, except you wouldn't get that unless you monkeypatch'd net","date":"2013-05-16T21:48:42.505Z","type":"message"}
+{"nick":"trevnorris","message":"and remember that while not a lot of developer may write cc-level modules. a lot of users use modules w/ cc code.","date":"2013-05-16T21:48:51.497Z","type":"message"}
+{"nick":"trevnorris","message":"so the few that write cc modules can write them ridiculously well, then the masses can use them w/o worrying about all this","date":"2013-05-16T21:49:33.425Z","type":"message"}
+{"nick":"tjfontaine","message":"mylib.createServer = function (cb) { return net.createServer(function (s) { cb(binding.setUpTheBomb(s)); }) };","date":"2013-05-16T21:49:54.246Z","type":"message"}
+{"nick":"trevnorris","message":"ok, first i'm going to throw up a patch. then i'm going to work on this http_parser issue.","date":"2013-05-16T21:51:20.688Z","type":"message"}
+{"nick":"trevnorris","message":"since the latter would solve the http regression i'm having from removing the slaballocator","date":"2013-05-16T21:51:44.815Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-05-16T21:54:59.229Z","type":"quit"}
+{"nick":"rendar_","date":"2013-05-16T21:56:04.396Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-05-16T22:00:21.499Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-05-16T22:06:48.680Z","type":"join"}
+{"nick":"pachet","reason":"Quit: leaving","date":"2013-05-16T22:14:11.230Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: imho this is a simple add that adds a lot of functionality: http://git.io/h9_33w (though excuse any c++ errors =)","date":"2013-05-16T22:15:55.878Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: also, that's only possible from my no-slaballocator branch. that sucker made life a bitch","date":"2013-05-16T22:16:11.940Z","type":"message"}
+{"nick":"dominictarr","reason":"Ping timeout: 252 seconds","date":"2013-05-16T22:17:38.875Z","type":"quit"}
+{"nick":"tjfontaine","message":"trevnorris: ya I have no problem understanding why you want to do it, I'm just not fond of the precedent","date":"2013-05-16T22:18:27.854Z","type":"message"}
+{"nick":"trevnorris","message":"ok. i can respect that.","date":"2013-05-16T22:18:45.972Z","type":"message"}
+{"nick":"tjfontaine","message":"especially since it can be done for modules now without a change to core","date":"2013-05-16T22:19:02.562Z","type":"message"}
+{"nick":"trevnorris","message":"referring back to the two methods mentioned earlier?","date":"2013-05-16T22:19:53.040Z","type":"message"}
+{"nick":"tjfontaine","message":"ya","date":"2013-05-16T22:19:59.727Z","type":"message"}
+{"nick":"tjfontaine","message":"which I presume there are people already doing it that way, especially the db modules","date":"2013-05-16T22:20:14.939Z","type":"message"}
+{"nick":"trevnorris","message":"you'd be surprised what crazy stuff I've seen.","date":"2013-05-16T22:20:30.371Z","type":"message"}
+{"nick":"tjfontaine","message":"ya well, there's no accounting for taste :)","date":"2013-05-16T22:20:46.069Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2013-05-16T22:20:52.467Z","type":"message"}
+{"nick":"trevnorris","message":"my Buffer changes are going to break a lot of cc modules. but unfortunately there's no way around that on.","date":"2013-05-16T22:21:42.321Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-05-16T22:26:23.115Z","type":"join"}
+{"nick":"trevnorris","message":"bnoordhuis: mind if I get your thoughts on http://git.io/h9_33w","date":"2013-05-16T22:36:52.527Z","type":"message"}
+{"nick":"trevnorris","message":"anyone care to lgtm this: https://github.com/trevnorris/node/compare/fs-create-string-sym","date":"2013-05-16T22:49:59.835Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: basically it looks good to me, though I thought in general we did lazy initialization of the symbols?","date":"2013-05-16T22:55:43.950Z","type":"message"}
+{"nick":"tjfontaine","message":"hmm i guess we do both","date":"2013-05-16T22:56:37.960Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: don't know how the rest feel, but imho it's not worth the hassle anymore. they're a lot cheaper then they used to  be","date":"2013-05-16T22:56:54.487Z","type":"message"}
+{"nick":"c4milo","date":"2013-05-16T22:57:00.393Z","type":"join"}
+{"nick":"tjfontaine","message":"I hate it when you see a test that's germane to what you're working with fails, but then you can't recreate it","date":"2013-05-16T22:57:35.138Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: so you mean the test doesn't fail when you run it alone?","date":"2013-05-16T22:58:28.557Z","type":"message"}
+{"nick":"tjfontaine","message":"or with python tools/test individual multiple times, or full suite multiple times","date":"2013-05-16T22:59:31.388Z","type":"message"}
+{"nick":"trevnorris","message":"wtf. that's awesome.","date":"2013-05-16T22:59:45.070Z","type":"message"}
+{"nick":"tjfontaine","message":"then you run it in make test and it hates me","date":"2013-05-16T22:59:48.917Z","type":"message"}
+{"nick":"trevnorris","message":"another lgtm anyone? https://github.com/trevnorris/node/compare/add-isolate-to-prims","date":"2013-05-16T22:59:59.076Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: you forget some debug code in b3cf3f35?","date":"2013-05-16T23:01:52.423Z","type":"message"}
+{"nick":"tjfontaine","message":"heh, cute that one has False with the isolate but True without","date":"2013-05-16T23:02:03.952Z","type":"message"}
+{"nick":"tjfontaine","message":"seems fine to me","date":"2013-05-16T23:02:19.127Z","type":"message"}
+{"nick":"trevnorris","message":"coolio thanks","date":"2013-05-16T23:02:23.824Z","type":"message"}
+{"nick":"trevnorris","message":"merging from v0.10 to master is getting more and more complicated.","date":"2013-05-16T23:02:38.946Z","type":"message"}
+{"nick":"trevnorris","message":"so many little v8 syntax changes make it a pain to keep track of them all","date":"2013-05-16T23:02:50.876Z","type":"message"}
+{"nick":"tjfontaine","message":"nod, isaacs said he was going to work on the big merge today, hopefully we'll be able to keep up with it a bit more","date":"2013-05-16T23:03:39.589Z","type":"message"}
+{"nick":"trevnorris","message":"yeah! then I can get to finishing up my buffer changes. i'll be happy to have that off my plate.","date":"2013-05-16T23:04:12.586Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Trevor Norris\u000f \u00037master\u000f * \u00027998843\u0002 : fs_event: use cached Persistent syms instead (+1 more commits) - http://git.io/pQNjbg","date":"2013-05-16T23:07:31.648Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #222 \u00037UNSTABLE\u000f osx-x64 (1/598) smartos-x64 (5/598) http://jenkins.nodejs.org/job/nodejs-master/222/","date":"2013-05-16T23:17:47.690Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ^ i'll assume that's normal? (debug* tests failing)","date":"2013-05-16T23:20:52.996Z","type":"message"}
+{"nick":"tjfontaine","message":"without looking I'm guessing osx is test-debugger-client?","date":"2013-05-16T23:21:26.024Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-05-16T23:21:33.246Z","type":"message"}
+{"nick":"tjfontaine","message":"ok, then unfortunately yes this is not unusual :/","date":"2013-05-16T23:21:50.332Z","type":"message"}
+{"nick":"tjfontaine","message":"I need to spend more time and figure out wtf is causing smartos x64 debug tests fail","date":"2013-05-16T23:22:11.091Z","type":"message"}
+{"nick":"trevnorris","message":"smartos it's test-debug* and test-http-client-timeout-event","date":"2013-05-16T23:22:13.100Z","type":"message"}
+{"nick":"tjfontaine","message":"the test-debug* scare me on x64, especially since it's only ever failing on x64","date":"2013-05-16T23:22:32.970Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm hoping it's a v8 bug that will be fixed in the next upgrade","date":"2013-05-16T23:22:45.482Z","type":"message"}
+{"nick":"tjfontaine","message":"and anything *timeout* of cours is ripe for randomly failure","date":"2013-05-16T23:23:31.502Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: um. this message isn't helpful: http://jenkins.nodejs.org//job/node-pullrequest/380/DESTCPU=x64,label=linux//tapTestReport/test.tap-572/","date":"2013-05-16T23:27:53.197Z","type":"message"}
+{"nick":"tjfontaine","message":"heh ya I don't disagree","date":"2013-05-16T23:28:18.993Z","type":"message"}
+{"nick":"tjfontaine","message":"I didn't write that test, and there's not a good reason for it to fail","date":"2013-05-16T23:28:54.834Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: you know why the failed tests/tap results page take so long to come up?","date":"2013-05-16T23:30:59.071Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: basically because every time you load a tap page jenkins has to reinterpret the tap file because it doesn't cache anything","date":"2013-05-16T23:31:47.148Z","type":"message"}
+{"nick":"trevnorris","message":"ah, ok","date":"2013-05-16T23:31:58.106Z","type":"message"}
+{"nick":"tjfontaine","message":"hm I wonder","date":"2013-05-16T23:32:23.269Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #31 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/nodejs-master-windows/31/","date":"2013-05-16T23:34:12.777Z","type":"message"}
+{"nick":"tjfontaine","message":"oooh what did you do","date":"2013-05-16T23:34:18.863Z","type":"message"}
+{"nick":"tjfontaine","message":"goddamn windows","date":"2013-05-16T23:34:36.000Z","type":"message"}
+{"nick":"trevnorris","message":"man. give me a heart attack.","date":"2013-05-16T23:34:56.653Z","type":"message"}
+{"nick":"trevnorris","message":"wow. the stack trace on this is awesome: http://jenkins.nodejs.org/job/nodejs-master-windows/31/DESTCPU=x64,label=windows/consoleText","date":"2013-05-16T23:38:18.485Z","type":"message"}
+{"nick":"tjfontaine","message":"ya lovely java","date":"2013-05-16T23:41:31.379Z","type":"message"}
+{"nick":"tjfontaine","message":"so clearly you must have bsod'd windows with your build :P","date":"2013-05-16T23:41:43.278Z","type":"message"}
+{"nick":"tjfontaine","message":"lets kick another off and see if it happens again, what say you?","date":"2013-05-16T23:41:59.552Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2013-05-16T23:42:07.330Z","type":"quit"}
+{"nick":"trevnorris","message":"sounds good to me. that'll be great if I cause windows to explode.  /s","date":"2013-05-16T23:44:59.679Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-05-16T23:45:09.700Z","type":"message"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-05-16T23:53:40.688Z","type":"quit"}
