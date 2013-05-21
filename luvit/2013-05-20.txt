@@ -36,3 +36,85 @@
 {"nick":"indexzero","date":"2013-05-20T15:28:51.601Z","type":"join"}
 {"nick":"Peter200","date":"2013-05-20T15:44:56.193Z","type":"join"}
 {"nick":"Peter200","message":"hello, can luvit distribute requests over CPU-Cores?","date":"2013-05-20T15:45:18.457Z","type":"message"}
+{"nick":"creationix","message":"Peter200: not in a single process normally","date":"2013-05-20T16:04:31.502Z","type":"message"}
+{"nick":"creationix","message":"Peter200: it's single threaded and pretty efficient on that one core though","date":"2013-05-20T16:04:43.767Z","type":"message"}
+{"nick":"creationix","message":"I think dvv made a threading addon a while back (no shared state) kinda like web-workers","date":"2013-05-20T16:05:10.995Z","type":"message"}
+{"nick":"Peter200","message":"Is it planned to implement such a spreader directly into luvit? Because even when it is faster than nodejs, nodejs could outperform by using threads for all cores?","date":"2013-05-20T16:09:27.575Z","type":"message"}
+{"nick":"Peter200","message":"And another question: Is there a RAM / shared memory key-value store? Thank you for your answers!","date":"2013-05-20T16:10:16.545Z","type":"message"}
+{"nick":"Peter200","message":"mh, maybe it is easier now thanks to SO_REUSEPORT where n threads bind to the same port and Linux distributes the requests...","date":"2013-05-20T16:16:18.955Z","type":"message"}
+{"nick":"creationix","message":"Peter200: luvit is the same api as node basically","date":"2013-05-20T16:20:21.736Z","type":"message"}
+{"nick":"creationix","message":"so node is also single-threded","date":"2013-05-20T16:20:35.097Z","type":"message"}
+{"nick":"creationix","message":"also using more cores only makes you faster when cpu blocking stuff is the bottleneck","date":"2013-05-20T16:21:01.903Z","type":"message"}
+{"nick":"creationix","message":"sometimes the syncronizing overhead of threads actually makes things slower","date":"2013-05-20T16:21:16.203Z","type":"message"}
+{"nick":"creationix","message":"using more cpu cores doesn't always mean getting more work done","date":"2013-05-20T16:21:27.954Z","type":"message"}
+{"nick":"creationix","message":"the main model is to use several processes and talk over IPC","date":"2013-05-20T16:21:41.353Z","type":"message"}
+{"nick":"creationix","message":"If you're doing something CPU intensive, have it in a seperate process written in some other language (like C)","date":"2013-05-20T16:22:06.911Z","type":"message"}
+{"nick":"creationix","message":"I don't think we ever implemented something like node's cluster in luvit though","date":"2013-05-20T16:22:29.757Z","type":"message"}
+{"nick":"Peter200","message":"I am thinking about a chat system, many requests (or maybe open connections) and little data per request","date":"2013-05-20T16:22:33.974Z","type":"message"}
+{"nick":"creationix","message":"yeah, with a chat system like that, CPU processing is not your bottleneck","date":"2013-05-20T16:22:54.144Z","type":"message"}
+{"nick":"creationix","message":"it's maintaining all the connections","date":"2013-05-20T16:23:00.755Z","type":"message"}
+{"nick":"creationix","message":"libuv (the underlying network library of luvit and node) isn't really thread safe","date":"2013-05-20T16:23:18.301Z","type":"message"}
+{"nick":"Peter200","message":"but when you have (ok, maybe never happens) 100,000 concurrent chatters?","date":"2013-05-20T16:23:27.653Z","type":"message"}
+{"nick":"creationix","message":"right, a single thread means less state to pass around","date":"2013-05-20T16:23:46.210Z","type":"message"}
+{"nick":"creationix","message":"1 thread can handle 100,000 connections","date":"2013-05-20T16:23:52.680Z","type":"message"}
+{"nick":"grep_awesome","message":"if you don't keep your connections alive, then luvit or node can handle that easily","date":"2013-05-20T16:23:57.036Z","type":"message"}
+{"nick":"creationix","message":"(unless of course each connection is active sending and processing lots of data at once)","date":"2013-05-20T16:24:25.145Z","type":"message"}
+{"nick":"creationix","message":"now if you can partition your 100,000 connections, then  sharding works great","date":"2013-05-20T16:24:49.348Z","type":"message"}
+{"nick":"creationix","message":"have ~1000 connections per process as long as connections don't need to talk to connections in other processes","date":"2013-05-20T16:25:18.841Z","type":"message"}
+{"nick":"Peter200","message":"I made some tests with openresty / Luajit and the critical section starts at >5000 req/sec, maybe the Linux kernel / tcp-stack can't open/close tcp-connections fast enough","date":"2013-05-20T16:25:21.724Z","type":"message"}
+{"nick":"creationix","message":"I've gotten 120,000 HTTP requests per second on a luvit http server before","date":"2013-05-20T16:25:46.340Z","type":"message"}
+{"nick":"creationix","message":"1 thread","date":"2013-05-20T16:25:50.589Z","type":"message"}
+{"nick":"Peter200","message":"but with keepalive?","date":"2013-05-20T16:25:57.356Z","type":"message"}
+{"nick":"creationix","message":"of course, the http server was very dumb and used keepalive","date":"2013-05-20T16:26:04.361Z","type":"message"}
+{"nick":"creationix","message":"but that's my point, CPU processing the protocol isn't always the bottleneck","date":"2013-05-20T16:26:28.151Z","type":"message"}
+{"nick":"Peter200","message":"The bottleneck seems to be the tcp/ip stack - as with more parallel requests gets overproportinal slower","date":"2013-05-20T16:26:59.743Z","type":"message"}
+{"nick":"creationix","message":"Peter200: if you need 100,000 people in the same chat room, all talking at once, and all hearing eachother, then things get tricky","date":"2013-05-20T16:27:01.813Z","type":"message"}
+{"nick":"creationix","message":"any technology will have a hard time with that one","date":"2013-05-20T16:27:08.491Z","type":"message"}
+{"nick":"creationix","message":"simply adding CPU cores doesn't make it easier","date":"2013-05-20T16:27:13.932Z","type":"message"}
+{"nick":"creationix","message":"it just makes it more complicated","date":"2013-05-20T16:27:18.301Z","type":"message"}
+{"nick":"creationix","message":"Peter200: yeah, high-load servers always need to tune their server kernels","date":"2013-05-20T16:27:47.273Z","type":"message"}
+{"nick":"Peter200","message":"I just read about WhatsApp or all other \"massive services\" and ask myself how they all get their problems solved fast enough before they get killed by the people-tsunami.","date":"2013-05-20T16:27:50.008Z","type":"message"}
+{"nick":"creationix","message":"I hear Linux is usually best","date":"2013-05-20T16:27:51.492Z","type":"message"}
+{"nick":"creationix","message":"Linux on bare-metal","date":"2013-05-20T16:27:56.592Z","type":"message"}
+{"nick":"creationix","message":"right, sharding, single-threaded event-loops, kernel tuning","date":"2013-05-20T16:28:25.780Z","type":"message"}
+{"nick":"creationix","message":"all parts of making it really fast","date":"2013-05-20T16:28:29.934Z","type":"message"}
+{"nick":"creationix","message":"the one trick you can't really do in luvit is shared memory between threads","date":"2013-05-20T16:28:50.587Z","type":"message"}
+{"nick":"creationix","message":"thanks to the awesome JIT in luajit, you can even call out to C libraries for hot parts of your path","date":"2013-05-20T16:29:21.525Z","type":"message"}
+{"nick":"creationix","message":"JIT calls to C don't deoptimize things like calls to C bindings","date":"2013-05-20T16:29:30.748Z","type":"message"}
+{"nick":"creationix","message":"*FFI calls","date":"2013-05-20T16:29:48.004Z","type":"message"}
+{"nick":"creationix","message":"since the FFI is baked into the core of the JIT engine","date":"2013-05-20T16:29:57.457Z","type":"message"}
+{"nick":"creationix","message":"though our libuv bindings are regular C bindings","date":"2013-05-20T16:30:16.197Z","type":"message"}
+{"nick":"creationix","message":"so every time you hit the network, the JIT is getting deoptimized a bit","date":"2013-05-20T16:30:28.043Z","type":"message"}
+{"nick":"creationix","message":"I would love a version of libuv that wasn't callback based","date":"2013-05-20T16:30:36.666Z","type":"message"}
+{"nick":"Peter200","message":"don't know if i remember correctly, but wasn't / isn't there a penalty when using ffi, no idea, sth. like context switch which \"costs\" a lot?","date":"2013-05-20T16:30:37.200Z","type":"message"}
+{"nick":"creationix","message":"normally FFI is very expensive","date":"2013-05-20T16:30:47.218Z","type":"message"}
+{"nick":"creationix","message":"luajit is the exception","date":"2013-05-20T16:30:50.344Z","type":"message"}
+{"nick":"creationix","message":"in luajit, FFI is the fast way","date":"2013-05-20T16:30:54.982Z","type":"message"}
+{"nick":"creationix","message":"(unless you use C callbacks)","date":"2013-05-20T16:31:00.280Z","type":"message"}
+{"nick":"creationix","message":"of course, like everything, benchmark it","date":"2013-05-20T16:31:38.329Z","type":"message"}
+{"nick":"Peter200","message":"The openresty-guys do some luajit stuff and \"de-callbacked\" it. Scripts actually \"wait\" although other lua-requests are processed in the same thread","date":"2013-05-20T16:31:47.169Z","type":"message"}
+{"nick":"creationix","message":"if you write one version in pure lua and the same in C with ffi, see which is faster","date":"2013-05-20T16:31:52.107Z","type":"message"}
+{"nick":"creationix","message":"I'm talking about the libuv API","date":"2013-05-20T16:32:27.425Z","type":"message"}
+{"nick":"creationix","message":"it's all C callback oriented","date":"2013-05-20T16:32:33.281Z","type":"message"}
+{"nick":"creationix","message":"now it's exposed to lua is another question","date":"2013-05-20T16:32:42.693Z","type":"message"}
+{"nick":"creationix","message":"it's possible if you write a libuv wrapper in C that exposes another API","date":"2013-05-20T16:33:03.062Z","type":"message"}
+{"nick":"creationix","message":"and then ffi into that new wrapped library","date":"2013-05-20T16:33:14.546Z","type":"message"}
+{"nick":"creationix","message":"I've also seen people write normal C bindings to libuv where they expose it to lua as coroutines instead of callbacks","date":"2013-05-20T16:33:40.646Z","type":"message"}
+{"nick":"creationix","message":"but that's using the slow C API bindings","date":"2013-05-20T16:33:48.860Z","type":"message"}
+{"nick":"creationix","message":"Peter200: if someone has written such a wrapper to libuv, I'd love to see it","date":"2013-05-20T16:35:04.417Z","type":"message"}
+{"nick":"creationix","message":"I've been too busy with paid and sponsored work to find time for it","date":"2013-05-20T16:35:28.179Z","type":"message"}
+{"nick":"arek_deepinit","date":"2013-05-20T17:31:32.629Z","type":"join"}
+{"nick":"arek_deepinit","reason":"Client Quit","date":"2013-05-20T17:33:10.762Z","type":"quit"}
+{"nick":"tv","reason":"Ping timeout: 248 seconds","date":"2013-05-20T18:49:05.133Z","type":"quit"}
+{"nick":"tv","date":"2013-05-20T18:51:07.561Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-20T19:01:24.762Z","type":"quit"}
+{"nick":"indexzero","date":"2013-05-20T19:21:55.143Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-20T19:44:10.949Z","type":"quit"}
+{"nick":"indexzero","date":"2013-05-20T19:50:04.551Z","type":"join"}
+{"nick":"Peter200","reason":"Quit: Page closed","date":"2013-05-20T20:01:11.132Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-20T20:28:33.479Z","type":"quit"}
+{"nick":"indexzero","date":"2013-05-20T20:29:51.354Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-20T20:43:00.146Z","type":"quit"}
+{"nick":"themgt","date":"2013-05-20T21:41:58.978Z","type":"join"}
+{"nick":"themgt","reason":"Quit: themgt","date":"2013-05-20T23:47:01.640Z","type":"quit"}
+{"nick":"themgt","date":"2013-05-20T23:47:51.013Z","type":"join"}
