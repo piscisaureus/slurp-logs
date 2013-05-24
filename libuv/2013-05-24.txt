@@ -1,0 +1,192 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-05-24T00:00:01.317Z","type":"quit"}
+{"nick":"ircretary","date":"2013-05-24T00:00:08.674Z","type":"join"}
+{"nick":"mordy_","message":"hrm, another question. do i need to uv_close a uv_async_t?","date":"2013-05-24T00:07:24.981Z","type":"message"}
+{"nick":"bnoordhuis","message":"mordy_: yes","date":"2013-05-24T00:08:35.104Z","type":"message"}
+{"nick":"bnoordhuis","message":"just make sure the other thread isn't using it anymore","date":"2013-05-24T00:08:54.195Z","type":"message"}
+{"nick":"mordy_","message":"bnoordhuis: hrm, just making sure. i can use uv_async if i only want to have a function called once the event loop regains control?","date":"2013-05-24T00:10:55.187Z","type":"message"}
+{"nick":"mordy_","message":"i see a lot of words abotu threads in the header","date":"2013-05-24T00:11:05.777Z","type":"message"}
+{"nick":"bnoordhuis","message":"mordy_: uv_async is for when you have another thread (or maybe a signal handler) that does whatever","date":"2013-05-24T00:11:48.918Z","type":"message"}
+{"nick":"bnoordhuis","message":"and you want the thread to be able to wake up the main thread from uv_run","date":"2013-05-24T00:12:25.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"common usage looks something like this: uv_async_init(...); pthread_create(...); uv_run(...)","date":"2013-05-24T00:13:09.752Z","type":"message"}
+{"nick":"mordy_","message":"ahhh","date":"2013-05-24T00:13:15.152Z","type":"message"}
+{"nick":"mordy_","message":"no, i need something more like ev_feed","date":"2013-05-24T00:13:27.615Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-05-24T00:13:48.958Z","type":"quit"}
+{"nick":"bnoordhuis","message":"you want to artificially make a handle 'ready'?","date":"2013-05-24T00:13:51.854Z","type":"message"}
+{"nick":"mordy_","message":"yes. more specifically, i have an error handler which needs to be invoked (this is passed into me as a callback), and i want to only invoke the callback when the user doesn't have control of the event loop","date":"2013-05-24T00:15:37.495Z","type":"message"}
+{"nick":"mordy_","message":"i guess i can use prepare/check for this, but then it gets complicated","date":"2013-05-24T00:16:34.890Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm, not sure i'm following","date":"2013-05-24T00:17:18.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"you have a callback but you only want to call (have it called?) when inside uv_run?","date":"2013-05-24T00:17:52.164Z","type":"message"}
+{"nick":"mordy_","message":"yes","date":"2013-05-24T00:18:00.981Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-24T00:18:19.511Z","type":"quit"}
+{"nick":"bnoordhuis","message":"when exactly should it get called? what's stopping you from calling it whenever?","date":"2013-05-24T00:18:33.108Z","type":"message"}
+{"nick":"bnoordhuis","message":"(trying to understand the issue)","date":"2013-05-24T00:18:39.553Z","type":"message"}
+{"nick":"mordy_","message":"bnoordhuis: the library i'm using has a distinct guarantee that its own callbacks are only invoked when the user does not have control of its event loop (i.e. it has specific wrappers for starting and stopping the event loop)...","date":"2013-05-24T00:20:57.266Z","type":"message"}
+{"nick":"mordy_","message":"and basically it can't invoke its callbacks (which the user defines for it) unless the 'start' function has been called","date":"2013-05-24T00:21:22.977Z","type":"message"}
+{"nick":"kazupon","date":"2013-05-24T00:21:48.265Z","type":"join"}
+{"nick":"mordy_","message":"now if i call that library's callback, it might invoke the user's callback, etc. etc.","date":"2013-05-24T00:21:50.132Z","type":"message"}
+{"nick":"mordy_","message":"and then nasty things can happen, for example the library freeing something from within the callback while it is still in scope in the user code","date":"2013-05-24T00:22:31.414Z","type":"message"}
+{"nick":"mordy_","message":"i'm dealing with like four layers here, so i can elaborate more if needed","date":"2013-05-24T00:22:49.476Z","type":"message"}
+{"nick":"bnoordhuis","message":"i... think i follow :)","date":"2013-05-24T00:23:02.571Z","type":"message"}
+{"nick":"bnoordhuis","message":"you basically want to run on a fresh stack each time?","date":"2013-05-24T00:23:21.821Z","type":"message"}
+{"nick":"mordy_","message":"exactly","date":"2013-05-24T00:23:26.343Z","type":"message"}
+{"nick":"bnoordhuis","message":"you probably want an idle handle","date":"2013-05-24T00:23:35.738Z","type":"message"}
+{"nick":"bnoordhuis","message":"that defers the action to the next tick of the event loop","date":"2013-05-24T00:23:48.715Z","type":"message"}
+{"nick":"bnoordhuis","message":"with the guarantee that the loop won't block in epoll_wait/kevent/etc.","date":"2013-05-24T00:24:01.565Z","type":"message"}
+{"nick":"bnoordhuis","message":"idle handle == uv_idle_t in case there's any confusion","date":"2013-05-24T00:24:57.365Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 252 seconds","date":"2013-05-24T00:26:05.125Z","type":"quit"}
+{"nick":"mordy_","message":"ok, let's tryt his","date":"2013-05-24T00:26:19.064Z","type":"message"}
+{"nick":"mordy_","message":"this","date":"2013-05-24T00:26:20.214Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: hey, this bug 5504","date":"2013-05-24T00:28:47.669Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: where hte EOF busy-loops","date":"2013-05-24T00:28:52.513Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: were you able to reproduce this on linux?  i can't seem to.","date":"2013-05-24T00:29:00.469Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: using the test case posted in the comments.","date":"2013-05-24T00:29:06.745Z","type":"message"}
+{"nick":"st_luke","date":"2013-05-24T00:30:33.262Z","type":"join"}
+{"nick":"bnoordhuis","message":"isaacs: no, it never triggers for me","date":"2013-05-24T00:32:00.465Z","type":"message"}
+{"nick":"bnoordhuis","message":"but the strace log the guy posted looks legitimate","date":"2013-05-24T00:32:10.980Z","type":"message"}
+{"nick":"tjfontaine","message":"do we know which kernel he's on? the default centos version?","date":"2013-05-24T00:33:28.453Z","type":"message"}
+{"nick":"bnoordhuis","message":"2.6.18 iirc","date":"2013-05-24T00:33:42.384Z","type":"message"}
+{"nick":"bnoordhuis","message":"but let me check that","date":"2013-05-24T00:33:49.492Z","type":"message"}
+{"nick":"bnoordhuis","message":"CentOS 6.3, kernel version 2.6.32-279.14.1.el6.x86_64","date":"2013-05-24T00:34:45.047Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-05-24T00:34:55.440Z","type":"join"}
+{"nick":"bnoordhuis","message":"that's like modern, by centos standards","date":"2013-05-24T00:35:01.992Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-05-24T00:35:06.717Z","type":"message"}
+{"nick":"isaacs","message":"Linux 7527bd77-ab3e-474b-ace7-eed6053931e7 3.1.10joyent-ubuntu-10-opt #1 SMP Fri Jan 20 09:55:31 PST 2012 x86_64 GNU/Linux","date":"2013-05-24T00:35:13.170Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw, https://github.com/joyent/node/issues/5108#issuecomment-16960802","date":"2013-05-24T00:36:12.067Z","type":"message"}
+{"nick":"bnoordhuis","message":"the fact that he hits the assertion means node doesn't close the handle","date":"2013-05-24T00:36:28.692Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-05-24T00:36:38.709Z","type":"quit"}
+{"nick":"timoxley","date":"2013-05-24T00:37:54.178Z","type":"join"}
+{"nick":"isaacs","message":"bnoordhuis: if this is in fact a bug in Node's js layer, and not in libuv, then why the OS/kernel specificity?","date":"2013-05-24T00:41:36.100Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: that seems odd to me","date":"2013-05-24T00:41:45.077Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: i don't know, maybe it's just coincidence","date":"2013-05-24T00:42:48.418Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least one guy reported the same issue but on debian","date":"2013-05-24T00:43:01.015Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2013-05-24T00:43:04.857Z","type":"message"}
+{"nick":"isaacs","message":"but i can't reproduce it on debian","date":"2013-05-24T00:43:08.768Z","type":"message"}
+{"nick":"isaacs","message":"or on smartos, or osx ","date":"2013-05-24T00:43:13.122Z","type":"message"}
+{"nick":"tjfontaine","message":"which could just as easily had an ancient kernel","date":"2013-05-24T00:43:14.742Z","type":"message"}
+{"nick":"isaacs","message":"right","date":"2013-05-24T00:43:17.549Z","type":"message"}
+{"nick":"isaacs","message":"it sounds like a \"old linux kernel\" bug","date":"2013-05-24T00:43:26.877Z","type":"message"}
+{"nick":"isaacs","message":"not necessarily a specific distro or whatever.","date":"2013-05-24T00:43:37.590Z","type":"message"}
+{"nick":"bnoordhuis","message":"could be","date":"2013-05-24T00:43:56.425Z","type":"message"}
+{"nick":"bnoordhuis","message":"hm, debian 6... that's also 2.6.32 iirc","date":"2013-05-24T00:44:08.725Z","type":"message"}
+{"nick":"bnoordhuis","message":"still, could be coincidence - and there's that assertion that got hit","date":"2013-05-24T00:45:29.541Z","type":"message"}
+{"nick":"bnoordhuis","message":"even if there is a kernel bug, there's still a bug in node as well :)","date":"2013-05-24T00:45:51.577Z","type":"message"}
+{"nick":"tjfontaine","message":"well, it's certainly somethign easier to trip on older kernels","date":"2013-05-24T00:46:10.871Z","type":"message"}
+{"nick":"tjfontaine","message":"I'd also be curious to know if they are tripping on bare metal or under virtualization","date":"2013-05-24T00:46:33.084Z","type":"message"}
+{"nick":"bnoordhuis","message":"both, according to #5108. there are mentions of both bare metal and openvz","date":"2013-05-24T00:46:59.429Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 276 seconds","date":"2013-05-24T00:47:22.094Z","type":"quit"}
+{"nick":"tjfontaine","message":"well, openvz is close enough to bare metal for this case, certainly no xen/kvm/vmware in the mix","date":"2013-05-24T00:47:26.285Z","type":"message"}
+{"nick":"bnoordhuis","message":"openvz is not hardware virtualization however","date":"2013-05-24T00:47:29.251Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's more like lxc or solaris zones","date":"2013-05-24T00:48:02.550Z","type":"message"}
+{"nick":"tjfontaine","message":"right so it's possible that such a rare bug is even harder to hit in [para]virtualization","date":"2013-05-24T00:48:50.333Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's quite possible, yes","date":"2013-05-24T00:49:45.366Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-05-24T00:50:14.619Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-05-24T00:51:15.744Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-05-24T00:58:48.888Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-24T00:59:31.875Z","type":"quit"}
+{"nick":"st_luke","date":"2013-05-24T01:04:02.240Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Read error: Operation timed out","date":"2013-05-24T01:05:36.219Z","type":"quit"}
+{"nick":"isaacs","message":"Well, this is pretty weird...","date":"2013-05-24T01:05:45.739Z","type":"message"}
+{"nick":"isaacs","message":"if the server writes a really big buffer, then a node client sends it an ECONNRESET","date":"2013-05-24T01:06:04.734Z","type":"message"}
+{"nick":"isaacs","message":"even if ou don't destroy from the client","date":"2013-05-24T01:06:12.254Z","type":"message"}
+{"nick":"indexzero","date":"2013-05-24T01:13:56.746Z","type":"join"}
+{"nick":"isaacs","message":"ircretary: tell bnoordhuis Check this out: https://github.com/joyent/node/issues/5542","date":"2013-05-24T01:15:19.879Z","type":"message"}
+{"nick":"ircretary","message":"isaacs: I'll be sure to tell bnoordhuis","date":"2013-05-24T01:15:20.215Z","type":"message"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-05-24T01:16:07.944Z","type":"quit"}
+{"nick":"skebcio","reason":"Read error: Operation timed out","date":"2013-05-24T01:21:52.593Z","type":"quit"}
+{"nick":"kazupon","date":"2013-05-24T01:22:09.333Z","type":"join"}
+{"nick":"TooTallNate","reason":"Read error: Connection reset by peer","date":"2013-05-24T01:25:28.661Z","type":"quit"}
+{"nick":"dap1","reason":"Quit: Leaving.","date":"2013-05-24T01:25:34.382Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-24T01:26:16.098Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 240 seconds","date":"2013-05-24T01:27:06.969Z","type":"quit"}
+{"nick":"skebcio","date":"2013-05-24T01:31:11.890Z","type":"join"}
+{"nick":"indexzero","date":"2013-05-24T01:32:54.269Z","type":"join"}
+{"nick":"stagas","reason":"Remote host closed the connection","date":"2013-05-24T01:39:55.029Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-24T01:47:04.362Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2013-05-24T01:54:00.472Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-05-24T01:59:30.899Z","type":"nick"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 264 seconds","date":"2013-05-24T01:59:55.342Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-24T02:09:52.889Z","type":"quit"}
+{"nick":"skebcio_","date":"2013-05-24T02:12:55.384Z","type":"join"}
+{"nick":"skebcio","reason":"Read error: Connection reset by peer","date":"2013-05-24T02:12:59.355Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-05-24T02:13:56.853Z","type":"join"}
+{"nick":"indexzero","date":"2013-05-24T02:16:44.683Z","type":"join"}
+{"nick":"dannycoates","new_nick":"dannycoates|afk","date":"2013-05-24T02:17:34.530Z","type":"nick"}
+{"nick":"skebcio_","reason":"Ping timeout: 240 seconds","date":"2013-05-24T02:18:28.531Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2013-05-24T02:18:47.824Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-05-24T02:20:49.430Z","type":"nick"}
+{"nick":"skebcio","date":"2013-05-24T02:21:44.678Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-24T02:21:58.964Z","type":"quit"}
+{"nick":"indexzero","date":"2013-05-24T02:22:48.541Z","type":"join"}
+{"nick":"dannycoates|afk","reason":"Remote host closed the connection","date":"2013-05-24T02:23:16.864Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-05-24T02:25:02.394Z","type":"nick"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-05-24T02:26:01.892Z","type":"quit"}
+{"nick":"indexzero","reason":"Client Quit","date":"2013-05-24T02:26:59.095Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-05-24T02:32:41.762Z","type":"quit"}
+{"nick":"amartens","date":"2013-05-24T02:33:38.977Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-05-24T02:33:55.104Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-05-24T02:35:21.703Z","type":"nick"}
+{"nick":"amartens","reason":"Ping timeout: 260 seconds","date":"2013-05-24T02:38:23.818Z","type":"quit"}
+{"nick":"inolen","date":"2013-05-24T02:50:07.656Z","type":"join"}
+{"nick":"loladiro","date":"2013-05-24T02:52:26.130Z","type":"join"}
+{"nick":"loladiro","reason":"Client Quit","date":"2013-05-24T02:52:51.426Z","type":"quit"}
+{"nick":"kazupon","date":"2013-05-24T02:55:45.639Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 252 seconds","date":"2013-05-24T03:00:55.426Z","type":"quit"}
+{"nick":"wmil","date":"2013-05-24T03:14:56.113Z","type":"join"}
+{"nick":"loladiro","date":"2013-05-24T03:17:25.365Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-05-24T03:27:13.458Z","type":"join"}
+{"nick":"st_luke","date":"2013-05-24T03:28:31.248Z","type":"join"}
+{"nick":"amartens","date":"2013-05-24T03:33:59.265Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 248 seconds","date":"2013-05-24T03:38:09.105Z","type":"quit"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-05-24T03:38:24.865Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-05-24T03:43:21.360Z","type":"quit"}
+{"nick":"wmil","reason":"Remote host closed the connection","date":"2013-05-24T03:45:06.313Z","type":"quit"}
+{"nick":"brson","date":"2013-05-24T03:47:11.656Z","type":"join"}
+{"nick":"kazupon","date":"2013-05-24T03:54:58.278Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-05-24T03:55:17.575Z","type":"quit"}
+{"nick":"indexzero","date":"2013-05-24T03:56:06.519Z","type":"join"}
+{"nick":"wmil","date":"2013-05-24T04:11:04.283Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-24T04:18:55.447Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-24T04:20:27.839Z","type":"quit"}
+{"nick":"wmil","reason":"Remote host closed the connection","date":"2013-05-24T04:22:15.350Z","type":"quit"}
+{"nick":"timoxley","date":"2013-05-24T04:23:06.120Z","type":"join"}
+{"nick":"indexzero","date":"2013-05-24T04:24:06.747Z","type":"join"}
+{"nick":"timoxley","reason":"Read error: Connection reset by peer","date":"2013-05-24T04:24:58.423Z","type":"quit"}
+{"nick":"amartens","date":"2013-05-24T04:29:51.305Z","type":"join"}
+{"nick":"normanm","date":"2013-05-24T04:32:47.288Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-05-24T04:34:33.010Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 248 seconds","date":"2013-05-24T04:36:53.620Z","type":"quit"}
+{"nick":"timoxley","date":"2013-05-24T04:38:24.107Z","type":"join"}
+{"nick":"brson","date":"2013-05-24T04:38:52.104Z","type":"join"}
+{"nick":"benoitc","reason":"Ping timeout: 260 seconds","date":"2013-05-24T04:45:19.933Z","type":"quit"}
+{"nick":"timoxley","reason":"Read error: Connection reset by peer","date":"2013-05-24T04:49:55.690Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-05-24T04:50:33.434Z","type":"quit"}
+{"nick":"timoxley","date":"2013-05-24T04:52:55.284Z","type":"join"}
+{"nick":"wmil","date":"2013-05-24T04:58:30.603Z","type":"join"}
+{"nick":"wmil","reason":"Remote host closed the connection","date":"2013-05-24T05:00:48.042Z","type":"quit"}
+{"nick":"timoxley","reason":"Read error: Connection reset by peer","date":"2013-05-24T05:03:20.069Z","type":"quit"}
+{"nick":"timoxley","date":"2013-05-24T05:06:37.123Z","type":"join"}
+{"nick":"indexzero","date":"2013-05-24T05:09:20.771Z","type":"join"}
+{"nick":"timoxley","reason":"Read error: Connection reset by peer","date":"2013-05-24T05:11:23.047Z","type":"quit"}
+{"nick":"indexzero","reason":"Client Quit","date":"2013-05-24T05:12:17.587Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-05-24T05:16:52.578Z","type":"join"}
+{"nick":"timoxley","date":"2013-05-24T05:21:17.532Z","type":"join"}
+{"nick":"st_luke","date":"2013-05-24T05:27:21.245Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-05-24T05:27:38.586Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-05-24T05:37:27.491Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-05-24T05:47:18.467Z","type":"join"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2013-05-24T05:48:35.729Z","type":"quit"}
+{"nick":"bajtos","date":"2013-05-24T05:53:28.232Z","type":"join"}
+{"nick":"mikeal","date":"2013-05-24T05:57:35.264Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2013-05-24T05:57:35.714Z","type":"quit"}
+{"nick":"mikeal","date":"2013-05-24T06:00:10.743Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-05-24T06:07:10.361Z","type":"quit"}
+{"nick":"rendar","date":"2013-05-24T06:34:26.711Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-05-24T06:59:11.127Z","type":"quit"}
+{"nick":"`3rdEden","date":"2013-05-24T06:59:11.272Z","type":"join"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-05-24T07:26:31.243Z","type":"quit"}
+{"nick":"juliangruber","reason":"Read error: Operation timed out","date":"2013-05-24T07:26:44.501Z","type":"quit"}
+{"nick":"juliangruber","date":"2013-05-24T07:28:28.421Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-05-24T07:37:09.979Z","type":"quit"}
+{"nick":"loladiro","date":"2013-05-24T07:39:54.843Z","type":"join"}
+{"nick":"paddybyers","date":"2013-05-24T07:40:29.124Z","type":"join"}
+{"nick":"txdv","reason":"Ping timeout: 264 seconds","date":"2013-05-24T07:56:19.368Z","type":"quit"}
