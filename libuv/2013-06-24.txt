@@ -62,3 +62,184 @@
 {"nick":"bajtos","date":"2013-06-24T07:14:06.119Z","type":"join"}
 {"nick":"`3E","new_nick":"`3rdEden","date":"2013-06-24T07:25:15.958Z","type":"nick"}
 {"nick":"rendar","date":"2013-06-24T07:43:16.895Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-06-24T08:02:50.490Z","type":"quit"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-06-24T08:13:16.403Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-06-24T08:17:24.367Z","type":"join"}
+{"nick":"bnoordhuis","message":"morning","date":"2013-06-24T08:19:07.946Z","type":"message"}
+{"nick":"bajtos","message":"bnoordhuis: good morning","date":"2013-06-24T08:21:07.388Z","type":"message"}
+{"nick":"bajtos","message":"have you had a chance to look at node pr 5713?","date":"2013-06-24T08:21:33.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"bajtos: chance? yes. done so. no","date":"2013-06-24T08:22:07.921Z","type":"message"}
+{"nick":"trapito","reason":"Remote host closed the connection","date":"2013-06-24T08:22:23.269Z","type":"quit"}
+{"nick":"bnoordhuis","message":"bajtos: can you give me the executive summary?","date":"2013-06-24T08:22:26.588Z","type":"message"}
+{"nick":"bajtos","message":"sure","date":"2013-06-24T08:22:30.976Z","type":"message"}
+{"nick":"bajtos","message":"SetVerbose does two things - reports uncaught exception to debugger and logs a message","date":"2013-06-24T08:22:52.577Z","type":"message"}
+{"nick":"bajtos","message":"to log a message, V8 calls embedder's callback or prints to stdout if there is no callback registeed","date":"2013-06-24T08:23:21.827Z","type":"message"}
+{"nick":"bajtos","message":"*registered","date":"2013-06-24T08:23:47.679Z","type":"message"}
+{"nick":"bajtos","message":"node does not register any callbacks","date":"2013-06-24T08:24:08.929Z","type":"message"}
+{"nick":"bajtos","message":"so my dilemma is how to approach this","date":"2013-06-24T08:24:38.680Z","type":"message"}
+{"nick":"bajtos","message":"I can ignore all messages from V8, since it seems like there are only two kinds of them: uncaught exception and syntax error in debug-debugger.js, mirror-debugger.js & friends","date":"2013-06-24T08:25:29.122Z","type":"message"}
+{"nick":"bajtos","message":"or I can rewrite node.js exception handling so that uncaught exceptions are logged via OnMessage callback","date":"2013-06-24T08:26:10.155Z","type":"message"}
+{"nick":"bnoordhuis","message":"OnMessage?","date":"2013-06-24T08:27:00.492Z","type":"message"}
+{"nick":"bajtos","message":"or I can modify V8 to allow OnMessage callback to detect what kind of message it is and throw away \"uncaught_exception\" message","date":"2013-06-24T08:27:04.703Z","type":"message"}
+{"nick":"bnoordhuis","message":"do you mean the listener that you add with V8::AddMessageListener?","date":"2013-06-24T08:27:13.696Z","type":"message"}
+{"nick":"bajtos","message":"yes","date":"2013-06-24T08:27:23.748Z","type":"message"}
+{"nick":"bajtos","message":"I implemented the third option in commit 84f19c50","date":"2013-06-24T08:27:46.449Z","type":"message"}
+{"nick":"bajtos","message":"I don't now how likely is V8 to accept this change","date":"2013-06-24T08:28:28.395Z","type":"message"}
+{"nick":"bajtos","message":"plus I am little bit worried that we might miss a case where the exception is logged via ReportException, in which case it won't be logged at all","date":"2013-06-24T08:29:37.987Z","type":"message"}
+{"nick":"bajtos","message":"I am leaning towards rewriting node.js exception handling, but that might break backwards compatibility in the sense that a different output will be reported","date":"2013-06-24T08:30:24.386Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah. that's not ideal","date":"2013-06-24T08:30:49.323Z","type":"message"}
+{"nick":"bajtos","message":"But then… is it necessary to have so many different code paths for reporting exception?","date":"2013-06-24T08:31:38.911Z","type":"message"}
+{"nick":"bajtos","message":"There is ReportException() with show_line true/false, then there is FatalException()","date":"2013-06-24T08:32:17.187Z","type":"message"}
+{"nick":"bnoordhuis","message":"you can pretty much ignore ReportException","date":"2013-06-24T08:32:29.044Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's only used for what amounts to fatal errors","date":"2013-06-24T08:32:49.881Z","type":"message"}
+{"nick":"bnoordhuis","message":"same for FatalException obviously :)","date":"2013-06-24T08:33:08.648Z","type":"message"}
+{"nick":"bajtos","message":"that's the thing which puzzles me :-)","date":"2013-06-24T08:33:17.792Z","type":"message"}
+{"nick":"bnoordhuis","message":"FatalException is an api function that calls ReportException (which is internal)","date":"2013-06-24T08:33:32.035Z","type":"message"}
+{"nick":"bajtos","message":"ouch.","date":"2013-06-24T08:34:09.727Z","type":"message"}
+{"nick":"bajtos","message":"So reporting uncaught exceptions from V8::AddMessageListener callback will also break API compatibility","date":"2013-06-24T08:34:40.781Z","type":"message"}
+{"nick":"timoxley","date":"2013-06-24T08:34:49.094Z","type":"join"}
+{"nick":"bajtos","message":"since users should use TryCatch.SetVerbose(true) instead of calling FatalException(TryCatch) ","date":"2013-06-24T08:35:18.128Z","type":"message"}
+{"nick":"bajtos","message":"However. If native modules want to support \"break on uncaught exception\", then they have to call SetVerbose anyway","date":"2013-06-24T08:36:51.655Z","type":"message"}
+{"nick":"bnoordhuis","message":"*affirmative nod*","date":"2013-06-24T08:37:32.066Z","type":"message"}
+{"nick":"bajtos","message":"how about this solution? https://gist.github.com/bajtos/9ba2ebfd44ec7232ea75","date":"2013-06-24T08:41:13.368Z","type":"message"}
+{"nick":"bnoordhuis","message":"bajtos: i really, really don't want to expand the c++ api","date":"2013-06-24T08:43:32.095Z","type":"message"}
+{"nick":"bnoordhuis","message":"if anything, i want it to get smaller over time","date":"2013-06-24T08:43:40.794Z","type":"message"}
+{"nick":"bnoordhuis","message":"documenting the SetVerbose thing in addons.markdown is fine however","date":"2013-06-24T08:44:02.238Z","type":"message"}
+{"nick":"bajtos","message":"in that case if you use both SetVerbose and FatalException, your exception will be logged twice ","date":"2013-06-24T08:44:44.162Z","type":"message"}
+{"nick":"bajtos","message":"if that's an acceptable price to pay for smaller API, then ok","date":"2013-06-24T08:45:07.533Z","type":"message"}
+{"nick":"bnoordhuis","message":"bajtos: if TryCatch had a IsVerbose() method, you could avoid that, right?","date":"2013-06-24T08:47:33.232Z","type":"message"}
+{"nick":"bajtos","message":"you know what? if native module authors were using NodeTryCatch already, then we won't have to think so hard about backward compatibility - we could simple change implementation (internals) and all modules will work without change. having our own API objects instead of exposing V8 API has some benefits.","date":"2013-06-24T08:47:48.388Z","type":"message"}
+{"nick":"bajtos","message":"bnoordhuis: I am not sure","date":"2013-06-24T08:47:57.771Z","type":"message"}
+{"nick":"bajtos","message":"bnoordhuis: since TryCatch is converted to a Message before it is sent to our handler","date":"2013-06-24T08:48:17.943Z","type":"message"}
+{"nick":"bnoordhuis","message":"handler? i was talking about FatalException","date":"2013-06-24T08:48:52.964Z","type":"message"}
+{"nick":"bajtos","message":"oh, I see your point","date":"2013-06-24T08:49:02.817Z","type":"message"}
+{"nick":"bajtos","message":"yeah, that's a good idea","date":"2013-06-24T08:49:09.083Z","type":"message"}
+{"nick":"bajtos","message":"adding IsVerbose() should be simple enough to have it accepted to V8 or added to our patch we are applying to V8","date":"2013-06-24T08:50:51.554Z","type":"message"}
+{"nick":"bnoordhuis","message":"bajtos: upstream always!","date":"2013-06-24T08:53:09.210Z","type":"message"}
+{"nick":"bnoordhuis","message":"if v8 rejects it, i probably will too","date":"2013-06-24T08:53:19.200Z","type":"message"}
+{"nick":"bajtos","message":"hmm, ok","date":"2013-06-24T08:53:38.747Z","type":"message"}
+{"nick":"bajtos","message":"I found one more problem","date":"2013-06-24T08:53:55.913Z","type":"message"}
+{"nick":"bajtos","message":"I am not sure I we can call \"_fatalException\" event handler from AddMessageListener callback(), most likely we will have to do it in FatalException","date":"2013-06-24T08:55:29.717Z","type":"message"}
+{"nick":"bajtos","message":"in which case we will report exception even if \"_fatalException\" handler returned true :(","date":"2013-06-24T08:56:09.630Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think that should be safe","date":"2013-06-24T08:58:27.201Z","type":"message"}
+{"nick":"bnoordhuis","message":"but let me check","date":"2013-06-24T08:58:29.747Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, looks like it should be okay","date":"2013-06-24T09:00:42.347Z","type":"message"}
+{"nick":"bajtos","message":"cool.","date":"2013-06-24T09:01:31.793Z","type":"message"}
+{"nick":"bnoordhuis","message":"amusingly, any exceptions your listener throws, v8 stops from propagating :)","date":"2013-06-24T09:01:46.429Z","type":"message"}
+{"nick":"bajtos","message":"except we can't access TryCatch from AddMessageListener","date":"2013-06-24T09:01:47.397Z","type":"message"}
+{"nick":"bajtos","message":"I am taking it back","date":"2013-06-24T09:02:20.697Z","type":"message"}
+{"nick":"bajtos","message":"we need to access TryCatch from FatalException() which is called *after* AddMessageListener callback, so that should be fine","date":"2013-06-24T09:02:51.752Z","type":"message"}
+{"nick":"bajtos","message":"one more question","date":"2013-06-24T09:02:59.795Z","type":"message"}
+{"nick":"bnoordhuis","message":"one more answer","date":"2013-06-24T09:03:05.239Z","type":"message"}
+{"nick":"bajtos","message":":)","date":"2013-06-24T09:03:07.799Z","type":"message"}
+{"nick":"amartens","date":"2013-06-24T09:03:09.085Z","type":"join"}
+{"nick":"bajtos","message":"from what I was able to find, ReportException() is called directly from Load(process_l)","date":"2013-06-24T09:03:36.456Z","type":"message"}
+{"nick":"bajtos","message":"is there a reason why this code cannot call FatalException instead? (i.e. why it is bypassing \"_fatalException\" handler)","date":"2013-06-24T09:04:19.672Z","type":"message"}
+{"nick":"bnoordhuis","message":"because there's no going forward when Load() fails","date":"2013-06-24T09:04:42.067Z","type":"message"}
+{"nick":"bnoordhuis","message":"FatalException is (since v0.10) only conditionally fatal","date":"2013-06-24T09:05:13.397Z","type":"message"}
+{"nick":"bajtos","message":"ok, that makes sense","date":"2013-06-24T09:05:43.451Z","type":"message"}
+{"nick":"bnoordhuis","message":"there's also the chicken/egg problemn: if Load() fails, the process object is probably in an undefined state","date":"2013-06-24T09:06:04.770Z","type":"message"}
+{"nick":"bajtos","message":"do I understand it correctly, that FatalException is basically a wrapper around ReportException that adds ","date":"2013-06-24T09:06:09.791Z","type":"message"}
+{"nick":"bajtos","message":"\"_fatalException\" handler logic","date":"2013-06-24T09:06:16.821Z","type":"message"}
+{"nick":"bajtos","message":"?","date":"2013-06-24T09:06:23.815Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes. and exits if _fatalException doesn't handle it","date":"2013-06-24T09:06:31.194Z","type":"message"}
+{"nick":"bajtos","message":"ok","date":"2013-06-24T09:06:55.923Z","type":"message"}
+{"nick":"amartens","reason":"Ping timeout: 246 seconds","date":"2013-06-24T09:07:22.993Z","type":"quit"}
+{"nick":"bajtos","message":"in that case I should call V8::AddMessageListener only after Load has finished (or modify AddMessageListener callback so that it does not call _fatalException handler if we are not loaded yet - perhaps via a global flag?)","date":"2013-06-24T09:09:12.390Z","type":"message"}
+{"nick":"bajtos","message":"anyway, I think I should have all information I need now","date":"2013-06-24T09:09:48.794Z","type":"message"}
+{"nick":"bajtos","message":"bnoordhuis: thanks for your help :)","date":"2013-06-24T09:10:47.407Z","type":"message"}
+{"nick":"bnoordhuis","message":"np :)","date":"2013-06-24T09:11:02.222Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Ben Noordhuis\u000f \u00037v0.10\u000f * \u00023fac415\u0002 : doc: fs: synchronize watchFile/unwatchFile warning - http://git.io/6vOvAA","date":"2013-06-24T09:19:12.566Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #257 \u00037UNSTABLE\u000f osx-x64 (1/592) smartos-ia32 (1/592) osx-ia32 (1/592) smartos-x64 (2/592) http://jenkins.nodejs.org/job/nodejs-v0.10/257/","date":"2013-06-24T09:31:17.718Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #86 \u00037UNSTABLE\u000f windows-x64 (8/592) windows-ia32 (7/592) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/86/","date":"2013-06-24T09:47:40.928Z","type":"message"}
+{"nick":"amartens","date":"2013-06-24T10:03:26.019Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 256 seconds","date":"2013-06-24T10:08:05.309Z","type":"quit"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-06-24T10:23:57.219Z","type":"quit"}
+{"nick":"timoxley","reason":"Ping timeout: 276 seconds","date":"2013-06-24T10:49:19.186Z","type":"quit"}
+{"nick":"amartens","date":"2013-06-24T11:03:48.073Z","type":"join"}
+{"nick":"st_luke","date":"2013-06-24T11:06:46.413Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 246 seconds","date":"2013-06-24T11:08:06.004Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-06-24T11:15:15.915Z","type":"quit"}
+{"nick":"bnoordhuis","message":"thoughts on adding better sprintf functionality to core?","date":"2013-06-24T11:45:23.770Z","type":"message"}
+{"nick":"bnoordhuis","message":"util.format() doesn't quite cut it but i'd rather not change it this late in the game","date":"2013-06-24T11:45:53.380Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: hey, how does https://github.com/mmalecki/node/compare/0.10-no-idle-gc cut if for a 'remove idle GC on 0.8'?","date":"2013-06-24T11:46:07.684Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: wut?","date":"2013-06-24T11:46:25.876Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: I backported your patch since it never made it to 0.8","date":"2013-06-24T11:46:48.504Z","type":"message"}
+{"nick":"mmalecki","message":"and yeah, I can't use the switch","date":"2013-06-24T11:47:00.065Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm still not sure what the question is :)","date":"2013-06-24T11:47:23.589Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: ot","date":"2013-06-24T11:47:57.624Z","type":"message"}
+{"nick":"mmalecki","message":"er","date":"2013-06-24T11:47:59.397Z","type":"message"}
+{"nick":"timoxley","date":"2013-06-24T11:48:12.608Z","type":"join"}
+{"nick":"mmalecki","message":"it's a backport of your patch to remove idle GC on 0.10","date":"2013-06-24T11:48:12.876Z","type":"message"}
+{"nick":"mmalecki","message":"to 0.8","date":"2013-06-24T11:48:14.183Z","type":"message"}
+{"nick":"mmalecki","message":"so I'm wondering if I did it right :-)","date":"2013-06-24T11:48:23.964Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah okay","date":"2013-06-24T11:48:29.761Z","type":"message"}
+{"nick":"bnoordhuis","message":"does it compile?","date":"2013-06-24T11:48:35.401Z","type":"message"}
+{"nick":"mmalecki","message":"it does indeed happen to compile","date":"2013-06-24T11:48:43.820Z","type":"message"}
+{"nick":"bnoordhuis","message":"does it crash within seconds?","date":"2013-06-24T11:48:54.523Z","type":"message"}
+{"nick":"mmalecki","message":"what's even funnier, it's running on one of our frontend balancers","date":"2013-06-24T11:48:56.063Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll take that as a no :)","date":"2013-06-24T11:49:07.399Z","type":"message"}
+{"nick":"indutny","message":"probably its working then?","date":"2013-06-24T11:49:10.658Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2013-06-24T11:49:11.201Z","type":"message"}
+{"nick":"bnoordhuis","message":"then you probably did it right","date":"2013-06-24T11:49:11.556Z","type":"message"}
+{"nick":"mmalecki","message":"but I'm wondering how bad this'll turn out to be after few hours","date":"2013-06-24T11:49:13.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, the gc in v0.8 is a little less advanced than the one in v0.10","date":"2013-06-24T11:49:42.886Z","type":"message"}
+{"nick":"bnoordhuis","message":"but no doubt you monitor request latency and memory usage","date":"2013-06-24T11:49:58.195Z","type":"message"}
+{"nick":"mmalecki","message":"oh, we even monitor GC latency. I got nervous when it reached 3 s","date":"2013-06-24T11:50:15.439Z","type":"message"}
+{"nick":"bnoordhuis","message":"3 seconds for one gc run?","date":"2013-06-24T11:50:27.997Z","type":"message"}
+{"nick":"mmalecki","message":"yeah","date":"2013-06-24T11:50:31.958Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's extremely bad","date":"2013-06-24T11:50:39.072Z","type":"message"}
+{"nick":"mmalecki","message":"and like 1 GB of memory","date":"2013-06-24T11:50:42.775Z","type":"message"}
+{"nick":"mmalecki","message":"isn't it?","date":"2013-06-24T11:50:44.920Z","type":"message"}
+{"nick":"bnoordhuis","message":"what the...","date":"2013-06-24T11:50:53.889Z","type":"message"}
+{"nick":"mmalecki","message":"I'm trying to see if removing idle GC fixes it at all","date":"2013-06-24T11:50:57.114Z","type":"message"}
+{"nick":"bnoordhuis","message":"right","date":"2013-06-24T11:51:05.704Z","type":"message"}
+{"nick":"bnoordhuis","message":"btw https://github.com/bnoordhuis/node-idle-gc","date":"2013-06-24T11:51:08.504Z","type":"message"}
+{"nick":"mmalecki","message":"but I'm mostly just guessing anyway","date":"2013-06-24T11:51:11.279Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's the idle gc done right","date":"2013-06-24T11:51:12.805Z","type":"message"}
+{"nick":"mmalecki","message":"oh yeah, I saw this one","date":"2013-06-24T11:51:19.184Z","type":"message"}
+{"nick":"mmalecki","message":"I think I'll actually add it next","date":"2013-06-24T11:51:26.982Z","type":"message"}
+{"nick":"bnoordhuis","message":"have you read the README?","date":"2013-06-24T11:51:53.796Z","type":"message"}
+{"nick":"bnoordhuis","message":"for once i got to use a futurama quote in an appropriate context :)","date":"2013-06-24T11:52:11.411Z","type":"message"}
+{"nick":"mmalecki","message":"hahahah","date":"2013-06-24T11:52:25.221Z","type":"message"}
+{"nick":"mmalecki","message":"that always feels good, doesn't it?","date":"2013-06-24T11:52:36.862Z","type":"message"}
+{"nick":"mmalecki","message":"btw, I'm going to be in Amsterdam this or next weekend","date":"2013-06-24T11:52:47.586Z","type":"message"}
+{"nick":"mmalecki","message":"prepare your liver","date":"2013-06-24T11:52:55.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah, okay","date":"2013-06-24T11:53:29.006Z","type":"message"}
+{"nick":"`3rdEden","message":"mmalecki: why do you back port it? Why not just use the command line flag?","date":"2013-06-24T11:54:16.097Z","type":"message"}
+{"nick":"mmalecki","message":"`3rdEden: forever. it's actually easier to backport than fix forever.","date":"2013-06-24T11:54:50.127Z","type":"message"}
+{"nick":"mmalecki","action":"is a lazy asshole","date":"2013-06-24T11:55:07.768Z","type":"action"}
+{"nick":"bnoordhuis","message":"oh, i don't know about 'lazy'","date":"2013-06-24T11:55:24.036Z","type":"message"}
+{"nick":"`3rdEden","message":"I thought they ran on aeternum ;p","date":"2013-06-24T11:55:37.028Z","type":"message"}
+{"nick":"mmalecki","message":"`3rdEden: nah, aeternum is slaves only. it's a bit too bare for balancers","date":"2013-06-24T11:56:06.674Z","type":"message"}
+{"nick":"`3rdEden","message":"mmalecki: ok, makes sense","date":"2013-06-24T11:56:24.907Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: I wonder about that sometimes too ;)","date":"2013-06-24T11:56:29.647Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: looks like it works. not too many gc's happening at all. thanks for giving it a look.","date":"2013-06-24T12:03:01.412Z","type":"message"}
+{"nick":"amartens","date":"2013-06-24T12:04:05.077Z","type":"join"}
+{"nick":"bnoordhuis","message":"mmalecki: no problem","date":"2013-06-24T12:05:15.998Z","type":"message"}
+{"nick":"amartens","reason":"Ping timeout: 268 seconds","date":"2013-06-24T12:09:09.078Z","type":"quit"}
+{"nick":"mmalecki","message":"gc: 28706043 ns, that's actually getting really weird","date":"2013-06-24T12:10:00.283Z","type":"message"}
+{"nick":"bnoordhuis","message":"mmalecki: that's 28 ms. that's not too bad, is it?","date":"2013-06-24T12:32:10.414Z","type":"message"}
+{"nick":"bnoordhuis","message":"i mean, it's not great either but at least it's not 3s","date":"2013-06-24T12:32:52.731Z","type":"message"}
+{"nick":"mmalecki","message":"bnoordhuis: I meant it's weird that it's so much faster","date":"2013-06-24T12:33:42.856Z","type":"message"}
+{"nick":"amartens","date":"2013-06-24T13:04:28.241Z","type":"join"}
+{"nick":"kenperkins","reason":"Quit: Textual IRC Client: http://www.textualapp.com/","date":"2013-06-24T13:08:51.065Z","type":"quit"}
+{"nick":"amartens","reason":"Ping timeout: 246 seconds","date":"2013-06-24T13:08:51.329Z","type":"quit"}
+{"nick":"kenperkins","date":"2013-06-24T13:11:47.096Z","type":"join"}
+{"nick":"c4milo","date":"2013-06-24T13:24:54.345Z","type":"join"}
+{"nick":"mikolalysenko","date":"2013-06-24T13:41:44.019Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-06-24T13:42:01.520Z","type":"quit"}
+{"nick":"amartens","date":"2013-06-24T14:04:44.341Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 268 seconds","date":"2013-06-24T14:09:24.080Z","type":"quit"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-06-24T14:16:34.956Z","type":"quit"}
+{"nick":"papertigers","date":"2013-06-24T14:23:27.371Z","type":"join"}
+{"nick":"c4milo","date":"2013-06-24T14:27:36.803Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-06-24T14:29:01.363Z","type":"nick"}
+{"nick":"icarot","date":"2013-06-24T14:36:57.857Z","type":"join"}
+{"nick":"amartens","date":"2013-06-24T15:05:09.353Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 248 seconds","date":"2013-06-24T15:09:21.348Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-06-24T15:16:53.369Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-06-24T15:25:14.961Z","type":"nick"}
+{"nick":"groundwater","date":"2013-06-24T15:33:40.948Z","type":"join"}
+{"nick":"loladiro","date":"2013-06-24T15:39:10.552Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2013-06-24T15:50:21.807Z","type":"quit"}
