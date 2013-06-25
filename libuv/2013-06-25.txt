@@ -1,0 +1,141 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-06-25T00:00:00.698Z","type":"quit"}
+{"nick":"ircretary","date":"2013-06-25T00:00:08.391Z","type":"join"}
+{"nick":"icarot","reason":"Remote host closed the connection","date":"2013-06-25T00:00:45.848Z","type":"quit"}
+{"nick":"icarot","date":"2013-06-25T00:01:13.393Z","type":"join"}
+{"nick":"loladiro","reason":"Ping timeout: 246 seconds","date":"2013-06-25T00:05:07.946Z","type":"quit"}
+{"nick":"isaacs","message":"yeah","date":"2013-06-25T00:06:30.755Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: oh!! no, this is a compeletely different bug.","date":"2013-06-25T00:19:43.437Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: haha","date":"2013-06-25T00:19:46.024Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: so, i found a case where the tls stream will hang","date":"2013-06-25T00:19:57.328Z","type":"message"}
+{"nick":"tjfontaine","message":"oh?","date":"2013-06-25T00:20:47.374Z","type":"message"}
+{"nick":"tjfontaine","message":"I have a test case that writes a ton and sends us into recursion death :)","date":"2013-06-25T00:21:10.606Z","type":"message"}
+{"nick":"tjfontaine","message":"but it's mostly just badly behaving code","date":"2013-06-25T00:21:24.049Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: https://gist.github.com/isaacs/5854932","date":"2013-06-25T00:24:24.258Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: if you remove the two read(0) calls, it hangs","date":"2013-06-25T00:24:30.195Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: in v0.10, this fails worse.","date":"2013-06-25T00:24:38.487Z","type":"message"}
+{"nick":"isaacs","message":"but it does fail with my GH-5712 fixes","date":"2013-06-25T00:24:48.445Z","type":"message"}
+{"nick":"isaacs","message":"just not as big a diff","date":"2013-06-25T00:24:52.628Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: which leads me to believe that the CryptoStream \"socket\" is emitting 'drain' early","date":"2013-06-25T00:25:17.491Z","type":"message"}
+{"nick":"tjfontaine","message":"ah","date":"2013-06-25T00:25:35.169Z","type":"message"}
+{"nick":"qard","reason":"Quit: Leaving.","date":"2013-06-25T00:29:55.141Z","type":"quit"}
+{"nick":"isaacs","message":"ok, found the hangup","date":"2013-06-25T00:31:29.094Z","type":"message"}
+{"nick":"isaacs","message":"but still not getting the right number of bytes at the end.","date":"2013-06-25T00:31:41.155Z","type":"message"}
+{"nick":"isaacs","message":"so 'finish' is emitting before it's actually finished and consumed","date":"2013-06-25T00:31:52.704Z","type":"message"}
+{"nick":"isaacs","action":"can't wiat for TLSSocket","date":"2013-06-25T00:31:56.715Z","type":"action"}
+{"nick":"tjfontaine","message":"ya","date":"2013-06-25T00:32:02.440Z","type":"message"}
+{"nick":"tjfontaine","message":"netstat -an | grep 443 | grep TIME_WAIT | wc -l","date":"2013-06-25T00:47:02.863Z","type":"message"}
+{"nick":"tjfontaine","message":"327","date":"2013-06-25T00:47:03.149Z","type":"message"}
+{"nick":"tjfontaine","message":"well how about that","date":"2013-06-25T00:47:17.496Z","type":"message"}
+{"nick":"tjfontaine","message":"that's pretty nasty","date":"2013-06-25T00:48:02.882Z","type":"message"}
+{"nick":"tjfontaine","message":"no wonder mark didn't like the default agent, isaacs is better-agent a module now?","date":"2013-06-25T00:49:10.301Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: no, it's still just a pull request","date":"2013-06-25T00:50:40.481Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-06-25T00:50:46.580Z","type":"message"}
+{"nick":"qard","date":"2013-06-25T00:58:04.631Z","type":"join"}
+{"nick":"isaacs","message":"indutny: ping","date":"2013-06-25T00:58:10.577Z","type":"message"}
+{"nick":"isaacs","message":"indutny: found a weird tls bug","date":"2013-06-25T00:58:16.667Z","type":"message"}
+{"nick":"tjfontaine","message":"#2 :)","date":"2013-06-25T00:58:26.307Z","type":"message"}
+{"nick":"tjfontaine","message":"anyway, I'm going to commute home now, I'll bbs","date":"2013-06-25T00:58:42.848Z","type":"message"}
+{"nick":"isaacs","message":"ahhhh!!!!","date":"2013-06-25T00:59:13.823Z","type":"message"}
+{"nick":"isaacs","message":"ok... so:","date":"2013-06-25T00:59:18.102Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: go home","date":"2013-06-25T00:59:20.813Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2013-06-25T00:59:21.566Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-06-25T00:59:24.190Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: this'll be waiting when you get there","date":"2013-06-25T00:59:25.431Z","type":"message"}
+{"nick":"isaacs","message":"hurry!","date":"2013-06-25T00:59:26.838Z","type":"message"}
+{"nick":"tjfontaine","message":"k","date":"2013-06-25T00:59:28.778Z","type":"message"}
+{"nick":"isaacs","action":"waiting 5 minutes so that tjfontaine doesn't get tempted and miss the boat ;)","date":"2013-06-25T00:59:39.705Z","type":"action"}
+{"nick":"isaacs","message":"so, IF we do this thing, where http.OutgoingMessage only emits 'finish' when the *socket* has accepted and successfully written the last bit of data, then that means that it'll still always fail for TLS.  because, the \"socket\" from the OutgoingMessage's pov is actually a CryptoStream.  That CryptoStream will emit 'finish' when its partner (the pair.encrypted side) has accepted the data.  However, that *isn't* the time when the actual TCP socket has actually a","date":"2013-06-25T01:01:11.331Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: boat?","date":"2013-06-25T01:08:36.449Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: tjfontaine lives on the Island of Alamed","date":"2013-06-25T01:08:55.713Z","type":"message"}
+{"nick":"isaacs","message":"a","date":"2013-06-25T01:08:56.738Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: it's only accessible by boat.","date":"2013-06-25T01:09:03.859Z","type":"message"}
+{"nick":"isaacs","message":"or bus, or you can walk there.","date":"2013-06-25T01:09:08.754Z","type":"message"}
+{"nick":"isaacs","message":"or drive","date":"2013-06-25T01:09:17.125Z","type":"message"}
+{"nick":"TooTallNate","message":"lol","date":"2013-06-25T01:09:19.476Z","type":"message"}
+{"nick":"isaacs","message":"it's pretty accessible, actually","date":"2013-06-25T01:09:21.765Z","type":"message"}
+{"nick":"TooTallNate","message":"so TJ takes the ferry?","date":"2013-06-25T01:09:33.405Z","type":"message"}
+{"nick":"isaacs","message":"yeah","date":"2013-06-25T01:10:10.589Z","type":"message"}
+{"nick":"isaacs","message":"so, i think for this 'finish isn't finished' issue, we relaly can't do it properly until 0.12.","date":"2013-06-25T01:10:32.011Z","type":"message"}
+{"nick":"isaacs","message":"we can make it less bad, but it'll still be bad for TLS","date":"2013-06-25T01:10:39.949Z","type":"message"}
+{"nick":"amartens1","reason":"Quit: Leaving.","date":"2013-06-25T01:14:42.163Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-06-25T01:20:18.080Z","type":"quit"}
+{"nick":"isaacs","message":"unless, we have the TLS outgoing message wait for its cryptostream AND its cryptostream's socket to both drain","date":"2013-06-25T01:20:29.197Z","type":"message"}
+{"nick":"icarot","reason":"Ping timeout: 268 seconds","date":"2013-06-25T01:23:25.076Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-06-25T01:24:43.929Z","type":"quit"}
+{"nick":"abraxas","date":"2013-06-25T01:28:35.800Z","type":"join"}
+{"nick":"icarot","date":"2013-06-25T01:38:29.554Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-06-25T01:48:11.562Z","type":"quit"}
+{"nick":"amartens","date":"2013-06-25T02:03:19.020Z","type":"join"}
+{"nick":"tjfontaine","message":"isaacs: right, that all makes sense","date":"2013-06-25T02:05:37.310Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: ya, the ferry is very relaxing, albeit slightly inconvenient at times :)","date":"2013-06-25T02:06:20.373Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i take the ferry too!","date":"2013-06-25T02:06:36.773Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: to Larkspur though","date":"2013-06-25T02:06:44.546Z","type":"message"}
+{"nick":"TooTallNate","message":"not alameda :D","date":"2013-06-25T02:06:48.361Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe","date":"2013-06-25T02:06:51.021Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: I suppose it's not possible in 0.10 to dip down into the crypto side and see the pending outbound bio bytes","date":"2013-06-25T02:08:48.686Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-06-25T02:09:32.445Z","type":"quit"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-06-25T02:27:45.951Z","type":"quit"}
+{"nick":"timoxley","date":"2013-06-25T02:28:44.354Z","type":"join"}
+{"nick":"indexzero","date":"2013-06-25T02:31:02.735Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 255 seconds","date":"2013-06-25T02:33:23.491Z","type":"quit"}
+{"nick":"dap","date":"2013-06-25T02:39:11.302Z","type":"join"}
+{"nick":"icarot","reason":"Ping timeout: 268 seconds","date":"2013-06-25T02:50:22.089Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-06-25T03:10:13.060Z","type":"quit"}
+{"nick":"dscape__","reason":"Ping timeout: 260 seconds","date":"2013-06-25T03:23:44.060Z","type":"quit"}
+{"nick":"icarot","date":"2013-06-25T03:32:10.578Z","type":"join"}
+{"nick":"isaacs","message":"tjfontaine: it's pretty gnarly","date":"2013-06-25T03:32:25.018Z","type":"message"}
+{"nick":"tjfontaine","message":"I figured","date":"2013-06-25T03:32:33.673Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: the best you can get is whether the cleartext side has flushed it out to the encrypted side","date":"2013-06-25T03:32:47.346Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: but then you don't know if the *socket* has flushed it, once the encrypted side reads it and writes to the tcp socket","date":"2013-06-25T03:33:04.885Z","type":"message"}
+{"nick":"tjfontaine","message":"ah, but you could find out if the encrypted bio has flushed to the socket","date":"2013-06-25T03:33:39.095Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-06-25T03:41:09.426Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-06-25T03:42:20.460Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-06-25T03:46:07.253Z","type":"join"}
+{"nick":"isaacs","message":"right, but even then, , you'd have to track whether the last write returned true, or else 'drain' won't ever happen","date":"2013-06-25T03:57:45.920Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: ^","date":"2013-06-25T03:57:49.712Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-06-25T03:58:02.348Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-06-25T04:04:45.375Z","type":"quit"}
+{"nick":"isaacs","message":"it ends up being pretty complicated.","date":"2013-06-25T04:05:02.044Z","type":"message"}
+{"nick":"tjfontaine","message":"who needs tls","date":"2013-06-25T04:10:01.566Z","type":"message"}
+{"nick":"tjfontaine","message":"such a waste","date":"2013-06-25T04:10:05.382Z","type":"message"}
+{"nick":"tjfontaine","message":"if you're using it you must be trying to hide something","date":"2013-06-25T04:10:24.269Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: exactly","date":"2013-06-25T04:12:18.463Z","type":"message"}
+{"nick":"isaacs","message":"just turning CPUs over more.","date":"2013-06-25T04:12:26.790Z","type":"message"}
+{"nick":"isaacs","message":"it's not environmental or green","date":"2013-06-25T04:12:31.015Z","type":"message"}
+{"nick":"tjfontaine","message":"WHY DO YOU HATE MOTHER EARTH BITCOINERS?!","date":"2013-06-25T04:13:08.866Z","type":"message"}
+{"nick":"LOUDBOT","message":"I'M GONNA WRITE A SIMCOPTER CLONE WITH PERL, XS, AND OGRE","date":"2013-06-25T04:13:09.133Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-06-25T04:13:15.744Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-06-25T04:20:31.320Z","type":"join"}
+{"nick":"brson","date":"2013-06-25T04:21:35.963Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-06-25T04:25:50.353Z","type":"nick"}
+{"nick":"brson","reason":"Ping timeout: 246 seconds","date":"2013-06-25T04:26:54.257Z","type":"quit"}
+{"nick":"inolen","reason":"Read error: No route to host","date":"2013-06-25T04:51:22.746Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-06-25T05:06:53.450Z","type":"nick"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-06-25T05:08:32.761Z","type":"nick"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-06-25T05:09:45.616Z","type":"nick"}
+{"nick":"Chip_Zero","reason":"Ping timeout: 245 seconds","date":"2013-06-25T05:15:33.322Z","type":"quit"}
+{"nick":"dscape__","date":"2013-06-25T05:22:54.822Z","type":"join"}
+{"nick":"indexzero","date":"2013-06-25T05:26:43.576Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-06-25T05:57:15.415Z","type":"quit"}
+{"nick":"qard","reason":"Quit: Leaving.","date":"2013-06-25T06:07:24.502Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 246 seconds","date":"2013-06-25T06:12:15.190Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2013-06-25T06:12:29.300Z","type":"join"}
+{"nick":"mikeal","date":"2013-06-25T06:19:37.288Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2013-06-25T06:19:40.725Z","type":"quit"}
+{"nick":"mikeal","date":"2013-06-25T06:25:29.736Z","type":"join"}
+{"nick":"`3E|Zz","new_nick":"`3rdEden","date":"2013-06-25T06:30:02.882Z","type":"nick"}
+{"nick":"dominictarr","date":"2013-06-25T06:45:49.005Z","type":"join"}
+{"nick":"dominictarr","reason":"Client Quit","date":"2013-06-25T06:49:13.144Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-06-25T06:51:26.455Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-06-25T06:52:13.188Z","type":"quit"}
+{"nick":"csaoh","date":"2013-06-25T07:03:56.826Z","type":"join"}
+{"nick":"csaoh","reason":"Quit: csaoh","date":"2013-06-25T07:12:05.226Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 246 seconds","date":"2013-06-25T07:16:20.268Z","type":"quit"}
+{"nick":"Chip_Zero","date":"2013-06-25T07:16:28.798Z","type":"join"}
+{"nick":"timoxley","reason":"Quit: Computer has gone to sleep.","date":"2013-06-25T07:17:48.927Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-06-25T07:18:47.419Z","type":"quit"}
+{"nick":"timoxley","date":"2013-06-25T07:25:17.783Z","type":"join"}
+{"nick":"csaoh","date":"2013-06-25T07:30:52.070Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-06-25T07:31:17.284Z","type":"quit"}
+{"nick":"amartens","date":"2013-06-25T07:49:10.819Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 256 seconds","date":"2013-06-25T07:55:58.591Z","type":"quit"}
