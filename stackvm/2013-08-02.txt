@@ -1,0 +1,377 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-08-02T00:00:00.926Z","type":"quit"}
+{"nick":"ircretary","date":"2013-08-02T00:00:07.336Z","type":"join"}
+{"nick":"mikolalysenko","message":"to this end, just exposing the capability to rebundle at run time seems like the minimally invasive solution","date":"2013-08-02T00:00:24.196Z","type":"message"}
+{"nick":"mikolalysenko","message":"since then you could build a worker api as a separate module without having to pick some syntax","date":"2013-08-02T00:00:36.627Z","type":"message"}
+{"nick":"mikolalysenko","message":"and that module could figure out how to handle node interoperability, transfers, streams, etc.","date":"2013-08-02T00:01:00.161Z","type":"message"}
+{"nick":"mikolalysenko","message":"that is the basic idea in chrisdickinson's bfy-worker, and I think it is pretty solid","date":"2013-08-02T00:01:41.499Z","type":"message"}
+{"nick":"mikolalysenko","message":"whenever you create a worker it reconstructs a bundle for that worker, creates a blob url and then loads the worker from the blob","date":"2013-08-02T00:02:16.359Z","type":"message"}
+{"nick":"substack","message":"it looks like I could just make a few tweaks to make workerify not need to bundle the entire thing","date":"2013-08-02T00:02:43.879Z","type":"message"}
+{"nick":"mikolalysenko","message":"hmm","date":"2013-08-02T00:02:55.895Z","type":"message"}
+{"nick":"mikolalysenko","message":"but you still might have problems with double bundling files...","date":"2013-08-02T00:03:04.801Z","type":"message"}
+{"nick":"substack","message":"the worker could deactivate the entry points but use the exposed require() logic","date":"2013-08-02T00:03:08.587Z","type":"message"}
+{"nick":"mikolalysenko","message":"also workerify has a lot of bugs...","date":"2013-08-02T00:03:14.893Z","type":"message"}
+{"nick":"substack","message":"as its fallback","date":"2013-08-02T00:03:15.616Z","type":"message"}
+{"nick":"Raynos","message":"have you guys seen https://github.com/padolsey/operative ?","date":"2013-08-02T00:04:37.544Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, I think the idea of just taking the current list of modules and replacing the entry point is the way to go","date":"2013-08-02T00:04:43.140Z","type":"message"}
+{"nick":"Raynos","message":"wrap a function or object in it and it runs all the functions in a worker","date":"2013-08-02T00:04:52.348Z","type":"message"}
+{"nick":"mikolalysenko","message":"Raynos: yeah,  that seems like kind of a bad idea...","date":"2013-08-02T00:05:18.372Z","type":"message"}
+{"nick":"mikolalysenko","message":"since it won't play nice with requires","date":"2013-08-02T00:05:27.368Z","type":"message"}
+{"nick":"Raynos","message":"why?","date":"2013-08-02T00:05:27.628Z","type":"message"}
+{"nick":"Raynos","message":"Sure","date":"2013-08-02T00:05:30.717Z","type":"message"}
+{"nick":"Raynos","message":"but dont do complex things","date":"2013-08-02T00:05:36.296Z","type":"message"}
+{"nick":"Raynos","message":":D","date":"2013-08-02T00:05:39.929Z","type":"message"}
+{"nick":"mikolalysenko","message":"well, but sometimes you want to do complex things...","date":"2013-08-02T00:05:44.971Z","type":"message"}
+{"nick":"Raynos","message":"or inject dependencies","date":"2013-08-02T00:05:50.289Z","type":"message"}
+{"nick":"mikolalysenko","message":"that isn't possible right now though, because you can't get the source for the requires and add them to the worker","date":"2013-08-02T00:06:06.903Z","type":"message"}
+{"nick":"Raynos","message":"miko: https://gist.github.com/Raynos/b6d347dfba6dba14a3d5","date":"2013-08-02T00:06:31.737Z","type":"message"}
+{"nick":"Raynos","message":"that probably wont work","date":"2013-08-02T00:07:01.449Z","type":"message"}
+{"nick":"Raynos","message":"but if it could","date":"2013-08-02T00:07:03.189Z","type":"message"}
+{"nick":"Raynos","message":"that would be cool :p","date":"2013-08-02T00:07:05.796Z","type":"message"}
+{"nick":"mikolalysenko","message":"also it doesn't expose transferrable objects in any sane way","date":"2013-08-02T00:07:28.003Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is absolutely critical for things like voxel.js","date":"2013-08-02T00:07:37.106Z","type":"message"}
+{"nick":"mikolalysenko","message":"where you would want to build all your meshes in a worker","date":"2013-08-02T00:07:44.331Z","type":"message"}
+{"nick":"substack","message":"mikolalysenko: I think it might actually be possible to do another trick, depending on if postMessage() sends its results back immediately or puts it in a queue","date":"2013-08-02T00:07:55.364Z","type":"message"}
+{"nick":"mikolalysenko","message":"turning a giant 2mb typedarray into a string is a terrible waste","date":"2013-08-02T00:07:56.640Z","type":"message"}
+{"nick":"vitorpacheco","reason":"Quit: Saindo","date":"2013-08-02T00:07:57.374Z","type":"quit"}
+{"nick":"mikolalysenko","message":"substack: not sure what you are thinking here...  what problem are you trying to solve?","date":"2013-08-02T00:08:25.306Z","type":"message"}
+{"nick":"substack","message":"mikolalysenko: the problem of not being able to require() in the worker","date":"2013-08-02T00:08:36.922Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, what are you thinking about doing?","date":"2013-08-02T00:08:55.519Z","type":"message"}
+{"nick":"substack","message":"experimenting with the timing of postMessage","date":"2013-08-02T00:09:07.621Z","type":"message"}
+{"nick":"substack","message":"if it's all on the same tick you can actually have a synchronous api","date":"2013-08-02T00:09:17.842Z","type":"message"}
+{"nick":"mikolalysenko","message":"hmm","date":"2013-08-02T00:09:22.316Z","type":"message"}
+{"nick":"mikolalysenko","message":"that would still be problematic","date":"2013-08-02T00:09:26.282Z","type":"message"}
+{"nick":"mikolalysenko","message":"how would you transfer a function to the worker?","date":"2013-08-02T00:09:34.800Z","type":"message"}
+{"nick":"substack","message":"yes that is tricky","date":"2013-08-02T00:09:57.057Z","type":"message"}
+{"nick":"mikolalysenko","message":"the basic semantics for postMessage are the same as json.stringify()","date":"2013-08-02T00:10:01.016Z","type":"message"}
+{"nick":"mikolalysenko","message":"with the added property that typedarrays get transferred","date":"2013-08-02T00:10:11.845Z","type":"message"}
+{"nick":"mikolalysenko","message":"which basically means they get moved from worker to the main thread and vice-versa","date":"2013-08-02T00:10:23.322Z","type":"message"}
+{"nick":"mikolalysenko","message":"this avoids stringifying them and speeds things up a lot","date":"2013-08-02T00:10:43.400Z","type":"message"}
+{"nick":"mikolalysenko","message":"but it also means you can't transfer functions or objects with prototypes","date":"2013-08-02T00:11:05.232Z","type":"message"}
+{"nick":"substack","message":"perhaps there is something really subtle that can be done with the module sources in browser-pack","date":"2013-08-02T00:11:18.594Z","type":"message"}
+{"nick":"mikolalysenko","message":"well, all you really need is a way to get a list of all the modules","date":"2013-08-02T00:11:34.229Z","type":"message"}
+{"nick":"cianomaidin","date":"2013-08-02T00:11:36.565Z","type":"join"}
+{"nick":"mikolalysenko","message":"if you have that you can build the worker source at run time","date":"2013-08-02T00:11:41.068Z","type":"message"}
+{"nick":"substack","message":"why only a list?","date":"2013-08-02T00:11:41.281Z","type":"message"}
+{"nick":"mikolalysenko","message":"err a list and their sources","date":"2013-08-02T00:11:48.376Z","type":"message"}
+{"nick":"mikolalysenko","message":"you can use the function(){} + \"\"","date":"2013-08-02T00:11:53.905Z","type":"message"}
+{"nick":"mikolalysenko","message":"to get the source of each module","date":"2013-08-02T00:11:58.965Z","type":"message"}
+{"nick":"substack","message":"only if browser-pack will let you do that","date":"2013-08-02T00:12:22.373Z","type":"message"}
+{"nick":"mikolalysenko","message":"right","date":"2013-08-02T00:12:27.019Z","type":"message"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-08-02T00:12:34.456Z","type":"quit"}
+{"nick":"mikolalysenko","message":"you need to get that list of all the modules and their sources","date":"2013-08-02T00:12:34.727Z","type":"message"}
+{"nick":"mikolalysenko","message":"if you have that data, then spinning up a worker is easy","date":"2013-08-02T00:13:00.172Z","type":"message"}
+{"nick":"mikolalysenko","message":"even with requires","date":"2013-08-02T00:13:03.860Z","type":"message"}
+{"nick":"whit537","date":"2013-08-02T00:13:08.938Z","type":"join"}
+{"nick":"mikolalysenko","message":"since you just take the module list and repackage it into a new bundle with a modified entry point","date":"2013-08-02T00:13:25.358Z","type":"message"}
+{"nick":"mikolalysenko","message":"then create a fake worker script using  a bloburl","date":"2013-08-02T00:13:41.975Z","type":"message"}
+{"nick":"mikolalysenko","message":"that is basically how bfy-worker does it, and I think it is minimally invasive","date":"2013-08-02T00:14:05.401Z","type":"message"}
+{"nick":"substack","message":"ok I will see if this can be minimally done in browser-pack","date":"2013-08-02T00:14:32.065Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok","date":"2013-08-02T00:14:36.617Z","type":"message"}
+{"nick":"thlorenz","date":"2013-08-02T00:14:43.321Z","type":"join"}
+{"nick":"mikolalysenko","message":"fantastic, if you manage to get this to work it will be awesome","date":"2013-08-02T00:14:48.370Z","type":"message"}
+{"nick":"substack","message":"if it can, it'd be sweet to have a child_process.fork() or cluster.fork() polyfill for node","date":"2013-08-02T00:14:48.580Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, I think it should be possible eventually","date":"2013-08-02T00:14:58.265Z","type":"message"}
+{"nick":"mikolalysenko","message":"as a way to expose the exported modules, one way might be to have a virtual module","date":"2013-08-02T00:15:36.360Z","type":"message"}
+{"nick":"mikolalysenko","message":"like you do:  require(\"all-loaded-modules\")","date":"2013-08-02T00:15:51.400Z","type":"message"}
+{"nick":"mikolalysenko","message":"and it gives you a list of all the currently loaded modules","date":"2013-08-02T00:16:00.311Z","type":"message"}
+{"nick":"mikolalysenko","message":"you could even check if that module was used, and if so have browser-pack make the necessary modifications","date":"2013-08-02T00:16:31.799Z","type":"message"}
+{"nick":"mk30_","date":"2013-08-02T00:16:33.400Z","type":"join"}
+{"nick":"substack","message":"I think we can do something a bit more subtle","date":"2013-08-02T00:16:42.132Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok","date":"2013-08-02T00:16:49.359Z","type":"message"}
+{"nick":"mikolalysenko","message":"the only data that needs to be exposed is the list of modules + sources","date":"2013-08-02T00:17:04.160Z","type":"message"}
+{"nick":"substack","message":"at any rate, it's so nice to have all these pieces properly split up","date":"2013-08-02T00:17:05.292Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah","date":"2013-08-02T00:17:14.988Z","type":"message"}
+{"nick":"substack","message":"this kind of thing would have been impossible in v <2","date":"2013-08-02T00:17:15.946Z","type":"message"}
+{"nick":"mikolalysenko","message":"well, there was a patch for v1 that would've worked too","date":"2013-08-02T00:17:28.342Z","type":"message"}
+{"nick":"mikolalysenko","message":"but yeah, I think v2 is overall still a big improvement","date":"2013-08-02T00:17:39.300Z","type":"message"}
+{"nick":"mikolalysenko","message":"https://github.com/substack/node-browserify/pull/284","date":"2013-08-02T00:17:50.749Z","type":"message"}
+{"nick":"cianomaidin","reason":"Quit: cianomaidin","date":"2013-08-02T00:18:27.801Z","type":"quit"}
+{"nick":"substack","message":"a transform *could* capture all the module sources and rewrite require('all-loaded-modules')","date":"2013-08-02T00:18:29.403Z","type":"message"}
+{"nick":"mikolalysenko","message":"hmm","date":"2013-08-02T00:18:34.474Z","type":"message"}
+{"nick":"substack","message":"but that would inflate the size still","date":"2013-08-02T00:18:38.580Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, but it would inflate size","date":"2013-08-02T00:18:41.522Z","type":"message"}
+{"nick":"mikolalysenko","message":"right","date":"2013-08-02T00:18:43.526Z","type":"message"}
+{"nick":"mikolalysenko","message":"that is how workerify basically does it, and that is also the main problem with workerify...","date":"2013-08-02T00:18:55.282Z","type":"message"}
+{"nick":"thlorenz","reason":"Ping timeout: 256 seconds","date":"2013-08-02T00:19:06.281Z","type":"quit"}
+{"nick":"substack","message":"ok another problem","date":"2013-08-02T00:19:59.096Z","type":"message"}
+{"nick":"substack","message":"paths are statically resolved","date":"2013-08-02T00:20:13.854Z","type":"message"}
+{"nick":"mikolalysenko","message":"fine, expose that data too","date":"2013-08-02T00:20:21.008Z","type":"message"}
+{"nick":"substack","message":"so the canonical form is a hash of the file name","date":"2013-08-02T00:20:21.951Z","type":"message"}
+{"nick":"mikolalysenko","message":"the exposed data can be slightly hacky","date":"2013-08-02T00:20:38.950Z","type":"message"}
+{"nick":"mikolalysenko","message":"I've looked at browser-pack and I think it should work if you can get a hold of it","date":"2013-08-02T00:20:57.917Z","type":"message"}
+{"nick":"substack","message":"and then each file gets mappings of require('./some-local-thing.js') to './some-local-thing.js' => 'abc123'","date":"2013-08-02T00:20:59.166Z","type":"message"}
+{"nick":"mikolalysenko","message":"that should be no problem I think","date":"2013-08-02T00:21:15.779Z","type":"message"}
+{"nick":"mikolalysenko","message":"here is how I was thinking of loading workers:","date":"2013-08-02T00:21:23.388Z","type":"message"}
+{"nick":"mikolalysenko","message":"basically you'd use some syntax like:  spawn(function() { require(\"something\") })","date":"2013-08-02T00:21:49.909Z","type":"message"}
+{"nick":"mikolalysenko","message":"and then it would rebuild the bundle for that thing","date":"2013-08-02T00:22:11.490Z","type":"message"}
+{"nick":"mikolalysenko","message":"like just do:  function spawn(f) {  var src = f+'';  //Load modules, set entry to f }","date":"2013-08-02T00:22:56.060Z","type":"message"}
+{"nick":"mikolalysenko","message":"though the local file resolution could be an issue...","date":"2013-08-02T00:23:19.884Z","type":"message"}
+{"nick":"mikolalysenko","message":"hmm","date":"2013-08-02T00:23:26.756Z","type":"message"}
+{"nick":"spion","date":"2013-08-02T00:23:35.615Z","type":"join"}
+{"nick":"substack","message":"ok that gives me an idea for a 100% transform approach","date":"2013-08-02T00:23:54.560Z","type":"message"}
+{"nick":"mikolalysenko","message":"without ballooning file size?","date":"2013-08-02T00:24:05.359Z","type":"message"}
+{"nick":"substack","message":"yes","date":"2013-08-02T00:24:11.481Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, I'd like to see it","date":"2013-08-02T00:24:16.578Z","type":"message"}
+{"nick":"substack","message":"basically","date":"2013-08-02T00:24:58.835Z","type":"message"}
+{"nick":"substack","message":"the transform could be told what the entrypoints are","date":"2013-08-02T00:25:09.614Z","type":"message"}
+{"nick":"substack","message":"then it could rewrite the entrypoints to have 1 entry for the usual code path and 1 entry for web workers","date":"2013-08-02T00:25:41.681Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, then how does it load the worker?","date":"2013-08-02T00:26:41.125Z","type":"message"}
+{"nick":"substack","message":"new Worker('bundle.js')","date":"2013-08-02T00:26:53.821Z","type":"message"}
+{"nick":"mikolalysenko","message":"hmm","date":"2013-08-02T00:26:56.373Z","type":"message"}
+{"nick":"mikolalysenko","message":"but then you need to know the filename of the bundle","date":"2013-08-02T00:27:02.829Z","type":"message"}
+{"nick":"mikolalysenko","message":"and where it is hosted","date":"2013-08-02T00:27:05.144Z","type":"message"}
+{"nick":"substack","message":"yes","date":"2013-08-02T00:27:09.199Z","type":"message"}
+{"nick":"substack","message":"aside from that issue, this approach would be very clean","date":"2013-08-02T00:27:24.437Z","type":"message"}
+{"nick":"mikolalysenko","message":"also depending on which script you load as a worker you'd have different entry points","date":"2013-08-02T00:27:27.978Z","type":"message"}
+{"nick":"mikolalysenko","message":"which means you'd have to do some hacking to have multiple worker scripts","date":"2013-08-02T00:27:42.436Z","type":"message"}
+{"nick":"substack","message":"it could also disable all the existing entry points in worker mode","date":"2013-08-02T00:28:04.522Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, but what happens if you have two different worker scripts","date":"2013-08-02T00:28:18.075Z","type":"message"}
+{"nick":"substack","message":"oh hah I thought up a hack so it wouldn't need to know which files are the entry points","date":"2013-08-02T00:28:21.685Z","type":"message"}
+{"nick":"substack","message":"the transform could parse out Worker() and add a stub require()","date":"2013-08-02T00:29:16.181Z","type":"message"}
+{"nick":"substack","message":"so that the file gets loaded","date":"2013-08-02T00:29:20.372Z","type":"message"}
+{"nick":"substack","message":"if(0)require('./worker.js');","date":"2013-08-02T00:29:34.998Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, but then you got to start the worker somehow","date":"2013-08-02T00:30:02.483Z","type":"message"}
+{"nick":"mikolalysenko","message":"the easiest way would probably be a blob url I think","date":"2013-08-02T00:30:11.118Z","type":"message"}
+{"nick":"mikolalysenko","message":"but to build that blob url you still need run time reflection","date":"2013-08-02T00:30:36.310Z","type":"message"}
+{"nick":"substack","message":"I can't see any way to have a blob url that doesn't increase bundle size","date":"2013-08-02T00:30:45.085Z","type":"message"}
+{"nick":"mikolalysenko","message":"no, you build the blob at run time","date":"2013-08-02T00:30:54.473Z","type":"message"}
+{"nick":"substack","message":"yes but","date":"2013-08-02T00:30:59.373Z","type":"message"}
+{"nick":"substack","message":"maybe if you could just fetch the entire source of the entire bundle","date":"2013-08-02T00:31:14.128Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah","date":"2013-08-02T00:31:18.528Z","type":"message"}
+{"nick":"mikolalysenko","message":"exactly","date":"2013-08-02T00:31:20.207Z","type":"message"}
+{"nick":"soldair","reason":"Ping timeout: 250 seconds","date":"2013-08-02T00:31:23.323Z","type":"quit"}
+{"nick":"substack","message":"and not even worry about individual files","date":"2013-08-02T00:31:28.942Z","type":"message"}
+{"nick":"mikolalysenko","message":"that would work too","date":"2013-08-02T00:31:35.786Z","type":"message"}
+{"nick":"substack","message":"the require() cascade logic is already built-in","date":"2013-08-02T00:31:47.669Z","type":"message"}
+{"nick":"mikolalysenko","message":"yep","date":"2013-08-02T00:31:52.366Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-02T00:32:20.379Z","type":"quit"}
+{"nick":"mikolalysenko","message":"basically it is a kind of quine problem","date":"2013-08-02T00:33:37.322Z","type":"message"}
+{"nick":"mikolalysenko","message":"you need to have some way to print the source code of the whole bundle out","date":"2013-08-02T00:33:49.092Z","type":"message"}
+{"nick":"mikolalysenko","message":"the standard solution for a quine though requires writing the source of the program twice","date":"2013-08-02T00:34:06.859Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, see wiki:  http://en.wikipedia.org/wiki/Quine_(computing)","date":"2013-08-02T00:34:21.903Z","type":"message"}
+{"nick":"mikolalysenko","message":"but we can cheat using the function(){} + '' trick","date":"2013-08-02T00:34:30.895Z","type":"message"}
+{"nick":"No9","reason":"Quit: Gone to join the choir invisibule","date":"2013-08-02T00:34:40.144Z","type":"quit"}
+{"nick":"mikolalysenko","message":"which means that we can write the source of the bundle only once and get the same results","date":"2013-08-02T00:34:42.748Z","type":"message"}
+{"nick":"wolfeidau","date":"2013-08-02T00:42:20.331Z","type":"join"}
+{"nick":"substack","message":"I've almost got something :D","date":"2013-08-02T00:42:26.917Z","type":"message"}
+{"nick":"substack","message":"haha this is so silly","date":"2013-08-02T00:42:37.483Z","type":"message"}
+{"nick":"substack","message":"mikolalysenko: https://gist.github.com/substack/6136692","date":"2013-08-02T00:49:55.259Z","type":"message"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-08-02T00:50:51.999Z","type":"quit"}
+{"nick":"substack","message":"requires no transforms","date":"2013-08-02T00:50:57.913Z","type":"message"}
+{"nick":"substack","message":"requires no modifications to any modules","date":"2013-08-02T00:51:04.063Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, I tried this but had problems","date":"2013-08-02T00:51:08.469Z","type":"message"}
+{"nick":"mikolalysenko","message":"it works fine from the entry point but if you require it as a submodule it breaks","date":"2013-08-02T00:51:38.565Z","type":"message"}
+{"nick":"substack","message":"as a submodule?","date":"2013-08-02T00:51:48.955Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah","date":"2013-08-02T00:51:53.470Z","type":"message"}
+{"nick":"mikolalysenko","message":"like if you do that from a submodule it doesn't work","date":"2013-08-02T00:52:01.117Z","type":"message"}
+{"nick":"substack","message":"oh I see","date":"2013-08-02T00:52:01.972Z","type":"message"}
+{"nick":"substack","message":"from some module that was require()d","date":"2013-08-02T00:52:10.077Z","type":"message"}
+{"nick":"substack","message":"because of the call stack","date":"2013-08-02T00:52:13.473Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah","date":"2013-08-02T00:52:13.811Z","type":"message"}
+{"nick":"substack","message":"not a problem","date":"2013-08-02T00:52:15.231Z","type":"message"}
+{"nick":"mikolalysenko","message":"even if the main thread has a \"use strict\" in it?","date":"2013-08-02T00:52:30.401Z","type":"message"}
+{"nick":"substack","message":"\"use strict\" is function scoped","date":"2013-08-02T00:52:47.795Z","type":"message"}
+{"nick":"mikolalysenko","message":"err the main module I mean","date":"2013-08-02T00:52:48.947Z","type":"message"}
+{"nick":"mikolalysenko","message":"it can still mess up the call stack though","date":"2013-08-02T00:52:56.074Z","type":"message"}
+{"nick":"substack","message":"anyways don't \"use strict\" then","date":"2013-08-02T00:53:01.560Z","type":"message"}
+{"nick":"substack","message":"ever","date":"2013-08-02T00:53:03.596Z","type":"message"}
+{"nick":"mikolalysenko","message":"umm","date":"2013-08-02T00:53:06.153Z","type":"message"}
+{"nick":"substack","message":"for anything","date":"2013-08-02T00:53:07.794Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok....","date":"2013-08-02T00:53:20.417Z","type":"message"}
+{"nick":"mikolalysenko","message":"but what if someone does use strict anyway?","date":"2013-08-02T00:53:32.825Z","type":"message"}
+{"nick":"substack","message":"then they don't get nice things","date":"2013-08-02T00:53:41.597Z","type":"message"}
+{"nick":"mikolalysenko","message":"whatever the solution is it should still work","date":"2013-08-02T00:53:44.486Z","type":"message"}
+{"nick":"substack","message":"it hasn't been a problem because if somebody does \"use strict\"","date":"2013-08-02T00:53:54.674Z","type":"message"}
+{"nick":"substack","message":"in their entry file for example","date":"2013-08-02T00:53:59.277Z","type":"message"}
+{"nick":"substack","message":"that behavior is scoped to only their file","date":"2013-08-02T00:54:06.151Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is part of javascript","date":"2013-08-02T00:54:12.121Z","type":"message"}
+{"nick":"mikolalysenko","message":"just like optional semicolons","date":"2013-08-02T00:54:18.534Z","type":"message"}
+{"nick":"mikolalysenko","message":"like it or not, it is there","date":"2013-08-02T00:54:25.488Z","type":"message"}
+{"nick":"mikolalysenko","message":"I also use strict all the time and find it catches errors in my code","date":"2013-08-02T00:54:38.200Z","type":"message"}
+{"nick":"substack","message":"but it's not actually a problem that exists","date":"2013-08-02T00:54:41.652Z","type":"message"}
+{"nick":"wolfeidau","date":"2013-08-02T00:54:48.984Z","type":"join"}
+{"nick":"mikolalysenko","message":"maybe I'm not as awesome a programmer, but I sometimes typo variables and use strict catches that stuff","date":"2013-08-02T00:54:54.393Z","type":"message"}
+{"nick":"substack","message":"and I never do \"use strict\" ever and I do all kinds of things that strict mode would complain about","date":"2013-08-02T00:54:59.790Z","type":"message"}
+{"nick":"substack","message":"but you are able to use my modules fine","date":"2013-08-02T00:55:11.045Z","type":"message"}
+{"nick":"substack","message":"because \"use strict\" is function scoped","date":"2013-08-02T00:55:17.938Z","type":"message"}
+{"nick":"substack","message":"so this is not even an issue","date":"2013-08-02T00:55:24.558Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok.  my point is that use strict will still mess up the call stack here","date":"2013-08-02T00:55:29.389Z","type":"message"}
+{"nick":"substack","message":"and I hate that people think that it is actually a problem","date":"2013-08-02T00:55:33.352Z","type":"message"}
+{"nick":"mikolalysenko","message":"also what if you do the require from a setTimeout then?","date":"2013-08-02T00:55:39.794Z","type":"message"}
+{"nick":"mikolalysenko","message":"it will still break","date":"2013-08-02T00:55:44.322Z","type":"message"}
+{"nick":"mikolalysenko","message":"or some async event","date":"2013-08-02T00:55:48.860Z","type":"message"}
+{"nick":"substack","message":"yep","date":"2013-08-02T00:55:49.073Z","type":"message"}
+{"nick":"mikolalysenko","message":"the whole point is that this is pretty fragile, even ignoring the whole use strict issue","date":"2013-08-02T00:56:13.690Z","type":"message"}
+{"nick":"substack","message":"so just don't do those things","date":"2013-08-02T00:57:47.072Z","type":"message"}
+{"nick":"substack","message":"only do things that won't break","date":"2013-08-02T00:57:50.814Z","type":"message"}
+{"nick":"mikolalysenko","message":"....","date":"2013-08-02T00:57:54.722Z","type":"message"}
+{"nick":"mikolalysenko","message":"this is not a great solution imo","date":"2013-08-02T00:58:00.642Z","type":"message"}
+{"nick":"substack","message":"I don't think it matters very much","date":"2013-08-02T00:58:45.714Z","type":"message"}
+{"nick":"substack","message":"because","date":"2013-08-02T00:58:46.706Z","type":"message"}
+{"nick":"substack","message":"you require('browserify-quine') once when your program fires up","date":"2013-08-02T00:59:02.490Z","type":"message"}
+{"nick":"substack","message":"and then you have all the source","date":"2013-08-02T00:59:05.870Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, but what if you do it from a submodule","date":"2013-08-02T00:59:14.203Z","type":"message"}
+{"nick":"substack","message":"then you do the webworkery part later","date":"2013-08-02T00:59:17.308Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is required several modules deep","date":"2013-08-02T00:59:19.163Z","type":"message"}
+{"nick":"substack","message":"you can traverse up the call stack for that","date":"2013-08-02T00:59:32.222Z","type":"message"}
+{"nick":"substack","message":"I can probably get that working","date":"2013-08-02T00:59:36.867Z","type":"message"}
+{"nick":"mikolalysenko","message":"but what if one of those bad things I described happens somewhere?","date":"2013-08-02T00:59:47.505Z","type":"message"}
+{"nick":"mikolalysenko","message":"in general you don't get to control how your module gets called","date":"2013-08-02T00:59:57.223Z","type":"message"}
+{"nick":"mikolalysenko","message":"that is part of the contract in being a module","date":"2013-08-02T01:00:02.591Z","type":"message"}
+{"nick":"mikolalysenko","message":"otherwise you are framework","date":"2013-08-02T01:00:15.369Z","type":"message"}
+{"nick":"mikolalysenko","message":"and those bad things aren't even outlandish","date":"2013-08-02T01:01:05.125Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, what if I load up the module in a dom-ready event?","date":"2013-08-02T01:01:15.047Z","type":"message"}
+{"nick":"mikolalysenko","message":"or what if some n00b puts a use strict in their code before calling a module that uses workers?","date":"2013-08-02T01:01:59.214Z","type":"message"}
+{"nick":"substack","message":"raise an error when the source can't be read","date":"2013-08-02T01:02:02.122Z","type":"message"}
+{"nick":"mikolalysenko","message":"then everything is going to crash and burn","date":"2013-08-02T01:02:04.066Z","type":"message"}
+{"nick":"mikolalysenko","message":"...","date":"2013-08-02T01:02:11.091Z","type":"message"}
+{"nick":"substack","message":"who cares","date":"2013-08-02T01:02:14.760Z","type":"message"}
+{"nick":"mikolalysenko","message":"umm, people who want to use workers modularly?","date":"2013-08-02T01:02:26.964Z","type":"message"}
+{"nick":"substack","message":"it's like any tool, it has instructions for use","date":"2013-08-02T01:02:52.235Z","type":"message"}
+{"nick":"substack","message":"if you don't use it correctly it won't work","date":"2013-08-02T01:02:57.754Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, but this has serious problems with optimizations","date":"2013-08-02T01:04:17.136Z","type":"message"}
+{"nick":"mikolalysenko","message":"using arguments.callee kills the possibility of tail call optimization for example","date":"2013-08-02T01:04:29.354Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is ok if you do it from a single root module, but forcing everyone to do it could be bad for performance","date":"2013-08-02T01:04:51.276Z","type":"message"}
+{"nick":"mikolalysenko","message":"and I wouldn't be surprised if it had other bad side effects when used in v8","date":"2013-08-02T01:05:24.612Z","type":"message"}
+{"nick":"substack","message":"idle speculation","date":"2013-08-02T01:05:28.931Z","type":"message"}
+{"nick":"substack","message":"measure it!","date":"2013-08-02T01:05:32.405Z","type":"message"}
+{"nick":"substack","message":"and we can't measure it until we've got working code!","date":"2013-08-02T01:05:41.305Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, one sec","date":"2013-08-02T01:05:54.277Z","type":"message"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2013-08-02T01:07:58.791Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-02T01:14:27.898Z","type":"join"}
+{"nick":"jjjohnny_","message":"whats the way to get shortlink hashes?","date":"2013-08-02T01:14:48.004Z","type":"message"}
+{"nick":"mikolalysenko","message":"ok, I am having trouble thinking of a case where tail call optimization would matter here","date":"2013-08-02T01:14:49.489Z","type":"message"}
+{"nick":"thlorenz","date":"2013-08-02T01:15:08.293Z","type":"join"}
+{"nick":"jjjohnny_","message":"all the hashes i ever get are long. is there a short hash algorithm?","date":"2013-08-02T01:16:22.490Z","type":"message"}
+{"nick":"mikolalysenko","message":"but there is still the bigger issue with async calls and the fact that people still use strict","date":"2013-08-02T01:16:25.190Z","type":"message"}
+{"nick":"substack","message":"in node require() is sync but people don't go around putting require('modulename') in their server loops","date":"2013-08-02T01:17:07.166Z","type":"message"}
+{"nick":"mikolalysenko","message":"probably not","date":"2013-08-02T01:17:20.519Z","type":"message"}
+{"nick":"mikolalysenko","message":"but you still might want to require on an event","date":"2013-08-02T01:17:27.708Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example to execute that script","date":"2013-08-02T01:17:36.526Z","type":"message"}
+{"nick":"substack","message":"not at all!","date":"2013-08-02T01:17:37.665Z","type":"message"}
+{"nick":"substack","message":"because require('browserify-quine') will return a string","date":"2013-08-02T01:17:46.884Z","type":"message"}
+{"nick":"jjjohnny_","message":"that woudl stupid!","date":"2013-08-02T01:17:48.658Z","type":"message"}
+{"nick":"jjjohnny_","message":"be","date":"2013-08-02T01:17:50.599Z","type":"message"}
+{"nick":"jjjohnny_","message":"like me","date":"2013-08-02T01:17:52.332Z","type":"message"}
+{"nick":"substack","message":"so you just var src = require('browserify-quine')","date":"2013-08-02T01:17:59.162Z","type":"message"}
+{"nick":"substack","message":"and then later you do something with `src`","date":"2013-08-02T01:18:03.828Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, I got that part","date":"2013-08-02T01:18:08.724Z","type":"message"}
+{"nick":"mikolalysenko","message":"but the trick is that you need to have that browserify quine get required at the start","date":"2013-08-02T01:18:23.157Z","type":"message"}
+{"nick":"substack","message":"but people already require things at the start","date":"2013-08-02T01:18:33.944Z","type":"message"}
+{"nick":"substack","message":"so the convention is already there","date":"2013-08-02T01:18:38.917Z","type":"message"}
+{"nick":"mikolalysenko","message":"well, maybe","date":"2013-08-02T01:18:40.875Z","type":"message"}
+{"nick":"substack","message":"and the docs will make it very clear that the module will only work on the first tick","date":"2013-08-02T01:18:57.890Z","type":"message"}
+{"nick":"substack","message":"anyhow I don't think people who will need web workers will be particularly confused by this","date":"2013-08-02T01:19:10.917Z","type":"message"}
+{"nick":"mikolalysenko","message":"perhaps...","date":"2013-08-02T01:19:29.383Z","type":"message"}
+{"nick":"jjjohnny_","message":"i have a web worker module called work-slave","date":"2013-08-02T01:19:34.425Z","type":"message"}
+{"nick":"mikolalysenko","message":"but I think a bigger issue is that you might want to make modules that internally use workers","date":"2013-08-02T01:19:46.763Z","type":"message"}
+{"nick":"thlorenz","reason":"Ping timeout: 256 seconds","date":"2013-08-02T01:19:58.292Z","type":"quit"}
+{"nick":"mikolalysenko","message":"for example, imagine a physics module for voxel.js","date":"2013-08-02T01:20:04.260Z","type":"message"}
+{"nick":"jjjohnny_","message":"http://npmjs.org/package/work-slave","date":"2013-08-02T01:20:08.532Z","type":"message"}
+{"nick":"mikolalysenko","message":"where the details of workers should be hidden internally","date":"2013-08-02T01:20:18.852Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is reasonable that even novice users might require such a module","date":"2013-08-02T01:20:32.426Z","type":"message"}
+{"nick":"mikolalysenko","message":"but they should not be expected to know anything about workers to invoke such a script","date":"2013-08-02T01:20:45.347Z","type":"message"}
+{"nick":"mikolalysenko","message":"or in voxel.js it would make sense to use a worker to do meshing","date":"2013-08-02T01:21:09.323Z","type":"message"}
+{"nick":"mikolalysenko","message":"people who use voxel.js should not have to understand workers to run it","date":"2013-08-02T01:21:29.503Z","type":"message"}
+{"nick":"substack","message":"but you would require('worker') on the first tick anyways","date":"2013-08-02T01:21:30.733Z","type":"message"}
+{"nick":"mikolalysenko","message":"maybe","date":"2013-08-02T01:21:39.255Z","type":"message"}
+{"nick":"substack","message":"and if you don't, the module complains at you","date":"2013-08-02T01:21:44.219Z","type":"message"}
+{"nick":"substack","message":"and tells you how to fix it","date":"2013-08-02T01:21:47.610Z","type":"message"}
+{"nick":"mikolalysenko","message":"what if they use strict somewhere though?","date":"2013-08-02T01:22:07.319Z","type":"message"}
+{"nick":"mikolalysenko","message":"it looks bad if the script is telling them not to do that","date":"2013-08-02T01:22:28.449Z","type":"message"}
+{"nick":"mikolalysenko","message":"maybe you could have a flag or something called module-preload that forces it to execute before the bundle loads","date":"2013-08-02T01:23:59.179Z","type":"message"}
+{"nick":"mikolalysenko","message":"I wonder if that could be faked with a browserify transform...","date":"2013-08-02T01:24:12.930Z","type":"message"}
+{"nick":"jjjohnny_","message":"HOW DO THEY REQUIRE FORMULAE IN MATHS?","date":"2013-08-02T01:24:42.273Z","type":"message"}
+{"nick":"LOUDBOT","message":"I THINK MY LINODE LAGGED A BIT LOL","date":"2013-08-02T01:24:42.516Z","type":"message"}
+{"nick":"kirbysayshi","date":"2013-08-02T01:25:33.524Z","type":"join"}
+{"nick":"kevino80","date":"2013-08-02T01:39:13.300Z","type":"join"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2013-08-02T01:39:14.513Z","type":"quit"}
+{"nick":"maksimlin","date":"2013-08-02T01:39:16.833Z","type":"join"}
+{"nick":"mk30_","reason":"Ping timeout: 250 seconds","date":"2013-08-02T01:54:09.350Z","type":"quit"}
+{"nick":"stagas","date":"2013-08-02T01:55:42.697Z","type":"join"}
+{"nick":"tmcw","reason":"Remote host closed the connection","date":"2013-08-02T02:01:09.952Z","type":"quit"}
+{"nick":"ins0mnia","reason":"Ping timeout: 264 seconds","date":"2013-08-02T02:02:55.074Z","type":"quit"}
+{"nick":"stagas","reason":"Ping timeout: 256 seconds","date":"2013-08-02T02:04:10.289Z","type":"quit"}
+{"nick":"thlorenz","date":"2013-08-02T02:15:35.958Z","type":"join"}
+{"nick":"i_m_ca","date":"2013-08-02T02:16:49.997Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 246 seconds","date":"2013-08-02T02:19:55.877Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-02T02:21:14.553Z","type":"quit"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-08-02T02:24:28.656Z","type":"quit"}
+{"nick":"i_m_ca","reason":"Ping timeout: 264 seconds","date":"2013-08-02T02:26:19.049Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-02T02:56:24.282Z","type":"join"}
+{"nick":"wolfeidau","date":"2013-08-02T02:56:25.672Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-02T03:00:26.391Z","type":"quit"}
+{"nick":"i_m_ca","date":"2013-08-02T03:01:05.119Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-02T03:11:00.370Z","type":"join"}
+{"nick":"thlorenz","date":"2013-08-02T03:16:00.364Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 264 seconds","date":"2013-08-02T03:20:52.365Z","type":"quit"}
+{"nick":"thlorenz","date":"2013-08-02T03:26:49.258Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-02T03:26:54.212Z","type":"nick"}
+{"nick":"whit537","reason":"Read error: Connection reset by peer","date":"2013-08-02T03:28:00.972Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-02T03:28:01.180Z","type":"nick"}
+{"nick":"whit537","date":"2013-08-02T03:28:17.325Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2013-08-02T03:30:32.593Z","type":"quit"}
+{"nick":"ricardobeat","date":"2013-08-02T03:41:00.967Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-02T03:48:21.869Z","type":"quit"}
+{"nick":"substack","message":"mikolalysenko: I have an idea for a really tiny thing we can do","date":"2013-08-02T04:00:25.452Z","type":"message"}
+{"nick":"substack","message":"in browser-pack just expose the 4th arg as the parent require definition","date":"2013-08-02T04:00:38.530Z","type":"message"}
+{"nick":"substack","message":"then pull it in with arguments[3]","date":"2013-08-02T04:00:57.235Z","type":"message"}
+{"nick":"mikeal","date":"2013-08-02T04:16:12.574Z","type":"join"}
+{"nick":"thlorenz","date":"2013-08-02T04:16:24.639Z","type":"join"}
+{"nick":"substack","message":"only 2 extra bytes!","date":"2013-08-02T04:16:54.151Z","type":"message"}
+{"nick":"substack","message":"and then any file can do arguments[3]+'' to get the bundle source!","date":"2013-08-02T04:17:09.299Z","type":"message"}
+{"nick":"thlorenz","reason":"Ping timeout: 256 seconds","date":"2013-08-02T04:21:04.497Z","type":"quit"}
+{"nick":"whit537","reason":"Quit: whit537","date":"2013-08-02T04:28:20.492Z","type":"quit"}
+{"nick":"ralphtheninja","reason":"Ping timeout: 268 seconds","date":"2013-08-02T04:38:12.126Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-02T04:51:06.552Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-02T04:52:38.541Z","type":"join"}
+{"nick":"pikpik","reason":"Ping timeout: 256 seconds","date":"2013-08-02T04:55:04.577Z","type":"quit"}
+{"nick":"ryanseddon","reason":"Ping timeout: 264 seconds","date":"2013-08-02T04:56:52.414Z","type":"quit"}
+{"nick":"ehd","reason":"Ping timeout: 256 seconds","date":"2013-08-02T04:57:00.286Z","type":"quit"}
+{"nick":"niftylettuce","reason":"Ping timeout: 264 seconds","date":"2013-08-02T04:57:09.747Z","type":"quit"}
+{"nick":"ec","reason":"Ping timeout: 264 seconds","date":"2013-08-02T04:57:11.611Z","type":"quit"}
+{"nick":"gozala","reason":"Ping timeout: 240 seconds","date":"2013-08-02T04:57:23.951Z","type":"quit"}
+{"nick":"kirbysayshi","reason":"Quit: kirbysayshi","date":"2013-08-02T05:14:28.393Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2013-08-02T05:14:30.291Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-02T05:16:26.350Z","type":"quit"}
+{"nick":"thlorenz","date":"2013-08-02T05:16:50.146Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 245 seconds","date":"2013-08-02T05:21:15.118Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-02T05:21:36.996Z","type":"quit"}
+{"nick":"kirbysayshi","date":"2013-08-02T05:32:51.517Z","type":"join"}
+{"nick":"mikeal","date":"2013-08-02T05:43:23.153Z","type":"join"}
+{"nick":"calvinfo","date":"2013-08-02T05:48:13.797Z","type":"join"}
+{"nick":"kirbysayshi","reason":"Quit: kirbysayshi","date":"2013-08-02T05:54:58.101Z","type":"quit"}
+{"nick":"calvinfo","reason":"Ping timeout: 248 seconds","date":"2013-08-02T05:55:17.713Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-08-02T05:56:39.219Z","type":"quit"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2013-08-02T05:58:57.183Z","type":"quit"}
+{"nick":"mirkokiefer","date":"2013-08-02T05:59:48.206Z","type":"join"}
+{"nick":"Kessler","date":"2013-08-02T06:00:55.355Z","type":"join"}
+{"nick":"Domenic_","reason":"Ping timeout: 256 seconds","date":"2013-08-02T06:10:26.726Z","type":"quit"}
+{"nick":"owenb__","reason":"Ping timeout: 248 seconds","date":"2013-08-02T06:11:17.774Z","type":"quit"}
+{"nick":"sveisvei","reason":"Ping timeout: 264 seconds","date":"2013-08-02T06:11:35.854Z","type":"quit"}
+{"nick":"Birdbones","reason":"Ping timeout: 240 seconds","date":"2013-08-02T06:11:42.434Z","type":"quit"}
+{"nick":"jcrugzz","reason":"Ping timeout: 246 seconds","date":"2013-08-02T06:13:01.901Z","type":"quit"}
+{"nick":"Domenic_","date":"2013-08-02T06:13:15.264Z","type":"join"}
+{"nick":"Raynos","reason":"Ping timeout: 245 seconds","date":"2013-08-02T06:15:33.165Z","type":"quit"}
+{"nick":"tanepiper","reason":"Ping timeout: 268 seconds","date":"2013-08-02T06:15:38.076Z","type":"quit"}
+{"nick":"thlorenz","date":"2013-08-02T06:17:15.776Z","type":"join"}
+{"nick":"Raynos","date":"2013-08-02T06:20:34.445Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 248 seconds","date":"2013-08-02T06:21:25.773Z","type":"quit"}
+{"nick":"tanepiper","date":"2013-08-02T06:23:20.469Z","type":"join"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2013-08-02T06:45:40.564Z","type":"quit"}
+{"nick":"Kessler","reason":"Ping timeout: 245 seconds","date":"2013-08-02T06:47:05.146Z","type":"quit"}
+{"nick":"ehd","date":"2013-08-02T06:53:49.871Z","type":"join"}
+{"nick":"ryanseddon","date":"2013-08-02T06:54:00.688Z","type":"join"}
+{"nick":"ec","date":"2013-08-02T06:54:16.724Z","type":"join"}
+{"nick":"gozala","date":"2013-08-02T06:55:08.124Z","type":"join"}
+{"nick":"niftylettuce","date":"2013-08-02T06:59:05.943Z","type":"join"}
+{"nick":"timoxley","date":"2013-08-02T07:05:52.013Z","type":"join"}
+{"nick":"frankblizzard","date":"2013-08-02T07:10:04.224Z","type":"join"}
+{"nick":"i_m_ca","reason":"Ping timeout: 245 seconds","date":"2013-08-02T07:11:15.146Z","type":"quit"}
+{"nick":"i_m_ca","date":"2013-08-02T07:13:20.071Z","type":"join"}
+{"nick":"thlorenz","date":"2013-08-02T07:17:41.145Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 245 seconds","date":"2013-08-02T07:22:05.145Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 268 seconds","date":"2013-08-02T07:25:19.127Z","type":"quit"}
+{"nick":"i_m_ca","reason":"Quit: Lost terminal","date":"2013-08-02T07:38:45.338Z","type":"quit"}
+{"nick":"ryanseddon","reason":"Ping timeout: 256 seconds","date":"2013-08-02T07:54:42.785Z","type":"quit"}
+{"nick":"ryanseddon","date":"2013-08-02T07:55:09.541Z","type":"join"}
