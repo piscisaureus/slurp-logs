@@ -1,0 +1,121 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-08-24T00:00:01.013Z","type":"quit"}
+{"nick":"ircretary","date":"2013-08-24T00:00:08.871Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #125 \u00037UNSTABLE\u000f windows-x64 (5/193) smartos-ia32 (2/192) smartos-x64 (2/192) windows-ia32 (3/193) http://jenkins.nodejs.org/job/libuv-master-gyp/125/","date":"2013-08-24T00:01:18.433Z","type":"message"}
+{"nick":"ecr","reason":"Quit: ecr","date":"2013-08-24T00:14:01.463Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: I believe there is with natives.","date":"2013-08-24T00:18:38.433Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: interesting.","date":"2013-08-24T00:18:50.814Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: also, there's another way, if we assign all the functions to variables within the module using them.","date":"2013-08-24T00:19:10.290Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: right, because we can native-ify those functions, and then it's like they're pre-inlined, right?  or am i completely missing the point there","date":"2013-08-24T00:19:10.924Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: ohh... interesting","date":"2013-08-24T00:19:25.983Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: instead of util.isFoo()","date":"2013-08-24T00:19:26.478Z","type":"message"}
+{"nick":"trevnorris","message":"do var isFoo = util.isFoo","date":"2013-08-24T00:19:37.824Z","type":"message"}
+{"nick":"trevnorris","message":"that'll by pass the context change","date":"2013-08-24T00:19:45.430Z","type":"message"}
+{"nick":"trevnorris","message":"a bit of a pain, but it'll work","date":"2013-08-24T00:20:00.648Z","type":"message"}
+{"nick":"tjfontaine","message":"ya I was going to make that suggestion","date":"2013-08-24T00:20:51.115Z","type":"message"}
+{"nick":"tjfontaine","message":"it's the property lookup that's the killer, it has to make sure it hasn't mutated, right?","date":"2013-08-24T00:21:18.159Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-24T00:21:39.179Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: exactly, and since it lives beyond the module scope it's even worse.","date":"2013-08-24T00:21:55.433Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: or we can internally expose natives, and assign those out.","date":"2013-08-24T00:22:30.755Z","type":"message"}
+{"nick":"tjfontaine","message":"I guess, I haven't looked into those types of numbers, but the cache seems ideal, but doesn't allow people to do weird things to them like replace them with nops or false if they wanted :P","date":"2013-08-24T00:22:44.731Z","type":"message"}
+{"nick":"trevnorris","message":"basically do an --expose-natives-as=someobj, assign out what we want then to someobj = undefined","date":"2013-08-24T00:23:01.190Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2013-08-24T00:23:20.644Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm really -1 on defaulting with --expose-natives-as, before we result to such things we should really talk with v8 team about what we can do","date":"2013-08-24T00:23:54.604Z","type":"message"}
+{"nick":"tjfontaine","message":"*resort","date":"2013-08-24T00:24:02.023Z","type":"message"}
+{"nick":"Domenic_","message":"Any ObjectWrap experts in the house?","date":"2013-08-24T00:24:06.036Z","type":"message"}
+{"nick":"trevnorris","message":"sure, don't use it. ;)","date":"2013-08-24T00:24:46.684Z","type":"message"}
+{"nick":"tjfontaine","message":"Domenic_: it's easier to ask than to ask to ask :)","date":"2013-08-24T00:24:59.839Z","type":"message"}
+{"nick":"Domenic_","message":"OK, I was thinking of maybe going that route. Because it seems to only work on objects that you create","date":"2013-08-24T00:25:02.108Z","type":"message"}
+{"nick":"Domenic_","message":"Is that correct?","date":"2013-08-24T00:25:10.214Z","type":"message"}
+{"nick":"tjfontaine","message":"that is correct, it needs its own object template","date":"2013-08-24T00:25:19.328Z","type":"message"}
+{"nick":"Domenic_","message":"I always see it wrapping a node-created class, never used to store values on existing objects from users.","date":"2013-08-24T00:25:21.171Z","type":"message"}
+{"nick":"Domenic_","message":"ok","date":"2013-08-24T00:25:22.106Z","type":"message"}
+{"nick":"Domenic_","message":"so no objectwrap for me","date":"2013-08-24T00:25:25.112Z","type":"message"}
+{"nick":"Domenic_","message":"So: how do I do this manually, with Set/GetHiddenValue, but without leaking memory? MakeWeak something something?","date":"2013-08-24T00:25:42.968Z","type":"message"}
+{"nick":"tjfontaine","message":"so you're adding this to arbtrary user input?","date":"2013-08-24T00:26:07.359Z","type":"message"}
+{"nick":"Domenic_","message":"ya. Want to store a ContextifyContext on arbitrary user input.","date":"2013-08-24T00:26:29.124Z","type":"message"}
+{"nick":"tjfontaine","message":"arbitrary objects/values passed to you by the user","date":"2013-08-24T00:26:31.629Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-08-24T00:26:33.212Z","type":"message"}
+{"nick":"Domenic_","message":"I mean, it turns out I already do this. But I leak memory.","date":"2013-08-24T00:26:48.639Z","type":"message"}
+{"nick":"tjfontaine","message":"so Get/Set hiddenvalue is the right way, and then yes you need to make them persistent and weak, and then on weakcb you Get it back out and dispose it properly","date":"2013-08-24T00:26:58.575Z","type":"message"}
+{"nick":"tjfontaine","message":"where them is the users value that you tucked the context object on","date":"2013-08-24T00:27:16.099Z","type":"message"}
+{"nick":"Domenic_","message":"OK. I *think* I know how to make them persistent. How does MakeWeak/weakcb work? I guess I'll search for existing examples in the codebase.","date":"2013-08-24T00:28:19.828Z","type":"message"}
+{"nick":"Domenic_","message":"The smalloc example is pretty reasonable, I think I can work with this.","date":"2013-08-24T00:29:12.788Z","type":"message"}
+{"nick":"tjfontaine","message":"right actually you don't even need the Get, because you can pass arbitrary data","date":"2013-08-24T00:29:25.292Z","type":"message"}
+{"nick":"tjfontaine","message":"so pobj.Reset(user_obj); pobj.MakeWeak(some_cb, contextifyPtr);","date":"2013-08-24T00:30:01.453Z","type":"message"}
+{"nick":"tjfontaine","message":"then in some_cb you get the persistent object which you .Dispose(), but you also have the contextifyPtr which you can then `delete contextifyPtr`","date":"2013-08-24T00:30:25.877Z","type":"message"}
+{"nick":"st_luke","date":"2013-08-24T00:30:44.380Z","type":"join"}
+{"nick":"Domenic_","message":"Can I use this method to store arbitrary C++ classes on user_obj, or do I need to make them into JS instances (i.e. Local<Value>s)?","date":"2013-08-24T00:32:26.764Z","type":"message"}
+{"nick":"tjfontaine","message":"if you want to store an arbitrary C++ class (actually a pointer) then you should External::New them, and then SetHiddenValue()","date":"2013-08-24T00:33:06.956Z","type":"message"}
+{"nick":"Domenic_","message":"Ah nice","date":"2013-08-24T00:33:15.465Z","type":"message"}
+{"nick":"julianduque","reason":"Ping timeout: 256 seconds","date":"2013-08-24T00:33:46.674Z","type":"quit"}
+{"nick":"tjfontaine","message":"user_obj.SetHiddenValue(String::New(\"super_sekrit\"), External::New(new CPPClass()));","date":"2013-08-24T00:33:53.157Z","type":"message"}
+{"nick":"tjfontaine","message":"Domenic_: you want to limit the amount you are ->Get and ->Set'ing of course, so if you have more than 1 of these things to store on an object, you'll want to put them in a container","date":"2013-08-24T00:34:31.495Z","type":"message"}
+{"nick":"Domenic_","message":"tjfontaine: makes sense. GetHiddenValue will give me back a Local<Value>; I can just do .As<CPPClass*>?","date":"2013-08-24T00:35:07.070Z","type":"message"}
+{"nick":"tjfontaine","message":"no, you will get Local<Value> you .As<External>()->Value() which gives you a void* which can then be cast to CPPClass*","date":"2013-08-24T00:35:42.045Z","type":"message"}
+{"nick":"Domenic_","message":"kk thanks","date":"2013-08-24T00:35:52.613Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-08-24T00:36:01.874Z","type":"quit"}
+{"nick":"c4milo","date":"2013-08-24T00:38:25.217Z","type":"join"}
+{"nick":"paulfryzel","reason":"Remote host closed the connection","date":"2013-08-24T00:41:29.027Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-08-24T00:41:38.692Z","type":"quit"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-08-24T00:44:16.151Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 264 seconds","date":"2013-08-24T00:48:50.781Z","type":"quit"}
+{"nick":"mordy__","message":"hrrm.. i wonder why this thing isn't throwing proper exceptions.. /home/mnunberg/src/couchnode/lib/couchbase.js:4177: Uncaught Error: [couchnode]: LCB=0;LCB_Expanded='Success';Major=1;Minor=3;Message='Missing callback';","date":"2013-08-24T00:49:47.847Z","type":"message"}
+{"nick":"mordy__","message":"where's my stack trace? and i don't have a line \"4177\". the exception is created via C++","date":"2013-08-24T00:50:09.688Z","type":"message"}
+{"nick":"brson","date":"2013-08-24T00:50:37.735Z","type":"join"}
+{"nick":"mordy__","message":"http://paste.scsys.co.uk/266320 (taken from how node.cc does its UVException and ErrnoException)","date":"2013-08-24T00:51:49.184Z","type":"message"}
+{"nick":"tjfontaine","message":"and then you're ThrowException'ing that?","date":"2013-08-24T00:53:07.865Z","type":"message"}
+{"nick":"mordy__","message":"yep","date":"2013-08-24T00:54:05.464Z","type":"message"}
+{"nick":"tjfontaine","message":"is that from an async handler?","date":"2013-08-24T00:54:13.435Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-24T00:54:22.984Z","type":"quit"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-08-24T00:55:00.225Z","type":"quit"}
+{"nick":"mordy__","message":"hrm, i'm not sure where its being thrown from, hence the frustration. i'm using assert.js","date":"2013-08-24T00:55:42.311Z","type":"message"}
+{"nick":"mordy__","message":"brb","date":"2013-08-24T00:55:50.551Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-08-24T01:09:51.942Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-24T01:11:00.499Z","type":"quit"}
+{"nick":"Domenic_","message":"tjfontaine: do I need to MarkIndependent() or SetWrapperClassId()?","date":"2013-08-24T01:18:39.982Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-08-24T01:23:36.931Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-08-24T01:29:17.596Z","type":"quit"}
+{"nick":"Domenic_","message":"https://github.com/joyent/node/pull/6117","date":"2013-08-24T01:37:05.651Z","type":"message"}
+{"nick":"mordy__","message":"ok, back","date":"2013-08-24T01:51:40.879Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-24T01:56:49.865Z","type":"quit"}
+{"nick":"mordy__","message":"the weird thing about my issue is that process.on('uncaughtException' doesn't seem to recognize it either","date":"2013-08-24T02:00:09.309Z","type":"message"}
+{"nick":"amartens","date":"2013-08-24T02:01:59.734Z","type":"join"}
+{"nick":"kazupon","date":"2013-08-24T02:15:37.904Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-08-24T02:25:52.088Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-08-24T02:25:52.988Z","type":"quit"}
+{"nick":"Brett19","date":"2013-08-24T02:35:50.152Z","type":"join"}
+{"nick":"mordy__","message":"ahh","date":"2013-08-24T02:36:41.779Z","type":"message"}
+{"nick":"mordy__","message":"oh hi Brett19 ","date":"2013-08-24T02:36:43.511Z","type":"message"}
+{"nick":"mordy__","message":"so i just found out about v8::Message::PrintStackTrace","date":"2013-08-24T02:37:04.200Z","type":"message"}
+{"nick":"mordy__","message":"still can't figure out why node isn't printing the stack trace on errors, but this should be good enough","date":"2013-08-24T02:37:19.633Z","type":"message"}
+{"nick":"Brett19","message":"Its not?","date":"2013-08-24T02:41:11.672Z","type":"message"}
+{"nick":"pachet","reason":"Quit: [ +++ ]","date":"2013-08-24T02:54:37.028Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-08-24T03:18:30.922Z","type":"join"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2013-08-24T03:18:31.556Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-08-24T03:27:19.979Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2013-08-24T03:29:57.815Z","type":"quit"}
+{"nick":"brson_","date":"2013-08-24T03:54:15.618Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2013-08-24T03:54:18.775Z","type":"quit"}
+{"nick":"brson_","reason":"Ping timeout: 276 seconds","date":"2013-08-24T04:21:36.699Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-24T04:46:43.778Z","type":"nick"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-24T05:09:26.051Z","type":"nick"}
+{"nick":"hueniverse","message":"can someone point me to where I could log slab allocations? I'd like to log whenever a new slab is allocated and when it is cleaned up","date":"2013-08-24T05:24:05.880Z","type":"message"}
+{"nick":"hueniverse","message":"ls","date":"2013-08-24T05:24:13.045Z","type":"message"}
+{"nick":"kazupon","date":"2013-08-24T05:34:25.373Z","type":"join"}
+{"nick":"julianduque","date":"2013-08-24T05:38:01.372Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-08-24T05:38:05.062Z","type":"join"}
+{"nick":"swajr","reason":"Quit: leaving","date":"2013-08-24T05:50:32.431Z","type":"quit"}
+{"nick":"swaj","reason":"Quit: leaving","date":"2013-08-24T05:53:31.040Z","type":"quit"}
+{"nick":"swaj","date":"2013-08-24T05:53:45.533Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-24T06:39:15.290Z","type":"quit"}
+{"nick":"stagas","date":"2013-08-24T06:51:48.623Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #174 \u00037UNSTABLE\u000f windows-ia32 (8/597) windows-x64 (7/597) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/174/","date":"2013-08-24T06:54:48.258Z","type":"message"}
+{"nick":"groundwater","date":"2013-08-24T07:05:04.532Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-24T07:07:59.726Z","type":"quit"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-08-24T07:18:51.339Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-08-24T07:19:07.491Z","type":"quit"}
+{"nick":"abraxas","date":"2013-08-24T07:27:27.031Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 248 seconds","date":"2013-08-24T07:31:49.683Z","type":"quit"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2013-08-24T07:43:04.081Z","type":"quit"}
+{"nick":"amartens","date":"2013-08-24T07:49:23.242Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 264 seconds","date":"2013-08-24T07:57:42.183Z","type":"quit"}
