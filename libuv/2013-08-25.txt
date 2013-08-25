@@ -1,0 +1,101 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-08-25T00:00:00.541Z","type":"quit"}
+{"nick":"ircretary","date":"2013-08-25T00:00:08.938Z","type":"join"}
+{"nick":"mordy__","message":"what do you know; it works :)","date":"2013-08-25T00:03:38.828Z","type":"message"}
+{"nick":"mordy__","message":"well, the casting to a char thing, that is","date":"2013-08-25T00:03:45.018Z","type":"message"}
+{"nick":"mordy__","message":"tjfontaine: is this any more helpful?","date":"2013-08-25T00:04:10.464Z","type":"message"}
+{"nick":"mordy__","message":"the culprit is the second \"CAS: (H): <hex>\"","date":"2013-08-25T00:04:22.819Z","type":"message"}
+{"nick":"tjfontaine","message":"it's not more helpful, without seeing it in context of the code","date":"2013-08-25T00:05:06.394Z","type":"message"}
+{"nick":"mordy__","message":"hrm..","date":"2013-08-25T00:05:45.077Z","type":"message"}
+{"nick":"tjfontaine","message":"not v8, but your plugin","date":"2013-08-25T00:05:52.534Z","type":"message"}
+{"nick":"tjfontaine","message":"*addon","date":"2013-08-25T00:05:56.589Z","type":"message"}
+{"nick":"mordy__","message":"alrighty; the actual object i'm trying to print is created here","date":"2013-08-25T00:11:20.697Z","type":"message"}
+{"nick":"mordy__","message":"(i'm using the _LP64 variant)","date":"2013-08-25T00:11:34.592Z","type":"message"}
+{"nick":"mordy__","message":"so the path for this is normally..:","date":"2013-08-25T00:12:27.784Z","type":"message"}
+{"nick":"mordy__","message":"https://github.com/mnunberg/couchnode/blob/master/src/cookie.cc","date":"2013-08-25T00:12:48.921Z","type":"message"}
+{"nick":"mordy__","message":"libcouchbase calls into one of the callbacks defined on the bottom of the file. each of those callbacks create a new ResponseInfo object on the stack, populating it with the relevant info","date":"2013-08-25T00:13:53.780Z","type":"message"}
+{"nick":"tjfontaine","message":"there's no External in that file","date":"2013-08-25T00:14:19.540Z","type":"message"}
+{"nick":"mordy__","message":"oh right","date":"2013-08-25T00:14:34.908Z","type":"message"}
+{"nick":"mordy__","message":"i didn't send the link for the External","date":"2013-08-25T00:14:40.839Z","type":"message"}
+{"nick":"mordy__","message":"https://github.com/mnunberg/couchnode/blob/master/src/cas.cc","date":"2013-08-25T00:14:54.813Z","type":"message"}
+{"nick":"tjfontaine","message":"that dereference is needed there? External::Cast(*obj)","date":"2013-08-25T00:15:52.648Z","type":"message"}
+{"nick":"mordy__","message":"tjfontaine: nope. i've changed it to obj.As<External>()->Value()","date":"2013-08-25T00:16:20.489Z","type":"message"}
+{"nick":"mordy__","message":"but that's not where it's crashing","date":"2013-08-25T00:16:28.735Z","type":"message"}
+{"nick":"tjfontaine","message":"k, I'm just looking through it","date":"2013-08-25T00:16:34.581Z","type":"message"}
+{"nick":"mordy__","message":"yeah. it's probably not your simplest node addon","date":"2013-08-25T00:16:45.275Z","type":"message"}
+{"nick":"tjfontaine","message":"oh I see, it's a slight abuse","date":"2013-08-25T00:18:03.443Z","type":"message"}
+{"nick":"mordy__","message":"actually.. let me check if things magically behave if i -DCOUCHNODE_NO_CASINTPTR","date":"2013-08-25T00:19:09.220Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2013-08-25T00:19:27.774Z","type":"quit"}
+{"nick":"tjfontaine","message":"so you're creating things with out a handlescope because couchbase calls back in?","date":"2013-08-25T00:20:05.265Z","type":"message"}
+{"nick":"mordy__","message":"tjfontaine: so this is what i was explaining earlier","date":"2013-08-25T00:20:23.693Z","type":"message"}
+{"nick":"mordy__","message":"it has a handlescope","date":"2013-08-25T00:20:28.816Z","type":"message"}
+{"nick":"mordy__","message":"the ResponseInfo has a HandleScope member","date":"2013-08-25T00:20:34.987Z","type":"message"}
+{"nick":"mordy__","message":"and it's always the first thing created","date":"2013-08-25T00:20:39.833Z","type":"message"}
+{"nick":"mordy__","message":"it's a bit \"clever\" unfortunately.. but i hate boilerplate more than cleverness","date":"2013-08-25T00:20:52.787Z","type":"message"}
+{"nick":"tjfontaine","message":"until it's impossible to debug","date":"2013-08-25T00:21:05.616Z","type":"message"}
+{"nick":"tjfontaine","message":"anyway still reading","date":"2013-08-25T00:21:20.639Z","type":"message"}
+{"nick":"tjfontaine","message":"is libcouchbase single threaded?","date":"2013-08-25T00:21:36.857Z","type":"message"}
+{"nick":"mordy__","message":"yeah","date":"2013-08-25T00:21:50.482Z","type":"message"}
+{"nick":"mordy__","message":"it's not that clever actually","date":"2013-08-25T00:21:57.671Z","type":"message"}
+{"nick":"mordy__","message":"all the callback stuff is very simple from the C side","date":"2013-08-25T00:22:04.388Z","type":"message"}
+{"nick":"mordy__","message":"the *spooled stuff is broken","date":"2013-08-25T00:22:30.027Z","type":"message"}
+{"nick":"mordy__","message":"but that's not the path being followed anyway","date":"2013-08-25T00:22:36.291Z","type":"message"}
+{"nick":"tjfontaine","message":"I vote you recompile with --debug","date":"2013-08-25T00:24:21.268Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-08-25T00:24:24.369Z","type":"join"}
+{"nick":"tjfontaine","message":"because that stack trace is basically useless, at least on that platform","date":"2013-08-25T00:24:37.919Z","type":"message"}
+{"nick":"mordy__","message":"hrm, and it works on the 32 bit variant","date":"2013-08-25T00:25:26.206Z","type":"message"}
+{"nick":"tjfontaine","message":"the 32bit is doing somethign significantly different, I wonder if it would behave better if you didn't abuse uint64_t as a pointer","date":"2013-08-25T00:26:00.911Z","type":"message"}
+{"nick":"mordy__","message":"tjfontaine: afaik nothing is reading from it","date":"2013-08-25T00:26:16.155Z","type":"message"}
+{"nick":"mordy__","message":"and the 'cas' value is never handled at the application level","date":"2013-08-25T00:26:40.955Z","type":"message"}
+{"nick":"mordy__","message":"it's just an opaque token sent to and from the network","date":"2013-08-25T00:26:49.407Z","type":"message"}
+{"nick":"tjfontaine","message":"like, do `uint64_t *v = new uint64_t; *v = cas; External::New(v)`","date":"2013-08-25T00:26:53.716Z","type":"message"}
+{"nick":"tjfontaine","message":"mordy__: but v8 may be expecting things to be aligned or whatever","date":"2013-08-25T00:27:06.006Z","type":"message"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2013-08-25T00:27:27.305Z","type":"quit"}
+{"nick":"mordy__","message":"even for \"External\" data? hrm.","date":"2013-08-25T00:27:28.944Z","type":"message"}
+{"nick":"mordy__","message":"the 32 bit version abuses the cas as an 8 byte character array","date":"2013-08-25T00:27:41.471Z","type":"message"}
+{"nick":"mordy__","message":"via 'new'","date":"2013-08-25T00:27:53.865Z","type":"message"}
+{"nick":"tjfontaine","message":"yes, I'm not sure why you're using two different paths for this","date":"2013-08-25T00:28:39.227Z","type":"message"}
+{"nick":"mordy__","message":"hrm, let's see how it performs here","date":"2013-08-25T00:28:50.783Z","type":"message"}
+{"nick":"mordy__","message":"the thing is that the CAS is not really inspected by the application","date":"2013-08-25T00:29:00.326Z","type":"message"}
+{"nick":"tjfontaine","message":"also casDtor could just pass the pointer and avoid the GetIndexedProperties...","date":"2013-08-25T00:29:46.602Z","type":"message"}
+{"nick":"mordy__","message":"tjfontaine: in my benchmarks the 32 bit version performs a bit slower.. 21k/sec with External; 20k with Object","date":"2013-08-25T00:33:06.259Z","type":"message"}
+{"nick":"mordy__","message":"and for whatever reason, ends up using 65M of memory rather than 15M","date":"2013-08-25T00:33:58.993Z","type":"message"}
+{"nick":"mordy__","message":"but i can live with it","date":"2013-08-25T00:34:56.477Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-08-25T00:54:11.009Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-08-25T01:17:26.654Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-08-25T02:01:51.846Z","type":"quit"}
+{"nick":"c4milo","date":"2013-08-25T02:08:19.753Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-08-25T02:09:34.973Z","type":"join"}
+{"nick":"julianduque","date":"2013-08-25T02:25:04.207Z","type":"join"}
+{"nick":"dominictarr","date":"2013-08-25T03:15:14.569Z","type":"join"}
+{"nick":"kazupon","date":"2013-08-25T03:27:09.885Z","type":"join"}
+{"nick":"mburns","reason":"Ping timeout: 264 seconds","date":"2013-08-25T03:29:38.854Z","type":"quit"}
+{"nick":"brson","date":"2013-08-25T03:47:16.239Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-08-25T03:55:49.919Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-08-25T04:06:51.197Z","type":"quit"}
+{"nick":"ircretary","reason":"Ping timeout: 276 seconds","date":"2013-08-25T04:14:12.780Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-25T04:22:54.606Z","type":"quit"}
+{"nick":"c4milo","date":"2013-08-25T04:28:26.466Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-08-25T04:48:20.315Z","type":"quit"}
+{"nick":"mburns","date":"2013-08-25T04:52:16.570Z","type":"join"}
+{"nick":"mburns","reason":"Read error: Connection reset by peer","date":"2013-08-25T05:17:10.848Z","type":"quit"}
+{"nick":"mburns","date":"2013-08-25T05:18:28.342Z","type":"join"}
+{"nick":"MI6","reason":"Remote host closed the connection","date":"2013-08-25T05:23:00.413Z","type":"quit"}
+{"nick":"MI6","date":"2013-08-25T05:23:12.605Z","type":"join"}
+{"nick":"jmar777","date":"2013-08-25T05:24:21.434Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-08-25T05:37:18.999Z","type":"quit"}
+{"nick":"st_luke","date":"2013-08-25T05:53:28.384Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-25T06:30:35.067Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-25T06:35:58.988Z","type":"join"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-08-25T06:44:52.928Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #175 \u00037UNSTABLE\u000f windows-x64 (7/597) windows-ia32 (7/597) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/175/","date":"2013-08-25T06:47:52.291Z","type":"message"}
+{"nick":"jmar777","date":"2013-08-25T06:51:22.013Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-25T06:54:50.787Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-25T07:10:28.202Z","type":"quit"}
+{"nick":"st_luke","date":"2013-08-25T07:11:06.176Z","type":"join"}
+{"nick":"st_luke","reason":"Ping timeout: 246 seconds","date":"2013-08-25T07:15:07.968Z","type":"quit"}
+{"nick":"hz","date":"2013-08-25T07:16:34.592Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-25T07:22:03.862Z","type":"join"}
+{"nick":"rendar","date":"2013-08-25T07:37:14.357Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-08-25T07:50:04.393Z","type":"quit"}
+{"nick":"kazupon","date":"2013-08-25T07:52:21.562Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-25T07:59:33.856Z","type":"quit"}
