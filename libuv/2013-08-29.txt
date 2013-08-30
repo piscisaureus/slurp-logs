@@ -369,3 +369,559 @@
 {"nick":"groundwater","date":"2013-08-29T15:55:38.862Z","type":"join"}
 {"nick":"AvianFlu","reason":"Ping timeout: 260 seconds","date":"2013-08-29T15:55:39.405Z","type":"quit"}
 {"nick":"dshaw_","date":"2013-08-29T15:58:55.991Z","type":"join"}
+{"nick":"`3rdEden","new_nick":"`3E|FOODING","date":"2013-08-29T16:00:15.340Z","type":"nick"}
+{"nick":"isaacs","message":"good morning nodestars","date":"2013-08-29T16:04:30.981Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T16:05:48.051Z","type":"nick"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-29T16:06:20.877Z","type":"nick"}
+{"nick":"tjfontaine","message":"good day","date":"2013-08-29T16:07:09.541Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs, creationix, othiym23: Updated the API: https://github.com/joyent/node/pull/6011","date":"2013-08-29T16:07:35.195Z","type":"message"}
+{"nick":"trevnorris","message":"two main changes are, added a \"done\" callback which will fire when there are no more possible callbacks to be called","date":"2013-08-29T16:07:53.707Z","type":"message"}
+{"nick":"trevnorris","message":"and the other is to return a unique key that's used to remove from the queue.","date":"2013-08-29T16:08:12.155Z","type":"message"}
+{"nick":"trevnorris","message":"the later is necessary in case I want to use the same async listener, but propagate different domain objects","date":"2013-08-29T16:08:29.257Z","type":"message"}
+{"nick":"trevnorris","message":"the former is helpful in case there's any cleanup I want to perform.","date":"2013-08-29T16:08:46.912Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-08-29T16:09:09.287Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 248 seconds","date":"2013-08-29T16:09:41.742Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T16:13:00.020Z","type":"nick"}
+{"nick":"creationix","message":"trevnorris, in your API, is the async listener called many times?","date":"2013-08-29T16:13:24.345Z","type":"message"}
+{"nick":"creationix","message":"IE, once for every call to setTimeout","date":"2013-08-29T16:13:34.566Z","type":"message"}
+{"nick":"creationix","message":"and other function calls that setup events","date":"2013-08-29T16:13:44.333Z","type":"message"}
+{"nick":"trevnorris","message":"creationix: the async listener is called whenever something that will require calling a callback is queued","date":"2013-08-29T16:14:18.492Z","type":"message"}
+{"nick":"creationix","message":"perfect","date":"2013-08-29T16:14:42.588Z","type":"message"}
+{"nick":"creationix","message":"though why such a large and powerful API?","date":"2013-08-29T16:15:04.487Z","type":"message"}
+{"nick":"creationix","message":"function(cb) { return newCb; } would be enough right?","date":"2013-08-29T16:15:21.543Z","type":"message"}
+{"nick":"creationix","message":"that function would be called whenever something gets queued and since I can wrap the callback, I can monitor for before, after, arguments, etc","date":"2013-08-29T16:16:04.537Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-29T16:16:18.549Z","type":"nick"}
+{"nick":"trevnorris","message":"short of it is, this API will accommodate any possible use case of asynchronous events.","date":"2013-08-29T16:17:02.369Z","type":"message"}
+{"nick":"creationix","message":"does it enable anything my proposed simple API doesn't?","date":"2013-08-29T16:17:33.973Z","type":"message"}
+{"nick":"trevnorris","message":"slightly longer, it's possible to have multiple listeners for different reasons, and w/o needing to wrap the actual callback","date":"2013-08-29T16:17:51.091Z","type":"message"}
+{"nick":"creationix","message":"true, but as you said in the pr, that's not needed.  It can be easily implemented in userspace","date":"2013-08-29T16:18:45.552Z","type":"message"}
+{"nick":"trevnorris","message":"please speak with isaacs and othiym23 about this. there was a substantial conversation yesterday that brought us to this api","date":"2013-08-29T16:19:24.675Z","type":"message"}
+{"nick":"trevnorris","message":"and your api is incomplete in the case of ReqWrap, where we can't know ahead of time the actual callback that will run","date":"2013-08-29T16:20:04.395Z","type":"message"}
+{"nick":"trevnorris","message":"which would mean you need a callback that runs when it's queued, and a callback that runs when the callback itself should run.","date":"2013-08-29T16:20:31.504Z","type":"message"}
+{"nick":"creationix","message":"what's an example API of this?","date":"2013-08-29T16:20:55.838Z","type":"message"}
+{"nick":"creationix","message":"fs.read?","date":"2013-08-29T16:20:58.309Z","type":"message"}
+{"nick":"trevnorris","message":"anything that requires a ReqWrap, so pretty much anything I/O","date":"2013-08-29T16:21:18.527Z","type":"message"}
+{"nick":"creationix","message":"right, but all I/O in libuv has callbacks","date":"2013-08-29T16:21:31.724Z","type":"message"}
+{"nick":"trevnorris","message":"here's a simple case: https://gist.github.com/trevnorris/6346973","date":"2013-08-29T16:22:04.841Z","type":"message"}
+{"nick":"trevnorris","message":"what happens is that the .oncomplete callback can actually change while the I/O is in transit","date":"2013-08-29T16:22:25.982Z","type":"message"}
+{"nick":"trevnorris","message":"so your originally returned callback is now invalid","date":"2013-08-29T16:22:46.557Z","type":"message"}
+{"nick":"creationix","message":"right, so you would need a level of indirection.  Is that too expensive?","date":"2013-08-29T16:23:17.324Z","type":"message"}
+{"nick":"trevnorris","message":"explain indirection","date":"2013-08-29T16:23:37.209Z","type":"message"}
+{"nick":"creationix","message":"have a callback that never changes that then dynamically looks up the current value of .oncomplete and calls it","date":"2013-08-29T16:24:06.201Z","type":"message"}
+{"nick":"creationix","message":"JS<->JS calls are pretty fast I thought","date":"2013-08-29T16:24:23.949Z","type":"message"}
+{"nick":"creationix","message":"I assume that's done in C++ code currently?","date":"2013-08-29T16:24:54.640Z","type":"message"}
+{"nick":"trevnorris","message":"callbacks from I/O are from C++","date":"2013-08-29T16:25:08.124Z","type":"message"}
+{"nick":"trevnorris","message":"so that would require a jump from C++ to JS back to C++","date":"2013-08-29T16:25:18.498Z","type":"message"}
+{"nick":"creationix","message":"no it wouldn't","date":"2013-08-29T16:25:29.485Z","type":"message"}
+{"nick":"creationix","message":"the middle callback could live entirely in js and call js","date":"2013-08-29T16:25:42.692Z","type":"message"}
+{"nick":"creationix","message":"though itself would be called from C++","date":"2013-08-29T16:25:47.744Z","type":"message"}
+{"nick":"dshaw_","date":"2013-08-29T16:26:18.531Z","type":"join"}
+{"nick":"trevnorris","message":"let's setp this back.","date":"2013-08-29T16:26:28.717Z","type":"message"}
+{"nick":"trevnorris","message":"*step","date":"2013-08-29T16:26:32.295Z","type":"message"}
+{"nick":"trevnorris","message":"first, if you allow function wrappers, and there are multiple listeners, then that means many listeners == many function wrappers","date":"2013-08-29T16:26:58.658Z","type":"message"}
+{"nick":"trevnorris","message":"and creating a function within a closure for this specific purpose is very expensive","date":"2013-08-29T16:27:13.409Z","type":"message"}
+{"nick":"creationix","message":"many wrappers?","date":"2013-08-29T16:27:28.567Z","type":"message"}
+{"nick":"trevnorris","message":"say I setup two async listeners, each return a wrapped callback.","date":"2013-08-29T16:27:48.021Z","type":"message"}
+{"nick":"amartens","date":"2013-08-29T16:27:49.329Z","type":"join"}
+{"nick":"trevnorris","message":"well the second listener will actually be returning a wrapped callback of the wrapped callback from the first","date":"2013-08-29T16:28:07.261Z","type":"message"}
+{"nick":"creationix","message":"right, double nested","date":"2013-08-29T16:28:13.329Z","type":"message"}
+{"nick":"creationix","message":"so you're saying those closures are slow?  has this been tested?","date":"2013-08-29T16:28:28.777Z","type":"message"}
+{"nick":"creationix","message":"I'm curious because I do this all the time","date":"2013-08-29T16:28:37.352Z","type":"message"}
+{"nick":"trevnorris","message":"http://blog.trevnorris.com/2013/08/callbacks-what-i-said-was.html","date":"2013-08-29T16:28:39.655Z","type":"message"}
+{"nick":"trevnorris","message":"skip the preamble","date":"2013-08-29T16:28:58.502Z","type":"message"}
+{"nick":"LeftWing","date":"2013-08-29T16:29:41.290Z","type":"join"}
+{"nick":"trevnorris","message":"creationix: and in this core case, in high I/O scenarios, we're talking about calling up to 100k callbacks/sec.","date":"2013-08-29T16:32:58.989Z","type":"message"}
+{"nick":"trevnorris","message":"creationix: and if each callback needs its own wrapper, that means you're spending a crap load of time in GC cleaning up all instantiated functions.","date":"2013-08-29T16:33:40.533Z","type":"message"}
+{"nick":"creationix","message":"trevnorris, so how do you plan on storing the state then?","date":"2013-08-29T16:34:54.124Z","type":"message"}
+{"nick":"creationix","message":"you still need objects for every request for every hook","date":"2013-08-29T16:35:05.772Z","type":"message"}
+{"nick":"creationix","message":"are objects a lot cheaper than closures?","date":"2013-08-29T16:35:18.349Z","type":"message"}
+{"nick":"trevnorris","message":"a closure is just the function scope, and creating functions within another function scope is expensive. much more so than a simple object.","date":"2013-08-29T16:36:08.316Z","type":"message"}
+{"nick":"creationix","message":"fair enough","date":"2013-08-29T16:36:18.115Z","type":"message"}
+{"nick":"trevnorris","message":"i almost have the tests written up as the model for the API, i'll post those for review in a bit","date":"2013-08-29T16:36:26.239Z","type":"message"}
+{"nick":"creationix","message":"if you're sure this is much cheaper I can live with it","date":"2013-08-29T16:36:29.737Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T16:37:26.930Z","type":"nick"}
+{"nick":"creationix","message":"of course as soon as someone creates new functions inside the asyncListener it's slower than ever","date":"2013-08-29T16:37:44.025Z","type":"message"}
+{"nick":"creationix","message":"I assume you'll be passing the \"domain\" data to the callbacks so they can be shared functions","date":"2013-08-29T16:38:03.779Z","type":"message"}
+{"nick":"kazupon","date":"2013-08-29T16:40:08.288Z","type":"join"}
+{"nick":"Gateway69","date":"2013-08-29T16:40:49.645Z","type":"part"}
+{"nick":"trevnorris","message":"yes","date":"2013-08-29T16:41:13.602Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-29T16:43:04.457Z","type":"nick"}
+{"nick":"creationix","message":"trevnorris, ok, now that I understand why you did the API the way you did, it's great","date":"2013-08-29T16:43:46.397Z","type":"message"}
+{"nick":"creationix","message":"also great articles btw","date":"2013-08-29T16:43:55.375Z","type":"message"}
+{"nick":"trevnorris","message":"thanks :)","date":"2013-08-29T16:44:02.228Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 264 seconds","date":"2013-08-29T16:45:30.994Z","type":"quit"}
+{"nick":"AvianFlu_","reason":"Ping timeout: 248 seconds","date":"2013-08-29T16:49:41.789Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-29T16:51:05.599Z","type":"quit"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-08-29T16:51:33.186Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T16:58:08.864Z","type":"nick"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-08-29T17:02:47.064Z","type":"quit"}
+{"nick":"csaoh","reason":"Quit: csaoh","date":"2013-08-29T17:03:05.868Z","type":"quit"}
+{"nick":"brson","date":"2013-08-29T17:04:54.234Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-08-29T17:06:06.237Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-29T17:09:37.306Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T17:22:57.268Z","type":"quit"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-08-29T17:23:03.580Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-29T17:23:26.808Z","type":"nick"}
+{"nick":"ecr","date":"2013-08-29T17:26:06.072Z","type":"join"}
+{"nick":"`3E|FOODING","new_nick":"`3rdEden","date":"2013-08-29T17:26:49.047Z","type":"nick"}
+{"nick":"trevnorris","message":"isaacs, othiym23, creationix: here are unit tests that should all pass once the API is fully implemented: https://github.com/trevnorris/node/commit/f789af8","date":"2013-08-29T17:29:52.720Z","type":"message"}
+{"nick":"trevnorris","message":"(reserve the right to change them a little during the coding process :)","date":"2013-08-29T17:30:10.098Z","type":"message"}
+{"nick":"indexzero","date":"2013-08-29T17:32:19.514Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037execSync-wip\u000f * \u00026971efd\u0002 : child_process: initial stab at spawnSync binding (+2 more commits) - http://git.io/5HhSsQ","date":"2013-08-29T17:36:11.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: hey","date":"2013-08-29T17:37:18.340Z","type":"message"}
+{"nick":"piscisaureus_","message":"yt?","date":"2013-08-29T17:37:20.459Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: on a webinar","date":"2013-08-29T17:37:32.091Z","type":"message"}
+{"nick":"piscisaureus_","message":"ok","date":"2013-08-29T17:37:37.954Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: done in 30 minutes or so","date":"2013-08-29T17:37:40.740Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: ok, kewl. I was just going to say - https://github.com/joyent/node/pull/6148 - it's now 95% there. Lacks tests and execSync/execFileSync.","date":"2013-08-29T17:38:45.537Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: unfortunately I won't have time to work on it until after nodeconf.eu","date":"2013-08-29T17:38:45.752Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: that was all","date":"2013-08-29T17:38:45.752Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Bert Belder\u000f \u00037execSync-wip\u000f * \u0002b7b02a0\u0002 : child_process: s/lookupSigno/lookupSignal/ - http://git.io/ehnErg","date":"2013-08-29T17:41:10.323Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-08-29T17:41:53.507Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-29T17:46:31.489Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-29T17:47:35.800Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-08-29T17:47:38.637Z","type":"quit"}
+{"nick":"trevnorris","message":"msg to all, there's a small flaw in the api. i'm working it out now and will post an update.","date":"2013-08-29T17:50:54.853Z","type":"message"}
+{"nick":"hz","date":"2013-08-29T17:53:11.696Z","type":"join"}
+{"nick":"csaoh","date":"2013-08-29T18:01:19.099Z","type":"join"}
+{"nick":"csaoh","reason":"Client Quit","date":"2013-08-29T18:01:32.236Z","type":"quit"}
+{"nick":"csaoh","date":"2013-08-29T18:02:11.047Z","type":"join"}
+{"nick":"csaoh","reason":"Client Quit","date":"2013-08-29T18:03:57.906Z","type":"quit"}
+{"nick":"indexzero","date":"2013-08-29T18:06:31.033Z","type":"join"}
+{"nick":"trevnorris","action":"&","date":"2013-08-29T18:12:23.888Z","type":"action"}
+{"nick":"MI6","message":"\u0002node-review\u0002: #79 \u00034FAILURE\u000f linux-ia32 (3/645) linux-x64 (5/645) windows-x64 (18/645) osx-x64 (1/645) centos-ia32 (1/645) centos-x64 (4/645) windows-ia32 (18/645) http://jenkins.nodejs.org/job/node-review/79/","date":"2013-08-29T18:25:07.188Z","type":"message"}
+{"nick":"isaacs","action":"fg","date":"2013-08-29T18:27:30.249Z","type":"action"}
+{"nick":"isaacs","message":"Domenic_: So, part of the reason why this vm stuff sucks is that it's super duper ancient.","date":"2013-08-29T18:27:47.918Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: like, from before the days when we figured out that doing more in JS was usually a good idea.","date":"2013-08-29T18:28:03.898Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: if i were to write it today, i'd have a separate class for the JS stuf that's exposed to users, and then have the C++ bits only abort() if they get incorrect errors, and have the C++ binding be a this._binding kind of thing, like how zlib does it","date":"2013-08-29T18:28:51.612Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-08-29T18:29:38.049Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-08-29T18:35:47.795Z","type":"join"}
+{"nick":"bnoordhuis","date":"2013-08-29T18:39:19.218Z","type":"join"}
+{"nick":"Domenic_","message":"isaacs: yeah, and I think we could still do that, but we'd want to re-think the current C++ Script entirely like I did with the static methods","date":"2013-08-29T18:39:37.004Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: e.g. you'd want a binding.makeScript() that you could use inside the JS constructor, or similar","date":"2013-08-29T18:40:14.426Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: in the end I am not sure it is worth any effort to shift stuff into JS for the sake of shifting it into JS. Especially not half-way.","date":"2013-08-29T18:43:09.743Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-master\u0002: #208 \u00037UNSTABLE\u000f windows (5/194) smartos (9/193) http://jenkins.nodejs.org/job/libuv-master/208/","date":"2013-08-29T18:43:11.302Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-08-29T18:48:22.133Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T18:51:18.734Z","type":"nick"}
+{"nick":"indexzero","date":"2013-08-29T18:52:30.057Z","type":"join"}
+{"nick":"isaacs","message":"eah.","date":"2013-08-29T18:52:50.392Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: i'm about ready to just say fuckit and leave it as-is.","date":"2013-08-29T18:52:59.590Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: it already supports filename as a string, the way that you had it.","date":"2013-08-29T18:53:11.321Z","type":"message"}
+{"nick":"tjfontaine","message":"must. stop. fork. bomb'ing. my. laptp.","date":"2013-08-29T18:53:21.452Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: and as i'm actually looking at restructuring it, it's kind of justa pita","date":"2013-08-29T18:53:32.521Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: wht are you doing?","date":"2013-08-29T18:53:35.870Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: oh, the image thingie?","date":"2013-08-29T18:53:42.050Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: ya, when doing a worker pool, always be sure to add the worker back to the pool if you have logic for spinning up new workers","date":"2013-08-29T18:54:01.790Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: can't you just set the process ulimit really low before you start messing with it?","date":"2013-08-29T18:54:05.452Z","type":"message"}
+{"nick":"tjfontaine","message":"I should, yes","date":"2013-08-29T18:54:13.076Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: also, have a limit on the number of workers you'll EVER allow to live at once.","date":"2013-08-29T18:54:27.691Z","type":"message"}
+{"nick":"trevnorris","message":"ok, have another solution. going to lunch, then writing it up. I swear, even if I have to lock myself in a closet, i'm going to have this done before the v0.12 release.","date":"2013-08-29T18:54:32.115Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: that number should probably not be \"Infinity\" by default","date":"2013-08-29T18:54:36.600Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2013-08-29T18:54:39.012Z","type":"message"}
+{"nick":"tjholowaychuk","date":"2013-08-29T18:56:41.527Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-node-integration\u0002: #192 \u00037UNSTABLE\u000f smartos-x64 (7/645) linux-x64 (2/645) linux-ia32 (1/645) http://jenkins.nodejs.org/job/libuv-node-integration/192/","date":"2013-08-29T18:57:17.733Z","type":"message"}
+{"nick":"philips","reason":"Read error: Connection reset by peer","date":"2013-08-29T19:04:30.232Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T19:05:16.608Z","type":"quit"}
+{"nick":"philips","date":"2013-08-29T19:05:30.037Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-29T19:06:13.022Z","type":"join"}
+{"nick":"ecr","reason":"Ping timeout: 264 seconds","date":"2013-08-29T19:07:07.025Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T19:08:36.208Z","type":"quit"}
+{"nick":"st_luke","date":"2013-08-29T19:11:03.841Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T19:11:40.417Z","type":"quit"}
+{"nick":"MI6","message":"\u0002node-review\u0002: #80 \u00037UNSTABLE\u000f linux-ia32 (1/645) linux-x64 (1/645) windows-x64 (20/645) smartos-x64 (6/645) centos-ia32 (1/645) centos-x64 (2/645) windows-ia32 (21/645) http://jenkins.nodejs.org/job/node-review/80/","date":"2013-08-29T19:19:12.175Z","type":"message"}
+{"nick":"piscisaureus_","date":"2013-08-29T19:22:06.606Z","type":"join"}
+{"nick":"EhevuTov","date":"2013-08-29T19:25:55.404Z","type":"join"}
+{"nick":"st_luke","date":"2013-08-29T19:28:54.177Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2013-08-29T19:32:39.525Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T19:43:12.212Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-08-29T19:48:23.580Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #300 \u00037UNSTABLE\u000f windows-x64 (20/645) windows-ia32 (21/645) http://jenkins.nodejs.org/job/nodejs-master-windows/300/","date":"2013-08-29T19:54:26.819Z","type":"message"}
+{"nick":"st_luke","date":"2013-08-29T19:59:01.229Z","type":"join"}
+{"nick":"ecr","date":"2013-08-29T19:59:22.750Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T20:01:29.991Z","type":"quit"}
+{"nick":"st_luke","date":"2013-08-29T20:04:04.987Z","type":"join"}
+{"nick":"`3rdEden","new_nick":"ircb","date":"2013-08-29T20:04:19.089Z","type":"nick"}
+{"nick":"ircb","new_nick":"`3rdEden","date":"2013-08-29T20:04:31.482Z","type":"nick"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-29T20:10:09.794Z","type":"quit"}
+{"nick":"indutny","message":"hm...","date":"2013-08-29T20:15:03.951Z","type":"message"}
+{"nick":"hz","date":"2013-08-29T20:15:09.364Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-08-29T20:16:59.452Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-08-29T20:17:29.903Z","type":"quit"}
+{"nick":"pachet","reason":"Quit: [ +++ ]","date":"2013-08-29T20:18:11.074Z","type":"quit"}
+{"nick":"indexzero","date":"2013-08-29T20:20:26.522Z","type":"join"}
+{"nick":"trevnorris","message":"anyone around for some api feedback regarding domains?","date":"2013-08-29T20:25:17.969Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate, Domenic_: I'm thinking that we should get rid of this janky \"isSyntaxError\" blacklist thingie, and isntead just check for \"SyntaxError: Unexpected end of input\"","date":"2013-08-29T20:25:42.646Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: since that's really the only error that can reasonably be recovered from *anyway*","date":"2013-08-29T20:25:57.815Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: Seems reasonable, I don't really have an opinion on that part of the code.","date":"2013-08-29T20:26:13.933Z","type":"message"}
+{"nick":"isaacs","message":"ohhh... wait.  nvm","date":"2013-08-29T20:26:30.316Z","type":"message"}
+{"nick":"isaacs","message":"ha, nevermind","date":"2013-08-29T20:26:42.086Z","type":"message"}
+{"nick":"isaacs","message":"consider 'function () {}.toString'","date":"2013-08-29T20:26:48.454Z","type":"message"}
+{"nick":"isaacs","message":"then on the next line, you type `()`","date":"2013-08-29T20:26:54.779Z","type":"message"}
+{"nick":"isaacs","message":"now it's a valid program (when wrapped in parens)","date":"2013-08-29T20:27:03.299Z","type":"message"}
+{"nick":"isaacs","message":"ugh.  this fucking language.","date":"2013-08-29T20:27:06.487Z","type":"message"}
+{"nick":"Domenic_","message":":P","date":"2013-08-29T20:27:22.545Z","type":"message"}
+{"nick":"tjfontaine","message":"it's going to be ok isaacs, I promise","date":"2013-08-29T20:27:37.333Z","type":"message"}
+{"nick":"isaacs","message":"haha","date":"2013-08-29T20:27:58.971Z","type":"message"}
+{"nick":"tjholowaychuk","reason":"Read error: Connection reset by peer","date":"2013-08-29T20:27:59.801Z","type":"quit"}
+{"nick":"isaacs","message":"why couldn't ry have stuck with his initial impulse and chosen haskell?  srsly.","date":"2013-08-29T20:28:10.546Z","type":"message"}
+{"nick":"isaacs","message":"ok, actually, this is kind of weird... but i might be able to make this work","date":"2013-08-29T20:28:30.446Z","type":"message"}
+{"nick":"isaacs","message":"you see, `function(){}.toString` is invalid without parens, but it IS valid with them","date":"2013-08-29T20:28:45.576Z","type":"message"}
+{"nick":"trevnorris","message":"how about one of my favorites: var a = blah <line 1> (function() { do some stuff}()) <line 2>","date":"2013-08-29T20:28:46.888Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: i'm down for some experimenting with that","date":"2013-08-29T20:28:58.021Z","type":"message"}
+{"nick":"isaacs","message":"hmm...","date":"2013-08-29T20:29:03.427Z","type":"message"}
+{"nick":"TooTallNate","message":"isaacs: the isSyntaxError() function is hard to maintain when the damn language keeps adding new SyntaxErrors","date":"2013-08-29T20:29:14.595Z","type":"message"}
+{"nick":"TooTallNate","message":"haha","date":"2013-08-29T20:29:15.532Z","type":"message"}
+{"nick":"isaacs","message":"TooTallNate: exactly!","date":"2013-08-29T20:30:04.585Z","type":"message"}
+{"nick":"Domenic_","message":"can we make a script to generate them from v8's source?","date":"2013-08-29T20:30:16.569Z","type":"message"}
+{"nick":"tjfontaine","message":"that was one thing I was going to suggest, but really I'm feeling like we should tag our repl as abandoned and let someone else maintain it in userland","date":"2013-08-29T20:30:53.085Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-08-29T20:31:20.575Z","type":"quit"}
+{"nick":"trevnorris","message":"how does d8 do it?","date":"2013-08-29T20:32:12.534Z","type":"message"}
+{"nick":"isaacs","message":"so, this is much more complicated because we do the stupid wrapping in () thing","date":"2013-08-29T20:34:23.122Z","type":"message"}
+{"nick":"isaacs","message":"so that `{ a : 1 }` is not a named numeric expression statement in a block","date":"2013-08-29T20:34:42.018Z","type":"message"}
+{"nick":"isaacs","message":"no other repl does this","date":"2013-08-29T20:34:53.292Z","type":"message"}
+{"nick":"isaacs","message":"afaik","date":"2013-08-29T20:34:54.772Z","type":"message"}
+{"nick":"isaacs","message":"eg, in chrome dev tools:","date":"2013-08-29T20:35:20.302Z","type":"message"}
+{"nick":"isaacs","message":"{ a: 1 }","date":"2013-08-29T20:35:20.661Z","type":"message"}
+{"nick":"isaacs","message":"1","date":"2013-08-29T20:35:21.371Z","type":"message"}
+{"nick":"isaacs","message":"i think we should drop the parens thing","date":"2013-08-29T20:35:36.922Z","type":"message"}
+{"nick":"isaacs","message":"makes this all MUCH easier","date":"2013-08-29T20:35:39.572Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: you around?","date":"2013-08-29T20:37:25.524Z","type":"message"}
+{"nick":"st_luke","date":"2013-08-29T20:39:10.749Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: d8 does it by not wrapping things in parens, and only continuing if you have an \"unexpected end of input\" error, i believ.","date":"2013-08-29T20:40:51.788Z","type":"message"}
+{"nick":"trevnorris","message":"cool.","date":"2013-08-29T20:41:12.530Z","type":"message"}
+{"nick":"trevnorris","message":"they don't have auto complete though :P","date":"2013-08-29T20:41:41.379Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-08-29T20:42:05.962Z","type":"quit"}
+{"nick":"trevnorris","message":"creationix: how about you?","date":"2013-08-29T20:43:23.586Z","type":"message"}
+{"nick":"trevnorris","message":"or for anyone, the async lister api is completely now completely oblivious to domains. this'll give some cool side effects.","date":"2013-08-29T20:44:55.624Z","type":"message"}
+{"nick":"trevnorris","message":"here's the unit tests, which pretty much show the api: https://github.com/trevnorris/node/blob/286480a","date":"2013-08-29T20:45:05.437Z","type":"message"}
+{"nick":"trevnorris","message":"though, I feel like passing something would be helpful, but can't put my finger on what could be passed.","date":"2013-08-29T20:45:30.844Z","type":"message"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 264 seconds","date":"2013-08-29T20:52:40.372Z","type":"quit"}
+{"nick":"rendar","reason":"Ping timeout: 268 seconds","date":"2013-08-29T20:55:50.169Z","type":"quit"}
+{"nick":"creationix","message":"trevnorris, hmm..","date":"2013-08-29T20:57:01.850Z","type":"message"}
+{"nick":"trevnorris","message":"then there'll be process.addDomain/removeDomain() which you pass an object similar to what was returned from the other discussed api.","date":"2013-08-29T20:59:47.473Z","type":"message"}
+{"nick":"trevnorris","message":"i was shoving too much functionality into one thing, and there were too many edge cases.","date":"2013-08-29T21:00:05.967Z","type":"message"}
+{"nick":"creationix","message":"trevnorris, so the test only counts calls to the hook?","date":"2013-08-29T21:00:59.694Z","type":"message"}
+{"nick":"trevnorris","message":"creationix: yeah. i'm creating a separate set of tests for the actual domain implementation","date":"2013-08-29T21:01:20.780Z","type":"message"}
+{"nick":"creationix","message":"so you still have the same events? before, after, error?","date":"2013-08-29T21:02:00.035Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-08-29T21:02:06.325Z","type":"message"}
+{"nick":"trevnorris","message":"except it'll be: process.addDomain({ before: fn, after: fn, error: fn, done: fn });","date":"2013-08-29T21:02:36.500Z","type":"message"}
+{"nick":"creationix","message":"hmm","date":"2013-08-29T21:03:02.961Z","type":"message"}
+{"nick":"creationix","message":"for CLS we need a way to set data on a per hook basis","date":"2013-08-29T21:03:23.063Z","type":"message"}
+{"nick":"trevnorris","message":"how do you mean, per hook?","date":"2013-08-29T21:03:49.721Z","type":"message"}
+{"nick":"creationix","message":"per call to the asyncListener","date":"2013-08-29T21:04:00.070Z","type":"message"}
+{"nick":"trevnorris","message":"oh, and you want the data to persist with just that callback?","date":"2013-08-29T21:04:20.243Z","type":"message"}
+{"nick":"creationix","message":"so if the user calls setTimeout 5 times, I need 5 calls with 5 different data values I can set","date":"2013-08-29T21:04:27.020Z","type":"message"}
+{"nick":"trevnorris","message":"wow, ok","date":"2013-08-29T21:04:32.419Z","type":"message"}
+{"nick":"trevnorris","message":"that's doable","date":"2013-08-29T21:04:37.350Z","type":"message"}
+{"nick":"creationix","message":"mostly we just need to record some program state at the point that the async listener is called and pass that recorded state on to the callbacks when they eventually get called","date":"2013-08-29T21:05:20.357Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-08-29T21:05:38.209Z","type":"nick"}
+{"nick":"creationix","message":"actually we don't need to pass data to the callback itself","date":"2013-08-29T21:05:43.611Z","type":"message"}
+{"nick":"creationix","message":"but rather the before and after hooks for the callback","date":"2013-08-29T21:05:49.945Z","type":"message"}
+{"nick":"trevnorris","message":"one sec. they're serving cupcakes!!!","date":"2013-08-29T21:06:18.192Z","type":"message"}
+{"nick":"c4milo","date":"2013-08-29T21:06:40.917Z","type":"join"}
+{"nick":"othiym23","message":"trevnorris: I'm here, I just had to get caught up on what I missed","date":"2013-08-29T21:06:49.606Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-08-29T21:07:01.382Z","type":"quit"}
+{"nick":"creationix","message":"trevnorris, btw, I'm having fun with mozilla stuff today too https://cloudup.com/cJ0igVDW3yl","date":"2013-08-29T21:07:33.269Z","type":"message"}
+{"nick":"Domenic_","message":"man now i want cupcakes","date":"2013-08-29T21:07:38.292Z","type":"message"}
+{"nick":"trevnorris","message":"creationix: heh, awesome.","date":"2013-08-29T21:08:50.527Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: hey, if you're in mountain view, swing by ;)","date":"2013-08-29T21:09:03.204Z","type":"message"}
+{"nick":"Domenic_","message":"trevnorris: :) in NYC, sad to say","date":"2013-08-29T21:09:22.361Z","type":"message"}
+{"nick":"dshaw_","date":"2013-08-29T21:09:51.786Z","type":"join"}
+{"nick":"othiym23","message":"trevnorris: which tree should I be looking at right this second?","date":"2013-08-29T21:10:08.155Z","type":"message"}
+{"nick":"othiym23","message":"man, this new keyboard is fucking sweet, but I kinda wish it were lower-profile","date":"2013-08-29T21:10:26.790Z","type":"message"}
+{"nick":"trevnorris","message":"I have https://github.com/joyent/node/pull/6011 updated with my latest rework.","date":"2013-08-29T21:10:34.088Z","type":"message"}
+{"nick":"othiym23","message":"http://www.wasdkeyboards.com/index.php/code-87-key-mechanical-keyboard.html","date":"2013-08-29T21:10:39.200Z","type":"message"}
+{"nick":"dominictarr","date":"2013-08-29T21:10:39.451Z","type":"part"}
+{"nick":"trevnorris","message":"... they're sold out.","date":"2013-08-29T21:11:21.834Z","type":"message"}
+{"nick":"othiym23","message":"already?","date":"2013-08-29T21:11:27.638Z","type":"message"}
+{"nick":"othiym23","message":"that didn't take long","date":"2013-08-29T21:11:30.464Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris, creationix: btw I dragooned you guys into a thread on the mailing list today, in a message nobody will read because Gmail totally botched its formatting","date":"2013-08-29T21:12:21.854Z","type":"message"}
+{"nick":"othiym23","message":"lesson learned: don't write email you care about on Gmail for iPad","date":"2013-08-29T21:12:31.732Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-29T21:12:34.964Z","type":"quit"}
+{"nick":"trevnorris","message":"heh","date":"2013-08-29T21:12:36.765Z","type":"message"}
+{"nick":"c4milo","date":"2013-08-29T21:12:49.655Z","type":"join"}
+{"nick":"trevnorris","message":"I tried writing a response last night, and right after I submitted it told me the message had been deleted.","date":"2013-08-29T21:13:31.649Z","type":"message"}
+{"nick":"othiym23","message":"I used to hate Mailman, but it's looking better in retrospect","date":"2013-08-29T21:14:14.569Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: so catch me up, are you thinking about removing the object from the asyncListener contract and using an out-of-band method for dealing with those now?","date":"2013-08-29T21:14:58.790Z","type":"message"}
+{"nick":"trevnorris","message":"to catch you up, it was too much to jam domain functionality into the async listeners.","date":"2013-08-29T21:15:01.398Z","type":"message"}
+{"nick":"othiym23","message":"define \"domain functionality\"","date":"2013-08-29T21:15:16.513Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-08-29T21:15:47.901Z","type":"join"}
+{"nick":"trevnorris","message":"the ability to persist a state/domain/context (whatever it's called now) with an asynchronous request.","date":"2013-08-29T21:15:50.792Z","type":"message"}
+{"nick":"trevnorris","message":"so instead i'm going to write a light weight way of simply alerting when something that will require a callback has been called.","date":"2013-08-29T21:16:23.369Z","type":"message"}
+{"nick":"trevnorris","message":"i.e. async listeners","date":"2013-08-29T21:16:32.248Z","type":"message"}
+{"nick":"trevnorris","message":"then I can implement the more complex domains idea we've discussed on top of that by creating a single async listener callback that will be called whenever someone adds a state/domain/context","date":"2013-08-29T21:17:15.661Z","type":"message"}
+{"nick":"othiym23","message":"so the API in the gist is obsolete now?","date":"2013-08-29T21:17:45.101Z","type":"message"}
+{"nick":"creationix","message":"what data will this lightweight hook be given?","date":"2013-08-29T21:17:53.492Z","type":"message"}
+{"nick":"creationix","message":"and it's return value is now ignored right?","date":"2013-08-29T21:18:01.421Z","type":"message"}
+{"nick":"trevnorris","message":"maybe, and undetermined.","date":"2013-08-29T21:18:18.890Z","type":"message"}
+{"nick":"trevnorris","message":"the first step is to get it calling back something when those async requests are made","date":"2013-08-29T21:18:34.755Z","type":"message"}
+{"nick":"trevnorris","message":"the other stuff is trivial to implement in comparison","date":"2013-08-29T21:18:57.316Z","type":"message"}
+{"nick":"trevnorris","message":"and the gist is only sort of obselete","date":"2013-08-29T21:19:41.686Z","type":"message"}
+{"nick":"trevnorris","message":"i need more information on this storing unique data with each call","date":"2013-08-29T21:20:02.969Z","type":"message"}
+{"nick":"creationix","message":"trevnorris, ok, so...","date":"2013-08-29T21:20:35.825Z","type":"message"}
+{"nick":"creationix","message":"I'll use settimeout as an example because it's simple, but the same applies to anything that queues later events","date":"2013-08-29T21:20:58.045Z","type":"message"}
+{"nick":"creationix","message":"suppose I call setTimeout twice at two different times.  For each call to setTimeout, I need my asyncListener to be called.  I need to look at the current state of the program and pass some data to before and after functions","date":"2013-08-29T21:21:49.518Z","type":"message"}
+{"nick":"creationix","message":"I can share the same before and after functions between all event types","date":"2013-08-29T21:22:09.229Z","type":"message"}
+{"nick":"creationix","message":"but I need unique data for each event","date":"2013-08-29T21:22:19.890Z","type":"message"}
+{"nick":"creationix","message":"so I guess it's just another callback","date":"2013-08-29T21:22:42.325Z","type":"message"}
+{"nick":"trevnorris","message":"ah, ok.","date":"2013-08-29T21:22:53.870Z","type":"message"}
+{"nick":"creationix","message":"before, after, error, done, and setup","date":"2013-08-29T21:22:55.355Z","type":"message"}
+{"nick":"creationix","message":"whatever setup returns needs to be passed to before, after, error, and done","date":"2013-08-29T21:23:16.937Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-29T21:23:42.382Z","type":"quit"}
+{"nick":"c4milo","date":"2013-08-29T21:23:51.802Z","type":"join"}
+{"nick":"trevnorris","message":"understand it conceptually. give my brain cells a moment to process the api.","date":"2013-08-29T21:24:14.289Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-08-29T21:24:36.666Z","type":"quit"}
+{"nick":"othiym23","message":"creationix: doesn't the current version of CLS depend on being able to replace the context object?","date":"2013-08-29T21:25:14.037Z","type":"message"}
+{"nick":"austo","date":"2013-08-29T21:25:55.867Z","type":"join"}
+{"nick":"creationix","message":"trevnorris, https://gist.github.com/creationix/33da0230ae46e01c9d7c","date":"2013-08-29T21:27:49.058Z","type":"message"}
+{"nick":"creationix","message":"CLS will need all the event hooks except for \"done\"","date":"2013-08-29T21:28:09.580Z","type":"message"}
+{"nick":"creationix","message":"othiym23, what do you mean replace the context?","date":"2013-08-29T21:30:55.292Z","type":"message"}
+{"nick":"creationix","message":"\"setup\" can read the current context","date":"2013-08-29T21:31:06.543Z","type":"message"}
+{"nick":"creationix","message":"\"before\" can activate it","date":"2013-08-29T21:31:11.953Z","type":"message"}
+{"nick":"creationix","message":"\"after\" can deactivate it","date":"2013-08-29T21:31:16.472Z","type":"message"}
+{"nick":"othiym23","message":"you right, never mind me","date":"2013-08-29T21:31:28.060Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: sorry, i was wrong.  d8 doesn't buffer *anything*","date":"2013-08-29T21:32:34.384Z","type":"message"}
+{"nick":"CoverSlide","date":"2013-08-29T21:32:35.409Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: it reads until the eol, and then evals it, and if you get any kind of error, then that's it.","date":"2013-08-29T21:32:46.724Z","type":"message"}
+{"nick":"trevnorris","message":"simple enough, I guess, but bummer","date":"2013-08-29T21:32:57.826Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: yeah, but it is simpler.","date":"2013-08-29T21:33:29.504Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: i'm thinking though, we really *only* need the parens for {a:1}","date":"2013-08-29T21:33:42.703Z","type":"message"}
+{"nick":"trevnorris","message":"true","date":"2013-08-29T21:33:48.932Z","type":"message"}
+{"nick":"isaacs","message":"everything other than object literals actually the parens are a problem","date":"2013-08-29T21:33:52.693Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-29T21:36:33.034Z","type":"quit"}
+{"nick":"mikeal","date":"2013-08-29T21:37:18.396Z","type":"join"}
+{"nick":"creationix","message":"trevnorris, would it be useful for the setup() hook to give me information about the event","date":"2013-08-29T21:41:31.408Z","type":"message"}
+{"nick":"creationix","message":"like event type","date":"2013-08-29T21:41:33.998Z","type":"message"}
+{"nick":"trevnorris","message":"working, sec.","date":"2013-08-29T21:41:46.948Z","type":"message"}
+{"nick":"creationix","message":"(\"timer\", \"fs\", \"fs.open\", etc)?","date":"2013-08-29T21:41:48.266Z","type":"message"}
+{"nick":"trevnorris","message":"they're not all events","date":"2013-08-29T21:41:55.475Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-08-29T21:42:40.126Z","type":"nick"}
+{"nick":"trevnorris","message":"they're from ReqWrap, Timers, process.nextTick or EventEmitter","date":"2013-08-29T21:42:43.927Z","type":"message"}
+{"nick":"trevnorris","message":"each one is slightly unique","date":"2013-08-29T21:42:51.862Z","type":"message"}
+{"nick":"txdv","date":"2013-08-29T21:43:42.201Z","type":"join"}
+{"nick":"trevnorris","message":"but you have strange things, say, you create a ReqWrap to request I/O from the file system. but that fires an internal .oncomplete callback, and that will fire the user supplied callback.","date":"2013-08-29T21:43:59.728Z","type":"message"}
+{"nick":"trevnorris","message":"but I can't know ahead of time which event emitter callback will fire, so the most I can give you is information about the ReqWrap request","date":"2013-08-29T21:44:33.800Z","type":"message"}
+{"nick":"trevnorris","message":"and even then. the .oncomplete callback could change while the request is in transit, so most I could hand you is the context of the request (the \"this\")","date":"2013-08-29T21:45:11.826Z","type":"message"}
+{"nick":"trevnorris","message":"but that will be useless for process.nextTick, since it's context-less","date":"2013-08-29T21:45:30.533Z","type":"message"}
+{"nick":"trevnorris","message":"sorry, does that make sense?","date":"2013-08-29T21:47:54.785Z","type":"message"}
+{"nick":"trevnorris","message":"not trying to poop on anyones parade. just brain streaming what i've been thinking about the last 2 weeks.","date":"2013-08-29T21:48:20.429Z","type":"message"}
+{"nick":"othiym23","message":"that makes sense to me","date":"2013-08-29T21:50:08.534Z","type":"message"}
+{"nick":"othiym23","message":"I'd be interested to hear what value creationix thinks the class of event might add","date":"2013-08-29T21:50:17.609Z","type":"message"}
+{"nick":"trevnorris","message":"I was considering passing the context (i.e. \"this\") to the async listener, because it'd be useful for tracing how often specific things call out asynchronously.","date":"2013-08-29T21:51:21.561Z","type":"message"}
+{"nick":"trevnorris","message":"e.g. dtrace type stuff","date":"2013-08-29T21:51:34.903Z","type":"message"}
+{"nick":"isaacs","message":"omg, there are so many hairy terrible edge cases that removing this kludgey crap fixes.","date":"2013-08-29T21:53:24.641Z","type":"message"}
+{"nick":"isaacs","message":"i keep finding them :)","date":"2013-08-29T21:53:27.680Z","type":"message"}
+{"nick":"trevnorris","message":"go isaacs!","date":"2013-08-29T21:53:38.545Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-08-29T21:55:39.750Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-08-29T21:56:36.920Z","type":"join"}
+{"nick":"tjfontaine","message":"isaacs: in the repl?","date":"2013-08-29T21:57:24.360Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: yeah","date":"2013-08-29T21:57:36.318Z","type":"message"}
+{"nick":"isaacs","message":"it prevents potential double-evaling, but i can't seem to figure out a way to show that","date":"2013-08-29T21:57:53.078Z","type":"message"}
+{"nick":"isaacs","message":"aha, here's one:","date":"2013-08-29T22:00:07.427Z","type":"message"}
+{"nick":"isaacs","message":"> x = 1","date":"2013-08-29T22:00:08.966Z","type":"message"}
+{"nick":"isaacs","message":"1","date":"2013-08-29T22:00:09.178Z","type":"message"}
+{"nick":"isaacs","message":"> eval('x++; throw new SyntaxError(\"e\")')","date":"2013-08-29T22:00:09.178Z","type":"message"}
+{"nick":"isaacs","message":"... ^C","date":"2013-08-29T22:00:09.178Z","type":"message"}
+{"nick":"isaacs","message":"> x","date":"2013-08-29T22:00:11.465Z","type":"message"}
+{"nick":"isaacs","message":"3","date":"2013-08-29T22:00:13.986Z","type":"message"}
+{"nick":"trevnorris","message":"creationix, othiym23: brain dump revision: https://gist.github.com/trevnorris/6372405","date":"2013-08-29T22:07:36.163Z","type":"message"}
+{"nick":"othiym23","message":"lookin lookin","date":"2013-08-29T22:13:38.166Z","type":"message"}
+{"nick":"othiym23","message":"whao, this is a me-style wall o text","date":"2013-08-29T22:13:47.539Z","type":"message"}
+{"nick":"othiym23","message":"looks good trevnorris ","date":"2013-08-29T22:15:13.731Z","type":"message"}
+{"nick":"othiym23","message":"ship it!","date":"2013-08-29T22:15:20.069Z","type":"message"}
+{"nick":"othiym23","message":"(more realistically, I won't know if this has holes until there's an implementation I can play with, but it looks slightly cleaner than yesterday's revision)","date":"2013-08-29T22:15:56.862Z","type":"message"}
+{"nick":"philips","reason":"Changing host","date":"2013-08-29T22:20:10.626Z","type":"quit"}
+{"nick":"philips","date":"2013-08-29T22:20:10.842Z","type":"join"}
+{"nick":"groundwater","reason":"Ping timeout: 245 seconds","date":"2013-08-29T22:22:56.602Z","type":"quit"}
+{"nick":"trevnorris","message":"othiym23: thanks. i'm going to start with just calling the callback on queued async events.","date":"2013-08-29T22:25:57.585Z","type":"message"}
+{"nick":"trevnorris","message":"I can work in the domain object propagation afterwards.","date":"2013-08-29T22:26:06.405Z","type":"message"}
+{"nick":"CoverSlide","reason":"Quit: leaving","date":"2013-08-29T22:26:06.788Z","type":"quit"}
+{"nick":"CoverSlide","date":"2013-08-29T22:26:18.749Z","type":"join"}
+{"nick":"trevnorris","message":"isaacs: when you're not nipple deep in repl, mind taking a peak at this api: https://gist.github.com/trevnorris/6372405","date":"2013-08-29T22:27:18.563Z","type":"message"}
+{"nick":"pachet","date":"2013-08-29T22:27:23.991Z","type":"join"}
+{"nick":"trevnorris","message":"bnoordhuis: you're alive! how goes things?","date":"2013-08-29T22:27:27.930Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: i'll take a look later.  need to run out ofr a bit","date":"2013-08-29T22:27:53.209Z","type":"message"}
+{"nick":"othiym23","message":"here's the use cases I'm thinking of when evaluating these APIs: 1. long stacktraces, 2. logging, 3. error handling, 4. execution tracing","date":"2013-08-29T22:27:53.418Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: np, not like i'll have it done today or anything ;)","date":"2013-08-29T22:28:17.470Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: whatever you finally come up with, I'll probably adapt cls-glue to have an identical API","date":"2013-08-29T22:28:46.598Z","type":"message"}
+{"nick":"isaacs","message":"othiym23: i'd also like to get flamegraphs of the time my program is NOT on CPU, and why","date":"2013-08-29T22:28:52.147Z","type":"message"}
+{"nick":"othiym23","message":"well, either I or creationix will","date":"2013-08-29T22:28:54.802Z","type":"message"}
+{"nick":"isaacs","message":"othiym23: ie, if i'm doing more async operations, which take almost no time on cpu, but still slow things down","date":"2013-08-29T22:29:17.303Z","type":"message"}
+{"nick":"isaacs","message":"i guess that's \"execution tracing\"","date":"2013-08-29T22:29:29.217Z","type":"message"}
+{"nick":"othiym23","message":"yeah, that's the goal for New Relic as well","date":"2013-08-29T22:29:37.201Z","type":"message"}
+{"nick":"othiym23","message":"we're gonna have to get their incrementally, though, because a lot of things I need to do that right aren't really in place yet","date":"2013-08-29T22:29:57.589Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: you should be able to filter those, since i'm passing the context you'll be able to do things like if (context instanceof Timers) or whatever","date":"2013-08-29T22:30:31.585Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: neat","date":"2013-08-29T22:30:45.745Z","type":"message"}
+{"nick":"trevnorris","message":"i had another thought, but it seems sort of insane, but possibly cool.","date":"2013-08-29T22:31:33.236Z","type":"message"}
+{"nick":"othiym23","message":"insanity is my specialty","date":"2013-08-29T22:31:57.058Z","type":"message"}
+{"nick":"othiym23","message":"lay it on me","date":"2013-08-29T22:32:00.578Z","type":"message"}
+{"nick":"trevnorris","message":"i'm going to be returning an identifying object, like timers, and it'd be possible to have an array in there that shows the current queue of all contexts that are waiting for processing","date":"2013-08-29T22:32:02.416Z","type":"message"}
+{"nick":"trevnorris","message":"that even make sense?","date":"2013-08-29T22:33:37.352Z","type":"message"}
+{"nick":"othiym23","message":"it does, but I haven't come up with a use for it y et","date":"2013-08-29T22:33:57.196Z","type":"message"}
+{"nick":"othiym23","message":"not to say there isn't one","date":"2013-08-29T22:34:01.847Z","type":"message"}
+{"nick":"othiym23","message":"there might be an interesting metric lurking in there somewhere","date":"2013-08-29T22:34:11.004Z","type":"message"}
+{"nick":"trevnorris","message":"i was thinking, like if there's an error you could scan through and see what else is waiting to finish.","date":"2013-08-29T22:34:34.472Z","type":"message"}
+{"nick":"trevnorris","message":"then I might be able to do something bat shit crazy like allow you to drop async requests in transit, so the callback won't run.","date":"2013-08-29T22:35:48.556Z","type":"message"}
+{"nick":"trevnorris","message":"ok, getting way way ahead of myself.","date":"2013-08-29T22:35:54.360Z","type":"message"}
+{"nick":"othiym23","message":"it would be great to be able to tell people how \"deep\" their various processing queues are","date":"2013-08-29T22:36:29.024Z","type":"message"}
+{"nick":"othiym23","message":"right now that information isn't really exposed","date":"2013-08-29T22:36:48.569Z","type":"message"}
+{"nick":"trevnorris","message":"like see a list of all async requests currently in the wild type of thing?","date":"2013-08-29T22:37:15.892Z","type":"message"}
+{"nick":"othiym23","message":"yeah","date":"2013-08-29T22:37:36.100Z","type":"message"}
+{"nick":"othiym23","message":"you can do _getActiveHandles and _getActiveRequests, but not many people know what that's telilng them","date":"2013-08-29T22:37:53.527Z","type":"message"}
+{"nick":"othiym23","message":"and there's no way to get at the depth of the nextTick or setImmediate queues from userland, is there?","date":"2013-08-29T22:38:16.939Z","type":"message"}
+{"nick":"trevnorris","message":"now, i'm designing this to be as performant as Node-ly possible, but still going to be ridiculously expensive.","date":"2013-08-29T22:38:34.090Z","type":"message"}
+{"nick":"trevnorris","message":"and no, that was a design decision.","date":"2013-08-29T22:38:40.205Z","type":"message"}
+{"nick":"othiym23","message":"I think minimizing the closure overhead / GC pressure of creating so many functions is all I can realistically hope for","date":"2013-08-29T22:39:17.739Z","type":"message"}
+{"nick":"groundwater","date":"2013-08-29T22:39:26.745Z","type":"join"}
+{"nick":"trevnorris","message":"yeah. there'll be just one closure that runs everything.","date":"2013-08-29T22:39:48.321Z","type":"message"}
+{"nick":"othiym23","message":"the alternative is threading all this stuff into the C++ side of things, or instrumenting libuv itself, and that seems like an awful lot of work for what might turn out to be only a marginal improvement in efficiency","date":"2013-08-29T22:40:00.254Z","type":"message"}
+{"nick":"trevnorris","message":"not sure how that could be possible.","date":"2013-08-29T22:40:30.815Z","type":"message"}
+{"nick":"othiym23","message":"it's possible there's a way to abuse DTrace into generating individual request tracing, but if there is, I wasn't able to find it","date":"2013-08-29T22:40:41.014Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine could probably help you there","date":"2013-08-29T22:40:53.992Z","type":"message"}
+{"nick":"othiym23","message":"I was thinking about this this morning","date":"2013-08-29T22:41:07.073Z","type":"message"}
+{"nick":"othiym23","message":"what we're really building here is part of a lifting operation, where we're capturing a context without letting the code running in that context know that it's being captured","date":"2013-08-29T22:41:35.937Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2013-08-29T22:41:47.975Z","type":"quit"}
+{"nick":"othiym23","message":"and there's all kinds of CPS transform gubbidge that statically typed functional language compilers use to do this when transpiling to C","date":"2013-08-29T22:42:11.509Z","type":"message"}
+{"nick":"othiym23","message":"but JS's design doesn't really offer much in the way of help","date":"2013-08-29T22:42:39.323Z","type":"message"}
+{"nick":"tjfontaine","message":"ohai","date":"2013-08-29T22:59:47.682Z","type":"message"}
+{"nick":"othiym23","message":"tjfontaine: so if I wanted to trace execution of a continuation chain using DTrace, is there a way I could abuse memory addresses or whatever to do what I wanted?","date":"2013-08-29T23:00:37.326Z","type":"message"}
+{"nick":"tjfontaine","message":"oh man, lets step back a few assumptions","date":"2013-08-29T23:00:54.651Z","type":"message"}
+{"nick":"tjfontaine","message":"can you provide me an example more precisely of what you would want to do?","date":"2013-08-29T23:01:23.138Z","type":"message"}
+{"nick":"othiym23","message":"I sort of halfassed something that could extract traces of individual requests from the output of node --trace-all, but it was based on treating addresses as opaque identifiers, which did not seem at all sane to me","date":"2013-08-29T23:01:27.928Z","type":"message"}
+{"nick":"othiym23","message":"sure, just what I'm doing with CLS, more or less, but from the C++ / D side of things","date":"2013-08-29T23:01:53.180Z","type":"message"}
+{"nick":"tjfontaine","message":"so, with dtrace you can attach at (dtrace) process level variables, or at thread local variables","date":"2013-08-29T23:02:25.127Z","type":"message"}
+{"nick":"tjfontaine","message":"so depending on what you're looking to keep track of, yes it can be done","date":"2013-08-29T23:02:38.115Z","type":"message"}
+{"nick":"tjfontaine","message":"that's basically what happens for most examples you \"register interest\" and then perform subsequent operations based on that interest","date":"2013-08-29T23:03:02.711Z","type":"message"}
+{"nick":"othiym23","message":"right, but it gets dicey when you're trying to get it to register interest across call / async boundaries","date":"2013-08-29T23:03:38.128Z","type":"message"}
+{"nick":"tjfontaine","message":"so I would say the hardest (but not insurmountable) option, would actually be trying to see where you were about to land from MakeCallback","date":"2013-08-29T23:04:20.767Z","type":"message"}
+{"nick":"othiym23","message":"it would be super rad to be able to profile continuation chains from DTrace and generate aggregate metrics over whole-request timings","date":"2013-08-29T23:05:19.716Z","type":"message"}
+{"nick":"othiym23","message":"I mean, that's more or less what I'm trying to do with the execution tracer for New Relic, only from pure (slow) JS","date":"2013-08-29T23:05:37.539Z","type":"message"}
+{"nick":"othiym23","message":"and trevnorris and I were just discussing how to speed that up, and if you can *do* it at all in DTrace, seems like it'd be the fastest option","date":"2013-08-29T23:06:13.320Z","type":"message"}
+{"nick":"trevnorris","message":"who the fuck broke dns?","date":"2013-08-29T23:06:36.006Z","type":"message"}
+{"nick":"tjfontaine","message":"well, you want to profile how long continuation chains take for a given request?","date":"2013-08-29T23:06:36.721Z","type":"message"}
+{"nick":"trevnorris","message":"node: ../deps/uv/src/uv-common.c:475: int uv__getaddrinfo_translate_error(int): Assertion `!\"unknown EAI_* error code\"' failed.","date":"2013-08-29T23:06:41.766Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-08-29T23:07:00.495Z","type":"join"}
+{"nick":"tjfontaine","message":"trevnorris: how did you manage that?","date":"2013-08-29T23:07:01.892Z","type":"message"}
+{"nick":"trevnorris","message":"i ran make test","date":"2013-08-29T23:07:07.603Z","type":"message"}
+{"nick":"trevnorris","message":"on master","date":"2013-08-29T23:07:19.671Z","type":"message"}
+{"nick":"tjfontaine","message":"this is likely the errno refactor","date":"2013-08-29T23:07:40.416Z","type":"message"}
+{"nick":"othiym23","message":"tjfontaine: ideally what I want is a set of aggregate metrics that break down into little pieces how long each piece of a continuation chain took on average, given certain transactional boundaries to define what the \"continuation chain\" is in a given case","date":"2013-08-29T23:08:08.500Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: yup. it's from the uv v0.11.11 upgrade","date":"2013-08-29T23:08:39.616Z","type":"message"}
+{"nick":"trevnorris","message":"freakin bert, where is he","date":"2013-08-29T23:09:14.978Z","type":"message"}
+{"nick":"tjfontaine","message":"othiym23: the best way would be to add some more probe points in whatever api lands","date":"2013-08-29T23:10:55.708Z","type":"message"}
+{"nick":"tjfontaine","message":"othiym23: making that work with glue could be done with some helper probes in your glue stack","date":"2013-08-29T23:11:21.265Z","type":"message"}
+{"nick":"othiym23","message":"tjfontaine: I'm just constantly checking with people to make sure I haven't been wasting the last 14 months ;)","date":"2013-08-29T23:11:39.555Z","type":"message"}
+{"nick":"tjfontaine","message":"it may be possible today without modification to node or your CLS stuff, but it would probably be evil","date":"2013-08-29T23:11:52.227Z","type":"message"}
+{"nick":"tjfontaine","message":"othiym23: we should schedule some time to talk about in earnest I think","date":"2013-08-29T23:12:06.397Z","type":"message"}
+{"nick":"tjfontaine","message":"*it in","date":"2013-08-29T23:12:18.342Z","type":"message"}
+{"nick":"othiym23","message":"someday I'm gonna state the problem in such a way that somebody's going to say, \"why didn't you just use <magic, yet retrospectively obvious thing>, you dumbass?\"","date":"2013-08-29T23:12:28.519Z","type":"message"}
+{"nick":"othiym23","message":"I just know it","date":"2013-08-29T23:12:30.705Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-08-29T23:12:55.545Z","type":"message"}
+{"nick":"othiym23","message":"well, it's kinda a moot point, because I can't commit to DTrace support until it's something that's easily available on AWS, realistically","date":"2013-08-29T23:13:14.890Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: you could also blame the fact that internet is not default in make test","date":"2013-08-29T23:13:33.079Z","type":"message"}
+{"nick":"othiym23","message":"although Joyent and NR are buds, so maybe we can talk about it at the BD level for a post-1.0 spike","date":"2013-08-29T23:13:35.991Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: how do you mean?","date":"2013-08-29T23:14:01.418Z","type":"message"}
+{"nick":"tjfontaine","message":"othiym23: that's part of why I thought that the generic _trace.js points would be helpful, so you could polyfill on [dumber|older] platforms","date":"2013-08-29T23:14:38.360Z","type":"message"}
+{"nick":"trevnorris","message":"ircretary: tell bnoordhuis after uv v0.11.11 upgrade get this for dns tests: uv-common.c:475: int uv__getaddrinfo_translate_error(int): Assertion `!\"unknown EAI_* error code\"' failed.","date":"2013-08-29T23:14:40.377Z","type":"message"}
+{"nick":"ircretary","message":"trevnorris: I'll be sure to tell bnoordhuis","date":"2013-08-29T23:14:41.041Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I mean `make test` just does python tools/test.py simple message","date":"2013-08-29T23:15:43.886Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: the error is only shown in python tools/test.py internet","date":"2013-08-29T23:15:52.959Z","type":"message"}
+{"nick":"trevnorris","message":"still not following, shouldn't he have seen the error when running \"make test\" on his box?","date":"2013-08-29T23:16:36.156Z","type":"message"}
+{"nick":"tjfontaine","message":"because someone for other reasons didn't like that we had a test that needed the internet","date":"2013-08-29T23:16:36.372Z","type":"message"}
+{"nick":"tjfontaine","message":"it doesn't happen here unless I run the internet suite","date":"2013-08-29T23:16:57.079Z","type":"message"}
+{"nick":"tjfontaine","message":"test: all","date":"2013-08-29T23:16:57.510Z","type":"message"}
+{"nick":"tjfontaine","message":"  $(PYTHON) tools/test.py --mode=release simple message","date":"2013-08-29T23:16:57.776Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-29T23:17:38.146Z","type":"quit"}
+{"nick":"tjfontaine","message":"https://gist.github.com/tjfontaine/6384588","date":"2013-08-29T23:17:47.130Z","type":"message"}
+{"nick":"trevnorris","message":"all I ran was \"make test\" so that wouldn't have included \"internet\", right? I didn't even realize those were there","date":"2013-08-29T23:17:49.025Z","type":"message"}
+{"nick":"mikeal","date":"2013-08-29T23:18:38.741Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: run ./node test/simple/test-net-dns-error.js","date":"2013-08-29T23:18:49.803Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: you might try and revert https://github.com/joyent/libuv/commit/9d60f1ebda0cdedc67ee439997e60b74a40f2f3f","date":"2013-08-29T23:18:56.960Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: works here","date":"2013-08-29T23:19:14.060Z","type":"message"}
+{"nick":"trevnorris","message":"what OS you using?","date":"2013-08-29T23:19:22.182Z","type":"message"}
+{"nick":"tjfontaine","message":"also not showing up http://jenkins.nodejs.org/job/nodejs-master/lastCompletedBuild/testReport/","date":"2013-08-29T23:19:24.954Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: osx","date":"2013-08-29T23:19:32.268Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I believe the error is there, just not as easily reproduced in the base as it is for you","date":"2013-08-29T23:19:53.969Z","type":"message"}
+{"nick":"tjfontaine","message":"oh I know what is","date":"2013-08-29T23:20:14.814Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/joyent/libuv/commit/3f2d4d535867a99170b4964f2e3db1ef70968c23","date":"2013-08-29T23:20:17.829Z","type":"message"}
+{"nick":"tjfontaine","message":"that's the commit that's blowing","date":"2013-08-29T23:20:27.472Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: this is probably a legit bug in node that should be handled","date":"2013-08-29T23:22:30.582Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: alright, also that's not the commit. I reverted that and the error still occurs.","date":"2013-08-29T23:23:15.840Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: you sure you got it? the file has changed because of the subsequent commit, if I manually revert the addition in my tree it works","date":"2013-08-29T23:25:01.947Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: i just went in an deleted the line","date":"2013-08-29T23:25:17.555Z","type":"message"}
+{"nick":"trevnorris","message":"i'm talking about 3f2d4","date":"2013-08-29T23:25:39.558Z","type":"message"}
+{"nick":"tjfontaine","message":"me as well, I went it line 150 in deps/uv/src/unix/loop.c and commented it out","date":"2013-08-29T23:26:04.041Z","type":"message"}
+{"nick":"trevnorris","message":"ditto","date":"2013-08-29T23:26:11.355Z","type":"message"}
+{"nick":"tjfontaine","message":"oh","date":"2013-08-29T23:26:11.802Z","type":"message"}
+{"nick":"tjfontaine","message":"we have different asserts blowing","date":"2013-08-29T23:26:16.410Z","type":"message"}
+{"nick":"tjfontaine","message":"cute","date":"2013-08-29T23:26:23.287Z","type":"message"}
+{"nick":"tjfontaine","message":"yours is from ...","date":"2013-08-29T23:26:27.011Z","type":"message"}
+{"nick":"trevnorris","message":"hah, awesome.","date":"2013-08-29T23:26:27.299Z","type":"message"}
+{"nick":"trevnorris","message":"uv-common.c:475","date":"2013-08-29T23:26:58.868Z","type":"message"}
+{"nick":"trevnorris","message":"int uv__getaddrinfo_translate_error(int): Assertion `!\"unknown EAI_* error code\"' failed.","date":"2013-08-29T23:27:06.637Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-08-29T23:27:32.373Z","type":"quit"}
+{"nick":"trevnorris","message":"that was committed for ever ago in 3ee4d3f1","date":"2013-08-29T23:28:23.644Z","type":"message"}
+{"nick":"trevnorris","message":"ah, in the massive return error codes directly commit","date":"2013-08-29T23:28:44.927Z","type":"message"}
+{"nick":"trevnorris","message":"but no idea why it's blowing now","date":"2013-08-29T23:28:52.540Z","type":"message"}
+{"nick":"tjfontaine","message":"run it in gdb so we can find out which errno it is","date":"2013-08-29T23:29:28.327Z","type":"message"}
+{"nick":"trevnorris","message":"uv__getaddrinfo_translate_error (sys_err=-5)","date":"2013-08-29T23:30:22.754Z","type":"message"}
+{"nick":"trevnorris","message":"so the error code is -5","date":"2013-08-29T23:31:30.455Z","type":"message"}
+{"nick":"trevnorris","message":"there a way to decode that?","date":"2013-08-29T23:31:37.062Z","type":"message"}
+{"nick":"tjfontaine","message":"yes, it's ENODATA, which is right","date":"2013-08-29T23:32:16.689Z","type":"message"}
+{"nick":"trevnorris","message":"hm. well uv__getaddrinfo_translate_error doesn't recognize it","date":"2013-08-29T23:32:44.911Z","type":"message"}
+{"nick":"tjfontaine","message":"can you `dis` that function and gist it?","date":"2013-08-29T23:33:20.405Z","type":"message"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-08-29T23:33:33.360Z","type":"quit"}
+{"nick":"trevnorris","message":"in gdb?","date":"2013-08-29T23:33:40.109Z","type":"message"}
+{"nick":"tjfontaine","message":"yes","date":"2013-08-29T23:33:43.915Z","type":"message"}
+{"nick":"tjfontaine","message":"`disas`","date":"2013-08-29T23:33:58.138Z","type":"message"}
+{"nick":"tjfontaine","message":"if you're in the frame for it","date":"2013-08-29T23:34:10.235Z","type":"message"}
+{"nick":"trevnorris","message":"want the frame for uv__getaddrinfo_work or uv__getaddrinfo_translate_error?","date":"2013-08-29T23:34:44.431Z","type":"message"}
+{"nick":"tjfontaine","message":"translate_error","date":"2013-08-29T23:34:53.847Z","type":"message"}
+{"nick":"tjfontaine","message":"I wanna see which set we're actually comparing against","date":"2013-08-29T23:35:01.479Z","type":"message"}
+{"nick":"tjfontaine","message":"if some how you managed to compile without it being set","date":"2013-08-29T23:35:14.563Z","type":"message"}
+{"nick":"tjfontaine","message":"or if it's a different value","date":"2013-08-29T23:35:18.203Z","type":"message"}
+{"nick":"trevnorris","message":"https://gist.github.com/trevnorris/6384695","date":"2013-08-29T23:35:24.638Z","type":"message"}
+{"nick":"tjfontaine","message":"heh, screw it, put fprintf(stderr, \"%d -- %d\\n\", EAI_NODATA, sys_err); fflush(stderr); in that function","date":"2013-08-29T23:37:13.190Z","type":"message"}
+{"nick":"trevnorris","message":"-3007 -- -5","date":"2013-08-29T23:38:59.776Z","type":"message"}
+{"nick":"tjfontaine","message":"uh, really?","date":"2013-08-29T23:39:13.935Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-08-29T23:39:22.430Z","type":"quit"}
+{"nick":"tjfontaine","message":"you didn't use UV_EAI_NODATA did you?","date":"2013-08-29T23:39:22.823Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. it said EAI_NODATA was undefined","date":"2013-08-29T23:39:49.475Z","type":"message"}
+{"nick":"trevnorris","message":"so I used UV_*","date":"2013-08-29T23:39:54.109Z","type":"message"}
+{"nick":"tjfontaine","message":"ok that's a valid use case","date":"2013-08-29T23:39:56.596Z","type":"message"}
+{"nick":"tjfontaine","message":"see the defins","date":"2013-08-29T23:39:58.735Z","type":"message"}
+{"nick":"tjfontaine","message":"*defines","date":"2013-08-29T23:40:00.983Z","type":"message"}
+{"nick":"tjfontaine","message":"use EAI_NONAME instead of EAI_NODATA","date":"2013-08-29T23:40:11.918Z","type":"message"}
+{"nick":"tjfontaine","message":"if neither of these are defined, there's a problem.","date":"2013-08-29T23:40:27.520Z","type":"message"}
+{"nick":"trevnorris","message":"-2 -- -5","date":"2013-08-29T23:40:38.934Z","type":"message"}
+{"nick":"trevnorris","message":"that's NONAME","date":"2013-08-29T23:40:44.897Z","type":"message"}
+{"nick":"tjfontaine","message":"ok, so that's quite interesting :)","date":"2013-08-29T23:41:13.324Z","type":"message"}
+{"nick":"trevnorris","message":"ok, what's this line doing:","date":"2013-08-29T23:42:29.941Z","type":"message"}
+{"nick":"trevnorris","message":"# if !defined(EAI_NODATA) || EAI_NODATA != EAI_NONAME","date":"2013-08-29T23:42:30.399Z","type":"message"}
+{"nick":"trevnorris","message":"oh, read it wrong","date":"2013-08-29T23:42:47.176Z","type":"message"}
+{"nick":"trevnorris","message":"saw it as EAI_NONAME != EAI_NONAME","date":"2013-08-29T23:43:03.215Z","type":"message"}
+{"nick":"tjfontaine","message":"right, so the question is -- why isn't ENODATA defined for you","date":"2013-08-29T23:43:04.613Z","type":"message"}
+{"nick":"trevnorris","message":"um... good question","date":"2013-08-29T23:43:16.732Z","type":"message"}
+{"nick":"tjfontaine","message":"likely a missing header","date":"2013-08-29T23:43:17.591Z","type":"message"}
+{"nick":"tjfontaine","message":"should be in netdb.h","date":"2013-08-29T23:43:47.217Z","type":"message"}
+{"nick":"trevnorris","message":"# ifdef __USE_GNU","date":"2013-08-29T23:45:34.037Z","type":"message"}
+{"nick":"trevnorris","message":"#  define EAI_NODATA","date":"2013-08-29T23:45:38.284Z","type":"message"}
+{"nick":"trevnorris","message":"erm","date":"2013-08-29T23:45:49.872Z","type":"message"}
+{"nick":"trevnorris","message":"#  define EAI_NODATA      -5","date":"2013-08-29T23:45:50.515Z","type":"message"}
+{"nick":"tjfontaine","message":"right, you might try taking the compile line for that file and then runnign it manually with `gcc -E` or whatever it is that will show you the parsed output","date":"2013-08-29T23:46:59.159Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-08-29T23:47:23.117Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: so.. __USE_GNU isn't defined","date":"2013-08-29T23:48:19.969Z","type":"message"}
+{"nick":"tjfontaine","message":"lemme check if this is happening on our buidlslave","date":"2013-08-29T23:48:38.159Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: this isn't happening on the build slave, which is 12.04","date":"2013-08-29T23:50:42.847Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: so are you sure you don't have something weird in your CFLAGS/CXXFLAGS or similar?","date":"2013-08-29T23:51:07.111Z","type":"message"}
+{"nick":"trevnorris","message":"i'm on xubuntu 12.10","date":"2013-08-29T23:51:09.540Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 245 seconds","date":"2013-08-29T23:51:40.117Z","type":"quit"}
+{"nick":"trevnorris","message":"nope. I just export clang, that's all","date":"2013-08-29T23:51:40.426Z","type":"message"}
+{"nick":"tjfontaine","message":"oh","date":"2013-08-29T23:51:43.947Z","type":"message"}
+{"nick":"tjfontaine","message":"retry with gcc :)","date":"2013-08-29T23:51:49.963Z","type":"message"}
+{"nick":"trevnorris","message":"i'm rebuilding with gcc right now :)","date":"2013-08-29T23:51:54.837Z","type":"message"}
+{"nick":"tjfontaine","message":"it could be clang failing to do include paths right","date":"2013-08-29T23:51:57.567Z","type":"message"}
+{"nick":"tjfontaine","message":"it does a lot of automagic detection","date":"2013-08-29T23:52:07.891Z","type":"message"}
+{"nick":"trevnorris","message":"nope. gcc doesn't have it defined either","date":"2013-08-29T23:52:12.441Z","type":"message"}
+{"nick":"tjfontaine","message":"something is wonky in your env, debootstrap a new one up and see if you can reproduce :)","date":"2013-08-29T23:52:28.311Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2013-08-29T23:52:42.032Z","type":"message"}
