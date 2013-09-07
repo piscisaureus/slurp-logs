@@ -1,0 +1,209 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-09-07T00:00:01.102Z","type":"quit"}
+{"nick":"tjfontaine","message":"hehe ya","date":"2013-09-07T00:00:02.583Z","type":"message"}
+{"nick":"ircretary","date":"2013-09-07T00:00:08.334Z","type":"join"}
+{"nick":"isaacs","message":"tjfontaine: alright, i'll add a doc for that","date":"2013-09-07T00:00:22.483Z","type":"message"}
+{"nick":"isaacs","message":"one sec","date":"2013-09-07T00:00:23.880Z","type":"message"}
+{"nick":"tjfontaine","message":"otherwise I am 1000% on it","date":"2013-09-07T00:00:32.512Z","type":"message"}
+{"nick":"isaacs","message":"where should it go, you think?  in process.markdown along with exit(n) and exitCode?","date":"2013-09-07T00:00:38.176Z","type":"message"}
+{"nick":"tjfontaine","message":"yup","date":"2013-09-07T00:00:43.119Z","type":"message"}
+{"nick":"tjfontaine","message":"part of me wants back references from things like uncaughtException, but that's a project for another day","date":"2013-09-07T00:01:18.742Z","type":"message"}
+{"nick":"tjfontaine","message":"austo: I remember feeling like there were other important things I wanted to add to that, but at the moment they escape me as I've spent of the day dumping lots of other things out","date":"2013-09-07T00:02:25.306Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #166 \u00037UNSTABLE\u000f windows-x64 (4/195) smartos-ia32 (2/194) windows-ia32 (3/195) smartos-x64 (2/194) http://jenkins.nodejs.org/job/libuv-master-gyp/166/","date":"2013-09-07T00:03:17.052Z","type":"message"}
+{"nick":"isaacs","message":"ok, pop quiz:","date":"2013-09-07T00:03:23.464Z","type":"message"}
+{"nick":"isaacs","message":"process.on('exit', function(code) { console.log(\"code = %d\", code);","date":"2013-09-07T00:03:24.545Z","type":"message"}
+{"nick":"isaacs","message":"});","date":"2013-09-07T00:03:24.752Z","type":"message"}
+{"nick":"isaacs","message":"process.exitCode = 42;","date":"2013-09-07T00:03:24.752Z","type":"message"}
+{"nick":"isaacs","message":"throw new Error('ok');","date":"2013-09-07T00:03:25.784Z","type":"message"}
+{"nick":"isaacs","message":"question 1: what gets logged?","date":"2013-09-07T00:03:33.515Z","type":"message"}
+{"nick":"isaacs","message":"question 2: what's the exit code?","date":"2013-09-07T00:03:37.635Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-09-07T00:04:16.087Z","type":"quit"}
+{"nick":"tjfontaine","message":"is this a question for how I think it should work, or how it actually works","date":"2013-09-07T00:04:16.671Z","type":"message"}
+{"nick":"ircretary","message":"Time's up, pencils down","date":"2013-09-07T00:04:28.252Z","type":"message"}
+{"nick":"isaacs","message":"$ ./node s.js 2>/dev/null","date":"2013-09-07T00:04:29.833Z","type":"message"}
+{"nick":"isaacs","message":"code = 1","date":"2013-09-07T00:04:30.042Z","type":"message"}
+{"nick":"isaacs","message":"$ echo $?","date":"2013-09-07T00:04:30.042Z","type":"message"}
+{"nick":"isaacs","message":"8","date":"2013-09-07T00:04:30.042Z","type":"message"}
+{"nick":"isaacs","message":"WEIRD!","date":"2013-09-07T00:04:36.653Z","type":"message"}
+{"nick":"tjfontaine","message":"code is one, hmm, we must set that in fatal?","date":"2013-09-07T00:04:46.691Z","type":"message"}
+{"nick":"isaacs","message":"so, it looks like somewhere we're sending a 1 status code to process.on('exit') but then setting 8 as the *actual* error code","date":"2013-09-07T00:04:56.774Z","type":"message"}
+{"nick":"tjfontaine","message":"          if (!process._exiting) {","date":"2013-09-07T00:05:26.469Z","type":"message"}
+{"nick":"tjfontaine","message":"            process._exiting = true;","date":"2013-09-07T00:05:26.683Z","type":"message"}
+{"nick":"tjfontaine","message":"            process.emit('exit', 1);","date":"2013-09-07T00:05:26.892Z","type":"message"}
+{"nick":"tjfontaine","message":"in _fatalException","date":"2013-09-07T00:05:39.357Z","type":"message"}
+{"nick":"isaacs","message":"yeah, just foudn it","date":"2013-09-07T00:05:53.433Z","type":"message"}
+{"nick":"isaacs","message":"so, that should be an 8","date":"2013-09-07T00:05:56.793Z","type":"message"}
+{"nick":"isaacs","message":"it seems","date":"2013-09-07T00:05:58.602Z","type":"message"}
+{"nick":"tjfontaine","message":"or, make it shared state between C and JS","date":"2013-09-07T00:06:11.038Z","type":"message"}
+{"nick":"tjfontaine","message":"how many places do we call exit() from C that also result in JS executing?","date":"2013-09-07T00:07:10.776Z","type":"message"}
+{"nick":"tjfontaine","message":"if it's only uncaught then I guess change that to 8","date":"2013-09-07T00:07:21.943Z","type":"message"}
+{"nick":"tjfontaine","message":"but if more paths result in emit'ing exit, sharing state seems better","date":"2013-09-07T00:07:38.875Z","type":"message"}
+{"nick":"austo","message":"tjfontaine: there's not much on node::Buffer there, and how it's changed with the introduction of v8 typed arrays - I'm not totally clear on slicing, for instance.","date":"2013-09-07T00:08:18.766Z","type":"message"}
+{"nick":"tjfontaine","message":"austo: nothing has changed wrt to node::Buffer with the addition of v8 typed arrays (though maybe *crossfingers* one day it will)","date":"2013-09-07T00:08:50.517Z","type":"message"}
+{"nick":"tjfontaine","message":"austo: you probably don't want to slice from the native sid","date":"2013-09-07T00:09:06.307Z","type":"message"}
+{"nick":"tjfontaine","message":"e","date":"2013-09-07T00:09:07.319Z","type":"message"}
+{"nick":"austo","message":"tjfontaine: you mean you don't want to call buf.slice() from c++?","date":"2013-09-07T00:10:47.865Z","type":"message"}
+{"nick":"tjfontaine","message":"austo: I'm suspect of the motivation behind needing to","date":"2013-09-07T00:11:16.634Z","type":"message"}
+{"nick":"ecr","reason":"Quit: ecr","date":"2013-09-07T00:19:57.009Z","type":"quit"}
+{"nick":"austo","message":"tjfontaine: buffer views into a backing slowBuffer are the way to go?","date":"2013-09-07T00:20:28.027Z","type":"message"}
+{"nick":"tjfontaine","message":"austo: I guess I'd need further clarification on what it is you're trying to do?","date":"2013-09-07T00:21:28.147Z","type":"message"}
+{"nick":"jmar777","date":"2013-09-07T00:22:07.446Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-09-07T00:23:29.226Z","type":"join"}
+{"nick":"austo","message":"tjfontaine: I don't have to anymore, but at the time I needed to unpack an encrypted protocol buffer sent as a c++ string. This was outside of the normal node crypto module.","date":"2013-09-07T00:25:56.544Z","type":"message"}
+{"nick":"kenperkins","date":"2013-09-07T00:27:01.852Z","type":"join"}
+{"nick":"austo","message":"tjfontaine: actually I think I was sending the protobuf and needed to wrap the string.data(). There's probably a better way to do that though.","date":"2013-09-07T00:28:41.580Z","type":"message"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-07T00:29:36.883Z","type":"quit"}
+{"nick":"kenperkins","reason":"Ping timeout: 240 seconds","date":"2013-09-07T00:32:51.140Z","type":"quit"}
+{"nick":"isaacs","message":"tjfontaine: hmm... wondering just HOW unixista we ought to get on this.","date":"2013-09-07T00:34:46.745Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: ie, should we exit(127) when the script argument isn't found?","date":"2013-09-07T00:35:00.665Z","type":"message"}
+{"nick":"isaacs","message":"hm, no, that's probably bad.","date":"2013-09-07T00:35:25.423Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: right, there's all sorts of levels we can go with this","date":"2013-09-07T00:35:27.231Z","type":"message"}
+{"nick":"isaacs","message":"since 127 would mean that *node* could not be found","date":"2013-09-07T00:35:40.624Z","type":"message"}
+{"nick":"trevnorris","message":"hah, it's a wonderful thing when you spend time trying to fix a bug, just to figure out it's actually working as intended.","date":"2013-09-07T00:35:49.041Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-09-07T00:36:50.924Z","type":"quit"}
+{"nick":"isaacs","message":"anyone object to exit(9) instead of exit(1) for argument misuse?","date":"2013-09-07T00:37:32.340Z","type":"message"}
+{"nick":"tjfontaine","message":"not to me, but do we need to be bitwise friendly?","date":"2013-09-07T00:38:11.695Z","type":"message"}
+{"nick":"isaacs","message":"not really","date":"2013-09-07T00:39:54.801Z","type":"message"}
+{"nick":"isaacs","message":"we don't use 9 right now, and since 1 is a general purpose bail-out, it's not super helpful for debuggin","date":"2013-09-07T00:40:10.559Z","type":"message"}
+{"nick":"c4milo","date":"2013-09-07T00:41:38.309Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-07T00:43:08.939Z","type":"quit"}
+{"nick":"isaacs","message":"i'll land this process.exitCode and then we can hash out whether to use 1 or 9","date":"2013-09-07T00:43:48.148Z","type":"message"}
+{"nick":"tjfontaine","message":"yup","date":"2013-09-07T00:43:53.033Z","type":"message"}
+{"nick":"isaacs","message":"really, if we use 1 for anything, it should be uncaughtException","date":"2013-09-07T00:43:55.698Z","type":"message"}
+{"nick":"trevnorris","message":"so, I was trying to run a sequence of tests by finishing one and calling another. kept getting duplicate entires of listeners. I forgot that any callback will carry the context given by the listener. doy.","date":"2013-09-07T00:43:56.572Z","type":"message"}
+{"nick":"isaacs","message":"since that's the general \"something broke\" result","date":"2013-09-07T00:44:05.649Z","type":"message"}
+{"nick":"c4milo","date":"2013-09-07T00:47:20.457Z","type":"join"}
+{"nick":"isaacs","message":"tjfontaine: https://github.com/isaacs/node/commit/6808706c3b8baf8d4b867806acebda949f6d8f38 lgty?","date":"2013-09-07T00:52:23.773Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: i'm going to push the doc and s/8/1/g in a subsequent pr","date":"2013-09-07T00:52:32.993Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: yup","date":"2013-09-07T00:53:14.587Z","type":"message"}
+{"nick":"inolen","date":"2013-09-07T00:55:42.391Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-09-07T00:55:43.632Z","type":"quit"}
+{"nick":"isaacs","message":"kk","date":"2013-09-07T00:56:10.800Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u00026808706\u0002 : process: Use exit code 8 consistently (+1 more commits) - http://git.io/q40laA","date":"2013-09-07T00:56:18.850Z","type":"message"}
+{"nick":"isaacs","message":"ok https://github.com/joyent/node/pull/6191 is the 8->1,1->9 change","date":"2013-09-07T00:58:16.939Z","type":"message"}
+{"nick":"isaacs","message":"er, 1->9,8->1","date":"2013-09-07T00:58:28.950Z","type":"message"}
+{"nick":"dap","date":"2013-09-07T00:59:29.373Z","type":"join"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-07T01:01:08.952Z","type":"quit"}
+{"nick":"tjfontaine","message":"documentation and semantic change seems good to me, but I wonder about people who might be relying on these exit codes?","date":"2013-09-07T01:01:20.918Z","type":"message"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-09-07T01:04:22.671Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: I have","date":"2013-09-07T01:08:27.271Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: on the exit codes that we're about to change? :)","date":"2013-09-07T01:08:43.571Z","type":"message"}
+{"nick":"trevnorris","message":"oh, just the exit codes that have been numbered.","date":"2013-09-07T01:09:00.663Z","type":"message"}
+{"nick":"trevnorris","message":"kinda jumped in there :)","date":"2013-09-07T01:09:06.095Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-09-07T01:09:15.508Z","type":"message"}
+{"nick":"tjfontaine","message":"so we're discussing changing uncaughtException exit code to 1 since it's the most likely case","date":"2013-09-07T01:09:31.541Z","type":"message"}
+{"nick":"tjfontaine","message":"we won't reuse 8, but what was previously 1 will now be 9","date":"2013-09-07T01:09:57.706Z","type":"message"}
+{"nick":"trevnorris","message":"hah, async listeners. you are my bitches!","date":"2013-09-07T01:10:06.232Z","type":"message"}
+{"nick":"trevnorris","message":"eh, ok","date":"2013-09-07T01:10:14.804Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: there, unprecedented ability to track what's going on in your application.","date":"2013-09-07T01:10:44.522Z","type":"message"}
+{"nick":"trevnorris","message":"domains still aren't back ported though :P","date":"2013-09-07T01:11:13.383Z","type":"message"}
+{"nick":"tjfontaine","message":"forward ported :P","date":"2013-09-07T01:11:26.396Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #540 \u00037UNSTABLE\u000f osx-x64 (4/646) smartos-ia32 (6/646) osx-ia32 (4/646) linux-x64 (3/646) smartos-x64 (11/646) linux-ia32 (3/646) http://jenkins.nodejs.org/job/nodejs-master/540/","date":"2013-09-07T01:11:47.212Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: i'm willing to bet no one is relying on exit code 8","date":"2013-09-07T01:12:28.122Z","type":"message"}
+{"nick":"trevnorris","message":"how about just ported to the garbage?","date":"2013-09-07T01:12:34.861Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: especially since it didn't work reliably until about 10 minutes ago ;)","date":"2013-09-07T01:12:48.309Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe","date":"2013-09-07T01:12:52.445Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: so, test failures with the change","date":"2013-09-07T01:13:02.623Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: ohh... snap","date":"2013-09-07T01:13:19.186Z","type":"message"}
+{"nick":"isaacs","message":"k, one sec","date":"2013-09-07T01:13:21.667Z","type":"message"}
+{"nick":"isaacs","message":"i'll fix the tests and the land with hte doc/semantics","date":"2013-09-07T01:13:27.289Z","type":"message"}
+{"nick":"tjfontaine","message":"mk","date":"2013-09-07T01:13:44.610Z","type":"message"}
+{"nick":"trevnorris","message":"ok, i've really got to call it a night. still have to get ready to leave tomorrow morning","date":"2013-09-07T01:15:12.589Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: ohh... i'm testing for isNumber, not !isNaN","date":"2013-09-07T01:15:17.277Z","type":"message"}
+{"nick":"toothrot","reason":"Ping timeout: 268 seconds","date":"2013-09-07T01:15:24.124Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-07T01:15:48.610Z","type":"quit"}
+{"nick":"othiym23","message":"trevnorris: I'll bang on 6011 a little this weekend and comment if I find anything weird","date":"2013-09-07T01:17:06.318Z","type":"message"}
+{"nick":"othiym23","message":"bon voyage and travel safe!","date":"2013-09-07T01:17:13.925Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: cool enough. i'm going to do some more hacking on it during the 14 hr flight","date":"2013-09-07T01:17:30.321Z","type":"message"}
+{"nick":"trevnorris","message":"thanks :)","date":"2013-09-07T01:17:33.131Z","type":"message"}
+{"nick":"tjfontaine","message":"when are you flying trevor?","date":"2013-09-07T01:18:07.930Z","type":"message"}
+{"nick":"toothr","date":"2013-09-07T01:18:30.585Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u0002b30a03e\u0002 : process: use exit 1 for uncaughtException (+1 more commits) - http://git.io/V4igOQ","date":"2013-09-07T01:24:24.537Z","type":"message"}
+{"nick":"isaacs","message":"ok i'm going to sleep now.","date":"2013-09-07T01:24:52.902Z","type":"message"}
+{"nick":"isaacs","message":"see you guys online tomorrow a little bit :)","date":"2013-09-07T01:25:01.662Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-09-07T01:25:11.078Z","type":"message"}
+{"nick":"julianduque","reason":"Read error: Connection reset by peer","date":"2013-09-07T01:26:07.817Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: 11:45am","date":"2013-09-07T01:26:41.795Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-07T01:31:39.064Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: you?","date":"2013-09-07T01:32:56.643Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: 11:55 I think, what airline and what layover?","date":"2013-09-07T01:41:04.230Z","type":"message"}
+{"nick":"trevnorris","message":"first jet blue to jfk, then aer lingus to dublin","date":"2013-09-07T01:41:26.964Z","type":"message"}
+{"nick":"tjfontaine","message":"ah","date":"2013-09-07T01:41:29.853Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm going SFO->IAD, IAD->DUB on United","date":"2013-09-07T01:41:42.038Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #541 \u00037UNSTABLE\u000f smartos-ia32 (4/646) osx-ia32 (2/646) smartos-x64 (8/646) http://jenkins.nodejs.org/job/nodejs-master/541/","date":"2013-09-07T01:42:13.791Z","type":"message"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-09-07T01:42:19.615Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-09-07T01:43:18.289Z","type":"quit"}
+{"nick":"trevnorris","message":"fun. what time you arriving in dub?","date":"2013-09-07T01:43:25.778Z","type":"message"}
+{"nick":"tjfontaine","message":"10:25 iirc","date":"2013-09-07T01:43:49.970Z","type":"message"}
+{"nick":"tjfontaine","message":"it will be interesting to see how close we make it :)","date":"2013-09-07T01:44:02.164Z","type":"message"}
+{"nick":"tjfontaine","message":"bah damn you google","date":"2013-09-07T01:44:57.346Z","type":"message"}
+{"nick":"trevnorris","message":"hm. just looked at an email I received two weeks ago saying the DHS needs more information 72 hours in advance or I may not be able to travel :P","date":"2013-09-07T01:45:50.041Z","type":"message"}
+{"nick":"trevnorris","message":"well, i'll fill it out now and see what happens","date":"2013-09-07T01:45:59.703Z","type":"message"}
+{"nick":"tjfontaine","message":"what sort of information? o0","date":"2013-09-07T01:46:10.010Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #334 \u00037UNSTABLE\u000f windows-x64 (23/646) windows-ia32 (26/646) http://jenkins.nodejs.org/job/nodejs-master-windows/334/","date":"2013-09-07T01:47:54.986Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2013-09-07T01:47:57.513Z","type":"quit"}
+{"nick":"trevnorris","message":"um. passport number, few other things","date":"2013-09-07T01:48:11.323Z","type":"message"}
+{"nick":"tjfontaine","message":"thanks google for breaking authenticator on ios and now breaking your JS to not let me actually set it up again","date":"2013-09-07T01:48:41.693Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: hm","date":"2013-09-07T01:48:44.686Z","type":"message"}
+{"nick":"trevnorris","message":"says I need to fill out the stuff here: https://esta.cbp.dhs.gov/esta/","date":"2013-09-07T01:48:59.706Z","type":"message"}
+{"nick":"brson","date":"2013-09-07T01:49:08.971Z","type":"join"}
+{"nick":"trevnorris","message":"hah, good old authenticator","date":"2013-09-07T01:49:19.484Z","type":"message"}
+{"nick":"tjfontaine","message":"you're not trying to travel into the US though, right? :)","date":"2013-09-07T01:49:36.638Z","type":"message"}
+{"nick":"trevnorris","message":"wait. yeah. they must have just sent that to me because I have _a_ flight into the US.","date":"2013-09-07T01:50:16.574Z","type":"message"}
+{"nick":"trevnorris","message":"even though it's a return flight.","date":"2013-09-07T01:50:22.512Z","type":"message"}
+{"nick":"tjfontaine","message":"you are a US citizen, right? :P","date":"2013-09-07T01:50:39.857Z","type":"message"}
+{"nick":"trevnorris","message":"hah, yeah","date":"2013-09-07T01:50:49.840Z","type":"message"}
+{"nick":"trevnorris","message":"man, I hate traveling","date":"2013-09-07T01:51:02.902Z","type":"message"}
+{"nick":"trevnorris","message":"not my thing","date":"2013-09-07T01:51:07.354Z","type":"message"}
+{"nick":"tjfontaine","message":"this is my first non-american international trip","date":"2013-09-07T01:51:54.450Z","type":"message"}
+{"nick":"tjfontaine","message":"and I'm going alone, SO NEW EXPERIENCES FOR EVERYONE","date":"2013-09-07T01:52:14.416Z","type":"message"}
+{"nick":"tjfontaine","message":"what could go wrong?","date":"2013-09-07T01:52:19.494Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-09-07T01:53:11.333Z","type":"join"}
+{"nick":"trevnorris","message":"heh, seriously.","date":"2013-09-07T01:56:41.467Z","type":"message"}
+{"nick":"st_luke","date":"2013-09-07T02:09:54.328Z","type":"join"}
+{"nick":"dshaw_","date":"2013-09-07T02:10:35.947Z","type":"join"}
+{"nick":"dshaw_","reason":"Client Quit","date":"2013-09-07T02:10:37.555Z","type":"quit"}
+{"nick":"amartens","date":"2013-09-07T02:16:18.795Z","type":"join"}
+{"nick":"amartens","reason":"Client Quit","date":"2013-09-07T02:17:20.775Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #335 \u00037UNSTABLE\u000f windows-x64 (19/646) windows-ia32 (21/646) http://jenkins.nodejs.org/job/nodejs-master-windows/335/","date":"2013-09-07T02:47:35.722Z","type":"message"}
+{"nick":"dshaw_","date":"2013-09-07T02:50:12.183Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-09-07T02:51:28.396Z","type":"quit"}
+{"nick":"inolen","date":"2013-09-07T03:03:39.892Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2013-09-07T03:10:28.886Z","type":"quit"}
+{"nick":"dshaw_","date":"2013-09-07T03:10:40.326Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 245 seconds","date":"2013-09-07T03:15:00.119Z","type":"quit"}
+{"nick":"dshaw_","date":"2013-09-07T03:26:42.056Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 260 seconds","date":"2013-09-07T03:32:31.325Z","type":"quit"}
+{"nick":"jmar777","reason":"Ping timeout: 245 seconds","date":"2013-09-07T03:38:20.195Z","type":"quit"}
+{"nick":"jmar777","date":"2013-09-07T03:40:25.386Z","type":"join"}
+{"nick":"groundwater","date":"2013-09-07T03:50:16.822Z","type":"join"}
+{"nick":"bajtos","date":"2013-09-07T03:57:21.047Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2013-09-07T03:59:44.268Z","type":"quit"}
+{"nick":"brson","date":"2013-09-07T04:01:26.120Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2013-09-07T04:18:19.351Z","type":"quit"}
+{"nick":"inolen","reason":"Ping timeout: 260 seconds","date":"2013-09-07T04:23:32.010Z","type":"quit"}
+{"nick":"inolen","date":"2013-09-07T04:23:53.784Z","type":"join"}
+{"nick":"dshaw_","date":"2013-09-07T04:28:36.279Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-09-07T04:29:38.371Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-07T04:31:52.389Z","type":"quit"}
+{"nick":"dshaw_","reason":"Ping timeout: 268 seconds","date":"2013-09-07T04:33:21.069Z","type":"quit"}
+{"nick":"einaros","reason":"Remote host closed the connection","date":"2013-09-07T04:54:56.745Z","type":"quit"}
+{"nick":"einaros","date":"2013-09-07T04:55:36.279Z","type":"join"}
+{"nick":"defunctzombie","reason":"Ping timeout: 240 seconds","date":"2013-09-07T04:59:51.178Z","type":"quit"}
+{"nick":"defunctzombie","date":"2013-09-07T05:01:42.407Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-09-07T05:01:48.344Z","type":"quit"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-09-07T05:24:33.069Z","type":"quit"}
+{"nick":"Benvie_","date":"2013-09-07T05:24:46.164Z","type":"join"}
+{"nick":"Benvie","reason":"Ping timeout: 264 seconds","date":"2013-09-07T05:25:26.764Z","type":"quit"}
+{"nick":"tooxie","date":"2013-09-07T06:29:49.780Z","type":"join"}
+{"nick":"EhevuTov","date":"2013-09-07T06:34:44.334Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #199 \u00037UNSTABLE\u000f windows-ia32 (7/599) windows-x64 (8/599) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/199/","date":"2013-09-07T06:41:28.448Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-09-07T06:54:53.339Z","type":"nick"}
+{"nick":"hz","date":"2013-09-07T07:10:32.015Z","type":"join"}
+{"nick":"EhevuTov","reason":"Quit: Leaving","date":"2013-09-07T07:17:31.113Z","type":"quit"}
+{"nick":"inolen","reason":"Ping timeout: 264 seconds","date":"2013-09-07T07:30:14.875Z","type":"quit"}
+{"nick":"inolen","date":"2013-09-07T07:31:51.119Z","type":"join"}
+{"nick":"c4milo","date":"2013-09-07T07:33:29.934Z","type":"join"}
+{"nick":"inolen","reason":"Ping timeout: 245 seconds","date":"2013-09-07T07:44:10.120Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-09-07T07:45:52.938Z","type":"nick"}
+{"nick":"inolen","date":"2013-09-07T07:46:15.210Z","type":"join"}
+{"nick":"dshaw_","date":"2013-09-07T07:57:59.011Z","type":"join"}
