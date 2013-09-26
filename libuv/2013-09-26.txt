@@ -526,3 +526,194 @@
 {"nick":"trevnorris","message":"and that's coming from cares.getaddrinfo from lib/dns.js","date":"2013-09-26T07:57:22.943Z","type":"message"}
 {"nick":"trevnorris","message":"which is coming from dns.lookup","date":"2013-09-26T07:58:21.414Z","type":"message"}
 {"nick":"trevnorris","message":"othiym23: if that helps you narrow down your case at all","date":"2013-09-26T07:58:32.318Z","type":"message"}
+{"nick":"othiym23","message":"hmm","date":"2013-09-26T08:03:06.062Z","type":"message"}
+{"nick":"bnoordhuis","date":"2013-09-26T08:03:17.036Z","type":"join"}
+{"nick":"othiym23","message":"regular DNS lookup succeeds, but maybe the DNS lookup inside http.request is causing weirdness","date":"2013-09-26T08:03:40.655Z","type":"message"}
+{"nick":"othiym23","message":"I reduced too much, have to backtrack until it starts failing again","date":"2013-09-26T08:04:59.760Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: well, that object you're seeing passed in is the _asyncQueue object that's set on the context of the request","date":"2013-09-26T08:08:10.733Z","type":"message"}
+{"nick":"trevnorris","message":"i'm confused how that's making it out to JS though","date":"2013-09-26T08:08:23.267Z","type":"message"}
+{"nick":"othiym23","message":"almost have it","date":"2013-09-26T08:24:21.202Z","type":"message"}
+{"nick":"othiym23","message":"it's a combination of CLS + http.request, I think","date":"2013-09-26T08:24:34.788Z","type":"message"}
+{"nick":"othiym23","message":"could be dns.lookup, tho","date":"2013-09-26T08:24:43.642Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: what i'm seeing is that context._asyncQueue is being passed, not context","date":"2013-09-26T08:32:26.975Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: https://gist.github.com/othiym23/6711428","date":"2013-09-26T08:34:19.016Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: wow, impressive dude","date":"2013-09-26T08:34:37.701Z","type":"message"}
+{"nick":"othiym23","message":"that's as small as I can make it -- only relies on process.addAsyncListener and the DNS module","date":"2013-09-26T08:34:42.198Z","type":"message"}
+{"nick":"trevnorris","message":"wow, very impressive","date":"2013-09-26T08:36:26.217Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: actually I lied: https://gist.github.com/othiym23/6711509","date":"2013-09-26T08:42:07.661Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: hah, wtf.","date":"2013-09-26T08:42:24.269Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: seriously wtf. you don't even need the before/after callbacks.","date":"2013-09-26T08:43:47.828Z","type":"message"}
+{"nick":"othiym23","message":"something amiss in the ReqWrap for cares?","date":"2013-09-26T08:44:22.641Z","type":"message"}
+{"nick":"trevnorris","message":"must be","date":"2013-09-26T08:44:27.004Z","type":"message"}
+{"nick":"trevnorris","message":"I check the object going in and it's fine","date":"2013-09-26T08:44:46.369Z","type":"message"}
+{"nick":"trevnorris","message":"check the object coming out, and it's different.","date":"2013-09-26T08:44:55.677Z","type":"message"}
+{"nick":"othiym23","message":"it's total yak-shaving at this point, but I shrunk down the gist some more","date":"2013-09-26T08:46:23.488Z","type":"message"}
+{"nick":"trevnorris","message":"hah","date":"2013-09-26T08:47:11.621Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-09-26T08:54:44.773Z","type":"nick"}
+{"nick":"trevnorris","message":"oh you've got to be shitting me.","date":"2013-09-26T08:59:12.066Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: thanks for taking all night to find a total fuck up on my part","date":"2013-09-26T08:59:33.370Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: looking at src/cares_wrap.cc, how is the AsyncWrap stuff mixed in there?","date":"2013-09-26T08:59:43.080Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: ReqWrap inherits from AsyncWrap","date":"2013-09-26T09:00:05.734Z","type":"message"}
+{"nick":"othiym23","message":"no problem, dude, learned a bunch in the process","date":"2013-09-26T09:00:13.092Z","type":"message"}
+{"nick":"trevnorris","message":"I got my two implementations crossed, and after looking at this for so long it all looked the same.","date":"2013-09-26T09:00:45.714Z","type":"message"}
+{"nick":"othiym23","message":"so it's all via GetAddrInfoReqWrap?","date":"2013-09-26T09:01:23.874Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-09-26T09:01:47.841Z","type":"message"}
+{"nick":"trevnorris","message":"so dns.lookup creates an object in js and passes that to getaddrinfo","date":"2013-09-26T09:02:11.877Z","type":"message"}
+{"nick":"trevnorris","message":"that in turn instantiates a new GetAddrInfoReqWrap","date":"2013-09-26T09:02:22.121Z","type":"message"}
+{"nick":"trevnorris","message":"which inherits from ReqWrap, which inherits from AsyncWrap","date":"2013-09-26T09:02:39.362Z","type":"message"}
+{"nick":"trevnorris","message":"which uses state sharing to detect there's an active async listener, which then passes the object back out to JS so I can attach the _asyncWrap object with all the callback/domain information you pass to addAsyncListener","date":"2013-09-26T09:03:18.482Z","type":"message"}
+{"nick":"othiym23","message":"right","date":"2013-09-26T09:03:29.071Z","type":"message"}
+{"nick":"othiym23","message":"where's the error?","date":"2013-09-26T09:03:33.614Z","type":"message"}
+{"nick":"trevnorris","message":"in my code. so AsyncWrap has it's own MakeCallback impl. for performance reasons","date":"2013-09-26T09:04:50.277Z","type":"message"}
+{"nick":"trevnorris","message":"btw, just force pushed the fix. go ahead and try running your tests again","date":"2013-09-26T09:05:05.764Z","type":"message"}
+{"nick":"othiym23","message":"right, I'm looking at that right now","date":"2013-09-26T09:05:06.628Z","type":"message"}
+{"nick":"othiym23","message":"OK!","date":"2013-09-26T09:05:10.281Z","type":"message"}
+{"nick":"trevnorris","message":"but there's also node::MakeCallback that's part of the public c++ api so users can safely enter JS again w/ proper error handling and all that stuff","date":"2013-09-26T09:05:42.872Z","type":"message"}
+{"nick":"othiym23","message":"what's the fastest way to nuke my local checkout and force-pull your force-pushed changes?","date":"2013-09-26T09:06:18.548Z","type":"message"}
+{"nick":"othiym23","message":"nuke the branch and re-checkout?","date":"2013-09-26T09:06:24.231Z","type":"message"}
+{"nick":"trevnorris","message":"git fetch <remote>","date":"2013-09-26T09:06:30.673Z","type":"message"}
+{"nick":"trevnorris","message":"git reset --hard <remote>/flippin-tick-thing","date":"2013-09-26T09:06:41.020Z","type":"message"}
+{"nick":"trevnorris","message":"but since they're passing the object I have to do a full check if the object property _asyncQueue is set","date":"2013-09-26T09:07:18.200Z","type":"message"}
+{"nick":"othiym23","message":"thanks","date":"2013-09-26T09:07:27.704Z","type":"message"}
+{"nick":"trevnorris","message":":)","date":"2013-09-26T09:07:32.089Z","type":"message"}
+{"nick":"trevnorris","message":"but in my tired state I used Object::Get() instead of Object::Has() and passed the return object from ::Get()","date":"2013-09-26T09:07:52.143Z","type":"message"}
+{"nick":"trevnorris","message":"so I was passing the _asyncQueue object, not the context that contains the _asyncQueue object","date":"2013-09-26T09:08:13.806Z","type":"message"}
+{"nick":"trevnorris","message":"but it was hard to manifest since almost all the callbacks in core now go through AsyncWrap","date":"2013-09-26T09:08:37.371Z","type":"message"}
+{"nick":"trevnorris","message":"except a few in cares and tls","date":"2013-09-26T09:08:47.031Z","type":"message"}
+{"nick":"trevnorris","message":"which is why it showed up there.","date":"2013-09-26T09:09:00.435Z","type":"message"}
+{"nick":"othiym23","message":"cool, so my observation that that looked kinda goofy inside the Node debugger was more or less salient","date":"2013-09-26T09:09:03.626Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-09-26T09:09:27.513Z","type":"message"}
+{"nick":"othiym23","message":"(\"that\" = the context)","date":"2013-09-26T09:09:28.973Z","type":"message"}
+{"nick":"othiym23","message":"aw c'mon, make, you didn't need to rebuild all of v8","date":"2013-09-26T09:09:49.739Z","type":"message"}
+{"nick":"othiym23","message":"that's what I get for resetting to master, I guess","date":"2013-09-26T09:09:59.599Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2013-09-26T09:10:06.743Z","type":"message"}
+{"nick":"othiym23","message":"my fun weekend project when I have time for fun or weekends again is to see how hard it would be to replace v8's regexp implementation with re2, which I imagine will get me up to speed with V8's style of C++ in a big hurry","date":"2013-09-26T09:11:25.582Z","type":"message"}
+{"nick":"trevnorris","message":"sounds hard core.","date":"2013-09-26T09:11:55.926Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: seriously dude. you just spent 3-4 hours helping me figure out that stupid bug. I owe you one.","date":"2013-09-26T09:12:44.808Z","type":"message"}
+{"nick":"othiym23","message":"I owe you like 20 at this point, so we'll sort it out later ;)","date":"2013-09-26T09:13:15.029Z","type":"message"}
+{"nick":"trevnorris","message":"hah, ok","date":"2013-09-26T09:13:20.456Z","type":"message"}
+{"nick":"othiym23","message":"OK, so now the only test failures I'm seeing are due to the V8 bug that uglify is exercising","date":"2013-09-26T09:13:34.473Z","type":"message"}
+{"nick":"trevnorris","message":"wow, that's a nice surprise at least.","date":"2013-09-26T09:14:15.335Z","type":"message"}
+{"nick":"othiym23","message":"there are a couple other iffy looking failures, but I don't know whether those would be there in the latest 0.11 release because I haven't done any testing against those","date":"2013-09-26T09:14:51.814Z","type":"message"}
+{"nick":"othiym23","message":"one sec","date":"2013-09-26T09:14:53.383Z","type":"message"}
+{"nick":"trevnorris","message":"so, yeah. i'm going to keep working on getting domains out of core, but at least async listeners are working. so if nothing else that can land before v0.13","date":"2013-09-26T09:14:55.539Z","type":"message"}
+{"nick":"othiym23","message":"that's exxxxcellent news","date":"2013-09-26T09:17:22.643Z","type":"message"}
+{"nick":"othiym23","message":"and yeah, a couple of the failures I was seeing still happen on 0.11.7, and may or may not be the fault of the New Relic code, since they're all in integration tests","date":"2013-09-26T09:17:48.286Z","type":"message"}
+{"nick":"othiym23","message":"does look like I have some work to do to get the asyncListener polyfill working properly on 0.11.x, but with luck that won't really be an issue","date":"2013-09-26T09:18:14.799Z","type":"message"}
+{"nick":"trevnorris","message":"coolio. and I still need to integrate with ben's latest commit.","date":"2013-09-26T09:19:19.944Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-09-26T09:19:31.277Z","type":"quit"}
+{"nick":"bnoordhuis","message":"../../deps/openssl/openssl/crypto/des/set_key.c:398: error: unsupported inline asm: input constraint with a matching output constraint of incompatible type! :-/","date":"2013-09-26T09:19:32.081Z","type":"message"}
+{"nick":"bnoordhuis","message":"sometimes i hate computers","date":"2013-09-26T09:19:40.284Z","type":"message"}
+{"nick":"bnoordhuis","message":"and other programmers","date":"2013-09-26T09:19:45.362Z","type":"message"}
+{"nick":"indutny","message":"heya","date":"2013-09-26T09:19:58.346Z","type":"message"}
+{"nick":"trevnorris","message":"haha","date":"2013-09-26T09:20:02.816Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: haven't had a burst of inspiration of how to handle the AsyncWrap and WeakObject, have you? :)","date":"2013-09-26T09:21:00.606Z","type":"message"}
+{"nick":"trevnorris","message":"well, regardless I barely have enough brain cells functioning to make it to bed.","date":"2013-09-26T09:21:25.229Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: not quite. i did spend some brain power on it","date":"2013-09-26T09:21:32.555Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll see if i can go through your PR today","date":"2013-09-26T09:21:44.080Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: thanks much. :)","date":"2013-09-26T09:22:00.680Z","type":"message"}
+{"nick":"trevnorris","message":"i'm surprised you have any brain power to spare. your kids only 2 weeks old now?","date":"2013-09-26T09:22:25.665Z","type":"message"}
+{"nick":"trevnorris","message":"s/kids/kid","date":"2013-09-26T09:22:36.901Z","type":"message"}
+{"nick":"bnoordhuis","message":"10 days now :)","date":"2013-09-26T09:22:41.489Z","type":"message"}
+{"nick":"othiym23","message":"OK, something's busted in Restify in both 0.11.7 and flippin-tick-thing, and my async execution tracer torture test fails under flippin-tick-thing but not with the polyfill, which may or may not be flippin-tick-thing's fault","date":"2013-09-26T09:22:59.212Z","type":"message"}
+{"nick":"trevnorris","message":"awesome.","date":"2013-09-26T09:23:07.698Z","type":"message"}
+{"nick":"othiym23","message":"I'll look into that more tomorrow when I'm more well-rested","date":"2013-09-26T09:23:10.693Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: coolio. and thanks again. it might be that it's still not fully integrated.","date":"2013-09-26T09:23:40.534Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: it's only on HandleWrap and ReqWrap, so there are cases where listeners won't get called.","date":"2013-09-26T09:24:01.526Z","type":"message"}
+{"nick":"trevnorris","message":"but bnoordhuis' being real nice hand helping me out there :)","date":"2013-09-26T09:24:27.441Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: I just remember the first 2 weeks being the hardest. actually, I don't really remember them at all.","date":"2013-09-26T09:25:03.143Z","type":"message"}
+{"nick":"trevnorris","message":"that was a lot of sleep deprivation.","date":"2013-09-26T09:25:14.859Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: setTimeout is passing the context to before instead of the domain, it appears","date":"2013-09-26T09:27:52.874Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: well, before and after get (context, domain)","date":"2013-09-26T09:29:13.941Z","type":"message"}
+{"nick":"trevnorris","message":"are you saying that context is passed as both arguments?","date":"2013-09-26T09:29:27.273Z","type":"message"}
+{"nick":"othiym23","message":"hmm... I think I'm assuming that before only gets domain","date":"2013-09-26T09:29:51.387Z","type":"message"}
+{"nick":"othiym23","message":"time to square up the polyfill!","date":"2013-09-26T09:29:56.252Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2013-09-26T09:30:01.267Z","type":"message"}
+{"nick":"othiym23","message":"sorta scary that it only breaks there, though","date":"2013-09-26T09:30:21.212Z","type":"message"}
+{"nick":"trevnorris","message":"hah, know that feeling","date":"2013-09-26T09:30:32.211Z","type":"message"}
+{"nick":"othiym23","message":"I think I'm just putting my stuff right on the context objects right now","date":"2013-09-26T09:30:32.460Z","type":"message"}
+{"nick":"othiym23","message":"pee-eww","date":"2013-09-26T09:30:35.200Z","type":"message"}
+{"nick":"othiym23","message":"OK, that I will definitely fix tomorrow","date":"2013-09-26T09:30:46.221Z","type":"message"}
+{"nick":"othiym23","message":"I need to get to bed uh three hours ago","date":"2013-09-26T09:30:53.633Z","type":"message"}
+{"nick":"trevnorris","message":"i'm with you there.","date":"2013-09-26T09:31:04.653Z","type":"message"}
+{"nick":"othiym23","message":"tty'all later!","date":"2013-09-26T09:31:08.862Z","type":"message"}
+{"nick":"othiym23","action":"&","date":"2013-09-26T09:31:11.566Z","type":"action"}
+{"nick":"LOUDBOT","message":"NOT THE BUTTONS MORON","date":"2013-09-26T09:31:12.043Z","type":"message"}
+{"nick":"trevnorris","message":"night all","date":"2013-09-26T09:31:13.019Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2013-09-26T09:31:15.743Z","type":"action"}
+{"nick":"LOUDBOT","message":"WHO ARE YOU TO SAY WHAT IS ALLOWED","date":"2013-09-26T09:31:16.356Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2013-09-26T09:40:11.880Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-09-26T09:56:19.920Z","type":"quit"}
+{"nick":"Kakera","date":"2013-09-26T09:58:12.401Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 264 seconds","date":"2013-09-26T09:58:40.425Z","type":"quit"}
+{"nick":"mcavage","date":"2013-09-26T10:04:28.201Z","type":"join"}
+{"nick":"mcavage_","reason":"Read error: Connection reset by peer","date":"2013-09-26T10:04:28.421Z","type":"quit"}
+{"nick":"mcavage_","date":"2013-09-26T10:05:10.101Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2013-09-26T10:05:10.101Z","type":"quit"}
+{"nick":"mcavage_","reason":"Read error: Connection reset by peer","date":"2013-09-26T10:05:45.597Z","type":"quit"}
+{"nick":"mcavage","date":"2013-09-26T10:05:54.761Z","type":"join"}
+{"nick":"bnoordhuis","date":"2013-09-26T10:06:11.962Z","type":"join"}
+{"nick":"mcavage_","date":"2013-09-26T10:08:11.180Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2013-09-26T10:08:11.180Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2013-09-26T10:14:37.945Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-09-26T10:34:07.714Z","type":"join"}
+{"nick":"mraleph","reason":"Read error: Connection reset by peer","date":"2013-09-26T10:38:16.268Z","type":"quit"}
+{"nick":"mraleph","date":"2013-09-26T10:38:24.364Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1503 \u00037UNSTABLE\u000f smartos-x64 (2/600) osx-ia32 (1/600) http://jenkins.nodejs.org/job/nodejs-v0.10/1503/","date":"2013-09-26T10:46:06.555Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 248 seconds","date":"2013-09-26T11:03:01.690Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-09-26T11:03:56.495Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-09-26T11:23:47.279Z","type":"quit"}
+{"nick":"abraxas","date":"2013-09-26T11:24:19.414Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-09-26T11:27:50.674Z","type":"quit"}
+{"nick":"abraxas","reason":"Ping timeout: 240 seconds","date":"2013-09-26T11:28:28.275Z","type":"quit"}
+{"nick":"piscisaureus_","date":"2013-09-26T12:00:04.982Z","type":"join"}
+{"nick":"mcavage_","reason":"Read error: Connection reset by peer","date":"2013-09-26T12:00:05.312Z","type":"quit"}
+{"nick":"mcavage","date":"2013-09-26T12:00:16.951Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 248 seconds","date":"2013-09-26T12:30:29.738Z","type":"quit"}
+{"nick":"dominictarr","reason":"Ping timeout: 240 seconds","date":"2013-09-26T12:35:08.660Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-09-26T12:45:20.136Z","type":"join"}
+{"nick":"nightmar1","date":"2013-09-26T12:53:29.682Z","type":"join"}
+{"nick":"nightmar1","message":"what does uv_run return with UV_RUN_NOWAIT?","date":"2013-09-26T12:54:20.308Z","type":"message"}
+{"nick":"Kakera","reason":"Ping timeout: 264 seconds","date":"2013-09-26T13:00:28.433Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-09-26T13:02:12.881Z","type":"join"}
+{"nick":"saghul","message":"nightmar1 a boolean indicating if you need to run it again because there is pending work to do","date":"2013-09-26T13:04:59.202Z","type":"message"}
+{"nick":"piscisaureus_","date":"2013-09-26T13:05:04.780Z","type":"join"}
+{"nick":"piscisaureus_","message":"bnoordhuis: hi","date":"2013-09-26T13:05:30.519Z","type":"message"}
+{"nick":"bnoordhuis","message":"piscisaureus_: https://github.com/joyent/node/issues/6214","date":"2013-09-26T13:05:33.229Z","type":"message"}
+{"nick":"mcavage_","date":"2013-09-26T13:13:47.766Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2013-09-26T13:13:48.499Z","type":"quit"}
+{"nick":"hz","date":"2013-09-26T13:14:58.428Z","type":"join"}
+{"nick":"Kakera","date":"2013-09-26T13:16:52.545Z","type":"join"}
+{"nick":"nightmar1","message":"hm","date":"2013-09-26T13:26:26.577Z","type":"message"}
+{"nick":"nightmar1","message":"i am creating a udp thing, starting it and stopping it","date":"2013-09-26T13:26:52.334Z","type":"message"}
+{"nick":"nightmar1","message":"i get -1 on the stop","date":"2013-09-26T13:26:55.830Z","type":"message"}
+{"nick":"bnoordhuis","message":"is that an implied question or just an observation?","date":"2013-09-26T13:28:43.774Z","type":"message"}
+{"nick":"nightmar1","message":"observation","date":"2013-09-26T13:35:42.097Z","type":"message"}
+{"nick":"nightmar1","message":"i am doing this in my bindings, so ill try a plain c example first","date":"2013-09-26T13:35:57.086Z","type":"message"}
+{"nick":"jmar777","date":"2013-09-26T13:36:44.378Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-09-26T13:38:08.614Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 240 seconds","date":"2013-09-26T13:57:50.547Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 256 seconds","date":"2013-09-26T13:58:39.554Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-09-26T14:22:58.618Z","type":"quit"}
+{"nick":"kazupon","date":"2013-09-26T14:25:02.343Z","type":"join"}
+{"nick":"mcavage_","reason":"Remote host closed the connection","date":"2013-09-26T14:28:07.813Z","type":"quit"}
+{"nick":"mikeal","date":"2013-09-26T14:30:44.970Z","type":"join"}
+{"nick":"jmar777","reason":"Write error: Connection reset by peer","date":"2013-09-26T14:30:45.473Z","type":"quit"}
+{"nick":"jmar777","date":"2013-09-26T14:31:11.130Z","type":"join"}
+{"nick":"piscisaureus_","date":"2013-09-26T14:44:55.805Z","type":"join"}
+{"nick":"c4milo","date":"2013-09-26T14:50:24.553Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-09-26T14:54:48.236Z","type":"quit"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2013-09-26T15:03:27.507Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-26T15:07:58.172Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-09-26T15:15:22.234Z","type":"join"}
+{"nick":"dominictarr","date":"2013-09-26T15:17:13.374Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #580 \u00037UNSTABLE\u000f smartos-x64 (6/642) http://jenkins.nodejs.org/job/nodejs-master/580/","date":"2013-09-26T15:17:35.090Z","type":"message"}
+{"nick":"AvianFlu_","date":"2013-09-26T15:17:46.614Z","type":"join"}
+{"nick":"AvianFlu","reason":"Disconnected by services","date":"2013-09-26T15:17:46.614Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2013-09-26T15:17:53.134Z","type":"nick"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-09-26T15:28:01.381Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-09-26T15:38:11.871Z","type":"quit"}
+{"nick":"jmar777","date":"2013-09-26T15:39:32.296Z","type":"join"}
+{"nick":"octetcloud","date":"2013-09-26T15:39:33.536Z","type":"join"}
+{"nick":"nightmar1","reason":"Ping timeout: 264 seconds","date":"2013-09-26T15:39:42.250Z","type":"quit"}
+{"nick":"nightmar1","date":"2013-09-26T15:47:26.778Z","type":"join"}
