@@ -1,0 +1,157 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-09-27T00:00:01.256Z","type":"quit"}
+{"nick":"ircretary","date":"2013-09-27T00:00:10.121Z","type":"join"}
+{"nick":"hueniverse","message":"finally have two servers with slightly different config that are leaking memory twice as fast, so we have our first real clue where to look...","date":"2013-09-27T00:01:55.242Z","type":"message"}
+{"nick":"hueniverse","message":"never been this happy about faster leaking","date":"2013-09-27T00:02:04.989Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #199 \u00034FAILURE\u000f windows-x64 (3/195) windows-ia32 (3/195) http://jenkins.nodejs.org/job/libuv-master-gyp/199/","date":"2013-09-27T00:02:12.609Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse: what's the context?","date":"2013-09-27T00:04:57.844Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse: I'll be doing a new 0.11 release tomorrow","date":"2013-09-27T00:05:06.192Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-09-27T00:07:32.240Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-09-27T00:08:41.507Z","type":"nick"}
+{"nick":"hueniverse","message":"tjfontaine: our production servers are leaking about 20mb a day of RSS (they go up about 40 and down 20 at night every day)","date":"2013-09-27T00:09:17.470Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: could not figure it out for a long time","date":"2013-09-27T00:09:30.688Z","type":"message"}
+{"nick":"tjfontaine","message":"oh, how related is that to concurrent connections?","date":"2013-09-27T00:10:03.622Z","type":"message"}
+{"nick":"st_luke_","date":"2013-09-27T00:10:04.318Z","type":"join"}
+{"nick":"hueniverse","message":"tjfontaine: we changed 2 servers to use out http client code more freq and those servers are leaking 43mb a day","date":"2013-09-27T00:10:14.628Z","type":"message"}
+{"nick":"tjfontaine","message":"interesting","date":"2013-09-27T00:10:47.691Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: we cannot find any obvious correlation ","date":"2013-09-27T00:10:59.786Z","type":"message"}
+{"nick":"kenperkins","date":"2013-09-27T00:11:02.868Z","type":"join"}
+{"nick":"hueniverse","message":"not to connections, disconnects, etc","date":"2013-09-27T00:11:12.279Z","type":"message"}
+{"nick":"hueniverse","message":"we know more traffic makes is worse","date":"2013-09-27T00:11:17.979Z","type":"message"}
+{"nick":"hueniverse","message":"but little traffic keeps it flat or rss goes down","date":"2013-09-27T00:11:31.509Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse: do you have any dtrace running watching for gc-start/gc-stop as well, to get some ideas how often it's actually firing?","date":"2013-09-27T00:12:13.543Z","type":"message"}
+{"nick":"st_luke_","reason":"Remote host closed the connection","date":"2013-09-27T00:12:19.543Z","type":"quit"}
+{"nick":"hueniverse","message":"tjfontaine: we count gc runs","date":"2013-09-27T00:14:58.779Z","type":"message"}
+{"nick":"hueniverse","message":"they pick at 4 collections a second","date":"2013-09-27T00:15:52.028Z","type":"message"}
+{"nick":"hueniverse","message":"peak","date":"2013-09-27T00:15:54.150Z","type":"message"}
+{"nick":"tjfontaine","message":"presumably during peak traffic","date":"2013-09-27T00:16:14.508Z","type":"message"}
+{"nick":"hueniverse","message":"yes","date":"2013-09-27T00:16:32.470Z","type":"message"}
+{"nick":"hueniverse","message":"total heap used is never over 80mb","date":"2013-09-27T00:16:39.231Z","type":"message"}
+{"nick":"hueniverse","message":"servers start at around 150mb","date":"2013-09-27T00:16:55.388Z","type":"message"}
+{"nick":"hueniverse","message":"after about a week, they are now all at 350-450mb","date":"2013-09-27T00:17:09.951Z","type":"message"}
+{"nick":"tjfontaine","message":"interesting","date":"2013-09-27T00:18:01.892Z","type":"message"}
+{"nick":"hueniverse","message":"the offending code is most likely around here: https://github.com/spumko/hapi/blob/master/lib/client.js","date":"2013-09-27T00:22:01.660Z","type":"message"}
+{"nick":"tjfontaine","message":"are these predominately tls or http?","date":"2013-09-27T00:22:42.933Z","type":"message"}
+{"nick":"hueniverse","message":"looking","date":"2013-09-27T00:23:09.173Z","type":"message"}
+{"nick":"hueniverse","message":"so on the slower leaking machines, 28rps http, 15rps tls","date":"2013-09-27T00:24:36.678Z","type":"message"}
+{"nick":"hueniverse","message":"on the faster leaking machines, same ratio but with additional http calls (not sure how many more)","date":"2013-09-27T00:25:38.708Z","type":"message"}
+{"nick":"tjfontaine","message":"Collector looks interesting","date":"2013-09-27T00:26:30.371Z","type":"message"}
+{"nick":"tjfontaine","message":"are you able to gcore these and watch object counts that way?","date":"2013-09-27T00:26:51.601Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: yeah","date":"2013-09-27T00:28:00.768Z","type":"message"}
+{"nick":"hueniverse","message":"we can","date":"2013-09-27T00:28:02.517Z","type":"message"}
+{"nick":"hueniverse","message":"so far we were not able to make sense of it","date":"2013-09-27T00:28:12.308Z","type":"message"}
+{"nick":"hueniverse","message":"but now we got numbers showing how we can speed up leaking","date":"2013-09-27T00:28:26.811Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-09-27T00:30:58.555Z","type":"nick"}
+{"nick":"tjfontaine","message":"hueniverse: ya, I mean, I would just core on the hour, and cache the output of \"echo '::findjsobjects ! sort -k2' | mdb core > object_counts\"","date":"2013-09-27T00:37:01.917Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: can't imagine this will be super useful. I'm pretty sure we're leaking slabs for buffers","date":"2013-09-27T00:41:50.183Z","type":"message"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-09-27T00:41:55.008Z","type":"nick"}
+{"nick":"hueniverse","message":"since heap is total stable","date":"2013-09-27T00:41:56.943Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse: there's no slab in 0.11","date":"2013-09-27T00:42:38.487Z","type":"message"}
+{"nick":"st_luke","date":"2013-09-27T00:42:41.497Z","type":"join"}
+{"nick":"tjfontaine","message":"hueniverse: there's a buffer pool for buffers made in js, but that's only 8k at a time","date":"2013-09-27T00:43:00.062Z","type":"message"}
+{"nick":"hueniverse","message":"we're still 0.10 in production","date":"2013-09-27T00:43:47.790Z","type":"message"}
+{"nick":"tjfontaine","message":"oh, I thought we were talking about 2 servers running 0.11","date":"2013-09-27T00:44:00.038Z","type":"message"}
+{"nick":"hueniverse","message":"cause your 0.11 keep giving me a hard time!! :-)","date":"2013-09-27T00:44:00.861Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: sorry, no","date":"2013-09-27T00:44:11.876Z","type":"message"}
+{"nick":"hueniverse","message":"these are all .10","date":"2013-09-27T00:44:15.047Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe, well I was waiting to release a new 0.11 until I had your uglify issue fixed","date":"2013-09-27T00:44:15.674Z","type":"message"}
+{"nick":"hueniverse","message":"the two servers just do more client calls","date":"2013-09-27T00:44:30.020Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-09-27T00:44:45.229Z","type":"quit"}
+{"nick":"tjfontaine","message":"I see, ok, and the average response times for these calls are pretty quick, and request sizes are how large?","date":"2013-09-27T00:45:00.906Z","type":"message"}
+{"nick":"st_luke_","date":"2013-09-27T00:45:30.066Z","type":"join"}
+{"nick":"tjfontaine","message":"anyway if they are slabs, we should see some amount of similar increase by the end of the week in buffer counts, we could also inspect and aggregate the buffer counts by length and offsets","date":"2013-09-27T00:51:20.529Z","type":"message"}
+{"nick":"st_luke_","reason":"Remote host closed the connection","date":"2013-09-27T00:51:27.072Z","type":"quit"}
+{"nick":"tellnes","reason":"Ping timeout: 260 seconds","date":"2013-09-27T00:52:00.268Z","type":"quit"}
+{"nick":"tellnes","date":"2013-09-27T00:58:07.835Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-27T00:58:41.951Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-27T01:10:28.904Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-09-27T01:15:49.430Z","type":"quit"}
+{"nick":"hueniverse","message":"tjfontaine: that will just prove we are leaking some buffers... once we prove that, how do we go about finding those fuckers?","date":"2013-09-27T01:29:23.091Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-09-27T01:33:38.409Z","type":"join"}
+{"nick":"abraxas","date":"2013-09-27T01:37:02.728Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-09-27T01:41:46.646Z","type":"quit"}
+{"nick":"kenperkins","reason":"Ping timeout: 248 seconds","date":"2013-09-27T01:44:37.817Z","type":"quit"}
+{"nick":"kenperkins_","date":"2013-09-27T01:44:40.186Z","type":"join"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-09-27T01:50:32.133Z","type":"quit"}
+{"nick":"groundwater","date":"2013-09-27T01:51:04.413Z","type":"join"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-09-27T02:10:29.736Z","type":"quit"}
+{"nick":"mikeal","date":"2013-09-27T02:12:57.036Z","type":"join"}
+{"nick":"inolen","date":"2013-09-27T02:16:07.918Z","type":"join"}
+{"nick":"c4milo","date":"2013-09-27T02:17:33.304Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-09-27T02:44:09.690Z","type":"quit"}
+{"nick":"amartens","date":"2013-09-27T02:57:15.833Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-09-27T03:07:37.906Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-09-27T03:08:27.386Z","type":"join"}
+{"nick":"julianduque","reason":"Ping timeout: 252 seconds","date":"2013-09-27T03:13:24.249Z","type":"quit"}
+{"nick":"julianduque","date":"2013-09-27T03:15:48.544Z","type":"join"}
+{"nick":"julianduque","reason":"Client Quit","date":"2013-09-27T03:15:48.544Z","type":"quit"}
+{"nick":"mikeal","date":"2013-09-27T03:16:01.003Z","type":"join"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-27T03:18:02.212Z","type":"quit"}
+{"nick":"groundwater","date":"2013-09-27T03:19:25.932Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-09-27T03:21:48.051Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-09-27T03:23:38.211Z","type":"quit"}
+{"nick":"inolen","date":"2013-09-27T03:27:33.173Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-09-27T03:32:05.378Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-09-27T03:42:28.279Z","type":"quit"}
+{"nick":"st_luke","date":"2013-09-27T03:52:36.506Z","type":"join"}
+{"nick":"kazupon","date":"2013-09-27T03:54:29.397Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-09-27T03:54:36.032Z","type":"quit"}
+{"nick":"kazupon","date":"2013-09-27T03:54:43.905Z","type":"join"}
+{"nick":"indexzero","date":"2013-09-27T03:59:14.394Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-09-27T04:02:27.482Z","type":"quit"}
+{"nick":"st_luke_","date":"2013-09-27T04:21:23.526Z","type":"join"}
+{"nick":"dap1","date":"2013-09-27T04:23:00.171Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-27T04:25:11.056Z","type":"quit"}
+{"nick":"st_luke_","reason":"Remote host closed the connection","date":"2013-09-27T04:27:25.445Z","type":"quit"}
+{"nick":"dap1","reason":"Quit: Leaving.","date":"2013-09-27T04:33:55.165Z","type":"quit"}
+{"nick":"dap1","date":"2013-09-27T04:36:52.337Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-09-27T04:40:34.240Z","type":"nick"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-27T04:42:56.029Z","type":"quit"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-09-27T04:52:35.857Z","type":"quit"}
+{"nick":"st_luke","date":"2013-09-27T04:56:11.939Z","type":"join"}
+{"nick":"dap1","reason":"Quit: Leaving.","date":"2013-09-27T04:56:56.101Z","type":"quit"}
+{"nick":"octetcloud","reason":"Ping timeout: 264 seconds","date":"2013-09-27T05:00:42.331Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-27T05:03:57.480Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 245 seconds","date":"2013-09-27T05:09:43.168Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-09-27T05:13:55.468Z","type":"nick"}
+{"nick":"dominictarr","date":"2013-09-27T05:17:40.041Z","type":"join"}
+{"nick":"c4milo","date":"2013-09-27T05:23:42.478Z","type":"join"}
+{"nick":"inolen","date":"2013-09-27T05:31:51.645Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-09-27T05:32:27.755Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-27T05:32:46.319Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-09-27T05:43:00.261Z","type":"quit"}
+{"nick":"paddybyers","date":"2013-09-27T05:45:17.949Z","type":"join"}
+{"nick":"othiym23","message":"trevnorris: I was able to get all your asyncListener error test cases to pass against the polyfill with https://gist.github.com/othiym23/6724661","date":"2013-09-27T05:56:31.296Z","type":"message"}
+{"nick":"othiym23","message":"it's actually the non-error tests that are a pain in the butt, and I'm getting *more* events tracked than I expect, rather than less","date":"2013-09-27T05:56:57.672Z","type":"message"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-09-27T05:58:27.557Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-09-27T05:58:40.008Z","type":"join"}
+{"nick":"dominictarr","date":"2013-09-27T06:02:30.787Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-27T06:13:36.325Z","type":"quit"}
+{"nick":"groundwater","reason":"Quit: groundwater","date":"2013-09-27T06:14:05.048Z","type":"quit"}
+{"nick":"st_luke","date":"2013-09-27T06:23:31.790Z","type":"join"}
+{"nick":"felixge","date":"2013-09-27T06:25:46.389Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2013-09-27T06:25:46.610Z","type":"quit"}
+{"nick":"felixge","date":"2013-09-27T06:25:46.610Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-09-27T06:26:10.881Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-09-27T06:27:05.773Z","type":"quit"}
+{"nick":"paddybyers","date":"2013-09-27T06:30:34.072Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #230 \u00037UNSTABLE\u000f windows-ia32 (7/600) windows-x64 (7/600) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/230/","date":"2013-09-27T06:43:14.842Z","type":"message"}
+{"nick":"amartens","date":"2013-09-27T06:49:47.950Z","type":"join"}
+{"nick":"bnoordhuis","date":"2013-09-27T06:55:38.390Z","type":"join"}
+{"nick":"c4milo","date":"2013-09-27T06:57:18.006Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-09-27T06:58:13.891Z","type":"quit"}
+{"nick":"dsantiago","reason":"Quit: Leaving...","date":"2013-09-27T07:07:26.175Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-09-27T07:07:57.332Z","type":"quit"}
+{"nick":"inolen","date":"2013-09-27T07:08:23.116Z","type":"join"}
+{"nick":"rendar","date":"2013-09-27T07:09:12.342Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-09-27T07:09:36.152Z","type":"quit"}
+{"nick":"dsantiago","date":"2013-09-27T07:12:52.446Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Jeff Switzer\u000f \u00037master\u000f * \u00022e13d0c\u0002 : fs: remove duplicate !options case - http://git.io/PhVDKg","date":"2013-09-27T07:18:10.510Z","type":"message"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-09-27T07:20:16.661Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-09-27T07:26:31.366Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #582 \u00037UNSTABLE\u000f smartos-x64 (6/643) http://jenkins.nodejs.org/job/nodejs-master/582/","date":"2013-09-27T07:27:40.785Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #375 \u00037UNSTABLE\u000f windows-x64 (22/643) windows-ia32 (20/643) http://jenkins.nodejs.org/job/nodejs-master-windows/375/","date":"2013-09-27T07:37:25.980Z","type":"message"}
+{"nick":"paddybyers_","date":"2013-09-27T07:40:53.165Z","type":"join"}
+{"nick":"paddybyers","reason":"Ping timeout: 268 seconds","date":"2013-09-27T07:41:00.302Z","type":"quit"}
+{"nick":"paddybyers_","new_nick":"paddybyers","date":"2013-09-27T07:41:00.522Z","type":"nick"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 256 seconds","date":"2013-09-27T07:49:54.323Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-09-27T07:56:48.296Z","type":"join"}
