@@ -307,3 +307,346 @@
 {"nick":"piscisaureus_","message":"I think it should be more low level and have no eventemitters","date":"2013-10-10T15:59:32.603Z","type":"message"}
 {"nick":"tjfontaine","message":"or device side in the case of boot2gecko","date":"2013-10-10T15:59:50.157Z","type":"message"}
 {"nick":"Domenic_","message":"yes b2g is driving this most pressingly","date":"2013-10-10T15:59:59.796Z","type":"message"}
+{"nick":"piscisaureus_","message":".read([lowat, [hiwat]], cb)","date":"2013-10-10T16:00:05.596Z","type":"message"}
+{"nick":"bajtos","date":"2013-10-10T16:00:07.407Z","type":"join"}
+{"nick":"piscisaureus_","message":".write(cb)","date":"2013-10-10T16:00:09.525Z","type":"message"}
+{"nick":"Domenic_","message":"(also stopping the chrome filesystem API guys from doing crazy things.)","date":"2013-10-10T16:00:18.071Z","type":"message"}
+{"nick":"piscisaureus_","message":".shutdown/end(cb)","date":"2013-10-10T16:00:23.792Z","type":"message"}
+{"nick":"Domenic_","message":"interesting lowat and hiwat on the read call, not the constructor?","date":"2013-10-10T16:00:38.509Z","type":"message"}
+{"nick":"Domenic_","message":"wait i thought lowat was killed","date":"2013-10-10T16:00:47.136Z","type":"message"}
+{"nick":"piscisaureus_","message":"Ah we can kill lowat","date":"2013-10-10T16:00:55.783Z","type":"message"}
+{"nick":"piscisaureus_","message":"If you'd specify it it means \"read at least XX bytes or until EOF/FIN\"","date":"2013-10-10T16:01:11.410Z","type":"message"}
+{"nick":"Domenic_","message":"ah right","date":"2013-10-10T16:01:25.951Z","type":"message"}
+{"nick":"Domenic_","message":"isaac contended (and I think I agree) that this is not terribly useful","date":"2013-10-10T16:01:36.681Z","type":"message"}
+{"nick":"piscisaureus_","message":"like read(3) - disregarding signals","date":"2013-10-10T16:01:37.654Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: I agree actually","date":"2013-10-10T16:01:46.862Z","type":"message"}
+{"nick":"Domenic_","message":"because what you usually want is \"readUntil\"","date":"2013-10-10T16:01:54.103Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: I think that's not terribly useful either, because it requires copying/transient wrapping of part of the read buffer","date":"2013-10-10T16:02:37.247Z","type":"message"}
+{"nick":"kevinswiber","reason":"Ping timeout: 245 seconds","date":"2013-10-10T16:02:41.271Z","type":"quit"}
+{"nick":"piscisaureus_","message":"Domenic_: or to actually call read(3) with that amount of bytes","date":"2013-10-10T16:02:54.379Z","type":"message"}
+{"nick":"piscisaureus_","message":"but then you end up doing way to much reads because the user typically consumes data in small chunks","date":"2013-10-10T16:03:10.239Z","type":"message"}
+{"nick":"Domenic_","message":"sure","date":"2013-10-10T16:03:25.056Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: so - in fact lowat and hiwat are useful but they are \"too sweet\" for a low level api","date":"2013-10-10T16:03:34.595Z","type":"message"}
+{"nick":"Domenic_","message":"ok. but it's still useful to control the buffer at stream construction time i assume","date":"2013-10-10T16:03:53.267Z","type":"message"}
+{"nick":"piscisaureus_","message":"Depends - what would you want to control at construction time exactly?","date":"2013-10-10T16:04:21.540Z","type":"message"}
+{"nick":"Domenic_","message":"Well node currently has new ReadableStream({ highWaterMark })","date":"2013-10-10T16:04:57.486Z","type":"message"}
+{"nick":"piscisaureus_","message":"Yeah well that's isaacs design choice. But this requires the streams2 code to do internal bookkeeping and tricks","date":"2013-10-10T16:05:25.448Z","type":"message"}
+{"nick":"Domenic_","message":"oh interesting","date":"2013-10-10T16:05:31.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"like copying/joining/slicing buffers","date":"2013-10-10T16:05:35.351Z","type":"message"}
+{"nick":"Domenic_","message":"so kill it?","date":"2013-10-10T16:05:39.579Z","type":"message"}
+{"nick":"piscisaureus_","message":"If you want very low level yeah. What you could specify is a default \"max chunk size\"","date":"2013-10-10T16:06:09.810Z","type":"message"}
+{"nick":"Domenic_","message":"isn't it important for backpressure? i.e. for when push() returns false?","date":"2013-10-10T16:06:20.808Z","type":"message"}
+{"nick":"piscisaureus_","message":"like fs.createReadStream({maxBuffer: 65536","date":"2013-10-10T16:06:30.406Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: I don't think so?","date":"2013-10-10T16:06:47.742Z","type":"message"}
+{"nick":"Domenic_","message":"I was under the impression push() starts returning false when the buffer has highWaterMark bytes inside it","date":"2013-10-10T16:07:10.673Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: ah that could be true. But then highWaterMark basically means \"how much node buffers internally\"","date":"2013-10-10T16:07:44.251Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: which is only applicable for data that is push()ed. It doesn't matter for data that comes off the network.","date":"2013-10-10T16:08:14.565Z","type":"message"}
+{"nick":"Domenic_","message":"right that makes sense","date":"2013-10-10T16:08:50.354Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: maybe you're right. Some sort of buffer size makes sense. On windows/unix you also have a \"pipe size\"","date":"2013-10-10T16:09:06.511Z","type":"message"}
+{"nick":"piscisaureus_","message":"which is how much data the write and can write until the write() call starts blocking","date":"2013-10-10T16:09:30.833Z","type":"message"}
+{"nick":"piscisaureus_","message":"So I guess having something like this at construction time would indeed be useful although the semantics would be a little different depending on the type of stream","date":"2013-10-10T16:09:56.276Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: do you also have ideas about seekable streams (files) and message/frame oriented streans (like message queues)","date":"2013-10-10T16:10:56.510Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: or is that out of scope ?","date":"2013-10-10T16:11:09.812Z","type":"message"}
+{"nick":"Domenic_","message":"piscisaureus_: not really, never thought about them... ideally get something out the door first, but if you think there are relevant concerns that should inform the base design, then that's worth knowing...","date":"2013-10-10T16:11:45.828Z","type":"message"}
+{"nick":"Domenic_","message":"i feel like the design i have now can almost work with any object (not just arraybuffers or strings), but that seems strange, so i'm not *trying* to make it work.","date":"2013-10-10T16:12:32.404Z","type":"message"}
+{"nick":"Domenic_","message":"New question: what is .write's callback useful for?","date":"2013-10-10T16:13:49.463Z","type":"message"}
+{"nick":"Domenic_","message":"It is weird that it has both a sync return (boolean) and async return (callback)","date":"2013-10-10T16:14:02.421Z","type":"message"}
+{"nick":"Domenic_","message":"I guess errors :-/","date":"2013-10-10T16:14:11.252Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-10-10T16:14:33.982Z","type":"join"}
+{"nick":"piscisaureus_","message":"Domenic_: in a low level interface you may not want to return true or false","date":"2013-10-10T16:14:34.346Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: also, errors indeed. If write fails the error callback should receive the error","date":"2013-10-10T16:14:49.688Z","type":"message"}
+{"nick":"Domenic_","message":"Hmm that would be convenient. But how can you get away with it? I assumed pipe() used the true/false to do backpressure stuff...","date":"2013-10-10T16:15:05.561Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: whether the user can immediately write more should be available as a property on the stream object","date":"2013-10-10T16:15:14.206Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: or as a method","date":"2013-10-10T16:15:21.237Z","type":"message"}
+{"nick":"Domenic_","message":"OK that was going to be my fallback approach; I am glad you think it is good enough to be a \"should\"","date":"2013-10-10T16:15:38.293Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: it's already a \"should\"","date":"2013-10-10T16:15:55.001Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: what property is that in node?","date":"2013-10-10T16:16:10.077Z","type":"message"}
+{"nick":"isaacs","message":"the write() return can be ignored.  it's not unsafe if done in smal amounts","date":"2013-10-10T16:16:10.442Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: well, it's the return value","date":"2013-10-10T16:16:16.600Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but also i think _writableState.needDrain or something","date":"2013-10-10T16:16:28.370Z","type":"message"}
+{"nick":"Domenic_","message":"needDrain yeah I think","date":"2013-10-10T16:16:32.908Z","type":"message"}
+{"nick":"piscisaureus_","message":"right","date":"2013-10-10T16:16:40.309Z","type":"message"}
+{"nick":"Domenic_","message":"What is a good name for it? \"full\"?","date":"2013-10-10T16:16:46.257Z","type":"message"}
+{"nick":"isaacs","message":"which means \"you filledit up, and now someone is expecting a drain event\"","date":"2013-10-10T16:16:52.171Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: i'd actualy like a stream.state or something","date":"2013-10-10T16:17:00.481Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: which is 'OK' if it's ok to do more stuff, and something else if not.","date":"2013-10-10T16:17:08.351Z","type":"message"}
+{"nick":"isaacs","message":"maybe stream.readState and stream.writeState","date":"2013-10-10T16:17:24.181Z","type":"message"}
+{"nick":"Domenic_","message":"this ties into your readable state idea, hmm, yeah","date":"2013-10-10T16:17:28.168Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: full would be ok. Note that this only applies to the write end.","date":"2013-10-10T16:17:40.138Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: the \"real problem\" is that there is some magic number","date":"2013-10-10T16:18:10.547Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: and the user should make sure it writes until it reaches that number (or slightly goes over it)","date":"2013-10-10T16:18:33.757Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: well, so, either you buffer, or writes are not allowed when somethign is not flushed yet, etc","date":"2013-10-10T16:18:41.969Z","type":"message"}
+{"nick":"Domenic_","message":"readableState = { \"hasData\", \"empty\", \"EOF\", \"error\" }, writableState = { \"hasRoom\", \"isFull\", \"error\" } ??","date":"2013-10-10T16:18:43.277Z","type":"message"}
+{"nick":"Domenic_","message":"oh writableState also has \"ended\"","date":"2013-10-10T16:19:11.996Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: which requires careful bookkeeping in the write callback","date":"2013-10-10T16:19:15.411Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the \"real problem\" is not that there's a magic number.  it's that we built the whole thing up on EE","date":"2013-10-10T16:19:51.970Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: so the magic number is \"how much the kernel can buffer\" for tcp streams, which is usually unknown and may vary over time","date":"2013-10-10T16:19:53.093Z","type":"message"}
+{"nick":"Domenic_","message":"so much EE hate in this room ^_^","date":"2013-10-10T16:20:05.599Z","type":"message"}
+{"nick":"isaacs","message":"yes.","date":"2013-10-10T16:20:09.038Z","type":"message"}
+{"nick":"isaacs","message":"Node should not have any control-flow abstractions that aren't native to JavaScript","date":"2013-10-10T16:20:34.580Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I don't think that a stream can be in \"error\" state","date":"2013-10-10T16:20:36.931Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: if a write() fails, the stream is errored","date":"2013-10-10T16:20:48.940Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: write() can fail. And so can read(). and so can end()","date":"2013-10-10T16:20:49.950Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: right","date":"2013-10-10T16:20:54.720Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: usually this is unrecoverable","date":"2013-10-10T16:21:00.129Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: yeah so for convenience we could track the error state","date":"2013-10-10T16:21:05.320Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: which is basically \"the first error seen","date":"2013-10-10T16:21:13.649Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: right","date":"2013-10-10T16:21:16.738Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: i think, though, if we're going to design JS streams, from first principles, without events, we should not assume that we'll have \"lowlevel streams\" and \"sweet streams\"","date":"2013-10-10T16:21:54.889Z","type":"message"}
+{"nick":"Domenic_","message":"I feel like fundamentally it's canRead/shouldRead/cannotRead and the same for write","date":"2013-10-10T16:21:57.433Z","type":"message"}
+{"nick":"isaacs","message":"we should make lowlevel streams fundamentally different from the JS streams users are expected to consume","date":"2013-10-10T16:22:15.518Z","type":"message"}
+{"nick":"isaacs","message":"that was another design mistake in node","date":"2013-10-10T16:22:21.588Z","type":"message"}
+{"nick":"isaacs","message":"_handle vs stream","date":"2013-10-10T16:22:25.108Z","type":"message"}
+{"nick":"Domenic_","message":"I want to see the \"design mistakes in node\" talk some time","date":"2013-10-10T16:22:51.460Z","type":"message"}
+{"nick":"isaacs","message":"oh, man","date":"2013-10-10T16:22:56.529Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: handle was just the more low level abstraction that was convenient at the time","date":"2013-10-10T16:22:58.247Z","type":"message"}
+{"nick":"isaacs","message":"i bet me and piscisaureus_ could tag-team that one something fierce","date":"2013-10-10T16:23:07.867Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2013-10-10T16:23:10.147Z","type":"message"}
+{"nick":"piscisaureus_","message":":)","date":"2013-10-10T16:23:17.487Z","type":"message"}
+{"nick":"piscisaureus_","message":"we can do a shouting and insults session","date":"2013-10-10T16:23:26.586Z","type":"message"}
+{"nick":"isaacs","message":"you'd need to have both of us, because otherwise i'll gloss over my mistakes, and vice versa","date":"2013-10-10T16:23:29.525Z","type":"message"}
+{"nick":"isaacs","message":"it'd be fun to watch","date":"2013-10-10T16:23:48.207Z","type":"message"}
+{"nick":"isaacs","message":"maybe a little uncomfortable forthe audience","date":"2013-10-10T16:23:57.027Z","type":"message"}
+{"nick":"isaacs","message":":)","date":"2013-10-10T16:23:59.748Z","type":"message"}
+{"nick":"piscisaureus_","message":"People would stop using node","date":"2013-10-10T16:24:03.590Z","type":"message"}
+{"nick":"piscisaureus_","message":"I'd be bad for our job security","date":"2013-10-10T16:24:09.970Z","type":"message"}
+{"nick":"Domenic_","message":"maybe at nodeconf where it isn't recorded","date":"2013-10-10T16:24:37.561Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: let's do it after we have other jobs, or our startups all take exits","date":"2013-10-10T16:25:04.597Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-10T16:25:54.091Z","type":"quit"}
+{"nick":"isaacs","message":"it'd be good to have ryah on stage for it as well, not so much to say anything, but just to be there while we complain about a lot of the decisions that were originally his, to make the experience even more awkward.","date":"2013-10-10T16:26:01.187Z","type":"message"}
+{"nick":"piscisaureus_","message":"yeah","date":"2013-10-10T16:26:04.587Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: when is yours going to?","date":"2013-10-10T16:26:21.430Z","type":"message"}
+{"nick":"Domenic_","message":"Why is there no _end() like there is _write()?","date":"2013-10-10T16:26:50.619Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: traditionaly you have to have a company before it exits.","date":"2013-10-10T16:26:58.205Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but, ya know, as soon as someone comes along with a big enough check, as you do.","date":"2013-10-10T16:27:10.416Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: what would it do?","date":"2013-10-10T16:27:37.375Z","type":"message"}
+{"nick":"Domenic_","message":"um, I guess manage the underlying resource?","date":"2013-10-10T16:27:52.229Z","type":"message"}
+{"nick":"Domenic_","message":"close the FD?","date":"2013-10-10T16:27:56.122Z","type":"message"}
+{"nick":"isaacs","message":"cant' you just do that on('finish')?","date":"2013-10-10T16:28:23.635Z","type":"message"}
+{"nick":"Domenic_","message":"I thought we hated EEs","date":"2013-10-10T16:28:36.011Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: are you asking, for node streams, or for the new green-field Browser streams?","date":"2013-10-10T16:28:38.484Z","type":"message"}
+{"nick":"Domenic_","message":"well, a combo, i guess.","date":"2013-10-10T16:28:48.607Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: well, sure, but at least for Node, we're kinda stuck with them","date":"2013-10-10T16:28:48.944Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: yeah, i dunno.  we usually just add a 'finish' listener for that","date":"2013-10-10T16:29:02.394Z","type":"message"}
+{"nick":"amartens","date":"2013-10-10T16:29:06.394Z","type":"join"}
+{"nick":"Domenic_","message":"ok","date":"2013-10-10T16:29:07.971Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: why do you need an event for that?","date":"2013-10-10T16:30:44.375Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: could just be stream.close()","date":"2013-10-10T16:30:51.234Z","type":"message"}
+{"nick":"piscisaureus_","message":"?","date":"2013-10-10T16:30:52.716Z","type":"message"}
+{"nick":"brson","date":"2013-10-10T16:35:53.355Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: you might want to auto-close when the end() flushes","date":"2013-10-10T16:37:58.288Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: like we do in fs","date":"2013-10-10T16:38:03.728Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: and TCP, indirectly","date":"2013-10-10T16:38:16.978Z","type":"message"}
+{"nick":"isaacs","action":"doing a webinar, bbiab","date":"2013-10-10T16:38:20.797Z","type":"action"}
+{"nick":"piscisaureus_","message":"isaacs: yes, so the normal close flow would involve calling end()","date":"2013-10-10T16:39:10.633Z","type":"message"}
+{"nick":"julianduque","date":"2013-10-10T16:39:10.633Z","type":"join"}
+{"nick":"piscisaureus_","message":"isaacs: but the question is what to do for read-only streams (also 'end","date":"2013-10-10T16:39:34.284Z","type":"message"}
+{"nick":"piscisaureus_","message":"'?)","date":"2013-10-10T16:39:37.282Z","type":"message"}
+{"nick":"piscisaureus_","message":"and how to do a fast abortive close","date":"2013-10-10T16:39:47.432Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-10-10T16:40:54.572Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2013-10-10T16:41:41.880Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-10-10T16:43:43.041Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-10T16:44:42.587Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-10T16:48:21.157Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-10-10T16:48:37.943Z","type":"quit"}
+{"nick":"wwicks_","date":"2013-10-10T16:54:00.376Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 264 seconds","date":"2013-10-10T16:55:18.378Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T16:55:18.597Z","type":"nick"}
+{"nick":"AvianFlu","date":"2013-10-10T16:57:15.427Z","type":"join"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2013-10-10T17:01:36.097Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-10T17:02:57.836Z","type":"quit"}
+{"nick":"mikeal","date":"2013-10-10T17:03:50.983Z","type":"join"}
+{"nick":"st_luke","date":"2013-10-10T17:05:35.432Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-10-10T17:05:41.572Z","type":"join"}
+{"nick":"wwicks_","date":"2013-10-10T17:14:27.095Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 264 seconds","date":"2013-10-10T17:15:28.371Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T17:15:28.699Z","type":"nick"}
+{"nick":"bradleymeck","date":"2013-10-10T17:25:31.625Z","type":"join"}
+{"nick":"Benvie","reason":"Ping timeout: 248 seconds","date":"2013-10-10T17:27:28.786Z","type":"quit"}
+{"nick":"Benvie","date":"2013-10-10T17:30:23.414Z","type":"join"}
+{"nick":"kevinswiber","date":"2013-10-10T17:32:14.942Z","type":"join"}
+{"nick":"wwicks_","date":"2013-10-10T17:34:57.869Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 265 seconds","date":"2013-10-10T17:35:53.883Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T17:35:54.104Z","type":"nick"}
+{"nick":"EhevuTov","date":"2013-10-10T17:48:29.058Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-master\u0002: #280 \u00037UNSTABLE\u000f windows (3/196) smartos (2/195) http://jenkins.nodejs.org/job/libuv-master/280/","date":"2013-10-10T17:53:28.045Z","type":"message"}
+{"nick":"wwicks_","date":"2013-10-10T17:55:15.730Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 248 seconds","date":"2013-10-10T17:56:21.731Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T17:56:21.949Z","type":"nick"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-10T18:06:29.369Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-10T18:06:54.969Z","type":"join"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-10-10T18:08:04.653Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-node-integration\u0002: #265 \u00037UNSTABLE\u000f smartos-x64 (7/644) smartos-ia32 (5/644) http://jenkins.nodejs.org/job/libuv-node-integration/265/","date":"2013-10-10T18:10:24.289Z","type":"message"}
+{"nick":"mcavage","reason":"Ping timeout: 248 seconds","date":"2013-10-10T18:11:12.797Z","type":"quit"}
+{"nick":"indexzero","date":"2013-10-10T18:11:13.008Z","type":"join"}
+{"nick":"mcavage","date":"2013-10-10T18:14:02.016Z","type":"join"}
+{"nick":"wwicks","reason":"Read error: Connection reset by peer","date":"2013-10-10T18:14:50.004Z","type":"quit"}
+{"nick":"wwicks","date":"2013-10-10T18:15:09.228Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-10-10T18:15:23.166Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T18:15:50.986Z","type":"join"}
+{"nick":"st_luke","reason":"Ping timeout: 248 seconds","date":"2013-10-10T18:20:11.796Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T18:22:11.434Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-10-10T18:24:00.751Z","type":"nick"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-10-10T18:30:08.085Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T18:30:35.971Z","type":"join"}
+{"nick":"dominictarr","reason":"Remote host closed the connection","date":"2013-10-10T18:30:56.229Z","type":"quit"}
+{"nick":"dominictarr","date":"2013-10-10T18:31:21.431Z","type":"join"}
+{"nick":"st_luke","reason":"Ping timeout: 248 seconds","date":"2013-10-10T18:35:12.768Z","type":"quit"}
+{"nick":"wwicks_","date":"2013-10-10T18:35:38.818Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 240 seconds","date":"2013-10-10T18:37:08.199Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T18:37:08.730Z","type":"nick"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-10-10T18:41:13.111Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T18:44:07.049Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T18:44:40.674Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T18:45:23.726Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T18:45:39.604Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #398 \u00037UNSTABLE\u000f windows-x64 (21/644) windows-ia32 (23/644) http://jenkins.nodejs.org/job/nodejs-master-windows/398/","date":"2013-10-10T18:52:27.093Z","type":"message"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-10T18:53:50.096Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-10T18:54:16.551Z","type":"join"}
+{"nick":"mcavage_","date":"2013-10-10T18:55:08.360Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2013-10-10T18:55:08.712Z","type":"quit"}
+{"nick":"isaacs","message":"ok, got a fix for 6214, just need to write a test for it, and we're golden","date":"2013-10-10T18:58:34.026Z","type":"message"}
+{"nick":"tjfontaine","message":"yay","date":"2013-10-10T19:05:04.326Z","type":"message"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-10-10T19:07:58.448Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-10-10T19:08:32.266Z","type":"join"}
+{"nick":"bnoordhuis","message":"tjfontaine: https://github.com/joyent/node/issues/5112 <- why?","date":"2013-10-10T19:08:58.382Z","type":"message"}
+{"nick":"bnoordhuis","message":"i've outlined the reasons why installing headers site-wide is a bad, bad idea","date":"2013-10-10T19:09:20.465Z","type":"message"}
+{"nick":"bnoordhuis","message":"and to the people that have special build systems and/or dependencies: boo hoo","date":"2013-10-10T19:10:19.635Z","type":"message"}
+{"nick":"tjfontaine","message":"on the contrary, I think it is far worse to not install headers, and it's a bug that node-gyp downloads from the internet","date":"2013-10-10T19:10:26.803Z","type":"message"}
+{"nick":"tjfontaine","message":"it's not a special buildsystem","date":"2013-10-10T19:10:31.996Z","type":"message"}
+{"nick":"tjfontaine","message":"it's make","date":"2013-10-10T19:10:34.940Z","type":"message"}
+{"nick":"tjfontaine","message":"people should be free to build their addons how they see fit, especially since npm supports it","date":"2013-10-10T19:11:08.995Z","type":"message"}
+{"nick":"tjfontaine","message":"which shouldn't arbitrarily break modules by being a misbheaving software package","date":"2013-10-10T19:11:27.227Z","type":"message"}
+{"nick":"bnoordhuis","message":"especially since npm supports what?","date":"2013-10-10T19:11:36.619Z","type":"message"}
+{"nick":"tjfontaine","message":"pre-install scripts that can perform arbitrary actions to handle their install","date":"2013-10-10T19:11:55.951Z","type":"message"}
+{"nick":"tjfontaine","message":"it's perfectly legitimate for people to not want to have to use gyp for their module installs","date":"2013-10-10T19:12:14.622Z","type":"message"}
+{"nick":"bnoordhuis","message":"so? because npm allows people to do silly things doesn't mean we have to cater to that","date":"2013-10-10T19:12:22.203Z","type":"message"}
+{"nick":"tjfontaine","message":"we're catering to the fact that a proper package would install the headers it needs, just like ruby, python, perl, php, so on and so forth","date":"2013-10-10T19:12:54.388Z","type":"message"}
+{"nick":"tjfontaine","message":"this is crucial for supporting people like debian, ubuntu, fedora","date":"2013-10-10T19:13:12.112Z","type":"message"}
+{"nick":"bnoordhuis","message":"packagers don't care. they just apply a patch to their fork and call it a day","date":"2013-10-10T19:13:43.559Z","type":"message"}
+{"nick":"tjfontaine","message":"why do we need to be contrary on this, we can actually do this with minimal effort and improve the experience for everyone","date":"2013-10-10T19:14:16.732Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm not asking you to do the work, I'm already writing the fix","date":"2013-10-10T19:14:32.179Z","type":"message"}
+{"nick":"bnoordhuis","message":"because it means that now we have two build systems for add-ons","date":"2013-10-10T19:14:38.110Z","type":"message"}
+{"nick":"tjfontaine","message":"no, it means we can fix node-gyp from having to download files it doesn't need to, which improves the experience of people having to build addons against development releases, or in environments without internet","date":"2013-10-10T19:15:07.508Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: i'd personally like to look into the idea of bundling header files with the node binary","date":"2013-10-10T19:15:51.700Z","type":"message"}
+{"nick":"bnoordhuis","message":"then fix node-gyp to work with a local cache","date":"2013-10-10T19:15:54.603Z","type":"message"}
+{"nick":"TooTallNate","message":"possibly gzipped","date":"2013-10-10T19:15:57.059Z","type":"message"}
+{"nick":"bnoordhuis","message":"^ that","date":"2013-10-10T19:16:00.109Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: meh, resources like that are kind of insane","date":"2013-10-10T19:16:07.783Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: can you elaborate?","date":"2013-10-10T19:16:32.899Z","type":"message"}
+{"nick":"TooTallNate","message":"i mean it would solve the problem you're describing i think","date":"2013-10-10T19:16:40.399Z","type":"message"}
+{"nick":"TooTallNate","message":"unless i'm not getting the entire pic","date":"2013-10-10T19:16:46.838Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: because it doesn't really solve the issue of people building against the shared libraries, whcih we already support in our builds","date":"2013-10-10T19:17:03.384Z","type":"message"}
+{"nick":"tjfontaine","message":"TooTallNate: so if the system upgrades the library independently, the resource we've included is now wrong","date":"2013-10-10T19:17:14.894Z","type":"message"}
+{"nick":"tjfontaine","message":"or at least potentially","date":"2013-10-10T19:17:18.149Z","type":"message"}
+{"nick":"TooTallNate","message":"tjfontaine: well that's a separate issue i think","date":"2013-10-10T19:18:49.791Z","type":"message"}
+{"nick":"tjfontaine","message":"they are all sorts of issues, basically the story is right now, binary addons are just working by accident, I can't wait until someone has a complex project with multiple versions of level","date":"2013-10-10T19:19:36.512Z","type":"message"}
+{"nick":"tjfontaine","message":"anyway, for now I'm going to lunch, enjoy :)","date":"2013-10-10T19:19:55.763Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-10-10T19:20:10.673Z","type":"quit"}
+{"nick":"bnoordhuis","message":"working by accident, yes. and installing headers system-wide is going to fix that?","date":"2013-10-10T19:22:49.670Z","type":"message"}
+{"nick":"bnoordhuis","message":"rhetorical question because no, it won't","date":"2013-10-10T19:23:01.789Z","type":"message"}
+{"nick":"bnoordhuis","message":"if the sharedness of our dependencies is an issue, then linking them in a way that hides them from add-ons is a much better solution","date":"2013-10-10T19:23:36.622Z","type":"message"}
+{"nick":"bnoordhuis","message":"if an add-on wants to link, say, openssl, it can do so explicitly and get its own copy in the address space","date":"2013-10-10T19:24:00.057Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Quit: leaving","date":"2013-10-10T19:29:06.132Z","type":"quit"}
+{"nick":"amartens","date":"2013-10-10T19:30:47.422Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2013-10-10T19:36:04.915Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T19:41:14.476Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T19:42:46.046Z","type":"quit"}
+{"nick":"st_luke","reason":"Ping timeout: 264 seconds","date":"2013-10-10T19:45:42.248Z","type":"quit"}
+{"nick":"trevnorris","message":"afternoon","date":"2013-10-10T19:47:28.946Z","type":"message"}
+{"nick":"bajtos","date":"2013-10-10T19:47:39.506Z","type":"join"}
+{"nick":"bajtos","reason":"Client Quit","date":"2013-10-10T19:47:47.903Z","type":"quit"}
+{"nick":"trevnorris","message":"Domenic_: what was I interested in?","date":"2013-10-10T19:49:25.361Z","type":"message"}
+{"nick":"st_luke","date":"2013-10-10T19:50:46.403Z","type":"join"}
+{"nick":"kazupon","date":"2013-10-10T19:51:39.973Z","type":"join"}
+{"nick":"c4milo","date":"2013-10-10T19:53:43.462Z","type":"join"}
+{"nick":"EhevuTov","date":"2013-10-10T19:54:10.472Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 248 seconds","date":"2013-10-10T19:56:53.786Z","type":"quit"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-10-10T19:57:13.317Z","type":"quit"}
+{"nick":"wwicks_","date":"2013-10-10T19:58:32.270Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 248 seconds","date":"2013-10-10T19:59:55.776Z","type":"quit"}
+{"nick":"wwicks_","new_nick":"wwicks","date":"2013-10-10T19:59:56.236Z","type":"nick"}
+{"nick":"EhevuTov","reason":"Quit: This computer has gone to sleep","date":"2013-10-10T20:01:14.850Z","type":"quit"}
+{"nick":"EhevuTov","date":"2013-10-10T20:02:24.419Z","type":"join"}
+{"nick":"dominictarr","date":"2013-10-10T20:03:15.779Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T20:03:49.610Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T20:04:23.949Z","type":"join"}
+{"nick":"julianduque","date":"2013-10-10T20:06:33.388Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 248 seconds","date":"2013-10-10T20:08:37.727Z","type":"quit"}
+{"nick":"trevnorris","message":"indutny: ping","date":"2013-10-10T20:13:15.428Z","type":"message"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-10-10T20:13:20.824Z","type":"quit"}
+{"nick":"ecr","date":"2013-10-10T20:15:10.385Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-10-10T20:17:00.478Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T20:17:28.894Z","type":"join"}
+{"nick":"TooTallNate","date":"2013-10-10T20:18:33.403Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Ping timeout: 248 seconds","date":"2013-10-10T20:19:07.778Z","type":"quit"}
+{"nick":"st_luke","reason":"Read error: Operation timed out","date":"2013-10-10T20:22:04.652Z","type":"quit"}
+{"nick":"trevnorris","message":"wow, dead.","date":"2013-10-10T20:31:53.964Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-10T20:36:22.624Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T20:37:34.553Z","type":"join"}
+{"nick":"bradleymeck","date":"2013-10-10T20:38:30.933Z","type":"join"}
+{"nick":"othiym23","message":"ALIVE, ALIVE-O","date":"2013-10-10T20:45:14.304Z","type":"message"}
+{"nick":"LOUDBOT","message":"IF THE SPIFFY WILLS IT, IT SHALL BE DONE","date":"2013-10-10T20:45:14.740Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T20:48:09.722Z","type":"quit"}
+{"nick":"isaacbw","date":"2013-10-10T21:00:13.835Z","type":"part"}
+{"nick":"c4milo","date":"2013-10-10T21:06:42.405Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-10T21:08:36.166Z","type":"quit"}
+{"nick":"rendar","date":"2013-10-10T21:13:52.533Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-10T21:23:49.053Z","type":"quit"}
+{"nick":"ecr","reason":"Ping timeout: 240 seconds","date":"2013-10-10T21:27:48.224Z","type":"quit"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-10-10T21:32:49.583Z","type":"quit"}
+{"nick":"Kakera","reason":"Ping timeout: 248 seconds","date":"2013-10-10T21:33:20.789Z","type":"quit"}
+{"nick":"kevinswiber","date":"2013-10-10T21:33:24.596Z","type":"join"}
+{"nick":"kevinswiber","reason":"Ping timeout: 240 seconds","date":"2013-10-10T21:37:28.293Z","type":"quit"}
+{"nick":"ecr","date":"2013-10-10T21:38:38.805Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-10T21:43:12.811Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-10-10T21:43:33.660Z","type":"nick"}
+{"nick":"ecr","reason":"Quit: ecr","date":"2013-10-10T21:44:44.404Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-10-10T21:44:52.982Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T21:45:07.870Z","type":"quit"}
+{"nick":"mikeal","date":"2013-10-10T21:48:56.991Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 248 seconds","date":"2013-10-10T21:59:55.770Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T22:15:06.622Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-10-10T22:19:04.281Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T22:19:42.240Z","type":"join"}
+{"nick":"st_luke","reason":"Ping timeout: 265 seconds","date":"2013-10-10T22:24:27.395Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T22:30:39.376Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-10T22:32:48.263Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-10T22:33:21.986Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 248 seconds","date":"2013-10-10T22:37:52.769Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-10T22:39:36.013Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Dave Pacheco\u000f \u00037v0.10\u000f * \u0002720675e\u0002 : test: use proper findjsobjects output format - http://git.io/T6sOLQ","date":"2013-10-10T22:45:41.604Z","type":"message"}
+{"nick":"kazupon","date":"2013-10-10T22:46:30.381Z","type":"join"}
+{"nick":"sblom","date":"2013-10-10T22:49:20.781Z","type":"join"}
+{"nick":"st_luke","reason":"Ping timeout: 248 seconds","date":"2013-10-10T22:53:47.755Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1529 \u00037UNSTABLE\u000f smartos-x64 (5/601) smartos-ia32 (4/601) http://jenkins.nodejs.org/job/nodejs-v0.10/1529/","date":"2013-10-10T22:55:42.792Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-10-10T23:03:44.054Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: ping","date":"2013-10-10T23:06:05.632Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #255 \u00037UNSTABLE\u000f windows-ia32 (10/601) windows-x64 (10/601) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/255/","date":"2013-10-10T23:06:24.011Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-10-10T23:25:55.124Z","type":"quit"}
+{"nick":"tjfontaine","message":"trevnorris: pong","date":"2013-10-10T23:27:29.673Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: have we created a #nodejs-sec room w/ a passphrase where we can discuss security related stuff?","date":"2013-10-10T23:29:03.389Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: what if we just used security@nodejs.org","date":"2013-10-10T23:29:34.796Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: that's useful, but want a place for active discussion, and hate using email threads for that","date":"2013-10-10T23:30:17.577Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: the threads provide useful context for people who don't necessarily use persistent connections (like bert and ben)","date":"2013-10-10T23:30:37.614Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: an alternative would be to schedule a meeting time for the conversation","date":"2013-10-10T23:31:08.835Z","type":"message"}
+{"nick":"trevnorris","message":"...","date":"2013-10-10T23:31:18.971Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I mean we can create the channel and talk about it, but it's not really helpful for the people who aren't always around","date":"2013-10-10T23:32:12.325Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: will security@nodejs.org make it to everyone?","date":"2013-10-10T23:32:31.751Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: all the existing core contributors yes, but I will double check","date":"2013-10-10T23:33:00.431Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: yes, all users are on the list, we can send out a ping to make sure everyone responds","date":"2013-10-10T23:34:18.945Z","type":"message"}
+{"nick":"tjfontaine","message":"you know, when they're awake :)","date":"2013-10-10T23:34:58.858Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: just sent an email to security@nodejs.org. let me know if you get it.","date":"2013-10-10T23:38:09.699Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: yes, I did","date":"2013-10-10T23:41:06.718Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: either it knows that  I sent it, or I'm not on the list.","date":"2013-10-10T23:41:25.537Z","type":"message"}
+{"nick":"tjfontaine","message":"it knows that you sent it","date":"2013-10-10T23:41:44.094Z","type":"message"}
+{"nick":"tjfontaine","message":"google knows all","date":"2013-10-10T23:41:47.068Z","type":"message"}
+{"nick":"trevnorris","message":"haha, of course","date":"2013-10-10T23:41:53.343Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: fwiw it would be helpful if you asked more direct questions :)","date":"2013-10-10T23:42:53.998Z","type":"message"}
+{"nick":"austo","reason":"Quit: Leaving","date":"2013-10-10T23:43:21.271Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: there.","date":"2013-10-10T23:44:37.530Z","type":"message"}
+{"nick":"tjfontaine","message":"hahah, thanks","date":"2013-10-10T23:44:51.639Z","type":"message"}
+{"nick":"Benvie","reason":"Remote host closed the connection","date":"2013-10-10T23:48:37.953Z","type":"quit"}
+{"nick":"Benvie","date":"2013-10-10T23:48:53.201Z","type":"join"}
+{"nick":"dap","reason":"Quit: Leaving.","date":"2013-10-10T23:56:56.994Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #220 \u00034FAILURE\u000f windows-x64 (3/196) windows-ia32 (3/196) http://jenkins.nodejs.org/job/libuv-master-gyp/220/","date":"2013-10-10T23:59:26.114Z","type":"message"}
