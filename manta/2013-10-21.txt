@@ -66,3 +66,121 @@
 {"nick":"dap_","date":"2013-10-21T15:49:44.802Z","type":"join"}
 {"nick":"mcavage","date":"2013-10-21T15:57:07.195Z","type":"join"}
 {"nick":"dap_","reason":"Ping timeout: 248 seconds","date":"2013-10-21T15:57:47.782Z","type":"quit"}
+{"nick":"fredk","date":"2013-10-21T16:00:56.274Z","type":"join"}
+{"nick":"nahamu","message":"mcavage: why doesn't mput do something like this:","date":"2013-10-21T16:01:26.984Z","type":"message"}
+{"nick":"nahamu","message":"(implemented in bash b/c I'm a sysadmin and I think in bash)","date":"2013-10-21T16:02:01.281Z","type":"message"}
+{"nick":"nahamu","message":"http://paste.ec/?d880a965a2ed0bdf#vnj/Xxa7sAquiuXk/ol/hiqTVL1dbipeC63dmCK9CFA=","date":"2013-10-21T16:02:12.284Z","type":"message"}
+{"nick":"utlemming","date":"2013-10-21T16:02:50.232Z","type":"join"}
+{"nick":"nahamu","message":"stream the bits both into the upload, but also through an md5 calculation at the same time.","date":"2013-10-21T16:02:50.746Z","type":"message"}
+{"nick":"mcavage","message":"nahamu: mostly b/c that would require an extra round trip at the end.","date":"2013-10-21T16:03:15.115Z","type":"message"}
+{"nick":"lloydde","date":"2013-10-21T16:03:31.281Z","type":"join"}
+{"nick":"mcavage","message":"if you did the md5 calc, then sent -H content-md5:$md5, it gets enforced, so you don't have to check it.","date":"2013-10-21T16:03:36.021Z","type":"message"}
+{"nick":"nahamu","message":"right, and for small files that's totally the way to go.","date":"2013-10-21T16:04:13.904Z","type":"message"}
+{"nick":"mcavage","message":"yes, for small files.","date":"2013-10-21T16:04:21.790Z","type":"message"}
+{"nick":"mcavage","message":"well, really, it's going to depend on your throughput from your site what the \"cutover point is\"","date":"2013-10-21T16:04:43.216Z","type":"message"}
+{"nick":"nahamu","message":"right","date":"2013-10-21T16:04:55.309Z","type":"message"}
+{"nick":"mcavage","message":"where it's cheaper to do what your script does vs do it up front and save a wan trip to manta.","date":"2013-10-21T16:04:55.520Z","type":"message"}
+{"nick":"mcavage","message":"i actually would like to do this via trailers, except basically no http libraries correctly use trailers.","date":"2013-10-21T16:06:02.444Z","type":"message"}
+{"nick":"nahamu","message":"does mget do a streaming md5 checksum while it downloads?","date":"2013-10-21T16:06:08.570Z","type":"message"}
+{"nick":"mcavage","message":"yes","date":"2013-10-21T16:06:12.542Z","type":"message"}
+{"nick":"lloydde","reason":"Remote host closed the connection","date":"2013-10-21T16:06:18.059Z","type":"quit"}
+{"nick":"mcavage","message":"well, let me check :)","date":"2013-10-21T16:06:18.649Z","type":"message"}
+{"nick":"mcavage","message":"I *think* so :)","date":"2013-10-21T16:06:29.360Z","type":"message"}
+{"nick":"yunong","date":"2013-10-21T16:07:00.561Z","type":"join"}
+{"nick":"nahamu","message":"just seems like if there's code for calculating the md5 while you're streaming the data, it could be pretty simple to add a feature to mput that allows you to request the extra round trip verification.","date":"2013-10-21T16:07:18.011Z","type":"message"}
+{"nick":"nahamu","message":"(which seemed to be what bixu was asking for)","date":"2013-10-21T16:07:38.264Z","type":"message"}
+{"nick":"mcavage","message":"yes it does; it's actually in the SDK, not the mget CLI","date":"2013-10-21T16:07:47.948Z","type":"message"}
+{"nick":"mcavage","message":"the crypto stream is easy -- that's just node built-in stuff.","date":"2013-10-21T16:08:07.362Z","type":"message"}
+{"nick":"mcavage","message":"it's really the extra RT at the end","date":"2013-10-21T16:08:11.224Z","type":"message"}
+{"nick":"mcavage","message":"but we could certainly add a flag for it or something","date":"2013-10-21T16:08:24.322Z","type":"message"}
+{"nick":"mcavage","message":"people that script large directory uploads on mput would get burned if this was always on","date":"2013-10-21T16:08:37.575Z","type":"message"}
+{"nick":"nahamu","message":"right, it should clearly default to the current behavio(u)r","date":"2013-10-21T16:09:11.913Z","type":"message"}
+{"nick":"mcavage","message":"can you open a GH issue? adding a thing at the end would be pretty easy.","date":"2013-10-21T16:09:29.291Z","type":"message"}
+{"nick":"nahamu","message":"I was hoping to mention this when bixu was around so that bixu could open the ticket... :-P","date":"2013-10-21T16:10:00.905Z","type":"message"}
+{"nick":"mcavage","message":"pro move ;)","date":"2013-10-21T16:10:20.244Z","type":"message"}
+{"nick":"nahamu","message":"but sure, I'll open one anyway. For me it's low priority. I just found the question interesting enough that I had to open a shell and poke around.","date":"2013-10-21T16:10:48.509Z","type":"message"}
+{"nick":"mcavage","message":"the other problem here though is that if it failed, you still have an object on the server you have to clean up.","date":"2013-10-21T16:11:03.010Z","type":"message"}
+{"nick":"mcavage","message":"like it's assuredly better to calculate the md5 and then send it so it doesnt' get saved.","date":"2013-10-21T16:11:20.113Z","type":"message"}
+{"nick":"mcavage","message":"that's probably what i'd actually make mput do","date":"2013-10-21T16:11:26.544Z","type":"message"}
+{"nick":"nahamu","message":"I don't follow.","date":"2013-10-21T16:11:38.494Z","type":"message"}
+{"nick":"mcavage","message":"is the equivalent of mput -H content-md5:$(cat file | openssl ...) -f file ...","date":"2013-10-21T16:11:48.733Z","type":"message"}
+{"nick":"nfitch","reason":"Quit: Leaving.","date":"2013-10-21T16:12:01.046Z","type":"quit"}
+{"nick":"mcavage","message":"cat $1 | tee >(openssl md5 -binary | openssl enc -base64 > ${HASHFILE}) | mput ${MANTA_PATH}","date":"2013-10-21T16:12:06.976Z","type":"message"}
+{"nick":"mcavage","message":"diff <(mls -j ${MANTA_PATH} | json md5) <(cat ${HASHFILE}) || echo \"MD5 Doesn't match\"","date":"2013-10-21T16:12:07.185Z","type":"message"}
+{"nick":"mcavage","message":"rm $HASHFILE","date":"2013-10-21T16:12:07.185Z","type":"message"}
+{"nick":"mcavage","message":"that thing -- note that $MANTA_PATH","date":"2013-10-21T16:12:14.790Z","type":"message"}
+{"nick":"mcavage","message":"exists whether it's corrupt or not","date":"2013-10-21T16:12:27.156Z","type":"message"}
+{"nick":"nahamu","message":"right.","date":"2013-10-21T16:12:52.467Z","type":"message"}
+{"nick":"mcavage","message":"so really you need a if [] ; .. mrm ... fi","date":"2013-10-21T16:12:59.315Z","type":"message"}
+{"nick":"nahamu","message":"in theory it's preferable for there to be two different features:","date":"2013-10-21T16:13:05.738Z","type":"message"}
+{"nick":"nahamu","message":"1) precalculate md5 and set the header accordingly","date":"2013-10-21T16:13:26.071Z","type":"message"}
+{"nick":"nahamu","message":"2) calculate the md5 while streaming the data and do extra round-trips afterwards","date":"2013-10-21T16:13:43.945Z","type":"message"}
+{"nick":"nahamu","message":"because there's some cutoff somewhere where the size of the file being uploaded makes paying the price of reading it twice painful","date":"2013-10-21T16:14:18.029Z","type":"message"}
+{"nick":"nahamu","message":"(or at least I assume there is. I could be wrong)","date":"2013-10-21T16:14:26.034Z","type":"message"}
+{"nick":"nahamu","message":"also, for a streaming workload where we don't even have a complete file yet, it's nice to do verification on both ends.","date":"2013-10-21T16:14:51.820Z","type":"message"}
+{"nick":"mcavage","message":"btw: https://github.com/joyent/node-manta/issues/130","date":"2013-10-21T16:14:52.098Z","type":"message"}
+{"nick":"mcavage","message":"yes in theory both would be nice","date":"2013-10-21T16:15:09.537Z","type":"message"}
+{"nick":"nahamu","message":"nice.","date":"2013-10-21T16:15:19.659Z","type":"message"}
+{"nick":"mcavage","message":"and yes your way would be necessary for streaming uploads","date":"2013-10-21T16:15:22.093Z","type":"message"}
+{"nick":"dap_","date":"2013-10-21T16:15:53.293Z","type":"join"}
+{"nick":"nahamu","message":"anyway, always nice chatting with you about such things. I should probably go do some real work, though. :)","date":"2013-10-21T16:16:42.869Z","type":"message"}
+{"nick":"mcavage","message":"haha -- i am a time sink ;)","date":"2013-10-21T16:16:57.028Z","type":"message"}
+{"nick":"utlemming","reason":"Ping timeout: 272 seconds","date":"2013-10-21T16:26:33.257Z","type":"quit"}
+{"nick":"mamash","date":"2013-10-21T16:26:38.326Z","type":"join"}
+{"nick":"fennokin_","date":"2013-10-21T16:44:08.873Z","type":"join"}
+{"nick":"nfitch","date":"2013-10-21T17:02:51.548Z","type":"join"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2013-10-21T17:10:59.493Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-21T17:40:24.295Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-21T17:40:50.775Z","type":"join"}
+{"nick":"ryancnelson","reason":"Quit: Leaving.","date":"2013-10-21T17:41:08.373Z","type":"quit"}
+{"nick":"mcavage","reason":"Ping timeout: 248 seconds","date":"2013-10-21T17:45:31.763Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-21T18:05:53.779Z","type":"join"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-21T18:06:05.637Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-21T18:06:21.329Z","type":"join"}
+{"nick":"dap_","date":"2013-10-21T18:16:55.539Z","type":"join"}
+{"nick":"utlemming","date":"2013-10-21T18:23:30.812Z","type":"join"}
+{"nick":"utlemming","reason":"Ping timeout: 248 seconds","date":"2013-10-21T18:30:29.728Z","type":"quit"}
+{"nick":"notmatt","reason":"Remote host closed the connection","date":"2013-10-21T18:42:31.447Z","type":"quit"}
+{"nick":"bixu","date":"2013-10-21T18:43:05.095Z","type":"join"}
+{"nick":"bixu","reason":"Client Quit","date":"2013-10-21T18:43:40.221Z","type":"quit"}
+{"nick":"bixu","date":"2013-10-21T18:44:37.450Z","type":"join"}
+{"nick":"bixu","new_nick":"wanelo","date":"2013-10-21T18:45:29.078Z","type":"nick"}
+{"nick":"yruss972","date":"2013-10-21T19:02:48.983Z","type":"join"}
+{"nick":"nahamu","message":"wanelo: hashing while you upload: https://github.com/joyent/node-manta/issues/130#issuecomment-26750712","date":"2013-10-21T19:59:21.996Z","type":"message"}
+{"nick":"ryancnelson","date":"2013-10-21T20:09:47.300Z","type":"join"}
+{"nick":"yruss972","reason":"Remote host closed the connection","date":"2013-10-21T20:18:43.589Z","type":"quit"}
+{"nick":"yruss972","date":"2013-10-21T20:19:17.561Z","type":"join"}
+{"nick":"utlemming","date":"2013-10-21T20:19:37.941Z","type":"join"}
+{"nick":"yruss972","reason":"Ping timeout: 240 seconds","date":"2013-10-21T20:23:26.563Z","type":"quit"}
+{"nick":"daviddias","date":"2013-10-21T20:27:42.422Z","type":"join"}
+{"nick":"mamash","date":"2013-10-21T20:27:56.796Z","type":"part"}
+{"nick":"raboof","reason":"Ping timeout: 246 seconds","date":"2013-10-21T20:36:10.980Z","type":"quit"}
+{"nick":"raboof","date":"2013-10-21T20:38:00.779Z","type":"join"}
+{"nick":"mamash","date":"2013-10-21T20:43:00.880Z","type":"join"}
+{"nick":"ins0mnia","date":"2013-10-21T20:54:14.295Z","type":"join"}
+{"nick":"utlemming","reason":"Ping timeout: 260 seconds","date":"2013-10-21T21:14:11.867Z","type":"quit"}
+{"nick":"notmatt","date":"2013-10-21T21:19:28.936Z","type":"join"}
+{"nick":"yruss972","date":"2013-10-21T21:29:56.883Z","type":"join"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2013-10-21T21:34:13.947Z","type":"quit"}
+{"nick":"yruss972","reason":"Ping timeout: 260 seconds","date":"2013-10-21T21:34:15.950Z","type":"quit"}
+{"nick":"mamash","date":"2013-10-21T21:34:35.746Z","type":"part"}
+{"nick":"daviddias","date":"2013-10-21T21:34:42.769Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2013-10-21T21:39:02.542Z","type":"quit"}
+{"nick":"utlemming","date":"2013-10-21T22:11:51.851Z","type":"join"}
+{"nick":"fennokin_","reason":"Remote host closed the connection","date":"2013-10-21T22:17:28.527Z","type":"quit"}
+{"nick":"mattapperson","date":"2013-10-21T22:17:31.683Z","type":"join"}
+{"nick":"mattapperson","reason":"Remote host closed the connection","date":"2013-10-21T22:58:47.005Z","type":"quit"}
+{"nick":"chorrell","reason":"Quit: My iMac has gone to sleep. ZZZzzz…","date":"2013-10-21T22:58:54.934Z","type":"quit"}
+{"nick":"mattapperson","date":"2013-10-21T22:59:12.996Z","type":"join"}
+{"nick":"mattapperson","reason":"Ping timeout: 240 seconds","date":"2013-10-21T23:03:50.960Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-21T23:08:34.407Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-21T23:09:06.539Z","type":"join"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-10-21T23:11:01.887Z","type":"quit"}
+{"nick":"mcavage","date":"2013-10-21T23:11:17.182Z","type":"join"}
+{"nick":"utlemming","reason":"Read error: Connection reset by peer","date":"2013-10-21T23:23:20.564Z","type":"quit"}
+{"nick":"utlemming","date":"2013-10-21T23:23:28.569Z","type":"join"}
+{"nick":"utlemming","reason":"Client Quit","date":"2013-10-21T23:24:50.409Z","type":"quit"}
+{"nick":"fennokin_","date":"2013-10-21T23:28:35.562Z","type":"join"}
+{"nick":"fennokin_","reason":"Ping timeout: 240 seconds","date":"2013-10-21T23:32:38.538Z","type":"quit"}
+{"nick":"mattapperson","date":"2013-10-21T23:34:12.255Z","type":"join"}
+{"nick":"ira","date":"2013-10-21T23:37:14.205Z","type":"join"}
