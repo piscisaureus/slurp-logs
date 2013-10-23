@@ -1,0 +1,135 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-10-23T00:00:00.526Z","type":"quit"}
+{"nick":"ircretary","date":"2013-10-23T00:00:07.333Z","type":"join"}
+{"nick":"trevnorris","message":"hey, is this \"beforeExit\" event going to fire when there's an error?","date":"2013-10-23T00:00:19.766Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ^ ?","date":"2013-10-23T00:00:22.761Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: if process._exiting === true, should I bother to run any error callbacks. i.e. if the process.on('exit'... callback throws?","date":"2013-10-23T00:02:20.772Z","type":"message"}
+{"nick":"othiym23","message":"so what's the overall goal here?","date":"2013-10-23T00:03:03.563Z","type":"message"}
+{"nick":"trevnorris","message":"i dunno. this feature is because you requested it ;)","date":"2013-10-23T00:03:18.929Z","type":"message"}
+{"nick":"othiym23","message":"this seems like a bunch of new changes to me","date":"2013-10-23T00:03:19.142Z","type":"message"}
+{"nick":"trevnorris","message":"i'm just the implementor.","date":"2013-10-23T00:03:22.815Z","type":"message"}
+{"nick":"othiym23","message":"hmmmmmmmmmmmmm","date":"2013-10-23T00:03:42.253Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm not sure we're going to land beforeExit :)","date":"2013-10-23T00:04:17.325Z","type":"message"}
+{"nick":"othiym23","message":"I feel like we don't want to do anything unexpected if we're in the process of bringing the process down","date":"2013-10-23T00:04:26.854Z","type":"message"}
+{"nick":"othiym23","message":"so no?","date":"2013-10-23T00:04:31.990Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: thanks :)","date":"2013-10-23T00:04:43.540Z","type":"message"}
+{"nick":"trevnorris","message":"beforeExit was meant to help revive a process in case it ran out of \"refs\", but never discussed how it might affect error handling.","date":"2013-10-23T00:05:15.586Z","type":"message"}
+{"nick":"ISAACS","new_nick":"isaacs","date":"2013-10-23T00:05:46.467Z","type":"nick"}
+{"nick":"isaacs","message":"trevnorris: pong","date":"2013-10-23T00:05:49.117Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: question about error handling from the error callbacks. um. othiym23 think you can give a short summary?","date":"2013-10-23T00:06:28.737Z","type":"message"}
+{"nick":"trevnorris","message":"i suck at doing that.","date":"2013-10-23T00:06:33.643Z","type":"message"}
+{"nick":"isaacs","message":"ok, i see","date":"2013-10-23T00:07:01.386Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: fyi, doing that causes three of your tests to fail.","date":"2013-10-23T00:07:16.538Z","type":"message"}
+{"nick":"isaacs","message":"i think if the error handler throws, then let it crash","date":"2013-10-23T00:07:27.496Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: ie, no try/catch around errorHandler(er)","date":"2013-10-23T00:07:41.508Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: well, problem there is then process.on('exit' won't fire","date":"2013-10-23T00:07:57.260Z","type":"message"}
+{"nick":"isaacs","message":"hmm.","date":"2013-10-23T00:08:02.454Z","type":"message"}
+{"nick":"trevnorris","message":"that's what got me started into all this in the first place.","date":"2013-10-23T00:08:04.817Z","type":"message"}
+{"nick":"isaacs","message":"why not?","date":"2013-10-23T00:08:06.355Z","type":"message"}
+{"nick":"othiym23","message":"those are groundwater_'s tests, not mine","date":"2013-10-23T00:08:18.156Z","type":"message"}
+{"nick":"trevnorris","message":"because it's like throwing from _fatalException.","date":"2013-10-23T00:08:25.334Z","type":"message"}
+{"nick":"groundwater_","message":"othiym23: lol","date":"2013-10-23T00:08:28.458Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: ok","date":"2013-10-23T00:08:28.935Z","type":"message"}
+{"nick":"groundwater_","message":"trevnorris: is it just the error-in-error test that's failling?","date":"2013-10-23T00:08:58.197Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: threw=true; try { handleError(er);threw=false; } finally { if(threw) process.emit('exit', process.exitCode || 8) }","date":"2013-10-23T00:09:23.346Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: it's throw-in-before-multiple, throw-in-before and throw-in-after","date":"2013-10-23T00:09:27.909Z","type":"message"}
+{"nick":"groundwater_","message":"ahh, interesting because those used to pass","date":"2013-10-23T00:09:57.681Z","type":"message"}
+{"nick":"groundwater_","message":"why don't i have a look at your latest changes later","date":"2013-10-23T00:10:09.824Z","type":"message"}
+{"nick":"groundwater_","message":"i can also try to writeup a summary of the edge case behavior ","date":"2013-10-23T00:10:57.079Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: it's possible to run through the error callbacks one more time, which I thought might be useful to debug if one of your error callbacks throws.","date":"2013-10-23T00:11:04.824Z","type":"message"}
+{"nick":"trevnorris","message":"which i've implemented (wasn't hard) but also othiym23 wanted a custom error message that would print like \"Error handler threw: <stacktrace> when handling error: <stacktrace>\"","date":"2013-10-23T00:11:49.342Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris, isaacs: everybody is confused when a domain handler throws and they get the original stacktrace that was handed to the domain handler","date":"2013-10-23T00:13:21.572Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. so just allow the errorHandler to throw and that'll be it.","date":"2013-10-23T00:14:05.172Z","type":"message"}
+{"nick":"trevnorris","message":"if they need extra information then you can listen for 'exit' event and check the status code.","date":"2013-10-23T00:14:23.330Z","type":"message"}
+{"nick":"dshaw_","date":"2013-10-23T00:14:25.969Z","type":"join"}
+{"nick":"trevnorris","message":"othiym23: i think it'd just be helpful if we didn't loose the stacktrace when getting into _fataException, then they'd have the stack that got them there as well.","date":"2013-10-23T00:17:31.798Z","type":"message"}
+{"nick":"trevnorris","message":"that should be enough.","date":"2013-10-23T00:17:36.594Z","type":"message"}
+{"nick":"othiym23","message":"not sure what behavior you're describing here","date":"2013-10-23T00:17:56.121Z","type":"message"}
+{"nick":"trevnorris","message":"... screw it. need to head out.","date":"2013-10-23T00:20:53.254Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: for some reason I'm loosing the stack trace when I'm entering _fatalException. if you have any ideas why, it'd be appreciated.","date":"2013-10-23T00:21:27.819Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: i'll dig into it tomorrow","date":"2013-10-23T00:23:17.795Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-23T00:26:35.904Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-10-23T00:27:25.754Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-10-23T00:29:49.192Z","type":"quit"}
+{"nick":"jmar777","date":"2013-10-23T00:30:26.733Z","type":"join"}
+{"nick":"FROGGS","date":"2013-10-23T00:30:58.182Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 240 seconds","date":"2013-10-23T00:34:38.516Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-23T00:37:59.534Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-10-23T00:38:27.960Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-10-23T00:42:36.415Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 272 seconds","date":"2013-10-23T00:43:33.721Z","type":"quit"}
+{"nick":"pachet","reason":"Quit: leaving","date":"2013-10-23T00:49:39.890Z","type":"quit"}
+{"nick":"dshaw_","date":"2013-10-23T00:50:42.766Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-23T00:53:25.900Z","type":"quit"}
+{"nick":"dshaw_","reason":"Ping timeout: 240 seconds","date":"2013-10-23T00:55:02.513Z","type":"quit"}
+{"nick":"FROGGS","reason":"Ping timeout: 272 seconds","date":"2013-10-23T00:55:57.207Z","type":"quit"}
+{"nick":"jmar777","date":"2013-10-23T00:56:34.724Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 240 seconds","date":"2013-10-23T00:57:26.523Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-10-23T01:01:18.415Z","type":"quit"}
+{"nick":"dshaw_","date":"2013-10-23T01:13:33.327Z","type":"join"}
+{"nick":"dshaw_1","date":"2013-10-23T01:15:21.396Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2013-10-23T01:15:34.623Z","type":"quit"}
+{"nick":"dshaw_1","reason":"Ping timeout: 245 seconds","date":"2013-10-23T01:19:36.635Z","type":"quit"}
+{"nick":"kenansulayman","reason":"Ping timeout: 264 seconds","date":"2013-10-23T01:23:52.378Z","type":"quit"}
+{"nick":"kenansulayman","date":"2013-10-23T01:25:12.534Z","type":"join"}
+{"nick":"Ralith","date":"2013-10-23T01:27:06.721Z","type":"join"}
+{"nick":"inolen","date":"2013-10-23T01:35:46.732Z","type":"join"}
+{"nick":"abraxas","date":"2013-10-23T01:37:19.350Z","type":"join"}
+{"nick":"kazupon","date":"2013-10-23T01:38:44.471Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-10-23T01:45:49.505Z","type":"quit"}
+{"nick":"FROGGS","date":"2013-10-23T01:48:10.730Z","type":"join"}
+{"nick":"kazupon","date":"2013-10-23T01:55:19.992Z","type":"join"}
+{"nick":"kenansulayman","reason":"Quit: ≈ and thus my mac took a subtle yet profound nap ≈","date":"2013-10-23T02:13:27.426Z","type":"quit"}
+{"nick":"kazupon","reason":"Read error: Connection timed out","date":"2013-10-23T02:21:34.408Z","type":"quit"}
+{"nick":"FROGGS","reason":"Ping timeout: 272 seconds","date":"2013-10-23T02:28:03.741Z","type":"quit"}
+{"nick":"FROGGS","date":"2013-10-23T02:28:30.873Z","type":"join"}
+{"nick":"kazupon","date":"2013-10-23T02:31:08.714Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-10-23T02:37:55.731Z","type":"join"}
+{"nick":"FROGGS","reason":"Ping timeout: 272 seconds","date":"2013-10-23T02:38:27.869Z","type":"quit"}
+{"nick":"FROGGS","date":"2013-10-23T02:51:08.197Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection timed out","date":"2013-10-23T02:55:53.753Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-23T03:01:49.093Z","type":"join"}
+{"nick":"FROGGS","reason":"Ping timeout: 272 seconds","date":"2013-10-23T03:33:01.222Z","type":"quit"}
+{"nick":"kazupon","reason":"Read error: Operation timed out","date":"2013-10-23T03:44:07.676Z","type":"quit"}
+{"nick":"FROGGS","date":"2013-10-23T03:49:51.532Z","type":"join"}
+{"nick":"kazupon","date":"2013-10-23T03:50:08.754Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-23T04:07:33.264Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-10-23T04:08:03.059Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-23T04:08:30.985Z","type":"quit"}
+{"nick":"kazupon","reason":"Read error: Connection timed out","date":"2013-10-23T04:08:44.092Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-23T04:10:14.348Z","type":"join"}
+{"nick":"mikeal","date":"2013-10-23T04:10:28.858Z","type":"join"}
+{"nick":"AvianFlu","date":"2013-10-23T04:12:03.857Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2013-10-23T04:12:14.853Z","type":"quit"}
+{"nick":"abraxas_","date":"2013-10-23T04:16:24.386Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-23T04:16:36.280Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-10-23T04:17:05.406Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 272 seconds","date":"2013-10-23T04:17:59.197Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 272 seconds","date":"2013-10-23T04:21:47.189Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 272 seconds","date":"2013-10-23T04:30:33.950Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-23T04:34:56.833Z","type":"quit"}
+{"nick":"mikeal","date":"2013-10-23T04:35:05.221Z","type":"join"}
+{"nick":"FROGGS","reason":"Ping timeout: 240 seconds","date":"2013-10-23T04:43:02.518Z","type":"quit"}
+{"nick":"avalanche123","date":"2013-10-23T04:52:37.765Z","type":"join"}
+{"nick":"avalanche123","reason":"Client Quit","date":"2013-10-23T04:54:52.894Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-23T04:59:49.583Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection timed out","date":"2013-10-23T05:19:47.553Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-23T05:21:32.097Z","type":"join"}
+{"nick":"paddybyers","date":"2013-10-23T05:34:59.727Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-10-23T05:57:16.752Z","type":"nick"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-10-23T06:10:28.497Z","type":"quit"}
+{"nick":"paddybyers","date":"2013-10-23T06:16:49.662Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-10-23T06:23:28.756Z","type":"nick"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #277 \u00037UNSTABLE\u000f windows-ia32 (10/603) windows-x64 (11/603) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/277/","date":"2013-10-23T06:41:11.888Z","type":"message"}
+{"nick":"dominictarr","date":"2013-10-23T06:43:15.374Z","type":"join"}
+{"nick":"dominictarr","reason":"Quit: dominictarr","date":"2013-10-23T06:54:50.156Z","type":"quit"}
+{"nick":"FROGGS","date":"2013-10-23T07:03:33.385Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2013-10-23T07:05:19.926Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-23T07:11:07.848Z","type":"join"}
+{"nick":"rendar","date":"2013-10-23T07:12:31.126Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-10-23T07:36:20.992Z","type":"quit"}
+{"nick":"indutny","message":"heya","date":"2013-10-23T07:43:34.873Z","type":"message"}
+{"nick":"c4milo","reason":"Read error: Connection reset by peer","date":"2013-10-23T07:51:05.550Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-23T07:51:40.414Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-10-23T07:54:14.886Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-23T07:55:32.197Z","type":"quit"}
+{"nick":"c4milo","date":"2013-10-23T07:56:05.383Z","type":"join"}
