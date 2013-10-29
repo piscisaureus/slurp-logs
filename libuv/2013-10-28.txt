@@ -396,3 +396,835 @@
 {"nick":"isaacs","message":"but they have to solve actual problems, and not just be api wankery","date":"2013-10-28T15:57:39.434Z","type":"message"}
 {"nick":"amartens","date":"2013-10-28T15:57:47.744Z","type":"join"}
 {"nick":"octetcloud","date":"2013-10-28T15:59:25.971Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master-windows\u0002: #438 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/nodejs-master-windows/438/","date":"2013-10-28T16:00:11.086Z","type":"message"}
+{"nick":"bnoordhuis","message":"weird. i have this benchmark that doesn't complete when --prof is given on the command line","date":"2013-10-28T16:00:22.100Z","type":"message"}
+{"nick":"bnoordhuis","message":"when i strace it, eventually node stops doing anything but sending SIGPROFs from the profiler thread to the main thread","date":"2013-10-28T16:00:47.355Z","type":"message"}
+{"nick":"bnoordhuis","message":"and the occassional write(9, \"code-creation,LoadPolymorphicIC,\"..., 62) = 62","date":"2013-10-28T16:01:26.249Z","type":"message"}
+{"nick":"bnoordhuis","message":"and futex syscall...","date":"2013-10-28T16:01:38.775Z","type":"message"}
+{"nick":"hueniverse1","date":"2013-10-28T16:01:50.680Z","type":"join"}
+{"nick":"c4milo","date":"2013-10-28T16:02:11.411Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #646 \u00037UNSTABLE\u000f osx-x64 (1/654) smartos-ia32 (6/654) linux-x64 (1/654) smartos-x64 (8/654) osx-ia32 (3/654) linux-ia32 (1/654) http://jenkins.nodejs.org/job/nodejs-master/646/","date":"2013-10-28T16:04:06.144Z","type":"message"}
+{"nick":"hueniverse","reason":"Ping timeout: 265 seconds","date":"2013-10-28T16:05:14.174Z","type":"quit"}
+{"nick":"Domenic_","message":"isaacs et al: if you push multiple times onto a stream, then call read(cb), should the stream give you back the first chunk you pushed, or a concatenation of all of them? Asking from the perspective of which is lower-level/more aligned with how OS's work.","date":"2013-10-28T16:06:00.298Z","type":"message"}
+{"nick":"bnoordhuis","message":"hrm, i suspect that the v8 profiler has trouble with really deep call stacks","date":"2013-10-28T16:06:34.353Z","type":"message"}
+{"nick":"julianduque","date":"2013-10-28T16:11:06.868Z","type":"join"}
+{"nick":"isaacs","message":"Domenic_: what's read(cb)?","date":"2013-10-28T16:15:09.684Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: (not being facetious)","date":"2013-10-28T16:15:19.914Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: well, not very ;)","date":"2013-10-28T16:15:27.263Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: well from what I remember last time there are two APIs that can be built on top of each other: read(cb) and poll + readCurrentBuffer + state.","date":"2013-10-28T16:16:06.392Z","type":"message"}
+{"nick":"isaacs","message":"my point is that I think there is still an open question of whether to do a) read(cb) (and deal with artificial deferral if data's available now) or b) poll(cb);chunk=read() (and deal with bookkeeping)","date":"2013-10-28T16:16:17.133Z","type":"message"}
+{"nick":"isaacs","message":"i think that the poll/state approach is better, because a push(chunk) can come at any time, so you need *some* sort of state and bookkeeping anyway","date":"2013-10-28T16:16:59.622Z","type":"message"}
+{"nick":"isaacs","message":"but i'm not sure if that's optimized for the pipe() case","date":"2013-10-28T16:17:32.282Z","type":"message"}
+{"nick":"isaacs","message":"streams3 made node's streams much faster.","date":"2013-10-28T16:17:38.983Z","type":"message"}
+{"nick":"isaacs","message":"fast enough to use directly in http, because we skip the bookkeeping when there's a pipe flowing","date":"2013-10-28T16:17:53.929Z","type":"message"}
+{"nick":"sblom","date":"2013-10-28T16:18:04.192Z","type":"join"}
+{"nick":"isaacs","message":"and instead just have push() emit a 'data' event, and do nothing else.","date":"2013-10-28T16:18:07.872Z","type":"message"}
+{"nick":"isaacs","message":"but, anyway, push(a);push(b);read();read();read()","date":"2013-10-28T16:18:44.133Z","type":"message"}
+{"nick":"isaacs","message":"could return either [a+b,null,null] or [a,b,null]","date":"2013-10-28T16:18:58.599Z","type":"message"}
+{"nick":"Domenic_","message":"exactly my question :)","date":"2013-10-28T16:19:07.272Z","type":"message"}
+{"nick":"isaacs","message":"as long as the third one returns null, and the \"b\" comes after the \"a\"","date":"2013-10-28T16:19:22.635Z","type":"message"}
+{"nick":"isaacs","message":"in object mode, they're *never* concatenated","date":"2013-10-28T16:19:35.131Z","type":"message"}
+{"nick":"isaacs","message":"and, it'd be nice if streams were less string/buffer specific, i think","date":"2013-10-28T16:19:46.850Z","type":"message"}
+{"nick":"isaacs","message":"ie, skip the concatenation business","date":"2013-10-28T16:19:59.123Z","type":"message"}
+{"nick":"Domenic_","message":"ok I was thinking of that, yes","date":"2013-10-28T16:20:05.471Z","type":"message"}
+{"nick":"Domenic_","message":"it is pretty much the only thing preventing streams from being completely generalized","date":"2013-10-28T16:20:14.025Z","type":"message"}
+{"nick":"isaacs","message":"that means rethinking the watermark stuff, of course.","date":"2013-10-28T16:20:16.001Z","type":"message"}
+{"nick":"Domenic_","message":"hmm","date":"2013-10-28T16:20:20.868Z","type":"message"}
+{"nick":"isaacs","message":"because what does \"7 chunks\" even mean for your memory water mark?","date":"2013-10-28T16:20:39.993Z","type":"message"}
+{"nick":"isaacs","message":"could be 7x1GB or 7x1b","date":"2013-10-28T16:20:51.800Z","type":"message"}
+{"nick":"piscisaureus_","message":"Promise readPromise = stream.read(1024); <-- Is that ES6 code?","date":"2013-10-28T16:21:31.895Z","type":"message"}
+{"nick":"piscisaureus_","message":"who snug in the types?","date":"2013-10-28T16:21:31.895Z","type":"message"}
+{"nick":"Domenic_","message":"right, tricky.","date":"2013-10-28T16:21:35.071Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: yt?","date":"2013-10-28T16:21:36.043Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: hi","date":"2013-10-28T16:21:46.269Z","type":"message"}
+{"nick":"Domenic_","message":"piscisaureus_: nope they're just making syntax errors i guess","date":"2013-10-28T16:21:53.595Z","type":"message"}
+{"nick":"piscisaureus_","message":"I agree with the async read and write","date":"2013-10-28T16:22:20.670Z","type":"message"}
+{"nick":"indutny","message":"heya","date":"2013-10-28T16:22:40.807Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: you still there?","date":"2013-10-28T16:22:41.024Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I'll land that proctitle thing in v0.10","date":"2013-10-28T16:22:44.028Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: back at looking at the memory leak. I am finally able to reproduce it outside production with a very simple test. just takes 10+ hours to notice the trend","date":"2013-10-28T16:22:45.526Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: but you can do no-concat without perf or memory impacts?","date":"2013-10-28T16:22:53.851Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: and then going to do merge","date":"2013-10-28T16:22:55.260Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: excellent http or https?","date":"2013-10-28T16:22:56.623Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: any objections?","date":"2013-10-28T16:22:57.500Z","type":"message"}
+{"nick":"hueniverse1","message":"http","date":"2013-10-28T16:23:01.035Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: excellent, do you have a gist?","date":"2013-10-28T16:23:13.094Z","type":"message"}
+{"nick":"isaacs","message":"Domenic_: we already don't concat when piping","date":"2013-10-28T16:23:13.303Z","type":"message"}
+{"nick":"piscisaureus_","message":"Domenic_: result.data and result.size and result.eof are kinda unfortunate though. Why not just pass an (array)buffer or a string or null?","date":"2013-10-28T16:23:25.847Z","type":"message"}
+{"nick":"Domenic_","message":"piscisaureus_: that proposal is garbage, i am trying to kill it with a counterproposal","date":"2013-10-28T16:24:17.958Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: https://gist.github.com/hueniverse/b2da3ab04ed2109652cb","date":"2013-10-28T16:24:19.373Z","type":"message"}
+{"nick":"Domenic_","message":"isaacs: ok cool, makes sense","date":"2013-10-28T16:24:27.695Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: thanks","date":"2013-10-28T16:24:28.797Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: over time, this will slowly leak","date":"2013-10-28T16:24:30.893Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: the code is webidl, not javascript/es","date":"2013-10-28T16:24:43.578Z","type":"message"}
+{"nick":"hueniverse1","message":"it's using a single file from hapi: client.js which is a very simple http client wrapper","date":"2013-10-28T16:24:48.847Z","type":"message"}
+{"nick":"isaacs","message":"webidl is a special code that only runs on human brains","date":"2013-10-28T16:25:05.978Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: Example 1 at https://dvcs.w3.org/hg/streams-api/raw-file/tip/Overview.htm?","date":"2013-10-28T16:25:27.866Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: doesn't look like it","date":"2013-10-28T16:25:31.885Z","type":"message"}
+{"nick":"kenperkins","date":"2013-10-28T16:25:35.269Z","type":"join"}
+{"nick":"hueniverse1","message":"tjfontaine: I am going to c/p it and simplify it but the example isn't using much from it. right now I mostly want someone to look and see if I'm doing something obviously stupid.","date":"2013-10-28T16:25:44.938Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: ok, do you have any cores from this?","date":"2013-10-28T16:25:47.006Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: ok","date":"2013-10-28T16:25:52.959Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: nope. I just ran it locally","date":"2013-10-28T16:26:06.966Z","type":"message"}
+{"nick":"piscisaureus_","message":"isaacs: I can tell webidl from js :)","date":"2013-10-28T16:26:13.223Z","type":"message"}
+{"nick":"Domenic_","message":"piscisaureus_: start of a counterproposal at https://gist.github.com/domenic/0c47ae300608341f3d7f but I haven't had time to work on it recently. Gotta pick up the pace this week though in order to counteract this new thing.","date":"2013-10-28T16:26:20.946Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: ohh, hahah, found the bit yor'e referring to","date":"2013-10-28T16:26:48.187Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: yeah, that's copy-pasta, i'm sure","date":"2013-10-28T16:26:54.382Z","type":"message"}
+{"nick":"isaacs","message":"piscisaureus_: but yes, i'm sure that no one ever ran this code.","date":"2013-10-28T16:27:09.057Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-10-28T16:27:20.783Z","type":"join"}
+{"nick":"isaacs","message":"piscisaureus_: implementations are done by mere mortals, once the spec is finished by the esteemed specificationati","date":"2013-10-28T16:27:47.895Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: when i remove those #ifdefs in the proctitle patch, everything seems to work okay","date":"2013-10-28T16:28:57.841Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: hence my 'probably not needed' comment","date":"2013-10-28T16:29:06.727Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: well, I know","date":"2013-10-28T16:29:11.449Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: but that's how it is in webkit","date":"2013-10-28T16:29:16.419Z","type":"message"}
+{"nick":"indutny","message":"and chromium is doing the same thing","date":"2013-10-28T16:29:21.431Z","type":"message"}
+{"nick":"indutny","message":"are you on 10.8?","date":"2013-10-28T16:29:28.874Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-10-28T16:29:31.280Z","type":"message"}
+{"nick":"bnoordhuis","message":"and that's never going to change","date":"2013-10-28T16:29:39.968Z","type":"message"}
+{"nick":"indutny","message":"perhaps it won't work on 10.6 or 10.7?","date":"2013-10-28T16:29:41.523Z","type":"message"}
+{"nick":"indutny","message":"we're still supporting them anyway","date":"2013-10-28T16:29:49.913Z","type":"message"}
+{"nick":"indutny","message":"right?","date":"2013-10-28T16:29:54.448Z","type":"message"}
+{"nick":"bnoordhuis","message":"easy to test","date":"2013-10-28T16:29:55.651Z","type":"message"}
+{"nick":"bnoordhuis","message":"saghul: ping","date":"2013-10-28T16:29:56.858Z","type":"message"}
+{"nick":"saghul","message":"bnoordhuis pong","date":"2013-10-28T16:30:08.869Z","type":"message"}
+{"nick":"bnoordhuis","message":"saghul: can you test something for us on os x 10.6?","date":"2013-10-28T16:30:16.784Z","type":"message"}
+{"nick":"saghul","message":"sure thing","date":"2013-10-28T16:30:22.875Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: ^","date":"2013-10-28T16:30:26.674Z","type":"message"}
+{"nick":"indutny","message":"saghul: https://github.com/joyent/libuv/pull/973/files","date":"2013-10-28T16:30:41.248Z","type":"message"}
+{"nick":"indutny","message":"saghul: but assuming that MAC_OS_X_VERSION_10_9 is 1","date":"2013-10-28T16:30:51.187Z","type":"message"}
+{"nick":"indutny","message":"saghul: i.e. with removed ifdefs","date":"2013-10-28T16:30:57.341Z","type":"message"}
+{"nick":"saghul","message":"ok","date":"2013-10-28T16:31:02.008Z","type":"message"}
+{"nick":"bnoordhuis","message":"or by turning the #ifdefs into #ifndefs :)","date":"2013-10-28T16:31:11.581Z","type":"message"}
+{"nick":"saghul","message":"should I check if it compiles, runs the test suite, ?","date":"2013-10-28T16:31:13.300Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes, please","date":"2013-10-28T16:31:17.854Z","type":"message"}
+{"nick":"indutny","message":"saghul: thanks","date":"2013-10-28T16:31:19.103Z","type":"message"}
+{"nick":"indutny","message":"http://www.youtube.com/watch?v=aWN9oqTSs14","date":"2013-10-28T16:32:13.620Z","type":"message"}
+{"nick":"indutny","message":"please turn this music on while doing it","date":"2013-10-28T16:32:26.900Z","type":"message"}
+{"nick":"saghul","message":"compiles","date":"2013-10-28T16:34:52.303Z","type":"message"}
+{"nick":"sblom","message":"indutny: I've found the new soundtrack for today. Thanks","date":"2013-10-28T16:35:05.169Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2013-10-28T16:35:09.506Z","type":"message"}
+{"nick":"indutny","message":"sblom: you're welcome","date":"2013-10-28T16:35:14.519Z","type":"message"}
+{"nick":"Domenic_","message":"Oh nodejsreactions, so perfect.","date":"2013-10-28T16:36:15.171Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-10-28T16:37:46.592Z","type":"nick"}
+{"nick":"saghul","message":"indutny bnoordhuis test pass!","date":"2013-10-28T16:38:06.915Z","type":"message"}
+{"nick":"indutny","message":"saghul: thanks","date":"2013-10-28T16:38:16.372Z","type":"message"}
+{"nick":"bnoordhuis","message":"nice","date":"2013-10-28T16:38:24.460Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: so... moving to that thing, right?","date":"2013-10-28T16:38:26.759Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: do we have proc title test? :)","date":"2013-10-28T16:38:32.769Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-10-28T16:38:35.412Z","type":"message"}
+{"nick":"indutny","message":"saghul: are you on 10.6?","date":"2013-10-28T16:38:35.889Z","type":"message"}
+{"nick":"bnoordhuis","message":"we have a few in node as well","date":"2013-10-28T16:38:41.782Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ok","date":"2013-10-28T16:38:45.084Z","type":"message"}
+{"nick":"saghul","message":"indutny yes!","date":"2013-10-28T16:38:46.508Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: lets assume that its cross-version thing","date":"2013-10-28T16:38:53.587Z","type":"message"}
+{"nick":"saghul","message":"10.9 is finally usable with multiple screens","date":"2013-10-28T16:38:57.288Z","type":"message"}
+{"nick":"saghul","message":"but at work we support 10.6 so I'm not moving all machines just yet :-)","date":"2013-10-28T16:39:12.880Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I'll show you a gist for v0.10 in a couple of minutes","date":"2013-10-28T16:39:34.064Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ok?","date":"2013-10-28T16:39:36.055Z","type":"message"}
+{"nick":"bnoordhuis","message":"ok","date":"2013-10-28T16:40:05.227Z","type":"message"}
+{"nick":"bnoordhuis","message":"514   11.1%   11.3%  node::DTRACE_HTTP_SERVER_REQUEST(v8::FunctionCallbackInfo<v8::Value> const&) <- our dtrace/stap probes have quite a bit of overhead...","date":"2013-10-28T16:42:04.673Z","type":"message"}
+{"nick":"tjfontaine","message":"only for stap really","date":"2013-10-28T16:42:47.662Z","type":"message"}
+{"nick":"tjfontaine","message":"because otherwise we check _ENABLED() which doesn't exist for stap","date":"2013-10-28T16:42:58.266Z","type":"message"}
+{"nick":"bnoordhuis","message":"where is that check done? in js land?","date":"2013-10-28T16:43:13.761Z","type":"message"}
+{"nick":"tjfontaine","message":"no, you still incur the boundary jump, but it's not that bad","date":"2013-10-28T16:43:29.528Z","type":"message"}
+{"nick":"tjfontaine","message":"more often than not it doesn't appear","date":"2013-10-28T16:43:34.887Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: https://gist.github.com/indutny/7200299","date":"2013-10-28T16:44:01.945Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, i hope so","date":"2013-10-28T16:44:07.488Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: we should try moving this stuff into external arrays, or something like this","date":"2013-10-28T16:44:38.698Z","type":"message"}
+{"nick":"TooTallNate","reason":"Ping timeout: 272 seconds","date":"2013-10-28T16:44:41.783Z","type":"quit"}
+{"nick":"indutny","message":"tjfontaine: I bet dtrace will allow us doing so","date":"2013-10-28T16:44:45.826Z","type":"message"}
+{"nick":"indutny","message":"aah, probably it won't","date":"2013-10-28T16:44:56.988Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: it is a linker thing, right?","date":"2013-10-28T16:45:06.603Z","type":"message"}
+{"nick":"indutny","message":"_ENABLED()","date":"2013-10-28T16:45:10.168Z","type":"message"}
+{"nick":"indutny","message":"it should be just storing position and reserving space for a constants","date":"2013-10-28T16:45:23.116Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: LGTY?","date":"2013-10-28T16:45:29.187Z","type":"message"}
+{"nick":"bnoordhuis","message":"i haven't even looked yet...","date":"2013-10-28T16:45:36.184Z","type":"message"}
+{"nick":"indutny","message":"https://gist.github.com/indutny/7200299","date":"2013-10-28T16:45:45.170Z","type":"message"}
+{"nick":"indutny","message":";)","date":"2013-10-28T16:45:46.813Z","type":"message"}
+{"nick":"bnoordhuis","message":"have you tested it?","date":"2013-10-28T16:46:20.754Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: yes","date":"2013-10-28T16:46:35.770Z","type":"message"}
+{"nick":"indutny","message":"seems to be building and passing test","date":"2013-10-28T16:46:43.631Z","type":"message"}
+{"nick":"indutny","message":"./out/Debug/run-tests process_title process_title","date":"2013-10-28T16:46:53.046Z","type":"message"}
+{"nick":"bnoordhuis","message":"what happens when you upgrade libuv in node?","date":"2013-10-28T16:47:20.418Z","type":"message"}
+{"nick":"bnoordhuis","message":"patch lgtm in principle","date":"2013-10-28T16:47:55.687Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: let me try it","date":"2013-10-28T16:48:27.794Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: patch for master was working","date":"2013-10-28T16:48:44.878Z","type":"message"}
+{"nick":"indutny","message":";)","date":"2013-10-28T16:48:45.736Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I was testing it in node","date":"2013-10-28T16:48:51.084Z","type":"message"}
+{"nick":"TooTallNate","date":"2013-10-28T16:48:58.213Z","type":"join"}
+{"nick":"dshaw_","date":"2013-10-28T16:51:10.005Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: considering that it'll work - can I land it?","date":"2013-10-28T16:52:30.615Z","type":"message"}
+{"nick":"indutny","message":"I mean","date":"2013-10-28T16:52:33.069Z","type":"message"}
+{"nick":"piscisaureus_","message":"pGetCurrentProcess","date":"2013-10-28T16:52:33.283Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-28T16:52:35.502Z","type":"quit"}
+{"nick":"indutny","message":"can I land it after testing","date":"2013-10-28T16:52:36.387Z","type":"message"}
+{"nick":"piscisaureus_","message":"os x is starting to look like windows","date":"2013-10-28T16:52:39.337Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: already fixed, thanks","date":"2013-10-28T16:52:40.885Z","type":"message"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-10-28T16:52:54.150Z","type":"quit"}
+{"nick":"indutny","message":"piscisaureus_: you must be looking at LSSetApplicationLaunchServicesServerConnectionStatusType","date":"2013-10-28T16:52:54.593Z","type":"message"}
+{"nick":"piscisaureus_","message":"soon it will be GetCurrentProcessExW","date":"2013-10-28T16:52:55.145Z","type":"message"}
+{"nick":"indutny","message":"hahaa","date":"2013-10-28T16:53:13.529Z","type":"message"}
+{"nick":"indutny","message":"DCMA them","date":"2013-10-28T16:53:21.804Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: sure, land it","date":"2013-10-28T16:54:06.874Z","type":"message"}
+{"nick":"indutny","message":"seems to be working","date":"2013-10-28T16:54:15.847Z","type":"message"}
+{"nick":"indutny","message":"landing","date":"2013-10-28T16:54:16.950Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Fedor Indutny\u000f \u00037v0.10\u000f * \u000208e0e63\u0002 : darwin: avoid calling GetCurrentProcess - http://git.io/6glOHw","date":"2013-10-28T16:54:29.368Z","type":"message"}
+{"nick":"piscisaureus_","message":"BOOL WINAPI GetCurrentProcessEx(_out LPHANDLE lpHandle, BOOL bInheritHandles)","date":"2013-10-28T16:54:40.641Z","type":"message"}
+{"nick":"tjfontaine","message":"yay, no more cloudup not responding :)","date":"2013-10-28T16:54:42.620Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: not yet :)","date":"2013-10-28T16:54:59.684Z","type":"message"}
+{"nick":"bnoordhuis","message":"\"seems to be working\"...","date":"2013-10-28T16:55:04.990Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: there are ways we can make the dtrace probes less expensive, by just relying more on the jit and its inline caches, fewer ->Get's in C++ will make the path faster, but requires people being ok with caching those lookups in JS","date":"2013-10-28T16:55:45.908Z","type":"message"}
+{"nick":"piscisaureus_","message":"Is it not possible to detect OS X version at runtime?","date":"2013-10-28T16:55:59.290Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: indeed","date":"2013-10-28T16:56:01.857Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus_: I think it should be, why not?","date":"2013-10-28T16:56:11.720Z","type":"message"}
+{"nick":"dshaw_","reason":"Ping timeout: 272 seconds","date":"2013-10-28T16:56:21.991Z","type":"quit"}
+{"nick":"piscisaureus_","message":"indutny: then why are we landing a patch with an ifdef?","date":"2013-10-28T16:56:34.248Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: what should the server code for this be? or just a nop hapi server?","date":"2013-10-28T16:56:45.743Z","type":"message"}
+{"nick":"indutny","message":"without it","date":"2013-10-28T16:56:46.071Z","type":"message"}
+{"nick":"mikeal","date":"2013-10-28T16:57:23.142Z","type":"join"}
+{"nick":"bnoordhuis","message":"piscisaureus_: i don't see an #ifdef","date":"2013-10-28T16:57:42.612Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-10-28T16:57:45.707Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: going to merge into v0.10","date":"2013-10-28T16:58:47.409Z","type":"message"}
+{"nick":"indutny","message":"err","date":"2013-10-28T16:58:48.943Z","type":"message"}
+{"nick":"indutny","message":"into master","date":"2013-10-28T16:58:50.187Z","type":"message"}
+{"nick":"piscisaureus_","message":"bnoordhuis: indutny: sorry *shame* was looking at old patch","date":"2013-10-28T16:59:10.825Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: godspeed","date":"2013-10-28T16:59:24.027Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Fedor Indutny\u000f \u00037master\u000f * \u0002ab02252\u0002 : Merge branch 'v0.10' (+3 more commits) - http://git.io/Q5AEkw","date":"2013-10-28T16:59:24.463Z","type":"message"}
+{"nick":"bnoordhuis","message":"only two conflicts? we're not trying hard enough","date":"2013-10-28T16:59:55.531Z","type":"message"}
+{"nick":"indutny","message":"yeah, I just wanted to make sure that we won't waste time on resolving merge later","date":"2013-10-28T16:59:57.776Z","type":"message"}
+{"nick":"indutny","message":"since I've originally written it for master","date":"2013-10-28T17:00:06.800Z","type":"message"}
+{"nick":"bnoordhuis","action":"moves some files around for the sake of it","date":"2013-10-28T17:00:11.115Z","type":"action"}
+{"nick":"indutny","message":"tjfontaine: when do we have scheduled v0.10 release?","date":"2013-10-28T17:00:15.523Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis :)","date":"2013-10-28T17:00:18.398Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: that won't help","date":"2013-10-28T17:00:23.378Z","type":"message"}
+{"nick":"tjfontaine","message":"if there's enough, tomorrow","date":"2013-10-28T17:00:25.787Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: you should try changing indent around","date":"2013-10-28T17:00:34.170Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: adding braces","date":"2013-10-28T17:00:37.783Z","type":"message"}
+{"nick":"indutny","message":"and moving ifdef clauses","date":"2013-10-28T17:00:43.520Z","type":"message"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-10-28T17:00:48.829Z","type":"quit"}
+{"nick":"indutny","message":"changing all ifdefs to ifndefs","date":"2013-10-28T17:00:51.451Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: would be good to have libuv updated then ;)","date":"2013-10-28T17:01:40.335Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2013-10-28T17:02:27.831Z","type":"message"}
+{"nick":"tjfontaine","message":"libuv releases happen before each node release :)","date":"2013-10-28T17:02:34.434Z","type":"message"}
+{"nick":"dshaw_","date":"2013-10-28T17:04:17.100Z","type":"join"}
+{"nick":"indutny","message":":)","date":"2013-10-28T17:06:05.954Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-10-28T17:06:07.716Z","type":"message"}
+{"nick":"tjfontaine","message":"actually, unless libuv-master + node-master require more integration work","date":"2013-10-28T17:06:38.937Z","type":"message"}
+{"nick":"tjfontaine","message":"in which case we can do a libuv release asap so I don't have to worry about doing api updates :)","date":"2013-10-28T17:06:58.122Z","type":"message"}
+{"nick":"indutny","message":"ok :)","date":"2013-10-28T17:08:02.500Z","type":"message"}
+{"nick":"indutny","message":"gotcha","date":"2013-10-28T17:08:04.068Z","type":"message"}
+{"nick":"tjfontaine","message":"right, there is some integration work needed, so I will do a libuv release if you want to do the next parts :)","date":"2013-10-28T17:09:16.139Z","type":"message"}
+{"nick":"tjfontaine","message":"it's your code anyway","date":"2013-10-28T17:09:37.456Z","type":"message"}
+{"nick":"tjfontaine","message":"../src/fs_event_wrap.cc: In static member function 'static void node::FSEventWrap::Start(const v8::FunctionCallbackInfo<v8::Value>&)':","date":"2013-10-28T17:09:46.879Z","type":"message"}
+{"nick":"tjfontaine","message":"../src/fs_event_wrap.cc:114:31: error: too many arguments to function 'int uv_fs_event_init(uv_loop_t*, uv_fs_event_t*)'","date":"2013-10-28T17:09:49.839Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2013-10-28T17:09:52.796Z","type":"message"}
+{"nick":"indutny","message":"oh, not mine","date":"2013-10-28T17:10:58.558Z","type":"message"}
+{"nick":"indutny","message":"saghul: ? :)","date":"2013-10-28T17:11:04.762Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: I think its just an argument removed","date":"2013-10-28T17:11:13.710Z","type":"message"}
+{"nick":"saghul","message":"pong","date":"2013-10-28T17:11:18.302Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: should be fine to remove it from fs_event_wrap.cc","date":"2013-10-28T17:11:20.710Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: btw, do you have any progress on my other libuv patches?","date":"2013-10-28T17:11:31.038Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T17:11:35.687Z","type":"message"}
+{"nick":"saghul","message":"yes, uv_fs_event_init has less arguments now","date":"2013-10-28T17:11:43.040Z","type":"message"}
+{"nick":"c4milo","date":"2013-10-28T17:13:01.410Z","type":"join"}
+{"nick":"saghul","message":"indutny tjfontaine https://github.com/joyent/libuv/commit/9d44d786ada6cf94e1bdcee7d777c790ca712a78","date":"2013-10-28T17:13:02.993Z","type":"message"}
+{"nick":"indutny","message":"exactly","date":"2013-10-28T17:13:13.548Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: basically, you need this https://github.com/joyent/libuv/commit/9d44d786ada6cf94e1bdcee7d777c790ca712a78#diff-5737b5ae6c6acd2f41d43cd5a1ae5bbcR228","date":"2013-10-28T17:13:47.875Z","type":"message"}
+{"nick":"indutny","message":"ok, going to reboot to windows","date":"2013-10-28T17:14:10.292Z","type":"message"}
+{"nick":"indutny","message":"and play some games","date":"2013-10-28T17:14:12.300Z","type":"message"}
+{"nick":"tjfontaine","message":"sure, was just hoping to get someone else tod o my work :P","date":"2013-10-28T17:14:13.176Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2013-10-28T17:14:17.775Z","type":"message"}
+{"nick":"tjfontaine","message":"but I'll do it :)","date":"2013-10-28T17:14:19.309Z","type":"message"}
+{"nick":"indutny","message":"that's not just your work","date":"2013-10-28T17:14:25.619Z","type":"message"}
+{"nick":"indutny","message":"that what we all do here","date":"2013-10-28T17:14:29.418Z","type":"message"}
+{"nick":"indutny","message":"and yeah","date":"2013-10-28T17:14:31.280Z","type":"message"}
+{"nick":"tjfontaine","message":"hehe","date":"2013-10-28T17:14:31.938Z","type":"message"}
+{"nick":"indutny","message":"I feel a bit lame","date":"2013-10-28T17:14:33.946Z","type":"message"}
+{"nick":"indutny","message":"sorry :P","date":"2013-10-28T17:14:37.264Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: same question as fedor, do you have any other pending patches you want in before I do a libuv release?","date":"2013-10-28T17:14:48.362Z","type":"message"}
+{"nick":"indutny","message":"ttyl","date":"2013-10-28T17:15:06.752Z","type":"message"}
+{"nick":"tjfontaine","message":"later","date":"2013-10-28T17:15:09.420Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 265 seconds","date":"2013-10-28T17:17:15.282Z","type":"quit"}
+{"nick":"tjfontaine","message":"piscisaureus_: hm, ping?","date":"2013-10-28T17:22:38.033Z","type":"message"}
+{"nick":"Chip_Zer-","reason":"Quit: Terminated with extreme prejudice - dircproxy 1.2.0","date":"2013-10-28T17:26:28.509Z","type":"quit"}
+{"nick":"tjfontaine","message":"ircretary: tell bnoordhuis there are a lot of changes for this next libuv release, it'd be helpful to me if you did it since you know what you would like to see in the changelog","date":"2013-10-28T17:30:02.732Z","type":"message"}
+{"nick":"ircretary","message":"tjfontaine: I'll be sure to tell bnoordhuis","date":"2013-10-28T17:30:02.942Z","type":"message"}
+{"nick":"amartens","date":"2013-10-28T17:43:03.088Z","type":"join"}
+{"nick":"Collin","date":"2013-10-28T17:44:06.603Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-10-28T17:44:15.149Z","type":"quit"}
+{"nick":"zot","date":"2013-10-28T17:44:50.566Z","type":"join"}
+{"nick":"zot","date":"2013-10-28T17:44:57.542Z","type":"part"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-28T17:46:40.903Z","type":"quit"}
+{"nick":"mikeal","date":"2013-10-28T17:46:47.737Z","type":"join"}
+{"nick":"hueniverse1","message":"tjfontaine: the server is just anything that accepts the requests","date":"2013-10-28T17:46:57.981Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: ok, thanks, that's what I figured","date":"2013-10-28T17:47:06.877Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: emailed you the chart showing the leak trend over 10+ hours.","date":"2013-10-28T17:50:52.793Z","type":"message"}
+{"nick":"tjfontaine","message":"yup, looking now","date":"2013-10-28T17:51:03.497Z","type":"message"}
+{"nick":"st_luke","date":"2013-10-28T17:57:18.944Z","type":"join"}
+{"nick":"sblom","reason":"Ping timeout: 245 seconds","date":"2013-10-28T18:00:25.598Z","type":"quit"}
+{"nick":"groundwater_","message":"trevnorris: ping","date":"2013-10-28T18:01:11.853Z","type":"message"}
+{"nick":"brson","date":"2013-10-28T18:02:42.218Z","type":"join"}
+{"nick":"superjoe30","date":"2013-10-28T18:02:47.867Z","type":"join"}
+{"nick":"trevnorris","message":"groundwater_: pong","date":"2013-10-28T18:07:54.095Z","type":"message"}
+{"nick":"trevnorris","message":"afternoon all","date":"2013-10-28T18:07:57.534Z","type":"message"}
+{"nick":"groundwater_","message":"i want to test how performant / non-performant some of our hackery to event emitters are doing, is there a benchmark suite i should try running it against?","date":"2013-10-28T18:08:37.025Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: i'd say most important is check the performance against normal benchmarks. check if it has any affect at the macro level.","date":"2013-10-28T18:09:37.521Z","type":"message"}
+{"nick":"groundwater_","message":"trevnorris: so just 'make bench' ?","date":"2013-10-28T18:09:58.184Z","type":"message"}
+{"nick":"pachet","reason":"Quit: leaving","date":"2013-10-28T18:10:24.819Z","type":"quit"}
+{"nick":"trevnorris","message":"groundwater_: that'll take a while. you  can also do things like \"make bench-http\", but also run the commands individually. like ./node benchmark/http/http/client-request-body.js dur=5 type=asc bytes=32 method=write","date":"2013-10-28T18:11:16.536Z","type":"message"}
+{"nick":"isaacs","message":"ugh, npm bug in latest release","date":"2013-10-28T18:11:48.950Z","type":"message"}
+{"nick":"groundwater_","message":"trevnorris: thanks, i'll start there","date":"2013-10-28T18:11:57.204Z","type":"message"}
+{"nick":"isaacs","message":"(latest npm release, not node release)","date":"2013-10-28T18:11:58.056Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: glad we found it today and not tomorrow :)","date":"2013-10-28T18:13:54.979Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: :)","date":"2013-10-28T18:14:06.819Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: https://gist.github.com/hueniverse/a655af7be0a13145e132","date":"2013-10-28T18:14:29.774Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: this one has no external deps, much simpler","date":"2013-10-28T18:14:43.390Z","type":"message"}
+{"nick":"indexzero","date":"2013-10-28T18:14:54.759Z","type":"join"}
+{"nick":"hueniverse1","message":"tjfontaine: it also leaks much faster","date":"2013-10-28T18:14:57.562Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: main diff is that in this case, I don't read the response to the http request, just res.destroy() it","date":"2013-10-28T18:15:29.098Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: I'm not seeing the leak here from your numbers http://us-east.manta.joyent.com/tjfontaine/public/walmart.png","date":"2013-10-28T18:15:45.725Z","type":"message"}
+{"nick":"hueniverse1","message":"rss is clearly trending up","date":"2013-10-28T18:16:12.525Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: what's been going on?","date":"2013-10-28T18:16:33.531Z","type":"message"}
+{"nick":"hueniverse1","message":"look at the jump third of the way from the right","date":"2013-10-28T18:16:38.194Z","type":"message"}
+{"nick":"tjfontaine","message":"at 5000?","date":"2013-10-28T18:16:50.467Z","type":"message"}
+{"nick":"hueniverse1","message":"more like 4200","date":"2013-10-28T18:17:06.333Z","type":"message"}
+{"nick":"tjfontaine","message":"ok I will continue with the second script","date":"2013-10-28T18:17:16.226Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-10-28T18:17:21.126Z","type":"quit"}
+{"nick":"hueniverse1","message":"tjfontaine: this has been the main issue with this. it is slow when not under production load at peak, and even then, it is a trend, not a continuous growth","date":"2013-10-28T18:18:11.825Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: to be honest I have a slight hack for domains on EE that'll allow me to completely remove domains from core.","date":"2013-10-28T18:18:29.692Z","type":"message"}
+{"nick":"hueniverse1","message":"tjfontaine: if you chart the trend line, it is very clearly there","date":"2013-10-28T18:18:29.923Z","type":"message"}
+{"nick":"trevnorris","message":"don't know why I didn't think of it before.","date":"2013-10-28T18:18:35.134Z","type":"message"}
+{"nick":"groundwater_","message":"trevnorris: what's the hack?","date":"2013-10-28T18:19:11.417Z","type":"message"}
+{"nick":"groundwater_","message":"code?","date":"2013-10-28T18:19:19.199Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: i'll let you know when I update the PR w/ it","date":"2013-10-28T18:20:52.624Z","type":"message"}
+{"nick":"AvianFlu","date":"2013-10-28T18:21:37.960Z","type":"join"}
+{"nick":"groundwater_","message":"trevnorris: othiym23 and i were thinking that if a similar api to async-listeners were exposed on EEs that domains/CLS could be implemented on top of that","date":"2013-10-28T18:21:40.680Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: basically we need to have a function that fires when a listener is added to an emitter that then passes state to be set up before / after said listener is run on an emit","date":"2013-10-28T18:25:26.588Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-10-28T18:26:59.501Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-28T18:27:26.940Z","type":"join"}
+{"nick":"othiym23","message":"trevnorris: here's what I have right now, and it uses closures galore: https://github.com/othiym23/shimmer/blob/master/index.js#L86-L217","date":"2013-10-28T18:27:51.465Z","type":"message"}
+{"nick":"othiym23","message":"also it does some pretty squirrelly shit try not to pay too much attention to that","date":"2013-10-28T18:28:20.435Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: honestly I think EE is one of the roots of evil in core, so I have little concern for that :P","date":"2013-10-28T18:29:52.059Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: wow yeah. that's kinda intense. I almost have my domain patch working. i'll let you know when it's done.","date":"2013-10-28T18:31:22.610Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 240 seconds","date":"2013-10-28T18:31:48.418Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-10-28T18:31:50.734Z","type":"join"}
+{"nick":"superjoe30","message":"what's evil about EventEmitter?","date":"2013-10-28T18:32:50.791Z","type":"message"}
+{"nick":"othiym23","message":"everything about its implementation is complicated due to all the weird perfomrance tuning done on it, and EEs are used for WAYYYYY too many things in core","date":"2013-10-28T18:33:33.325Z","type":"message"}
+{"nick":"superjoe30","message":"ah","date":"2013-10-28T18:33:40.597Z","type":"message"}
+{"nick":"trevnorris","message":"superjoe30: EE is actually synchronous, but we use them as a layer of abstraction to emit async events.","date":"2013-10-28T18:33:45.323Z","type":"message"}
+{"nick":"superjoe30","message":"I've seen that switch statement on the number of args","date":"2013-10-28T18:34:02.290Z","type":"message"}
+{"nick":"Collin","date":"2013-10-28T18:34:03.935Z","type":"part"}
+{"nick":"trevnorris","message":"the abstraction adds enough complexity that working around it within core itself has been a PITA","date":"2013-10-28T18:34:08.630Z","type":"message"}
+{"nick":"trevnorris","message":"also it's a hugely stupid performance hit were we could be doing some awesome optimizations.","date":"2013-10-28T18:35:56.126Z","type":"message"}
+{"nick":"trevnorris","message":"i already have it on my performance todo list for v0.13 to remove usage of EE for internal messaging.","date":"2013-10-28T18:36:24.183Z","type":"message"}
+{"nick":"othiym23","message":"superjoe30: there's also weird stuff like if you monkeypatch an EE that's being used in a streams1 stream, .on / .addListener will get overwritten when they're called because the stream reinitializes the stream by calling EventEmitter.call(this) on it","date":"2013-10-28T18:36:27.198Z","type":"message"}
+{"nick":"othiym23","message":"it's all just gnarly","date":"2013-10-28T18:36:34.948Z","type":"message"}
+{"nick":"superjoe30","message":"this is all good news to me","date":"2013-10-28T18:36:59.251Z","type":"message"}
+{"nick":"superjoe30","message":"because it means that I can do nothing and in future node.js versions my code will be faster :)","date":"2013-10-28T18:37:10.846Z","type":"message"}
+{"nick":"superjoe30","message":">:-)","date":"2013-10-28T18:37:23.096Z","type":"message"}
+{"nick":"superjoe30","message":"^^ devil horns","date":"2013-10-28T18:37:29.886Z","type":"message"}
+{"nick":"othiym23","message":"if only that were true for me...","date":"2013-10-28T18:37:37.566Z","type":"message"}
+{"nick":"superjoe30","message":"congrats on your new relic post, btw","date":"2013-10-28T18:37:55.181Z","type":"message"}
+{"nick":"superjoe30","message":"that was fun to read","date":"2013-10-28T18:37:59.286Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus_: ANSWER ME!!!","date":"2013-10-28T18:38:12.974Z","type":"message"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2013-10-28T18:45:02.222Z","type":"quit"}
+{"nick":"loladiro","date":"2013-10-28T18:48:23.110Z","type":"join"}
+{"nick":"trevnorris","message":"othiym23: haha, just got to thinking. my hack is going to step on your hack. :P","date":"2013-10-28T18:52:18.218Z","type":"message"}
+{"nick":"trevnorris","message":"well, if I can get it working. going to give it one more hour before I throw in the towel.","date":"2013-10-28T18:52:18.445Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-10-28T18:52:46.319Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 272 seconds","date":"2013-10-28T18:53:53.739Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-28T18:58:06.323Z","type":"join"}
+{"nick":"AvianFlu_","date":"2013-10-28T19:15:10.893Z","type":"join"}
+{"nick":"AvianFlu","reason":"Read error: Connection reset by peer","date":"2013-10-28T19:15:10.893Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-10-28T19:18:45.086Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-10-28T19:20:35.939Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 265 seconds","date":"2013-10-28T19:31:37.459Z","type":"quit"}
+{"nick":"superjoe","reason":"Ping timeout: 272 seconds","date":"2013-10-28T19:31:54.210Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2013-10-28T19:35:24.978Z","type":"nick"}
+{"nick":"Benvie_","date":"2013-10-28T19:35:39.952Z","type":"join"}
+{"nick":"trevnorris","message":"othiym23: api question.","date":"2013-10-28T19:36:41.598Z","type":"message"}
+{"nick":"sblom","date":"2013-10-28T19:36:48.863Z","type":"join"}
+{"nick":"hueniverse1","message":"tjfontaine: the last code sample shows the leak too. confirmed after am hour 38m","date":"2013-10-28T19:40:09.552Z","type":"message"}
+{"nick":"superjoe","date":"2013-10-28T19:42:09.426Z","type":"join"}
+{"nick":"trevnorris","message":"groundwater_: or you. just have a API curious question.","date":"2013-10-28T19:42:49.704Z","type":"message"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-10-28T19:47:00.873Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-10-28T19:49:29.485Z","type":"join"}
+{"nick":"dshaw_","date":"2013-10-28T19:49:53.744Z","type":"join"}
+{"nick":"mikeal","date":"2013-10-28T19:53:10.821Z","type":"join"}
+{"nick":"indexzero","date":"2013-10-28T19:55:57.580Z","type":"join"}
+{"nick":"wavded","date":"2013-10-28T19:56:38.771Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: heya","date":"2013-10-28T19:58:14.895Z","type":"message"}
+{"nick":"indutny","message":"and I'm back","date":"2013-10-28T19:58:17.327Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: duly noted","date":"2013-10-28T20:07:15.267Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: duly noted that you're here too","date":"2013-10-28T20:07:25.041Z","type":"message"}
+{"nick":"indutny","message":"may I remind you again about libuv stuff","date":"2013-10-28T20:07:31.270Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you may","date":"2013-10-28T20:07:42.660Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-10-28T20:07:42.876Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-10-28T20:07:43.721Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: I do","date":"2013-10-28T20:07:48.792Z","type":"message"}
+{"nick":"indutny","message":"I did","date":"2013-10-28T20:07:50.671Z","type":"message"}
+{"nick":"bnoordhuis","message":"you have","date":"2013-10-28T20:08:18.525Z","type":"message"}
+{"nick":"indutny","message":"I had","date":"2013-10-28T20:08:28.876Z","type":"message"}
+{"nick":"trevnorris","message":"...","date":"2013-10-28T20:08:38.616Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: you did","date":"2013-10-28T20:10:25.173Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: yes, I did forget what I was going to ask you guys. curse me for not utilizing ircretary.","date":"2013-10-28T20:10:51.747Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: ya, I'm running it","date":"2013-10-28T20:13:48.991Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: back from lunch","date":"2013-10-28T20:14:34.002Z","type":"message"}
+{"nick":"othiym23","message":"if your hack steps on my hack, I'll just fix my hack","date":"2013-10-28T20:15:17.407Z","type":"message"}
+{"nick":"othiym23","message":"I'm pretty used to it at this point","date":"2013-10-28T20:15:24.503Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: nm on the idea. oh, and I just fixed a silly/stupid bug. mostly affects performance.","date":"2013-10-28T20:15:24.913Z","type":"message"}
+{"nick":"othiym23","message":"it's the lot of the instrumentation engineer","date":"2013-10-28T20:15:29.794Z","type":"message"}
+{"nick":"trevnorris","message":"and i'm not going to do the domain thing.","date":"2013-10-28T20:15:35.877Z","type":"message"}
+{"nick":"trevnorris","message":"the EE constructor will still need to know whether it's being instantiated in an active domain or not.","date":"2013-10-28T20:15:49.068Z","type":"message"}
+{"nick":"othiym23","message":"heh OK","date":"2013-10-28T20:15:51.649Z","type":"message"}
+{"nick":"trevnorris","message":"(which I hate btw)","date":"2013-10-28T20:15:53.404Z","type":"message"}
+{"nick":"hueniverse1","message":"so what's the state of 0.11?","date":"2013-10-28T20:16:11.597Z","type":"message"}
+{"nick":"tjfontaine","message":"it's being released tomorrow, provided we agree on the windows fix","date":"2013-10-28T20:16:26.970Z","type":"message"}
+{"nick":"othiym23","message":"it's gross code but it makes domains way more useful (at the cost of being magical / hard for people to understand when domains are or aren't doing the heavy lifting for them)","date":"2013-10-28T20:16:29.952Z","type":"message"}
+{"nick":"tjfontaine","message":"hueniverse1: or do you mean in more \"when is 0.12\"? :)","date":"2013-10-28T20:17:27.849Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: my hack was to hijack the emit callback, and check if the ee had a .domain. then if it did then just ee.domain.enter() before the emit then .exit() after. async listeners take care of the rest.","date":"2013-10-28T20:17:39.608Z","type":"message"}
+{"nick":"hueniverse1","message":"I don't need 0.12, just would like to try out a 0.11 that has no known issues to compare the memory leak issues","date":"2013-10-28T20:18:34.463Z","type":"message"}
+{"nick":"hueniverse1","message":"we're not likely to deploy 0.12 this year","date":"2013-10-28T20:19:01.749Z","type":"message"}
+{"nick":"hueniverse1","message":"but I can play with it in tiny scale live","date":"2013-10-28T20:19:12.888Z","type":"message"}
+{"nick":"trevnorris","message":"dude. v0.12 is going to be so much awesomer!","date":"2013-10-28T20:19:29.559Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: yeah, that's more or less what groundwater_ and I were talking about doing in our emitterListener API","date":"2013-10-28T20:19:52.360Z","type":"message"}
+{"nick":"hueniverse1","message":"dude. v0.10 was a fucking nightmare :-)","date":"2013-10-28T20:19:57.846Z","type":"message"}
+{"nick":"hueniverse1","message":"deploying 0.10 was a huge mistake for us, and in some way still is","date":"2013-10-28T20:20:18.965Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: I used lab to write the tests for the hapi-cls plugin I put together this weekend","date":"2013-10-28T20:20:37.106Z","type":"message"}
+{"nick":"othiym23","message":"getting it running was kinda confusing, but I like it!","date":"2013-10-28T20:20:47.111Z","type":"message"}
+{"nick":"hueniverse1","message":"which is also why I want to deploy 0.11 now on a couple boxes so when 0.12 comes out, I know what I'm dealing with","date":"2013-10-28T20:20:49.883Z","type":"message"}
+{"nick":"trevnorris","message":"heh, well v0.12 has some things I think you'd want. e.g. now more SlabAllocator.","date":"2013-10-28T20:20:52.514Z","type":"message"}
+{"nick":"trevnorris","message":"*no more","date":"2013-10-28T20:21:06.343Z","type":"message"}
+{"nick":"hueniverse1","message":"othiym23: it works pretty much the same as mocha","date":"2013-10-28T20:21:13.212Z","type":"message"}
+{"nick":"hueniverse1","message":"have you used that before?","date":"2013-10-28T20:21:20.316Z","type":"message"}
+{"nick":"hueniverse1","message":"trevnorris: no need for a sales pitch","date":"2013-10-28T20:21:44.600Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: I have about 20K+ lines of mocha code in the new relic module so uh yes ;)","date":"2013-10-28T20:21:49.688Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: and it's going to have my new buffer implementation, and it's going to have ... ;)","date":"2013-10-28T20:22:14.249Z","type":"message"}
+{"nick":"hueniverse1","message":"so what about lab was diff? we just use diff names, but in all the hapi tests we alias it to look the same","date":"2013-10-28T20:22:16.805Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: I was just confused by working with the test runner, I think because I had a different version of the runner installed globally than I did in the project","date":"2013-10-28T20:22:23.962Z","type":"message"}
+{"nick":"hueniverse1","message":"ah","date":"2013-10-28T20:22:33.808Z","type":"message"}
+{"nick":"othiym23","message":"once I drove it via npm test everything started working","date":"2013-10-28T20:22:36.291Z","type":"message"}
+{"nick":"hueniverse1","message":"it's really just a domain wrapper :-)","date":"2013-10-28T20:22:41.875Z","type":"message"}
+{"nick":"hueniverse1","message":"and it fails every time domains fail to catch an error","date":"2013-10-28T20:23:01.791Z","type":"message"}
+{"nick":"othiym23","message":"https://github.com/othiym23/hapi-cls/blob/master/package.json","date":"2013-10-28T20:23:11.016Z","type":"message"}
+{"nick":"othiym23","message":"that seems pretty simple to me ;)","date":"2013-10-28T20:23:22.302Z","type":"message"}
+{"nick":"hueniverse1","message":"lab was basically mocha with 90% of the featured removed, then moved to use domains instead of global uncaught","date":"2013-10-28T20:24:27.786Z","type":"message"}
+{"nick":"hueniverse1","message":"but then we added coverage and other nice little things","date":"2013-10-28T20:24:41.379Z","type":"message"}
+{"nick":"hueniverse1","message":"we either use npm test","date":"2013-10-28T20:25:05.703Z","type":"message"}
+{"nick":"hueniverse1","message":"or npm link lab, then just lab","date":"2013-10-28T20:25:12.684Z","type":"message"}
+{"nick":"hueniverse1","message":"I don't have it npm install -h","date":"2013-10-28T20:25:25.002Z","type":"message"}
+{"nick":"hueniverse1","message":"-g","date":"2013-10-28T20:25:26.293Z","type":"message"}
+{"nick":"othiym23","message":"can you just run node test.js with the files like you can with tap?","date":"2013-10-28T20:25:30.676Z","type":"message"}
+{"nick":"hueniverse1","message":"I hate -g","date":"2013-10-28T20:25:31.855Z","type":"message"}
+{"nick":"hueniverse1","message":"hmm, don't think so","date":"2013-10-28T20:25:57.374Z","type":"message"}
+{"nick":"othiym23","message":"cool, then it wasn't brain damage on my part","date":"2013-10-28T20:26:06.823Z","type":"message"}
+{"nick":"hueniverse1","message":"the require('lab') doesn't include the runner","date":"2013-10-28T20:26:16.639Z","type":"message"}
+{"nick":"othiym23","message":"fwiw, I find that super useful so I can do stuff like node debug test.js to walk through a failing test case","date":"2013-10-28T20:26:24.214Z","type":"message"}
+{"nick":"hueniverse1","message":"just the func defs","date":"2013-10-28T20:26:25.735Z","type":"message"}
+{"nick":"othiym23","message":"got it","date":"2013-10-28T20:26:29.643Z","type":"message"}
+{"nick":"hueniverse1","message":"open an issue on lab","date":"2013-10-28T20:26:38.789Z","type":"message"}
+{"nick":"hueniverse1","message":"we can add that","date":"2013-10-28T20:26:41.464Z","type":"message"}
+{"nick":"othiym23","message":"I do like how it's more explicit about that stuff than mocha","date":"2013-10-28T20:26:43.906Z","type":"message"}
+{"nick":"othiym23","message":"cool, I will","date":"2013-10-28T20:26:46.886Z","type":"message"}
+{"nick":"hueniverse1","message":"I can do something like node test.js -r (or some flag to tell lab to load the running)","date":"2013-10-28T20:27:40.568Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-10-28T20:27:44.835Z","type":"quit"}
+{"nick":"kazupon","date":"2013-10-28T20:28:09.158Z","type":"join"}
+{"nick":"loladiro","date":"2013-10-28T20:28:19.784Z","type":"join"}
+{"nick":"indexzero","date":"2013-10-28T20:29:24.479Z","type":"join"}
+{"nick":"hueniverse1","message":"trevnorris: if the leak is still going to show up in 0.11, I'm naming it Trevor!","date":"2013-10-28T20:33:30.712Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: heh. well, there are still a handful of allocators in core besides the SlabAllocator (for crypto/tls) but none of those are exposed to the user.","date":"2013-10-28T20:34:32.363Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: if you are getting any leaks i'll be interested to see what' going on. should be easier to track down w/ the buffer simplification.","date":"2013-10-28T20:34:58.933Z","type":"message"}
+{"nick":"hueniverse1","message":"testing the gist now with 0.11.7","date":"2013-10-28T20:35:20.485Z","type":"message"}
+{"nick":"hueniverse1","message":"curious to see if it shows up there too","date":"2013-10-28T20:35:28.534Z","type":"message"}
+{"nick":"hueniverse1","message":"should know in an hour or so (that's how long it takes the trend to appear)","date":"2013-10-28T20:35:40.832Z","type":"message"}
+{"nick":"trevnorris","message":"been writing docs for AsyncListeners for almost 2 hours now. that's about all my brain can take...","date":"2013-10-28T20:36:04.999Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: that gist public?","date":"2013-10-28T20:39:08.105Z","type":"message"}
+{"nick":"hueniverse1","message":"https://gist.github.com/hueniverse/a655af7be0a13145e132","date":"2013-10-28T20:39:43.278Z","type":"message"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-10-28T20:41:39.633Z","type":"quit"}
+{"nick":"hueniverse1","message":"trevnorris: the new chart is much prettier /\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\/\\","date":"2013-10-28T20:47:36.628Z","type":"message"}
+{"nick":"hueniverse1","message":"trevnorris: but from 10m still looks like an upwards trend, but need to give it more hours for real insight","date":"2013-10-28T20:48:02.721Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: cool. let me know how it goes :)","date":"2013-10-28T20:48:30.821Z","type":"message"}
+{"nick":"julianduque","date":"2013-10-28T20:48:32.931Z","type":"join"}
+{"nick":"hueniverse1","message":"is 0.11.7 much diff from master?","date":"2013-10-28T20:48:48.930Z","type":"message"}
+{"nick":"tjfontaine","message":"significant, a v8 upgrade at the least","date":"2013-10-28T20:49:08.153Z","type":"message"}
+{"nick":"sblom","message":"hueniverse1: is that an ASCII sparkline? :p","date":"2013-10-28T20:54:05.805Z","type":"message"}
+{"nick":"st_luke","reason":"Read error: Connection reset by peer","date":"2013-10-28T20:58:46.487Z","type":"quit"}
+{"nick":"st_luke","date":"2013-10-28T20:59:08.006Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 246 seconds","date":"2013-10-28T21:01:22.949Z","type":"quit"}
+{"nick":"hueniverse1","message":"sblom: that's my proc memory under 0.11","date":"2013-10-28T21:02:09.808Z","type":"message"}
+{"nick":"dshaw_","date":"2013-10-28T21:02:12.685Z","type":"join"}
+{"nick":"kuplatup1u","new_nick":"kuplatupsu","date":"2013-10-28T21:06:57.805Z","type":"nick"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037v0.10\u000f * \u00024b5e6a3\u0002 : npm@1.3.13 - http://git.io/BpNZyg","date":"2013-10-28T21:10:57.715Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: ^","date":"2013-10-28T21:11:14.882Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: landing on master shortly","date":"2013-10-28T21:11:18.322Z","type":"message"}
+{"nick":"tjfontaine","message":"as a merge?","date":"2013-10-28T21:11:24.835Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033isaacs\u000f \u00037master\u000f * \u00020396b20\u0002 : Merge remote-tracking branch 'ry/v0.10' (+4 more commits) - http://git.io/0TdoCA","date":"2013-10-28T21:12:35.754Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: yes :)","date":"2013-10-28T21:12:42.241Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: here's a revision that'll kick the crap out of your server a lot harder. https://gist.github.com/trevnorris/7204785","date":"2013-10-28T21:12:45.978Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: so, also got the 3 doc patches","date":"2013-10-28T21:12:58.221Z","type":"message"}
+{"nick":"isaacs","message":"nothing major, otherwise","date":"2013-10-28T21:13:01.701Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2013-10-28T21:13:39.518Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: lul, no kidding hahah","date":"2013-10-28T21:14:21.248Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-10-28T21:14:25.909Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: :)","date":"2013-10-28T21:14:43.147Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: it's a strange pass time to enjoy figuring out how to get node to crap its pants. :P","date":"2013-10-28T21:15:37.078Z","type":"message"}
+{"nick":"c4milo_","date":"2013-10-28T21:15:59.881Z","type":"join"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T21:16:22.625Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: 'next libuv release' == libuv master?","date":"2013-10-28T21:16:30.016Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: yes, libuv-master","date":"2013-10-28T21:16:37.494Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 272 seconds","date":"2013-10-28T21:16:45.301Z","type":"quit"}
+{"nick":"bnoordhuis","message":"okay","date":"2013-10-28T21:16:52.806Z","type":"message"}
+{"nick":"tjfontaine","message":"there's a non-trivial amount of changelog action, and I'm not sure if you want to trim and what the policy etc is for it","date":"2013-10-28T21:16:57.245Z","type":"message"}
+{"nick":"bnoordhuis","message":"the policy is that i like to see my own name appearing often","date":"2013-10-28T21:17:39.737Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T21:17:45.966Z","type":"message"}
+{"nick":"bnoordhuis","message":"besides that anything goes","date":"2013-10-28T21:17:48.271Z","type":"message"}
+{"nick":"tjfontaine","message":"well you're there","date":"2013-10-28T21:17:49.949Z","type":"message"}
+{"nick":"tjfontaine","message":"there's also a bug in the release script :)","date":"2013-10-28T21:17:58.170Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh?","date":"2013-10-28T21:18:03.316Z","type":"message"}
+{"nick":"tjfontaine","message":"-      if (err.code == 'ENOENT' &&","date":"2013-10-28T21:18:20.970Z","type":"message"}
+{"nick":"tjfontaine","message":"+      if (err && err.code == 'ENOENT' &&","date":"2013-10-28T21:18:21.407Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, that's for the configure.ac, isn't it?","date":"2013-10-28T21:19:07.696Z","type":"message"}
+{"nick":"tjfontaine","message":"yup","date":"2013-10-28T21:19:16.555Z","type":"message"}
+{"nick":"bnoordhuis","message":"i was going to blame bert for that but it might actually have been me who wrote that","date":"2013-10-28T21:19:37.772Z","type":"message"}
+{"nick":"tjfontaine","message":"heh I'm not sure who, but anyway that was breaking when I was starting the release and then decided to abort","date":"2013-10-28T21:20:19.535Z","type":"message"}
+{"nick":"pachet","date":"2013-10-28T21:20:29.638Z","type":"join"}
+{"nick":"pachet","reason":"Changing host","date":"2013-10-28T21:20:29.848Z","type":"quit"}
+{"nick":"pachet","date":"2013-10-28T21:20:29.848Z","type":"join"}
+{"nick":"bnoordhuis","message":"ah no, it was bert. order has been restored to the force","date":"2013-10-28T21:20:30.588Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: fixed, cheers","date":"2013-10-28T21:23:40.194Z","type":"message"}
+{"nick":"tjfontaine","message":"np","date":"2013-10-28T21:24:19.161Z","type":"message"}
+{"nick":"tjfontaine","message":"looking through 6432","date":"2013-10-28T21:24:28.152Z","type":"message"}
+{"nick":"bnoordhuis","message":"it's full of awesome, isn't it?","date":"2013-10-28T21:24:38.374Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T21:24:45.501Z","type":"message"}
+{"nick":"bnoordhuis","message":"the hacks to get those dtrace object files in the right place, however...","date":"2013-10-28T21:24:54.618Z","type":"message"}
+{"nick":"trevnorris","message":"ok, if you guys don't review 6011 soon it's going to be bigger than a v8 upgrade :P","date":"2013-10-28T21:25:00.873Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: i admit i always zone out halfway through","date":"2013-10-28T21:25:25.282Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: indeed, I want to do it entirely different SomeTime(tm) as well, such that we're just running over every object file anyway so it's less of a hassle","date":"2013-10-28T21:25:27.701Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: haha. well, it's impressive you make it half way.","date":"2013-10-28T21:25:48.317Z","type":"message"}
+{"nick":"bnoordhuis","message":"linux-core.c:633: erreur: déréférencement d'un pointeur de type incomplet <- those french","date":"2013-10-28T21:26:55.357Z","type":"message"}
+{"nick":"trevnorris","message":"wtf. how'd you get that?","date":"2013-10-28T21:27:18.297Z","type":"message"}
+{"nick":"tjfontaine","message":"you better stop derefing that incomplete type :)","date":"2013-10-28T21:27:46.371Z","type":"message"}
+{"nick":"bnoordhuis","message":"i like how they translated 'pointer' to 'pointeur'","date":"2013-10-28T21:28:09.273Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T21:28:20.614Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: we're getting our shit together with respect to CI and perf testing the New Relic stuff, and we'll probably have an environment where we can load test 6011 within the next couple weeks","date":"2013-10-28T21:29:43.154Z","type":"message"}
+{"nick":"tjfontaine","message":"iow thanks for the gin jacob","date":"2013-10-28T21:30:00.570Z","type":"message"}
+{"nick":"othiym23","message":"it won't be as elaborate as hueniverse1's setup","date":"2013-10-28T21:30:14.166Z","type":"message"}
+{"nick":"othiym23","message":"I can't believe he actually plied you with gin","date":"2013-10-28T21:30:19.242Z","type":"message"}
+{"nick":"othiym23","message":"also straight gin is nasty","date":"2013-10-28T21:30:23.557Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: coolio. though I might cry if it hasn't been merged by then.","date":"2013-10-28T21:30:24.948Z","type":"message"}
+{"nick":"tjfontaine","message":"well, I suggested it, I never thought he would follow through :)","date":"2013-10-28T21:30:34.122Z","type":"message"}
+{"nick":"othiym23","message":"smh at bnoordhuis making trevnorris cry","date":"2013-10-28T21:30:41.261Z","type":"message"}
+{"nick":"trevnorris","message":"oh, it's not just bnoordhuis. piscisaureus_ has some stuff for me as well.","date":"2013-10-28T21:31:08.600Z","type":"message"}
+{"nick":"trevnorris","message":"IF HE'D RESPOND TO ME, I MIGHT BE ABLE TO GET IT DONE","date":"2013-10-28T21:31:33.057Z","type":"message"}
+{"nick":"LOUDBOT","message":"YOU GUYS NEED TO COORDINATE, K?","date":"2013-10-28T21:31:33.807Z","type":"message"}
+{"nick":"othiym23","message":"on point as usual LOUDBOT ","date":"2013-10-28T21:31:48.241Z","type":"message"}
+{"nick":"hueniverse1","message":"othiym23: what setup?","date":"2013-10-28T21:32:04.939Z","type":"message"}
+{"nick":"trevnorris","message":"makes me wonder if LOUDBOT is actually sentient.","date":"2013-10-28T21:32:13.282Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1567 \u00037UNSTABLE\u000f smartos-x64 (7/603) smartos-ia32 (8/603) linux-x64 (4/603) linux-ia32 (3/603) http://jenkins.nodejs.org/job/nodejs-v0.10/1567/","date":"2013-10-28T21:32:18.190Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: whatever it is you're running to figure out these leaks","date":"2013-10-28T21:32:27.152Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2013-10-28T21:32:43.630Z","type":"message"}
+{"nick":"hueniverse1","message":"node client.js","date":"2013-10-28T21:32:50.267Z","type":"message"}
+{"nick":"hueniverse1","message":"is all I do","date":"2013-10-28T21:32:53.095Z","type":"message"}
+{"nick":"tjfontaine","message":"who said anything about figuring anything out :)","date":"2013-10-28T21:32:54.319Z","type":"message"}
+{"nick":"hueniverse1","message":"it spits our rss every 10s","date":"2013-10-28T21:32:59.952Z","type":"message"}
+{"nick":"hueniverse1","message":"and I load it into excel","date":"2013-10-28T21:33:05.183Z","type":"message"}
+{"nick":"hueniverse1","message":"tada!","date":"2013-10-28T21:33:06.985Z","type":"message"}
+{"nick":"tjfontaine","message":"I use gnuplot, but same diff :)","date":"2013-10-28T21:33:19.225Z","type":"message"}
+{"nick":"hueniverse1","message":"we're now down to 8mb leak a day per server","date":"2013-10-28T21:33:45.785Z","type":"message"}
+{"nick":"hueniverse1","message":"down from 200mb a day","date":"2013-10-28T21:33:50.316Z","type":"message"}
+{"nick":"othiym23","message":"OK, maybe we can hit that level of sophistication","date":"2013-10-28T21:33:53.678Z","type":"message"}
+{"nick":"hueniverse1","message":"because we are doing a lot less upstream traffic","date":"2013-10-28T21:34:00.104Z","type":"message"}
+{"nick":"hueniverse1","message":"by moving things around","date":"2013-10-28T21:34:04.510Z","type":"message"}
+{"nick":"hueniverse1","message":"but the basic leak is still very much there","date":"2013-10-28T21:34:10.760Z","type":"message"}
+{"nick":"hueniverse1","message":"and we now think we know where it is coming from","date":"2013-10-28T21:34:20.672Z","type":"message"}
+{"nick":"hueniverse1","message":"which is what my gist is about","date":"2013-10-28T21:34:25.606Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #647 \u00037UNSTABLE\u000f osx-x64 (2/654) smartos-ia32 (10/654) smartos-x64 (10/654) linux-ia32 (1/654) http://jenkins.nodejs.org/job/nodejs-master/647/","date":"2013-10-28T21:34:37.579Z","type":"message"}
+{"nick":"hueniverse1","message":"othiym23: you coming to our meeting 11/6 at joyent? I got your cookbook (also who do you want to signed to)","date":"2013-10-28T21:37:37.877Z","type":"message"}
+{"nick":"othiym23","message":"SHERWOOD MCGRAW, of course ;)","date":"2013-10-28T21:37:58.165Z","type":"message"}
+{"nick":"othiym23","message":"and yeah, I'll be there, no need to mail it","date":"2013-10-28T21:38:04.957Z","type":"message"}
+{"nick":"othiym23","message":"got a ticket and everything","date":"2013-10-28T21:38:08.843Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: is there a reason why https://gist.github.com/trevnorris/7205304 isn't enough to fix https://github.com/joyent/node/issues/995 ?","date":"2013-10-28T21:38:11.872Z","type":"message"}
+{"nick":"trevnorris","message":"seems like a simple request.","date":"2013-10-28T21:38:17.289Z","type":"message"}
+{"nick":"abraxas","date":"2013-10-28T21:40:44.381Z","type":"join"}
+{"nick":"hueniverse1","message":"SHERWOOD MCGRAW?","date":"2013-10-28T21:41:07.331Z","type":"message"}
+{"nick":"LOUDBOT","message":"I'M HERE TO HIT ON LADIES WITH MY MOTHERFUCKING RHYMES","date":"2013-10-28T21:41:07.988Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: that was my character name for RTConf, either that or Forrest if Sherwood McGraw is too doofy for you to put up with","date":"2013-10-28T21:41:43.706Z","type":"message"}
+{"nick":"indexzero","date":"2013-10-28T21:41:50.091Z","type":"join"}
+{"nick":"hueniverse1","message":"othiym23: whatever you want. I'm putting it on a sticky note when the pile goes to the chef tomorrow","date":"2013-10-28T21:43:22.842Z","type":"message"}
+{"nick":"groundwater_","message":"tjfontaine: after looking at your jenkins setup i'm not sure that bottle was big enough","date":"2013-10-28T21:44:13.420Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: I think it's in keeping with the spirit of the event to have it signed to Sherwood McGraw","date":"2013-10-28T21:44:36.101Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: add a test, and that lgtm.  i think the question was how to handle encodings, since that'snot in the API, but i'm ok just shrugging on that one.","date":"2013-10-28T21:44:40.540Z","type":"message"}
+{"nick":"othiym23","message":"I'll store my nametag with it so I don't forget what the deal is there","date":"2013-10-28T21:44:45.418Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: and assume that strings are utf8","date":"2013-10-28T21:44:45.683Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: coolio, thanks.","date":"2013-10-28T21:45:04.314Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: does this agree with you?  you'd called dibs on that issue, presumably because you cared about it last year?","date":"2013-10-28T21:45:09.710Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 272 seconds","date":"2013-10-28T21:45:31.729Z","type":"quit"}
+{"nick":"hueniverse1","message":"othiym23: did you take your plate home? they all disappeared :-)","date":"2013-10-28T21:46:24.392Z","type":"message"}
+{"nick":"othiym23","message":"hueniverse1: I did! Were we not supposed to keep them?","date":"2013-10-28T21:46:46.775Z","type":"message"}
+{"nick":"hueniverse1","message":"othiym23: cool. I didn't want most of the shit back. People took everything. Like $3K work of shit :-)","date":"2013-10-28T21:47:18.321Z","type":"message"}
+{"nick":"othiym23","message":"we handed the flatware and those cool tweezers back to the folks who were helping you as servers","date":"2013-10-28T21:47:57.547Z","type":"message"}
+{"nick":"othiym23","message":"those tweezers were rad, I may have to get some of my own","date":"2013-10-28T21:48:09.369Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris, isaacs: right, so that seems like the obvious fix. you can't specify an encoding that way though","date":"2013-10-28T21:48:53.166Z","type":"message"}
+{"nick":"hueniverse1","message":"othiym23: there was a huge pile of stuff in the back room where we were setting up (15 sets of mortar and pestle...) 120 planters, etc.","date":"2013-10-28T21:49:01.149Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: well, i'm ok saying if you really care about performance you'll turn it into a Buffer beforehand. adding an encoding option at the end that can bubble down the parameters chain would really suck.","date":"2013-10-28T21:49:46.984Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: yeah, i don't really disagree. also, something is better than nothing","date":"2013-10-28T21:50:11.532Z","type":"message"}
+{"nick":"bnoordhuis","message":"unless it's herpes","date":"2013-10-28T21:50:17.686Z","type":"message"}
+{"nick":"trevnorris","message":"hehe","date":"2013-10-28T21:50:23.116Z","type":"message"}
+{"nick":"wavded","reason":"Quit: Hasta la pasta","date":"2013-10-28T21:51:24.848Z","type":"quit"}
+{"nick":"loladiro","reason":"Quit: loladiro","date":"2013-10-28T21:52:57.567Z","type":"quit"}
+{"nick":"julian_duque","date":"2013-10-28T21:53:17.678Z","type":"join"}
+{"nick":"loladiro","date":"2013-10-28T21:53:17.887Z","type":"join"}
+{"nick":"julianduque","reason":"Ping timeout: 248 seconds","date":"2013-10-28T21:53:41.776Z","type":"quit"}
+{"nick":"indutny","message":"bnoordhuis: have a minute?","date":"2013-10-28T21:54:14.517Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: 60, 59, 58...","date":"2013-10-28T21:54:34.127Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ok, so https://github.com/indutny/libuv/blob/c36a1726ba986eb26c804ca44125bb0f94b9c1b8/src/unix/linux-core.c#L224","date":"2013-10-28T21:54:44.210Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: what do you think about passing ->pevents here","date":"2013-10-28T21:54:52.013Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: and doing if (pevents != 0) check before calling cb","date":"2013-10-28T21:55:00.972Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: should prevent it from emitting events after io_stop()","date":"2013-10-28T21:55:28.159Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you mean checking if (pe->events & w->pevents) != 0?","date":"2013-10-28T21:56:12.701Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2013-10-28T21:56:22.089Z","type":"message"}
+{"nick":"indutny","message":"isn't pevents the new events?","date":"2013-10-28T21:56:31.494Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-10-28T21:56:35.310Z","type":"message"}
+{"nick":"indutny","message":"which just wasn't yet applied","date":"2013-10-28T21:56:37.496Z","type":"message"}
+{"nick":"indutny","message":"why should we bother with ->events at all?","date":"2013-10-28T21:56:46.421Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, but it's the event mask the watcher is interested in","date":"2013-10-28T21:56:50.724Z","type":"message"}
+{"nick":"indutny","message":"aah","date":"2013-10-28T21:56:55.359Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-10-28T21:56:57.188Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-10-28T21:57:03.082Z","type":"message"}
+{"nick":"bnoordhuis","message":"w->events is there so i can check that w->pevents != w->events :)","date":"2013-10-28T21:57:07.702Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2013-10-28T21:57:14.009Z","type":"message"}
+{"nick":"indutny","message":"I thought w->events = w->pevents","date":"2013-10-28T21:57:18.264Z","type":"message"}
+{"nick":"indutny","message":"that's what you do in the watcher update loop anyway","date":"2013-10-28T21:57:25.851Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, so the logic is that if w->events != w->pevents, we need to do an update","date":"2013-10-28T21:57:46.286Z","type":"message"}
+{"nick":"kazupon","date":"2013-10-28T21:58:01.006Z","type":"join"}
+{"nick":"bnoordhuis","message":"because if w->events == w->pevents, we're already subscribed to all events the watcher is interested in","date":"2013-10-28T21:58:10.230Z","type":"message"}
+{"nick":"bnoordhuis","message":"basically, it's there to avoid to making superfluous system calls","date":"2013-10-28T21:58:47.919Z","type":"message"}
+{"nick":"julianduque","date":"2013-10-28T21:59:14.506Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: I see","date":"2013-10-28T21:59:18.076Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: why do I need to apply it as mask then?","date":"2013-10-28T21:59:26.374Z","type":"message"}
+{"nick":"julian_duque","reason":"Ping timeout: 260 seconds","date":"2013-10-28T21:59:27.904Z","type":"quit"}
+{"nick":"indutny","message":"it couldn't have more or less, anyway","date":"2013-10-28T21:59:34.431Z","type":"message"}
+{"nick":"indutny","message":"it could just contain old value","date":"2013-10-28T21:59:39.657Z","type":"message"}
+{"nick":"indutny","message":"and if pevents is non-zero - then we're interested in any result","date":"2013-10-28T21:59:51.268Z","type":"message"}
+{"nick":"indutny","message":"at least, it seems that its how it is in epoll","date":"2013-10-28T22:00:02.955Z","type":"message"}
+{"nick":"indutny","message":"because you don't distinguish read/write events in linux-core.c","date":"2013-10-28T22:00:16.975Z","type":"message"}
+{"nick":"indutny","message":"and just give people what they want","date":"2013-10-28T22:00:45.370Z","type":"message"}
+{"nick":"bnoordhuis","message":"not sure i follow","date":"2013-10-28T22:00:51.696Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: isn't that true?","date":"2013-10-28T22:00:52.262Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-10-28T22:00:55.143Z","type":"message"}
+{"nick":"indutny","message":"1. the only place where events is set is : \"w->events = w->pevents\"","date":"2013-10-28T22:01:11.126Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-10-28T22:01:17.125Z","type":"message"}
+{"nick":"indutny","message":"2. w->cb(loop, w, w->events) in epoll","date":"2013-10-28T22:01:28.359Z","type":"message"}
+{"nick":"indutny","message":"3. why not w->pevents then?","date":"2013-10-28T22:01:35.527Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2013-10-28T22:01:37.723Z","type":"message"}
+{"nick":"indutny","message":"why should we give users events they're not interested in","date":"2013-10-28T22:01:48.621Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2013-10-28T22:01:55.497Z","type":"message"}
+{"nick":"indutny","message":"I see now","date":"2013-10-28T22:01:58.686Z","type":"message"}
+{"nick":"indutny","message":"it could be that we're not subscribed to writes","date":"2013-10-28T22:02:07.341Z","type":"message"}
+{"nick":"indutny","message":"and going to stop reading and start writing","date":"2013-10-28T22:02:15.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"look more closely, fedor :)","date":"2013-10-28T22:02:18.337Z","type":"message"}
+{"nick":"indutny","message":"so events and pevents will be both non-zero","date":"2013-10-28T22:02:26.830Z","type":"message"}
+{"nick":"indutny","message":"but not events has actually happened","date":"2013-10-28T22:02:31.143Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-10-28T22:02:35.117Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'll give you a hint","date":"2013-10-28T22:02:42.747Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: should I call w->cb(loop, w, w->events & w->pevents) ?","date":"2013-10-28T22:02:46.839Z","type":"message"}
+{"nick":"bnoordhuis","message":"\"3. why not w->pevents then?","date":"2013-10-28T22:02:49.122Z","type":"message"}
+{"nick":"bnoordhuis","message":"er","date":"2013-10-28T22:02:52.243Z","type":"message"}
+{"nick":"bnoordhuis","message":"\"2. w->cb(loop, w, w->events) in epoll\" <- it's not w->events","date":"2013-10-28T22:03:02.240Z","type":"message"}
+{"nick":"indutny","message":"it is","date":"2013-10-28T22:03:15.168Z","type":"message"}
+{"nick":"bnoordhuis","message":"nuh uh","date":"2013-10-28T22:03:20.114Z","type":"message"}
+{"nick":"indutny","message":"aaaaaaaah","date":"2013-10-28T22:03:24.086Z","type":"message"}
+{"nick":"indutny","message":"its pe->events","date":"2013-10-28T22:03:26.993Z","type":"message"}
+{"nick":"indutny","message":"sorry","date":"2013-10-28T22:03:27.794Z","type":"message"}
+{"nick":"bnoordhuis","message":":)","date":"2013-10-28T22:03:30.904Z","type":"message"}
+{"nick":"indutny","message":"hahaha","date":"2013-10-28T22:03:34.767Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-10-28T22:03:39.556Z","type":"message"}
+{"nick":"indutny","message":"I should use a mask when invoking callback too then","date":"2013-10-28T22:03:47.040Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah","date":"2013-10-28T22:03:55.228Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis, isaacs: small fix. here's the diff for quick review: https://gist.github.com/trevnorris/7205304","date":"2013-10-28T22:04:46.266Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: going to update PR","date":"2013-10-28T22:04:59.692Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: you should clarify the bytelength stuff, it's still kinda confusing","date":"2013-10-28T22:06:13.336Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: that's why it's linked to Buffer.byteLength :)","date":"2013-10-28T22:06:29.543Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: https://gist.github.com/bnoordhuis/c4365943f4eadea5603e <- those are arguably the important changes since v0.11.13","date":"2013-10-28T22:06:41.731Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: yes, but ... the wording still is difficult :)","date":"2013-10-28T22:07:00.461Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: you want me to do a release with those?","date":"2013-10-28T22:07:19.353Z","type":"message"}
+{"nick":"tjfontaine","message":"(in the changelog)","date":"2013-10-28T22:07:27.659Z","type":"message"}
+{"nick":"c4milo_","reason":"Remote host closed the connection","date":"2013-10-28T22:07:34.976Z","type":"quit"}
+{"nick":"bnoordhuis","message":"tjfontaine: it's for the node changelog, right?","date":"2013-10-28T22:08:53.998Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: i picked the most important changes since the last libuv upgrade in node","date":"2013-10-28T22:09:33.966Z","type":"message"}
+{"nick":"tjfontaine","message":"bnoordhuis: no, the node changelog will just be \"uv upgraded\" but I wasn't sure what needed culled when doing a libuv-release","date":"2013-10-28T22:09:55.718Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: sorry, force pushed PR","date":"2013-10-28T22:10:04.173Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: i've incidentally rebase it over origin/master ","date":"2013-10-28T22:10:25.139Z","type":"message"}
+{"nick":"indutny","message":"s/rebase/rebased/","date":"2013-10-28T22:10:29.503Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: anyway, its much simpler now : https://github.com/joyent/libuv/pull/970/files","date":"2013-10-28T22:10:56.028Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: ah, okay... one sec","date":"2013-10-28T22:11:52.159Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: have we released 0.10 with fsevents fixes?","date":"2013-10-28T22:12:50.351Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: ^","date":"2013-10-28T22:12:54.007Z","type":"message"}
+{"nick":"indutny","message":"I meant call-stack improvements","date":"2013-10-28T22:12:58.659Z","type":"message"}
+{"nick":"indutny","message":"aaah","date":"2013-10-28T22:13:00.015Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: I think so yes","date":"2013-10-28T22:13:00.452Z","type":"message"}
+{"nick":"indutny","message":"Just realized that there was no such code here","date":"2013-10-28T22:13:08.822Z","type":"message"}
+{"nick":"indutny","message":"in 0.10","date":"2013-10-28T22:13:10.937Z","type":"message"}
+{"nick":"indutny","message":"nvm","date":"2013-10-28T22:13:13.647Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2013-10-28T22:13:17.597Z","type":"message"}
+{"nick":"bnoordhuis","message":"tjfontaine: okay, it's the right list. there have been no other v0.11 libuv releases","date":"2013-10-28T22:14:32.947Z","type":"message"}
+{"nick":"tjfontaine","message":"do I cull test's and revert's?","date":"2013-10-28T22:14:50.839Z","type":"message"}
+{"nick":"bnoordhuis","message":"yes","date":"2013-10-28T22:14:56.009Z","type":"message"}
+{"nick":"bnoordhuis","message":"at least, i do","date":"2013-10-28T22:14:58.977Z","type":"message"}
+{"nick":"tjfontaine","message":"any ordering necessary?","date":"2013-10-28T22:15:03.179Z","type":"message"}
+{"nick":"bnoordhuis","message":"i just keep them in chronological order","date":"2013-10-28T22:15:28.356Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2013-10-28T22:15:37.887Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: you know the new 24 hour rule, right? :)","date":"2013-10-28T22:16:11.123Z","type":"message"}
+{"nick":"Kakera_","reason":"Read error: Connection reset by peer","date":"2013-10-28T22:17:31.207Z","type":"quit"}
+{"nick":"Kakera_","date":"2013-10-28T22:18:21.531Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: oh man, that doesn't count :)","date":"2013-10-28T22:28:11.862Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: meh, whatever works for you","date":"2013-10-28T22:28:23.978Z","type":"message"}
+{"nick":"indutny","message":"dutch bureaucrat  :)","date":"2013-10-28T22:28:38.809Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"guys","date":"2013-10-28T22:29:05.885Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"please tell me","date":"2013-10-28T22:29:09.599Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"please","date":"2013-10-28T22:29:11.635Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"that \"pyuv\" is ported on android, so I do not have to use twisted in my project? (python)","date":"2013-10-28T22:29:29.799Z","type":"message"}
+{"nick":"isaacs","message":"i am halfway through https://github.com/joyent/node/pull/6011/files","date":"2013-10-28T22:29:35.132Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: but, oh no!  my neighbors downstairs are making bacon!","date":"2013-10-28T22:29:46.670Z","type":"message"}
+{"nick":"isaacs","message":"now i must bacon","date":"2013-10-28T22:29:52.112Z","type":"message"}
+{"nick":"othiym23","message":"haha","date":"2013-10-28T22:29:54.514Z","type":"message"}
+{"nick":"isaacs","message":"the smell is overpowerful","date":"2013-10-28T22:29:59.681Z","type":"message"}
+{"nick":"isaacs","action":"off to bacon","date":"2013-10-28T22:30:04.756Z","type":"action"}
+{"nick":"othiym23","message":"I've actually looked at the whole thing","date":"2013-10-28T22:30:06.913Z","type":"message"}
+{"nick":"isaacs","message":"i am at long last +1 on the API, and the premise","date":"2013-10-28T22:30:21.251Z","type":"message"}
+{"nick":"othiym23","message":"fortunately I am undstractable by bacon","date":"2013-10-28T22:30:24.605Z","type":"message"}
+{"nick":"isaacs","message":"from what i can gather, my downstairs neighbors subsist entirely on bacon, over-cooked hamburgers, and marijuana","date":"2013-10-28T22:31:09.429Z","type":"message"}
+{"nick":"isaacs","message":"this is mostly what i've inferred from the smells","date":"2013-10-28T22:31:21.909Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 248 seconds","date":"2013-10-28T22:31:33.706Z","type":"quit"}
+{"nick":"isaacs","message":"which come directly into my apartment","date":"2013-10-28T22:31:38.779Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: damn that bacon!!!!","date":"2013-10-28T22:31:47.900Z","type":"message"}
+{"nick":"isaacs","message":"i dont' mind the bacon or the pot, but they seriously burn the shit out of some burgers, and it just is sad.","date":"2013-10-28T22:31:52.229Z","type":"message"}
+{"nick":"isaacs","message":"it's an abuse of perfectly fine beef.","date":"2013-10-28T22:31:59.680Z","type":"message"}
+{"nick":"isaacs","message":"actually it's probably safeway trash, but whatever.","date":"2013-10-28T22:32:08.809Z","type":"message"}
+{"nick":"bnoordhuis","message":"SquirrelCZECH: don't know about pyuv but libuv should work on android","date":"2013-10-28T22:33:12.193Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"bnoordhuis: hmm","date":"2013-10-28T22:33:18.558Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"and if pyuv is just bindings for libuv","date":"2013-10-28T22:33:29.692Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"then it should work too, or should be easy to make it work","date":"2013-10-28T22:33:39.328Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, there's a pretty good chance it'll work","date":"2013-10-28T22:33:43.755Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: tip tap? :-)","date":"2013-10-28T22:33:46.341Z","type":"message"}
+{"nick":"saghul","message":"SquirrelCZECH sup?","date":"2013-10-28T22:34:10.745Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: did you tried your awesome and perfect library \"pyuv\" on android?","date":"2013-10-28T22:34:24.661Z","type":"message"}
+{"nick":"SquirrelCZECH","action":"just refers to \"QPython\"","date":"2013-10-28T22:34:37.926Z","type":"action"}
+{"nick":"saghul","message":"SquirrelCZECH thanks for the kind words ;-) no, I haven't","date":"2013-10-28T22:34:45.220Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: believe me, Twisted is \"twisted evil creature\"","date":"2013-10-28T22:35:06.912Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"so pyuv is really, really perfect thing","date":"2013-10-28T22:35:15.763Z","type":"message"}
+{"nick":"saghul","message":"but there is no reason why it wouldn't work, if you have a working python interpreter and the headers to build it","date":"2013-10-28T22:35:28.044Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"nah","date":"2013-10-28T22:35:37.505Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: never builded something for android though...","date":"2013-10-28T22:35:45.503Z","type":"message"}
+{"nick":"saghul","message":"saghul","date":"2013-10-28T22:36:08.450Z","type":"message"}
+{"nick":"saghul","message":"SquirrelCZECH me neither, sorry :-S","date":"2013-10-28T22:36:16.141Z","type":"message"}
+{"nick":"pachet","reason":"Quit: leaving","date":"2013-10-28T22:36:27.413Z","type":"quit"}
+{"nick":"SquirrelCZECH","message":"nah, this is going to be long night :-/","date":"2013-10-28T22:36:30.441Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: can I ask you a question?","date":"2013-10-28T22:38:33.983Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"how it works?","date":"2013-10-28T22:38:36.078Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"your pyuv library?","date":"2013-10-28T22:38:44.522Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"it's C code that fakes itself as python library","date":"2013-10-28T22:38:55.697Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"or python code that imports libuv?","date":"2013-10-28T22:39:06.220Z","type":"message"}
+{"nick":"saghul","message":"it's C code, which extends Python","date":"2013-10-28T22:39:18.722Z","type":"message"}
+{"nick":"saghul","message":"Python has an API for C extensions, I just use it","date":"2013-10-28T22:39:29.386Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: damn that bacon!!!!","date":"2013-10-28T22:40:05.474Z","type":"message"}
+{"nick":"trevnorris","message":"whoops. second time :P","date":"2013-10-28T22:40:11.407Z","type":"message"}
+{"nick":"isaacs","message":"yes.  i will damn that bacon to the eternal fires of my frying pan.","date":"2013-10-28T22:40:41.404Z","type":"message"}
+{"nick":"isaacs","action":"away bacon","date":"2013-10-28T22:40:43.764Z","type":"action"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2013-10-28T22:42:50.593Z","type":"quit"}
+{"nick":"julianduque","date":"2013-10-28T22:43:16.060Z","type":"join"}
+{"nick":"indutny","message":"bnoordhuis: https://github.com/joyent/libuv/issues/974","date":"2013-10-28T22:47:13.089Z","type":"message"}
+{"nick":"SquirrelCZECH","message":"saghul: so first thing is to compile it for adnroid, naaaah","date":"2013-10-28T22:47:13.883Z","type":"message"}
+{"nick":"bnoordhuis","message":"isaacs: LazyCompile: *endReadable _stream_readable.js:881:21 <- that function seems to call process.nextTick() way too much","date":"2013-10-28T22:47:16.247Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I think you never though, that it could happen :P","date":"2013-10-28T22:47:20.542Z","type":"message"}
+{"nick":"bnoordhuis","message":"hah :)","date":"2013-10-28T22:47:52.533Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I think he might have * domain in network","date":"2013-10-28T22:48:47.971Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: I already seen that in a few organization","date":"2013-10-28T22:48:55.857Z","type":"message"}
+{"nick":"indutny","message":"organizations*","date":"2013-10-28T22:49:01.896Z","type":"message"}
+{"nick":"bnoordhuis","message":"[GC] 1247   19.0% :-(","date":"2013-10-28T22:50:29.210Z","type":"message"}
+{"nick":"bnoordhuis","message":"(running some http benchmarks)","date":"2013-10-28T22:50:38.400Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's with a fake socket, so no i/o overhead/variance","date":"2013-10-28T22:50:57.813Z","type":"message"}
+{"nick":"AvianFlu_","date":"2013-10-28T22:51:17.156Z","type":"join"}
+{"nick":"AvianFlu_","reason":"Remote host closed the connection","date":"2013-10-28T22:51:19.892Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-10-28T22:52:01.791Z","type":"nick"}
+{"nick":"indutny","message":"bnoordhuis: no surprise","date":"2013-10-28T22:53:25.270Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: time to move to unmanaged memory","date":"2013-10-28T22:53:40.348Z","type":"message"}
+{"nick":"indutny","message":"mraleph1: we need your help to remove GC from v8","date":"2013-10-28T22:53:47.771Z","type":"message"}
+{"nick":"indutny","message":"ok","date":"2013-10-28T22:54:31.401Z","type":"message"}
+{"nick":"indutny","message":"ttyl, guys","date":"2013-10-28T22:54:33.150Z","type":"message"}
+{"nick":"indutny","message":"time to sleep","date":"2013-10-28T22:54:34.692Z","type":"message"}
+{"nick":"indutny","message":"cheers","date":"2013-10-28T22:54:37.377Z","type":"message"}
+{"nick":"AvianFlu","reason":"Ping timeout: 272 seconds","date":"2013-10-28T22:54:55.194Z","type":"quit"}
+{"nick":"bnoordhuis","message":"night, fedor :)","date":"2013-10-28T22:55:28.133Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: yeah, i think it'd be good to comb through a lot of that stuff and see where the nextTicks are strictly necessary, and where they're just extra","date":"2013-10-28T22:56:07.444Z","type":"message"}
+{"nick":"isaacs","message":"bnoordhuis: that's part of what prompted my zalgo post.  if you are deferring a lot (as we are in some cases) then it's not free.","date":"2013-10-28T22:56:24.483Z","type":"message"}
+{"nick":"M28","date":"2013-10-28T23:04:03.482Z","type":"join"}
+{"nick":"M28","date":"2013-10-28T23:04:10.346Z","type":"part"}
+{"nick":"hueniverse1","message":"trevnorris: 0.11.7 also has the same leak","date":"2013-10-28T23:06:56.973Z","type":"message"}
+{"nick":"hueniverse1","message":"(assuming it is a leak and not a bug in my code)","date":"2013-10-28T23:07:09.968Z","type":"message"}
+{"nick":"hueniverse1","message":"the trend in 0.11.7 is MUCH easier to see. memory is much more stable, and the leak seems smaller.","date":"2013-10-28T23:07:47.687Z","type":"message"}
+{"nick":"hueniverse1","message":"100k over 2.5 hours","date":"2013-10-28T23:08:20.872Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: what're the totals from process.memoryUsage()?","date":"2013-10-28T23:08:54.395Z","type":"message"}
+{"nick":"hueniverse1","message":"https://gist.github.com/hueniverse/689904238bf847b982e3","date":"2013-10-28T23:09:33.537Z","type":"message"}
+{"nick":"hueniverse1","message":"rss, total heap, used heap, queued requests","date":"2013-10-28T23:09:48.378Z","type":"message"}
+{"nick":"hueniverse1","message":"each line is 10s sample","date":"2013-10-28T23:10:13.345Z","type":"message"}
+{"nick":"tjfontaine","message":"don't worry I am working on this, it appears to be active C/C++ memory","date":"2013-10-28T23:10:30.269Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm going to be making some pretty graphs and logs to help identify this","date":"2013-10-28T23:10:52.194Z","type":"message"}
+{"nick":"hueniverse1","message":"I think the leak in 0.10 is twice as bad as in 0.11 but both have the same trend slope","date":"2013-10-28T23:11:08.428Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: can you try that gist I posted earlier? it removes more work from the gc and hits the service harder.","date":"2013-10-28T23:11:10.201Z","type":"message"}
+{"nick":"hueniverse1","message":"trevnorris: didn't see","date":"2013-10-28T23:11:26.561Z","type":"message"}
+{"nick":"hueniverse1","message":"link?","date":"2013-10-28T23:11:29.419Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: https://gist.github.com/trevnorris/7204785","date":"2013-10-28T23:11:39.899Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: the last argument is how many requests were completed per 10s interval","date":"2013-10-28T23:12:40.810Z","type":"message"}
+{"nick":"hueniverse1","message":"k","date":"2013-10-28T23:12:58.191Z","type":"message"}
+{"nick":"hueniverse1","message":"I'll take a look once I am back from feeding the farm","date":"2013-10-28T23:13:09.051Z","type":"message"}
+{"nick":"trevnorris","message":"coolio.","date":"2013-10-28T23:13:15.295Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse1: also, are you hitting a service or do you mean for the connection to err?","date":"2013-10-28T23:13:41.776Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: have an example: https://gist.github.com/trevnorris/7205304","date":"2013-10-28T23:14:17.776Z","type":"message"}
+{"nick":"trevnorris","message":"that enough?","date":"2013-10-28T23:14:21.891Z","type":"message"}
+{"nick":"tjfontaine","message":"heh the example may not be too necessary, what about something like: \"will be based on byteLength not on character position\"","date":"2013-10-28T23:15:18.631Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: coolio. so no example then?","date":"2013-10-28T23:15:32.565Z","type":"message"}
+{"nick":"tjfontaine","message":"\"with consideration fror multi-byte characters, offset and length with be with respect to byteLength and not character position\"","date":"2013-10-28T23:15:59.808Z","type":"message"}
+{"nick":"trevnorris","message":"heh, ok. that's what i'll put :)","date":"2013-10-28T23:16:20.669Z","type":"message"}
+{"nick":"tjfontaine","message":":)","date":"2013-10-28T23:16:25.300Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm not saying I'm all that clear, it's just trying to find the message that you're trying to deliver","date":"2013-10-28T23:19:20.181Z","type":"message"}
+{"nick":"trevnorris","message":"i deliver messages best via code, so english examples are appreciated :)","date":"2013-10-28T23:19:44.788Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2013-10-28T23:19:50.547Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-10-28T23:20:11.937Z","type":"join"}
+{"nick":"Kakera_","reason":"Ping timeout: 240 seconds","date":"2013-10-28T23:21:50.546Z","type":"quit"}
+{"nick":"indexzero","reason":"Ping timeout: 246 seconds","date":"2013-10-28T23:25:55.901Z","type":"quit"}
+{"nick":"julian_duque","date":"2013-10-28T23:25:57.124Z","type":"join"}
+{"nick":"julianduque","reason":"Disconnected by services","date":"2013-10-28T23:26:06.193Z","type":"quit"}
+{"nick":"julian_duque","new_nick":"julianduque","date":"2013-10-28T23:26:11.207Z","type":"nick"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Trevor Norris\u000f \u00037master\u000f * \u00028130744\u0002 : dgram: send() can accept strings - http://git.io/oaHFJw","date":"2013-10-28T23:27:15.791Z","type":"message"}
+{"nick":"kazupon","date":"2013-10-28T23:28:04.763Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-10-28T23:29:48.522Z","type":"quit"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-10-28T23:29:55.978Z","type":"quit"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-10-28T23:39:10.826Z","type":"quit"}
+{"nick":"trevnorris","message":"isaacs: ah, just saw your comment \"i am at long last +1 on the API, and the premise\". cool, thanks :)","date":"2013-10-28T23:40:56.802Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: found a bug tho (just commented)","date":"2013-10-28T23:41:27.754Z","type":"message"}
+{"nick":"abraxas","date":"2013-10-28T23:41:40.308Z","type":"join"}
+{"nick":"isaacs","message":"trevnorris: doing a nextTick in clearImmediate is a relevant contract change.","date":"2013-10-28T23:42:22.033Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: yeah. my thought was that 1 you always say to not depend on the order of async calls 2 it still gets cleared before the immediate can run again and 3 timers are such a PITA :P","date":"2013-10-28T23:44:16.316Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: iow, by spamming setTimeout with flips back and forth, yes, you can in fact cause the nextTick in clearInterval to be run AFTER the next run of the interval,if it's scheduled for this tick","date":"2013-10-28T23:44:19.742Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #648 \u00037UNSTABLE\u000f osx-x64 (1/654) smartos-ia32 (7/654) smartos-x64 (9/654) linux-ia32 (1/654) http://jenkins.nodejs.org/job/nodejs-master/648/","date":"2013-10-28T23:44:30.177Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: 2 is not guaranteed.","date":"2013-10-28T23:44:35.883Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: if the nextTick is there","date":"2013-10-28T23:44:45.172Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: that's what the contract changes","date":"2013-10-28T23:45:06.974Z","type":"message"}
+{"nick":"trevnorris","message":"isaacs: first, thanks for the doc note.","date":"2013-10-28T23:45:51.186Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: in other words, in https://gist.github.com/isaacs/7206752 it should be impossible to get it to throw on line 30","date":"2013-10-28T23:46:01.132Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 265 seconds","date":"2013-10-28T23:46:20.810Z","type":"quit"}
+{"nick":"isaacs","message":"trevnorris: but becuse timers and intervals use that stupid shared handle thing, that's not the case.","date":"2013-10-28T23:46:58.811Z","type":"message"}
+{"nick":"isaacs","message":"re: docs, no problem, i'm even happy to write it, once done reviewing.","date":"2013-10-28T23:47:25.902Z","type":"message"}
+{"nick":"isaacs","message":"i wnt to get this thing landed tonight.","date":"2013-10-28T23:47:30.201Z","type":"message"}
+{"nick":"isaacs","message":"no one's strongly opposed, it's just big and gnarly.","date":"2013-10-28T23:47:38.821Z","type":"message"}
+{"nick":"isaacs","message":"maybe tomorrow if tjfontaine tells me to hold off :)","date":"2013-10-28T23:47:44.861Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: oh, simpler example: i=setInterval(fn);clearInterval(i);i=setInterval(fn)","date":"2013-10-28T23:50:54.910Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: so, the clear happens after the second set, but doesn't matter, actually, because i guess that's a different interval?","date":"2013-10-28T23:51:16.239Z","type":"message"}
+{"nick":"isaacs","message":"maybe my test is overly contrived.","date":"2013-10-28T23:51:20.968Z","type":"message"}
+{"nick":"isaacs","message":"still, why must there be a nextTick in clearInterval?  smells funny, at least.","date":"2013-10-28T23:51:32.229Z","type":"message"}
+{"nick":"isaacs","message":"trevnorris: oh, yeah, it is a problem.  even with a single timer","date":"2013-10-28T23:54:36.557Z","type":"message"}
+{"nick":"TooTallNate","reason":"Remote host closed the connection","date":"2013-10-28T23:56:33.415Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-10-28T23:57:18.814Z","type":"join"}
+{"nick":"hueniverse1","message":"trevnorris: just run a server that accepts traffic on the port and returns a response.","date":"2013-10-28T23:59:20.479Z","type":"message"}
+{"nick":"sblom","reason":"Ping timeout: 272 seconds","date":"2013-10-28T23:59:25.977Z","type":"quit"}
