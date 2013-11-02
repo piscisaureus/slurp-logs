@@ -1,0 +1,194 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-11-02T00:00:00.892Z","type":"quit"}
+{"nick":"ircretary","date":"2013-11-02T00:00:08.942Z","type":"join"}
+{"nick":"trevnorris","message":"groundwater_: actually, just the use of async listeners in general is the biggest hit. thinking about it, I understand why. for every MakeCallback call I need to make two more calls to JS to load/unload the current queue. so a noop done callback has practially no performance difference.","date":"2013-11-02T00:02:28.882Z","type":"message"}
+{"nick":"trevnorris","message":"so... now to see how I can optimize the other... hm.","date":"2013-11-02T00:02:58.473Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: so, I kept counters on before and done, running benchmark/http_simple.js for 10 sec. done: 145,569; before: 1,309,972","date":"2013-11-02T00:05:49.907Z","type":"message"}
+{"nick":"trevnorris","message":"so that averages to 14k and 131k calls/sec respectively","date":"2013-11-02T00:06:26.337Z","type":"message"}
+{"nick":"groundwater_","message":"what kind of overhead does that represent","date":"2013-11-02T00:06:44.655Z","type":"message"}
+{"nick":"groundwater_","message":"like what is the baseline w/o any async-listeners","date":"2013-11-02T00:07:40.610Z","type":"message"}
+{"nick":"trevnorris","message":"well, just keeping simple counter? almost nothing. the first big cost is the fact that I have to make 2 extra calls for every 1 MakeCallback call + 2 extra calls for every class instantiation.","date":"2013-11-02T00:07:55.118Z","type":"message"}
+{"nick":"trevnorris","message":"but, on the http benchmark, my req/sec went from 15500 req/sec t o 145500 req/sec","date":"2013-11-02T00:08:25.963Z","type":"message"}
+{"nick":"trevnorris","message":"sorry. drop a zero off that last one","date":"2013-11-02T00:08:39.190Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: so around a 7-10% performance hit.","date":"2013-11-02T00:09:36.401Z","type":"message"}
+{"nick":"groundwater_","message":"as long as it's opt-in i think that's reasonable ","date":"2013-11-02T00:10:11.619Z","type":"message"}
+{"nick":"groundwater_","message":"considering what it gets you","date":"2013-11-02T00:10:18.663Z","type":"message"}
+{"nick":"groundwater_","message":"reasonable for now at least!","date":"2013-11-02T00:10:33.067Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. and if you don't opt in, then the cost is pretty much zero.","date":"2013-11-02T00:10:47.774Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater_: now, if you just want to keep track of the function that called you. so not a full stack trace, but at least you know the entry/exit points to the async call.","date":"2013-11-02T00:13:17.658Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: I like the idea, and it seems like a clean implementation","date":"2013-11-02T00:13:38.378Z","type":"message"}
+{"nick":"othiym23","message":"I'm sorta wondering how much hackery it would take to get it into the polyfill, though","date":"2013-11-02T00:13:55.542Z","type":"message"}
+{"nick":"othiym23","message":"I have some strategies to play with, but some of them are pretty gross","date":"2013-11-02T00:14:07.328Z","type":"message"}
+{"nick":"groundwater_","message":"back later, walking dog that my landlord neglects :(","date":"2013-11-02T00:15:04.618Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: is \"return async_flags() & DONE_CALLBACK\" automatically cast to bool by C++?","date":"2013-11-02T00:15:59.817Z","type":"message"}
+{"nick":"othiym23","message":"trevnorris: once upon a time long long ago I was taught \"async_flages() & DONE_CALLBACK == DONE_CALLBACK\" was the right thing to do","date":"2013-11-02T00:16:29.142Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: well, ben didn't complain about it. and he's usually pretty stickler about his c++.","date":"2013-11-02T00:17:21.683Z","type":"message"}
+{"nick":"othiym23","message":"yeah, just asking because I don't know","date":"2013-11-02T00:18:04.974Z","type":"message"}
+{"nick":"trevnorris","message":"you'll want to ask him. i'm definitely not the right person to ask about c++ best practices.","date":"2013-11-02T00:18:26.650Z","type":"message"}
+{"nick":"othiym23","message":"(o_o)-b","date":"2013-11-02T00:18:37.288Z","type":"message"}
+{"nick":"othiym23","message":"looks good to me other than that","date":"2013-11-02T00:18:46.789Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: now, there's one down side to this approach. you have no access to the context in done, even if you store it in the storage value.","date":"2013-11-02T00:18:54.758Z","type":"message"}
+{"nick":"trevnorris","message":"because it's already been disposed by the time it reaches AsyncWrap::~AsyncWrap","date":"2013-11-02T00:19:09.548Z","type":"message"}
+{"nick":"othiym23","message":"right","date":"2013-11-02T00:19:12.409Z","type":"message"}
+{"nick":"othiym23","message":"so far, my uses of the API haven't needed the context","date":"2013-11-02T00:19:30.671Z","type":"message"}
+{"nick":"othiym23","message":"so I think piscisaureus_ is the person who you're going to want to run that past","date":"2013-11-02T00:20:00.179Z","type":"message"}
+{"nick":"trevnorris","message":"though I have been experimenting w/ a few things. like, on error it'll attach the class as a v8::External to the context, and the storage value can be a linked list to the chain of objects created.","date":"2013-11-02T00:20:12.428Z","type":"message"}
+{"nick":"othiym23","message":"that sounds like a resource leak waiting to happen, tbh","date":"2013-11-02T00:20:32.772Z","type":"message"}
+{"nick":"trevnorris","message":"othiym23: so you can not only inspect the js object involved, but a c++ module could inspect all the classes.","date":"2013-11-02T00:20:37.816Z","type":"message"}
+{"nick":"trevnorris","message":"the linked list?","date":"2013-11-02T00:20:51.202Z","type":"message"}
+{"nick":"othiym23","message":"yeah","date":"2013-11-02T00:20:57.519Z","type":"message"}
+{"nick":"othiym23","message":"maybe another way to put it is it sounds like a lot of additional complexity for only marginal increased utility","date":"2013-11-02T00:21:22.315Z","type":"message"}
+{"nick":"trevnorris","message":"yeah, it can be. for me it's more useful for controlled failures.","date":"2013-11-02T00:21:23.078Z","type":"message"}
+{"nick":"othiym23","message":"but if Bert really needs the context for what he's doing...","date":"2013-11-02T00:21:45.651Z","type":"message"}
+{"nick":"othiym23","message":"I do like the idea of this being an extension point on the C++ side as well, though","date":"2013-11-02T00:22:12.559Z","type":"message"}
+{"nick":"trevnorris","message":"been working on that. I have two implementation ideas. first an AsyncWrap API that allows you to pass in callbacks of a specific type. another that'll allow you to attach c++ callbacks to v8::External's and pass then in through JS","date":"2013-11-02T00:23:56.744Z","type":"message"}
+{"nick":"trevnorris","message":"problem is this entire thing is so abstract that the c++ API won't be anything like the JS API.","date":"2013-11-02T00:24:30.610Z","type":"message"}
+{"nick":"othiym23","message":"I think that's probably OK","date":"2013-11-02T00:24:47.725Z","type":"message"}
+{"nick":"trevnorris","message":"hence why the c++ function -> External -> js api route. because it might feel more natural.","date":"2013-11-02T00:24:55.626Z","type":"message"}
+{"nick":"othiym23","message":"I dunno, still seems like maybe it's unnecessary complexity to me","date":"2013-11-02T00:25:10.405Z","type":"message"}
+{"nick":"trevnorris","message":"i.e. if you pass an object to before/after/done then it'll assume it's an external and load/call it there.","date":"2013-11-02T00:25:25.861Z","type":"message"}
+{"nick":"othiym23","message":"as long as you can come up with something flexible enough that you don't need to change it once it's finished, I think it's fine if the C++ and JS APIs look pretty different","date":"2013-11-02T00:25:52.997Z","type":"message"}
+{"nick":"trevnorris","message":"any c++ api for this is going to be complex. only possibly \"simple\" api is a AsyncWrap::AddActive(void* async_listener, void* before, void* after, void* error, void* done); and any values that are NULL just won't be calle.d","date":"2013-11-02T00:26:53.674Z","type":"message"}
+{"nick":"trevnorris","message":"then it returns a uid that you can use in AsyncWrap::RemoveActive(unsigned int uid);","date":"2013-11-02T00:27:25.956Z","type":"message"}
+{"nick":"othiym23","message":"I like that API","date":"2013-11-02T00:29:52.165Z","type":"message"}
+{"nick":"othiym23","message":"it's verbose but it's straightforward","date":"2013-11-02T00:29:59.494Z","type":"message"}
+{"nick":"trevnorris","message":"well, i've gotta run.","date":"2013-11-02T00:30:34.160Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2013-11-02T00:30:35.169Z","type":"action"}
+{"nick":"LOUDBOT","message":"SWINE FLU IS GONNA KILL US ALL","date":"2013-11-02T00:30:35.493Z","type":"message"}
+{"nick":"othiym23","message":"and feels more or less like the JS version, with the added complexity that you have to get ahold of the object to be listening in the first place","date":"2013-11-02T00:30:36.056Z","type":"message"}
+{"nick":"othiym23","message":"k bye","date":"2013-11-02T00:30:40.019Z","type":"message"}
+{"nick":"kazupon","date":"2013-11-02T00:32:59.561Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 240 seconds","date":"2013-11-02T00:37:28.193Z","type":"quit"}
+{"nick":"kazupon","date":"2013-11-02T00:42:25.107Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 260 seconds","date":"2013-11-02T00:47:03.981Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-11-02T00:47:36.435Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2013-11-02T00:51:45.436Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-11-02T00:54:10.813Z","type":"nick"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-11-02T00:56:38.383Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-11-02T00:56:48.999Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T00:57:16.682Z","type":"join"}
+{"nick":"mcavage_","date":"2013-11-02T00:57:55.103Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2013-11-02T00:57:55.312Z","type":"quit"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2013-11-02T00:58:26.233Z","type":"quit"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-11-02T01:00:53.282Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Chris Bank\u000f \u00037v0.10\u000f * \u00023780e12\u0002 : fsevents: support japaneese characters in path - http://git.io/BLl08A","date":"2013-11-02T01:01:33.777Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-11-02T01:01:55.145Z","type":"quit"}
+{"nick":"paddybyers","date":"2013-11-02T01:02:28.161Z","type":"join"}
+{"nick":"paddybyers","reason":"Quit: paddybyers","date":"2013-11-02T01:19:12.815Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-11-02T01:20:12.695Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-11-02T01:21:19.647Z","type":"join"}
+{"nick":"octetcloud","date":"2013-11-02T01:28:21.992Z","type":"join"}
+{"nick":"mcavage_","reason":"Remote host closed the connection","date":"2013-11-02T01:29:54.562Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T01:30:22.021Z","type":"join"}
+{"nick":"mcavage","reason":"Ping timeout: 272 seconds","date":"2013-11-02T01:35:13.850Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-02T01:41:05.887Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 272 seconds","date":"2013-11-02T01:46:05.189Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2013-11-02T01:51:30.399Z","type":"quit"}
+{"nick":"wwicks","date":"2013-11-02T02:01:38.230Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-11-02T02:02:14.091Z","type":"quit"}
+{"nick":"wwicks","reason":"Ping timeout: 240 seconds","date":"2013-11-02T02:05:58.318Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-02T02:06:50.230Z","type":"join"}
+{"nick":"mikeal","date":"2013-11-02T02:11:48.276Z","type":"join"}
+{"nick":"mcavage","date":"2013-11-02T02:12:52.636Z","type":"join"}
+{"nick":"c4milo","date":"2013-11-02T02:13:33.736Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 240 seconds","date":"2013-11-02T02:13:48.188Z","type":"quit"}
+{"nick":"amartens","date":"2013-11-02T02:16:02.706Z","type":"join"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-11-02T02:22:40.493Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T02:23:07.103Z","type":"join"}
+{"nick":"mcavage","reason":"Ping timeout: 260 seconds","date":"2013-11-02T02:27:51.843Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T02:28:28.932Z","type":"join"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-11-02T02:30:49.923Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-11-02T02:32:51.323Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T02:33:17.679Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 272 seconds","date":"2013-11-02T02:33:29.899Z","type":"quit"}
+{"nick":"Benvie_","reason":"Ping timeout: 260 seconds","date":"2013-11-02T02:34:51.927Z","type":"quit"}
+{"nick":"brson","date":"2013-11-02T02:34:52.723Z","type":"join"}
+{"nick":"mcavage","reason":"Ping timeout: 246 seconds","date":"2013-11-02T02:37:27.478Z","type":"quit"}
+{"nick":"inolen","date":"2013-11-02T02:37:46.947Z","type":"join"}
+{"nick":"inolen","reason":"Client Quit","date":"2013-11-02T02:37:52.282Z","type":"quit"}
+{"nick":"inolen","date":"2013-11-02T02:39:02.162Z","type":"join"}
+{"nick":"jmar777","date":"2013-11-02T02:39:15.017Z","type":"join"}
+{"nick":"Benvie_","date":"2013-11-02T02:40:13.642Z","type":"join"}
+{"nick":"mcavage","date":"2013-11-02T02:50:39.443Z","type":"join"}
+{"nick":"amartens","date":"2013-11-02T03:01:46.161Z","type":"join"}
+{"nick":"amartens1","date":"2013-11-02T03:03:30.654Z","type":"join"}
+{"nick":"amartens","reason":"Read error: Connection reset by peer","date":"2013-11-02T03:03:32.280Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2013-11-02T03:06:06.423Z","type":"quit"}
+{"nick":"wolfeida_","date":"2013-11-02T03:06:31.868Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T03:06:32.398Z","type":"join"}
+{"nick":"wolfeida_","date":"2013-11-02T03:07:25.148Z","type":"join"}
+{"nick":"wolfeida_","reason":"Client Quit","date":"2013-11-02T03:07:25.385Z","type":"quit"}
+{"nick":"amartens1","reason":"Ping timeout: 260 seconds","date":"2013-11-02T03:07:59.844Z","type":"quit"}
+{"nick":"mcavage","reason":"Ping timeout: 272 seconds","date":"2013-11-02T03:11:35.188Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-11-02T03:11:44.467Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2013-11-02T03:15:19.041Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2013-11-02T03:24:42.765Z","type":"quit"}
+{"nick":"Benvie_","reason":"Ping timeout: 245 seconds","date":"2013-11-02T03:30:26.632Z","type":"quit"}
+{"nick":"TooTallNate","date":"2013-11-02T03:32:37.558Z","type":"join"}
+{"nick":"Benvie_","date":"2013-11-02T03:43:53.914Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2013-11-02T03:45:05.720Z","type":"quit"}
+{"nick":"mikeal","date":"2013-11-02T03:55:25.731Z","type":"join"}
+{"nick":"bradleymeck","date":"2013-11-02T04:03:43.348Z","type":"join"}
+{"nick":"amartens","date":"2013-11-02T04:04:15.188Z","type":"join"}
+{"nick":"swaj_","date":"2013-11-02T04:04:29.408Z","type":"join"}
+{"nick":"bradleymeck","reason":"Ping timeout: 272 seconds","date":"2013-11-02T04:08:29.881Z","type":"quit"}
+{"nick":"amartens","reason":"Ping timeout: 272 seconds","date":"2013-11-02T04:09:13.189Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-02T04:10:18.266Z","type":"join"}
+{"nick":"mcavage","date":"2013-11-02T04:12:13.265Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 248 seconds","date":"2013-11-02T04:15:02.119Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-11-02T04:15:58.383Z","type":"join"}
+{"nick":"swaj","reason":"Quit: leaving","date":"2013-11-02T04:16:14.327Z","type":"quit"}
+{"nick":"swaj_","new_nick":"swaj","date":"2013-11-02T04:16:14.585Z","type":"nick"}
+{"nick":"mcavage","reason":"Ping timeout: 245 seconds","date":"2013-11-02T04:16:23.161Z","type":"quit"}
+{"nick":"Benvie_","reason":"Ping timeout: 260 seconds","date":"2013-11-02T04:16:35.857Z","type":"quit"}
+{"nick":"swaj","new_nick":"Guest9040","date":"2013-11-02T04:16:44.229Z","type":"nick"}
+{"nick":"Guest9040","new_nick":"swaj","date":"2013-11-02T04:17:09.059Z","type":"nick"}
+{"nick":"swaj","reason":"Changing host","date":"2013-11-02T04:17:12.853Z","type":"quit"}
+{"nick":"swaj","date":"2013-11-02T04:17:13.066Z","type":"join"}
+{"nick":"swaj","reason":"Changing host","date":"2013-11-02T04:17:13.066Z","type":"quit"}
+{"nick":"swaj","date":"2013-11-02T04:17:13.067Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-11-02T04:19:40.329Z","type":"quit"}
+{"nick":"wwicks","date":"2013-11-02T04:34:19.538Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 245 seconds","date":"2013-11-02T04:38:31.219Z","type":"quit"}
+{"nick":"kevinswiber","date":"2013-11-02T04:41:25.036Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-11-02T04:44:38.951Z","type":"quit"}
+{"nick":"mikeal","date":"2013-11-02T04:45:17.724Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-11-02T05:01:23.211Z","type":"nick"}
+{"nick":"amartens","date":"2013-11-02T05:05:08.199Z","type":"join"}
+{"nick":"kevinswiber","reason":"Remote host closed the connection","date":"2013-11-02T05:07:43.231Z","type":"quit"}
+{"nick":"kevinswiber","date":"2013-11-02T05:08:18.947Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 245 seconds","date":"2013-11-02T05:09:21.217Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T05:12:34.443Z","type":"join"}
+{"nick":"kevinswiber","reason":"Ping timeout: 248 seconds","date":"2013-11-02T05:12:37.785Z","type":"quit"}
+{"nick":"mcavage","reason":"Ping timeout: 240 seconds","date":"2013-11-02T05:16:48.378Z","type":"quit"}
+{"nick":"wwicks","date":"2013-11-02T05:20:41.372Z","type":"join"}
+{"nick":"octetcloud","reason":"Ping timeout: 272 seconds","date":"2013-11-02T05:28:01.784Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-11-02T05:28:51.006Z","type":"quit"}
+{"nick":"wwicks","reason":"Ping timeout: 245 seconds","date":"2013-11-02T05:33:28.161Z","type":"quit"}
+{"nick":"c4milo","date":"2013-11-02T05:33:46.038Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 245 seconds","date":"2013-11-02T05:38:21.671Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-11-02T05:43:58.335Z","type":"quit"}
+{"nick":"jmar777","date":"2013-11-02T05:44:34.434Z","type":"join"}
+{"nick":"dshaw_","date":"2013-11-02T05:45:36.134Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 245 seconds","date":"2013-11-02T05:48:56.220Z","type":"quit"}
+{"nick":"bradleymeck","date":"2013-11-02T05:53:06.961Z","type":"join"}
+{"nick":"amartens","date":"2013-11-02T06:05:50.161Z","type":"join"}
+{"nick":"amartens","reason":"Read error: Connection reset by peer","date":"2013-11-02T06:07:25.260Z","type":"quit"}
+{"nick":"amartens","date":"2013-11-02T06:07:35.671Z","type":"join"}
+{"nick":"abraxas","date":"2013-11-02T06:11:07.445Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2013-11-02T06:11:08.532Z","type":"quit"}
+{"nick":"amartens","reason":"Ping timeout: 245 seconds","date":"2013-11-02T06:12:06.679Z","type":"quit"}
+{"nick":"mcavage","date":"2013-11-02T06:12:55.405Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 260 seconds","date":"2013-11-02T06:15:35.940Z","type":"quit"}
+{"nick":"mcavage","reason":"Ping timeout: 272 seconds","date":"2013-11-02T06:17:47.210Z","type":"quit"}
+{"nick":"inolen","date":"2013-11-02T06:44:01.453Z","type":"join"}
+{"nick":"inolen","reason":"Client Quit","date":"2013-11-02T06:44:09.667Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #300 \u00037UNSTABLE\u000f windows-ia32 (12/603) windows-x64 (15/603) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/300/","date":"2013-11-02T06:54:22.460Z","type":"message"}
+{"nick":"wwicks","date":"2013-11-02T07:03:05.097Z","type":"join"}
+{"nick":"amartens","date":"2013-11-02T07:08:29.188Z","type":"join"}
+{"nick":"amartens","reason":"Ping timeout: 272 seconds","date":"2013-11-02T07:13:31.219Z","type":"quit"}
+{"nick":"rendar","date":"2013-11-02T07:17:29.182Z","type":"join"}
+{"nick":"wwicks","reason":"Ping timeout: 272 seconds","date":"2013-11-02T07:17:51.922Z","type":"quit"}
+{"nick":"mraleph1","reason":"Quit: Leaving.","date":"2013-11-02T07:19:40.495Z","type":"quit"}
+{"nick":"c4milo","date":"2013-11-02T07:22:42.650Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 260 seconds","date":"2013-11-02T07:27:27.851Z","type":"quit"}
+{"nick":"inolen","date":"2013-11-02T07:47:31.431Z","type":"join"}
