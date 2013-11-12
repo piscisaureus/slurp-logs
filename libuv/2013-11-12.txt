@@ -1,0 +1,178 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2013-11-12T00:00:01.340Z","type":"quit"}
+{"nick":"trevnorris","message":"bnoordhuis: lgtm. just going to run the patch on my box before I comment on the issue.","date":"2013-11-12T00:00:03.104Z","type":"message"}
+{"nick":"ircretary","date":"2013-11-12T00:00:09.742Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #286 \u00037UNSTABLE\u000f smartos-ia32 (3/195) windows-x64 (4/195) smartos-x64 (3/195) windows-ia32 (4/195) osx-ia32 (1/196) http://jenkins.nodejs.org/job/libuv-master-gyp/286/","date":"2013-11-12T00:00:13.783Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: run test/simple/test-dns-regress-6244.js and tell me what you get.","date":"2013-11-12T00:01:35.628Z","type":"message"}
+{"nick":"saghul","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2013-11-12T00:02:52.450Z","type":"quit"}
+{"nick":"mikeal","date":"2013-11-12T00:02:57.001Z","type":"join"}
+{"nick":"trevnorris","message":"bnoordhuis: think that failure has to do w/ you removing the context around uv_run. i'm double checking now.","date":"2013-11-12T00:03:07.534Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: passes for me","date":"2013-11-12T00:03:38.907Z","type":"message"}
+{"nick":"bnoordhuis","message":"what happens for you?","date":"2013-11-12T00:03:43.667Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: segfault","date":"2013-11-12T00:03:48.062Z","type":"message"}
+{"nick":"trevnorris","message":"i'll gist the info","date":"2013-11-12T00:03:52.041Z","type":"message"}
+{"nick":"trevnorris","message":"first let me make clean. want to make sure there isn't anything lingering around.","date":"2013-11-12T00:04:49.383Z","type":"message"}
+{"nick":"Kakera","reason":"Ping timeout: 252 seconds","date":"2013-11-12T00:05:01.807Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #312 \u00037UNSTABLE\u000f windows-ia32 (10/604) windows-x64 (10/604) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/312/","date":"2013-11-12T00:05:14.865Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1591 \u00037UNSTABLE\u000f smartos-x64 (6/604) smartos-ia32 (5/604) osx-ia32 (1/604) http://jenkins.nodejs.org/job/nodejs-v0.10/1591/","date":"2013-11-12T00:06:05.923Z","type":"message"}
+{"nick":"bnoordhuis","message":"seriously, what's up with pummel/test-next-tick-loops-quick?","date":"2013-11-12T00:08:35.461Z","type":"message"}
+{"nick":"bnoordhuis","message":"FATAL ERROR: JS Allocation failed - process out of memory","date":"2013-11-12T00:08:47.644Z","type":"message"}
+{"nick":"bnoordhuis","message":"and it's been doing that for ages now","date":"2013-11-12T00:08:52.784Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: https://gist.github.com/trevnorris/7422946","date":"2013-11-12T00:09:12.369Z","type":"message"}
+{"nick":"trevnorris","message":"getting more info now.","date":"2013-11-12T00:09:15.511Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: reason that fails is because before nextTick would burp once in a while and allow the eloop to run. now it doesn't so it just runs until the nextTickQueue array overflows.","date":"2013-11-12T00:11:01.712Z","type":"message"}
+{"nick":"bnoordhuis","message":"yeah, i see that in the test","date":"2013-11-12T00:11:22.521Z","type":"message"}
+{"nick":"bnoordhuis","message":"it expects a timeout callback to run after 2s","date":"2013-11-12T00:11:36.314Z","type":"message"}
+{"nick":"bnoordhuis","message":"so, bogus test: null and void?","date":"2013-11-12T00:11:45.432Z","type":"message"}
+{"nick":"trevnorris","message":"remove it. there's now a benchmark to test the same thing.","date":"2013-11-12T00:12:27.900Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ok. in that gist. frame #7:","date":"2013-11-12T00:12:51.634Z","type":"message"}
+{"nick":"trevnorris","message":"(gdb) p wrap->env()->context()","date":"2013-11-12T00:12:51.852Z","type":"message"}
+{"nick":"trevnorris","message":"$5 = {","date":"2013-11-12T00:12:52.068Z","type":"message"}
+{"nick":"trevnorris","message":"  <v8::Handle<v8::Context>> = {","date":"2013-11-12T00:12:52.068Z","type":"message"}
+{"nick":"trevnorris","message":"    val_ = 0x1","date":"2013-11-12T00:12:52.288Z","type":"message"}
+{"nick":"trevnorris","message":"  }, <No data fields>}","date":"2013-11-12T00:12:54.095Z","type":"message"}
+{"nick":"bnoordhuis","message":"well, that's odd","date":"2013-11-12T00:13:11.566Z","type":"message"}
+{"nick":"bnoordhuis","message":"i'm guessing that's a missing Context::Scope","date":"2013-11-12T00:14:22.575Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: fwiw that's the test you fixed here: https://github.com/joyent/node/issues/6244","date":"2013-11-12T00:15:04.014Z","type":"message"}
+{"nick":"trevnorris","message":"oh, but for a completely different reason","date":"2013-11-12T00:15:22.588Z","type":"message"}
+{"nick":"trevnorris","message":"heh, funny how that works.","date":"2013-11-12T00:15:46.240Z","type":"message"}
+{"nick":"dshaw_","date":"2013-11-12T00:16:22.087Z","type":"join"}
+{"nick":"bnoordhuis","message":"wait, let me write a quick patch","date":"2013-11-12T00:16:39.291Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ok. also, frame #8, same thing with this->env()->context()","date":"2013-11-12T00:17:17.650Z","type":"message"}
+{"nick":"trevnorris","message":"ah, I see what you're saying.","date":"2013-11-12T00:17:38.729Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: can you try https://github.com/bnoordhuis/node/commit/6f84c7e ?","date":"2013-11-12T00:19:27.747Z","type":"message"}
+{"nick":"trevnorris","message":"sure thing","date":"2013-11-12T00:19:37.716Z","type":"message"}
+{"nick":"dshaw_","reason":"Ping timeout: 260 seconds","date":"2013-11-12T00:20:51.876Z","type":"quit"}
+{"nick":"trevnorris","message":"bnoordhuis: real quick. this->env()->context() is bad from the call into QueryWrap::Callback. so setting the Context from it probably won't work.","date":"2013-11-12T00:21:21.216Z","type":"message"}
+{"nick":"trevnorris","message":"i'm trying it now.","date":"2013-11-12T00:21:21.435Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: nm. that worked.","date":"2013-11-12T00:22:10.036Z","type":"message"}
+{"nick":"trevnorris","message":"strange. must have had to do w/ gdb. thanks :)","date":"2013-11-12T00:22:27.766Z","type":"message"}
+{"nick":"trevnorris","message":"ok, running tests one last time","date":"2013-11-12T00:23:42.163Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: test/simple/test-debug-signal-cluster.js is consistently failing for me now. looking into it.","date":"2013-11-12T00:24:28.710Z","type":"message"}
+{"nick":"bnoordhuis","message":"that test has known issues","date":"2013-11-12T00:24:44.728Z","type":"message"}
+{"nick":"bnoordhuis","message":"though it does seem to be failing every time now","date":"2013-11-12T00:25:30.180Z","type":"message"}
+{"nick":"trevnorris","message":"eh, just delete it ;)","date":"2013-11-12T00:25:50.718Z","type":"message"}
+{"nick":"bnoordhuis","message":"i've toyed with the idea","date":"2013-11-12T00:26:45.528Z","type":"message"}
+{"nick":"trevnorris","message":"it seems to be a complete race condition.","date":"2013-11-12T00:27:40.507Z","type":"message"}
+{"nick":"trevnorris","message":"if anything each of the three tests should be broken up into their own scripts.","date":"2013-11-12T00:27:51.124Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: ok. i'm signed off. you can do what you want w/ that test.","date":"2013-11-12T00:29:23.580Z","type":"message"}
+{"nick":"trevnorris","message":"heh, must have one strange build state. that test just gave me a \"FATAL ERROR: v8::HandleScope::CreateHandle() Cannot create a handle without a HandleScope\"","date":"2013-11-12T00:32:48.521Z","type":"message"}
+{"nick":"tjfontaine","message":"I think we should unconditionally abort in FatalError so you have a useful core file","date":"2013-11-12T00:34:23.671Z","type":"message"}
+{"nick":"bnoordhuis","message":"agreed","date":"2013-11-12T00:35:26.031Z","type":"message"}
+{"nick":"trevnorris","message":"DIE DIE DIE!!!","date":"2013-11-12T00:35:45.417Z","type":"message"}
+{"nick":"LOUDBOT","message":"MAY THE FORCE BE WITH YOU !","date":"2013-11-12T00:35:45.743Z","type":"message"}
+{"nick":"bnoordhuis","message":"i know what the (or at least a) issue with that test is: it calls EnableDebug() before v8 has initialized","date":"2013-11-12T00:36:03.425Z","type":"message"}
+{"nick":"bnoordhuis","message":"EnableDebug() emits an event to js land but only if there is a js land (which there isn't)","date":"2013-11-12T00:36:30.066Z","type":"message"}
+{"nick":"trevnorris","message":"heh, awesome.","date":"2013-11-12T00:36:55.179Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: don't we already?","date":"2013-11-12T00:37:36.920Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: I think you mean OnFatalError","date":"2013-11-12T00:37:48.570Z","type":"message"}
+{"nick":"trevnorris","message":"oh wait. i forgot that abort() was just to suppress compiler warnings.","date":"2013-11-12T00:38:50.064Z","type":"message"}
+{"nick":"st_luke","date":"2013-11-12T00:41:47.039Z","type":"join"}
+{"nick":"brson","date":"2013-11-12T00:42:16.844Z","type":"join"}
+{"nick":"brson","reason":"Client Quit","date":"2013-11-12T00:42:21.643Z","type":"quit"}
+{"nick":"brson","date":"2013-11-12T00:42:30.012Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-11-12T00:51:22.057Z","type":"quit"}
+{"nick":"st_luke","date":"2013-11-12T00:51:50.745Z","type":"join"}
+{"nick":"sblom","reason":"Ping timeout: 252 seconds","date":"2013-11-12T00:54:09.875Z","type":"quit"}
+{"nick":"bnoordhuis","message":"okay, i'll fix that cluster debug test tomorrow. i know how to fix but i'm going to sleep for a few hours first :)","date":"2013-11-12T00:54:25.827Z","type":"message"}
+{"nick":"st_luke","reason":"Ping timeout: 240 seconds","date":"2013-11-12T00:56:14.522Z","type":"quit"}
+{"nick":"st_luke","date":"2013-11-12T01:00:30.973Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2013-11-12T01:00:54.415Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2013-11-12T01:01:38.763Z","type":"quit"}
+{"nick":"trevnorris","message":"heh","date":"2013-11-12T01:09:24.858Z","type":"message"}
+{"nick":"dshaw_","date":"2013-11-12T01:17:38.746Z","type":"join"}
+{"nick":"piscisaureus_","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-11-12T01:20:04.880Z","type":"quit"}
+{"nick":"dshaw_","reason":"Ping timeout: 246 seconds","date":"2013-11-12T01:21:54.483Z","type":"quit"}
+{"nick":"zz_karupanerura","new_nick":"karupanerura","date":"2013-11-12T01:32:03.601Z","type":"nick"}
+{"nick":"c4milo","date":"2013-11-12T01:41:21.280Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 272 seconds","date":"2013-11-12T01:46:43.924Z","type":"quit"}
+{"nick":"karupanerura","new_nick":"zz_karupanerura","date":"2013-11-12T01:48:04.620Z","type":"nick"}
+{"nick":"zz_karupanerura","new_nick":"karupanerura","date":"2013-11-12T01:53:07.572Z","type":"nick"}
+{"nick":"hueniverse","message":"0.10.22 tomorrow?","date":"2013-11-12T02:01:15.232Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-11-12T02:02:49.598Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2013-11-12T02:07:33.531Z","type":"join"}
+{"nick":"abraxas","date":"2013-11-12T02:09:31.530Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2013-11-12T02:11:57.427Z","type":"quit"}
+{"nick":"skabbes","reason":"Quit: skabbes","date":"2013-11-12T02:13:16.982Z","type":"quit"}
+{"nick":"dshaw_","date":"2013-11-12T02:18:03.657Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 246 seconds","date":"2013-11-12T02:22:27.444Z","type":"quit"}
+{"nick":"st_luke","date":"2013-11-12T02:40:22.153Z","type":"join"}
+{"nick":"tjfontaine","message":"hueniverse: that's my plan yes, presuming I am satisfied that I have found all places this may be happening","date":"2013-11-12T02:41:43.465Z","type":"message"}
+{"nick":"robonerd","message":"can anyone explain to me in no more than 2 sentences what libuv offers to a C application developer?","date":"2013-11-12T02:42:11.997Z","type":"message"}
+{"nick":"robonerd","message":"please :)","date":"2013-11-12T02:42:20.292Z","type":"message"}
+{"nick":"hueniverse","message":"tjfontaine: two of us need to go out and binge on some scotch after this","date":"2013-11-12T02:42:28.146Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-11-12T02:43:24.237Z","type":"quit"}
+{"nick":"robonerd","message":"bueller?","date":"2013-11-12T02:51:09.831Z","type":"message"}
+{"nick":"hueniverse","message":"robonerd: you should ask that in the am PT. that's when the core team is active and can help you out.","date":"2013-11-12T02:52:59.810Z","type":"message"}
+{"nick":"robonerd","message":"hueniverse hey thank you for the information. i will do that! :D","date":"2013-11-12T02:53:40.858Z","type":"message"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-11-12T02:54:02.395Z","type":"quit"}
+{"nick":"inolen","message":"robonerd: between the highlights here https://github.com/joyent/libuv","date":"2013-11-12T02:54:18.744Z","type":"message"}
+{"nick":"inolen","message":"and http://nikhilm.github.io/uvbook/basics.html","date":"2013-11-12T02:54:23.122Z","type":"message"}
+{"nick":"inolen","message":"you should be able to get a good idea of what libuv is","date":"2013-11-12T02:54:30.775Z","type":"message"}
+{"nick":"robonerd","message":"inolen thankz for the links, reading.","date":"2013-11-12T02:55:53.937Z","type":"message"}
+{"nick":"robonerd","message":"..","date":"2013-11-12T02:55:56.149Z","type":"message"}
+{"nick":"robonerd","message":"looks like libuv's architecture is like erlang's vm","date":"2013-11-12T03:01:36.424Z","type":"message"}
+{"nick":"robonerd","message":"supervisor chain in form of process children","date":"2013-11-12T03:01:46.522Z","type":"message"}
+{"nick":"robonerd","message":"async, event riven","date":"2013-11-12T03:01:56.447Z","type":"message"}
+{"nick":"robonerd","message":"d","date":"2013-11-12T03:02:00.245Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-11-12T03:05:47.001Z","type":"join"}
+{"nick":"tjfontaine","message":"hueniverse: sold.","date":"2013-11-12T03:07:36.884Z","type":"message"}
+{"nick":"abraxas","date":"2013-11-12T03:09:08.290Z","type":"join"}
+{"nick":"skabbes","date":"2013-11-12T03:09:56.350Z","type":"join"}
+{"nick":"robonerd","message":"damn, i can't possibly finish the video of bert bedler. it's taking so many words to say the meaning","date":"2013-11-12T03:13:19.689Z","type":"message"}
+{"nick":"robonerd","message":"no offense of course :D","date":"2013-11-12T03:13:27.168Z","type":"message"}
+{"nick":"paulfryzel","date":"2013-11-12T03:19:00.179Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-11-12T03:25:09.327Z","type":"quit"}
+{"nick":"c4milo","date":"2013-11-12T03:29:35.705Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 260 seconds","date":"2013-11-12T03:29:47.937Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-12T03:31:26.922Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2013-11-12T03:34:06.228Z","type":"quit"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2013-11-12T03:38:30.167Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-11-12T03:40:13.129Z","type":"join"}
+{"nick":"robonerd","new_nick":"testr0n","date":"2013-11-12T03:41:05.747Z","type":"nick"}
+{"nick":"amartens","date":"2013-11-12T03:48:48.502Z","type":"join"}
+{"nick":"sblom","date":"2013-11-12T03:51:00.856Z","type":"join"}
+{"nick":"sblom","reason":"Ping timeout: 272 seconds","date":"2013-11-12T03:55:55.874Z","type":"quit"}
+{"nick":"amartens","reason":"Quit: Leaving.","date":"2013-11-12T04:01:04.183Z","type":"quit"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-11-12T04:11:04.736Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-12T04:14:53.429Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 260 seconds","date":"2013-11-12T04:19:47.924Z","type":"quit"}
+{"nick":"amartens","date":"2013-11-12T04:22:52.779Z","type":"join"}
+{"nick":"brson","date":"2013-11-12T04:34:44.072Z","type":"join"}
+{"nick":"abraxas","date":"2013-11-12T04:37:16.730Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 244 seconds","date":"2013-11-12T04:43:10.887Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 268 seconds","date":"2013-11-12T04:43:16.089Z","type":"quit"}
+{"nick":"brson","date":"2013-11-12T04:47:15.072Z","type":"join"}
+{"nick":"abraxas","date":"2013-11-12T05:05:04.770Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2013-11-12T05:05:51.147Z","type":"quit"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-11-12T05:06:42.593Z","type":"quit"}
+{"nick":"c4milo","date":"2013-11-12T05:17:54.126Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 244 seconds","date":"2013-11-12T05:22:27.069Z","type":"quit"}
+{"nick":"jmar777","date":"2013-11-12T05:27:45.343Z","type":"join"}
+{"nick":"amartens","date":"2013-11-12T05:36:07.200Z","type":"part"}
+{"nick":"amartens","date":"2013-11-12T05:36:11.894Z","type":"join"}
+{"nick":"stagas","date":"2013-11-12T05:44:24.618Z","type":"join"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-11-12T05:48:48.343Z","type":"quit"}
+{"nick":"paulfryzel","date":"2013-11-12T05:55:01.867Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2013-11-12T05:58:01.694Z","type":"quit"}
+{"nick":"testr0n","reason":"Read error: Connection reset by peer","date":"2013-11-12T06:02:27.440Z","type":"quit"}
+{"nick":"robonerd","date":"2013-11-12T06:02:59.597Z","type":"join"}
+{"nick":"robonerd","reason":"Read error: Connection reset by peer","date":"2013-11-12T06:05:10.530Z","type":"quit"}
+{"nick":"robonerd","date":"2013-11-12T06:06:05.172Z","type":"join"}
+{"nick":"abraxas","date":"2013-11-12T06:10:46.658Z","type":"join"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2013-11-12T06:12:19.951Z","type":"nick"}
+{"nick":"mikeal","date":"2013-11-12T06:17:05.226Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2013-11-12T06:24:04.295Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2013-11-12T06:40:47.542Z","type":"quit"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #313 \u00037UNSTABLE\u000f windows-ia32 (10/604) windows-x64 (10/604) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/313/","date":"2013-11-12T06:41:17.570Z","type":"message"}
+{"nick":"stagas","reason":"Quit: Bye","date":"2013-11-12T06:58:09.184Z","type":"quit"}
+{"nick":"c4milo","date":"2013-11-12T07:06:19.179Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2013-11-12T07:10:43.762Z","type":"quit"}
+{"nick":"abraxas","date":"2013-11-12T07:19:48.264Z","type":"join"}
+{"nick":"felixge","date":"2013-11-12T07:25:39.453Z","type":"join"}
+{"nick":"dshaw_","date":"2013-11-12T07:25:42.192Z","type":"join"}
+{"nick":"felixge","reason":"Changing host","date":"2013-11-12T07:25:46.147Z","type":"quit"}
+{"nick":"felixge","date":"2013-11-12T07:25:46.362Z","type":"join"}
+{"nick":"brson","reason":"Read error: Connection reset by peer","date":"2013-11-12T07:31:24.808Z","type":"quit"}
+{"nick":"brson","date":"2013-11-12T07:31:35.096Z","type":"join"}
+{"nick":"rendar","date":"2013-11-12T07:37:43.232Z","type":"join"}
+{"nick":"bajtos","date":"2013-11-12T07:50:01.615Z","type":"join"}
