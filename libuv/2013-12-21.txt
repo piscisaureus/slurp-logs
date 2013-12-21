@@ -215,3 +215,225 @@
 {"nick":"indutny","message":"and that semantically fits here","date":"2013-12-21T07:55:22.059Z","type":"message"}
 {"nick":"trevnorris","message":"ok cool.","date":"2013-12-21T07:55:40.819Z","type":"message"}
 {"nick":"trevnorris","message":"i'm trying to do a more specific write up of how node utilizes each step in uv_run. i'm getting most of it, but still a few things here and there that elude me","date":"2013-12-21T07:56:14.119Z","type":"message"}
+{"nick":"st_luke","reason":"Remote host closed the connection","date":"2013-12-21T08:04:09.440Z","type":"quit"}
+{"nick":"trevnorris","message":"man, uv__run_pending i'm not getting. like, why the linked list of uv__io_t on loop->pending_queue, and what callbacks are being called on those?","date":"2013-12-21T08:08:14.666Z","type":"message"}
+{"nick":"daviddias","date":"2013-12-21T08:14:21.050Z","type":"join"}
+{"nick":"rendar","date":"2013-12-21T08:19:06.456Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 250 seconds","date":"2013-12-21T08:28:35.999Z","type":"quit"}
+{"nick":"wolfeidau","date":"2013-12-21T08:29:13.878Z","type":"join"}
+{"nick":"indutny","message":"trevnorris: use the source :)","date":"2013-12-21T08:41:42.093Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: yeah. got it now. working on uv__run_closing_handles() :)","date":"2013-12-21T08:42:00.235Z","type":"message"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2013-12-21T08:49:33.227Z","type":"quit"}
+{"nick":"Kakera","date":"2013-12-21T08:55:27.640Z","type":"join"}
+{"nick":"c4milo","date":"2013-12-21T09:04:02.083Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2013-12-21T09:08:39.909Z","type":"quit"}
+{"nick":"trevnorris","message":"indutny: mind correcting my interpretation of uv_run(): https://gist.github.com/trevnorris/8067133","date":"2013-12-21T09:13:17.507Z","type":"message"}
+{"nick":"indutny","message":"uv__run_idle() ?","date":"2013-12-21T09:16:21.056Z","type":"message"}
+{"nick":"indutny","message":"run active handle","date":"2013-12-21T09:16:23.212Z","type":"message"}
+{"nick":"indutny","message":"I thought it was about uv_idle_t","date":"2013-12-21T09:16:31.310Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2013-12-21T09:17:02.234Z","type":"message"}
+{"nick":"indutny","message":"you're just doing node-specific description of meaning of those guys","date":"2013-12-21T09:17:13.291Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-12-21T09:17:49.163Z","type":"message"}
+{"nick":"indutny","message":"lgtm, generally","date":"2013-12-21T09:17:50.915Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: thanks.","date":"2013-12-21T09:23:33.442Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: btw, do you know off the top of your head if Server#close() runs the callback from uv__run_closing_handles()? that seems like the logical place for it to be executed.","date":"2013-12-21T09:24:12.826Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2013-12-21T09:28:15.596Z","type":"message"}
+{"nick":"indutny","message":"yes, i think it does","date":"2013-12-21T09:28:21.410Z","type":"message"}
+{"nick":"trevnorris","message":"thanks","date":"2013-12-21T09:29:42.931Z","type":"message"}
+{"nick":"hz","date":"2013-12-21T09:39:08.783Z","type":"join"}
+{"nick":"hueniverse1","date":"2013-12-21T09:43:45.642Z","type":"join"}
+{"nick":"hueniverse","reason":"Ping timeout: 264 seconds","date":"2013-12-21T09:44:02.737Z","type":"quit"}
+{"nick":"hueniverse","date":"2013-12-21T09:54:04.488Z","type":"join"}
+{"nick":"hueniverse1","reason":"Ping timeout: 265 seconds","date":"2013-12-21T09:55:54.126Z","type":"quit"}
+{"nick":"trevnorris","message":"indutny: freak. the close callback is actually pseudo-asynchronous. it's actually just emitted through a nextTick(), so internally he handle hasn't reached uv__run_closing_handles() before the user receives the close callback","date":"2013-12-21T10:01:17.894Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2013-12-21T10:01:29.766Z","type":"message"}
+{"nick":"trevnorris","message":"*the handle","date":"2013-12-21T10:01:33.011Z","type":"message"}
+{"nick":"indutny","message":"that is quite surprising","date":"2013-12-21T10:01:35.030Z","type":"message"}
+{"nick":"indutny","message":"I thought it is calling .handle.close","date":"2013-12-21T10:01:42.724Z","type":"message"}
+{"nick":"indutny","message":"and doing stuff in callback","date":"2013-12-21T10:01:46.706Z","type":"message"}
+{"nick":"indutny","message":"but","date":"2013-12-21T10:01:47.933Z","type":"message"}
+{"nick":"indutny","message":"whatever","date":"2013-12-21T10:01:48.867Z","type":"message"}
+{"nick":"trevnorris","message":"well. we are calling ._handle.close(), but no callback is passed there.","date":"2013-12-21T10:02:04.268Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-12-21T10:02:58.206Z","type":"message"}
+{"nick":"hueniverse","reason":"Read error: Connection reset by peer","date":"2013-12-21T10:04:48.004Z","type":"quit"}
+{"nick":"trevnorris","message":"indutny: ok. so I switched Server#close() in lib/net.js to just pass the cb to ._handle.close() instead. gets called as expected.","date":"2013-12-21T10:05:44.599Z","type":"message"}
+{"nick":"trevnorris","message":"don't understand why we're doing it that way, but whatever","date":"2013-12-21T10:06:28.260Z","type":"message"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-12-21T10:07:38.171Z","type":"quit"}
+{"nick":"indexzero","date":"2013-12-21T10:15:04.492Z","type":"join"}
+{"nick":"abraxas","date":"2013-12-21T10:21:49.817Z","type":"join"}
+{"nick":"indutny","message":"trevnorris: ok","date":"2013-12-21T10:22:39.412Z","type":"message"}
+{"nick":"indutny","message":"send a PR","date":"2013-12-21T10:22:41.561Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: i tried a quick patch. seems to screw with the cluster/slave process stuff. i'll take a deeper look.","date":"2013-12-21T10:23:17.466Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: also, it might confuse the user because, the execution order of a setTimeout and setImmediate will swap since uv__run_closing_handles() is the last thing to be executed on the event loop.","date":"2013-12-21T10:24:25.327Z","type":"message"}
+{"nick":"trevnorris","message":"(but, I really don't care about that :P )","date":"2013-12-21T10:24:40.718Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: anyways. thanks for helping me understand uv_run better. really clears things up.","date":"2013-12-21T10:25:24.324Z","type":"message"}
+{"nick":"trevnorris","message":"now, just need to write it up in a simple way so the community will stop asking about it all the time.","date":"2013-12-21T10:25:56.103Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 245 seconds","date":"2013-12-21T10:26:15.228Z","type":"quit"}
+{"nick":"indutny","message":"oh","date":"2013-12-21T10:26:38.005Z","type":"message"}
+{"nick":"indutny","message":"np","date":"2013-12-21T10:26:48.209Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033piscisaureus\u000f created branch temp - http://git.io/iztlfw","date":"2013-12-21T10:27:47.134Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: here is a quick thought on nextTick: https://gist.github.com/trevnorris/8067633","date":"2013-12-21T10:28:23.001Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: overall we need to have a discussion on how the eloop is being used. as I've just discussed with indutny, we're doing some stupid stuff like calling the close callback before the handle has actually had a chance to close internally.","date":"2013-12-21T10:30:39.143Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Bert Belder\u000f \u00037temp\u000f * \u0002a4660fb\u0002 : test: make test-pipe-server-close pass on linux - http://git.io/5AA9zQ","date":"2013-12-21T10:32:41.149Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Bert Belder\u000f \u00037v0.10\u000f * \u000216c4b21\u0002 : test: make test-pipe-server-close pass on linux - http://git.io/9DfyeQ","date":"2013-12-21T10:39:04.152Z","type":"message"}
+{"nick":"indutny","message":"bertje","date":"2013-12-21T10:41:19.349Z","type":"message"}
+{"nick":"indutny","message":"where are ya? :)","date":"2013-12-21T10:41:22.285Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2013-12-21T10:42:50.263Z","type":"action"}
+{"nick":"LOUDBOT","message":"YOUR MANHOOD WON'T BE INTACT MUCH LONGER IF YOU DON'T START SHOUTING","date":"2013-12-21T10:42:50.533Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Bert Belder\u000f \u00037master\u000f * \u0002140c863\u0002 : Merge branch 'v0.10' (+3 more commits) - http://git.io/H_JKtg","date":"2013-12-21T10:42:57.265Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1677 \u00037UNSTABLE\u000f smartos-ia32 (5/606) osx-ia32 (1/606) linux-ia32 (4/606) osx-x64 (1/606) linux-x64 (5/606) smartos-x64 (6/606) http://jenkins.nodejs.org/job/nodejs-v0.10/1677/","date":"2013-12-21T10:49:27.390Z","type":"message"}
+{"nick":"c4milo","date":"2013-12-21T10:52:54.419Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 240 seconds","date":"2013-12-21T10:57:26.798Z","type":"quit"}
+{"nick":"piscisaureus","date":"2013-12-21T10:58:17.165Z","type":"join"}
+{"nick":"piscisaureus","message":"indutny: sup?","date":"2013-12-21T10:58:29.639Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus: so about that close-accept test?","date":"2013-12-21T10:58:42.405Z","type":"message"}
+{"nick":"indutny","message":"it is a windows implementation bug, right?","date":"2013-12-21T10:58:53.983Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: ya","date":"2013-12-21T10:58:54.206Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: yes","date":"2013-12-21T10:58:58.979Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: it's fixed now","date":"2013-12-21T10:59:08.424Z","type":"message"}
+{"nick":"indutny","message":"ok, great","date":"2013-12-21T10:59:21.437Z","type":"message"}
+{"nick":"indutny","message":"what about uv_write() right after uv_connect()","date":"2013-12-21T10:59:30.571Z","type":"message"}
+{"nick":"indutny","message":"will you have time to work on queueing them?","date":"2013-12-21T10:59:40.157Z","type":"message"}
+{"nick":"indutny","message":"or should I do it?","date":"2013-12-21T10:59:46.098Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: not sure, depends on what we prioritize :)","date":"2013-12-21T11:00:09.988Z","type":"message"}
+{"nick":"indutny","message":"haha","date":"2013-12-21T11:00:15.321Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: if you have time, do it!","date":"2013-12-21T11:00:15.543Z","type":"message"}
+{"nick":"indutny","message":"that's right","date":"2013-12-21T11:00:16.985Z","type":"message"}
+{"nick":"indutny","message":"well, can't say that I have much","date":"2013-12-21T11:00:23.541Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I'd be super happy","date":"2013-12-21T11:00:23.693Z","type":"message"}
+{"nick":"indutny","message":"but if you wouldn't do it, I'll eventually fill the gap :)","date":"2013-12-21T11:00:33.681Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: for the time being I'll have 1-2 days/week for node+libuv max","date":"2013-12-21T11:00:40.297Z","type":"message"}
+{"nick":"indutny","message":"oh, I see","date":"2013-12-21T11:00:48.553Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I'm still not happy with uv_try_write btw ...","date":"2013-12-21T11:00:59.727Z","type":"message"}
+{"nick":"piscisaureus","message":":)","date":"2013-12-21T11:01:03.270Z","type":"message"}
+{"nick":"piscisaureus","message":"but you and saghul are doing a good job nonetheless","date":"2013-12-21T11:01:17.487Z","type":"message"}
+{"nick":"indutny","message":"piscisaureus: heh","date":"2013-12-21T11:01:33.885Z","type":"message"}
+{"nick":"indutny","message":"you'll be happy once you'll see how it fits nicely in node","date":"2013-12-21T11:01:46.007Z","type":"message"}
+{"nick":"indutny","message":"I already used it in bud","date":"2013-12-21T11:01:55.501Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: only if you make it cross-platform. But even then...","date":"2013-12-21T11:02:09.072Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-12-21T11:02:16.623Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I want to have thread-safe handles in libuv btw","date":"2013-12-21T11:02:21.866Z","type":"message"}
+{"nick":"piscisaureus","message":"long-term goal so to speak","date":"2013-12-21T11:02:26.224Z","type":"message"}
+{"nick":"indutny","message":"you mean windows handles or uv_handle_t ?","date":"2013-12-21T11:02:41.897Z","type":"message"}
+{"nick":"piscisaureus","message":"So I can do uv_write(handle, stuff, some_other_loop_where_the_callback_happens)","date":"2013-12-21T11:03:01.372Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: yes","date":"2013-12-21T11:03:06.784Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: so we can have off-thread streams processing","date":"2013-12-21T11:03:38.373Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: it lets me do off-thread http parsing for project x","date":"2013-12-21T11:04:08.599Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2013-12-21T11:05:29.169Z","type":"message"}
+{"nick":"indutny","message":"hrm","date":"2013-12-21T11:05:41.562Z","type":"message"}
+{"nick":"indutny","message":"I think you just need to","date":"2013-12-21T11:05:53.824Z","type":"message"}
+{"nick":"indutny","message":"uv_handle_transfer(handle, src_loop, dst_loop)","date":"2013-12-21T11:06:09.177Z","type":"message"}
+{"nick":"indutny","message":"not thread-safe version of every method :D","date":"2013-12-21T11:06:20.463Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I'm open to all suggestions :)","date":"2013-12-21T11:06:29.438Z","type":"message"}
+{"nick":"indutny","message":"well","date":"2013-12-21T11:06:34.121Z","type":"message"}
+{"nick":"indutny","message":"that will make minimal damage to all users :D","date":"2013-12-21T11:06:43.489Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I was thinking of uv_stream_init(x, y, z, UV_HANDLE_THREADSAFE)","date":"2013-12-21T11:06:48.893Z","type":"message"}
+{"nick":"indutny","message":"is there any point in using it from two threads simultaneously?","date":"2013-12-21T11:07:22.236Z","type":"message"}
+{"nick":"indutny","message":"writes won't work well","date":"2013-12-21T11:07:34.674Z","type":"message"}
+{"nick":"indutny","message":"so only if one thread reads and other writes","date":"2013-12-21T11:07:41.036Z","type":"message"}
+{"nick":"indutny","message":"but that smells bad","date":"2013-12-21T11:07:43.937Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: well, starting the action from thread A and having the callback on thread B seems useful","date":"2013-12-21T11:07:57.662Z","type":"message"}
+{"nick":"indutny","message":"you can already do it :)","date":"2013-12-21T11:08:08.261Z","type":"message"}
+{"nick":"indutny","message":"uv_async_send","date":"2013-12-21T11:08:09.753Z","type":"message"}
+{"nick":"piscisaureus","message":"it's inefficient","date":"2013-12-21T11:08:16.441Z","type":"message"}
+{"nick":"piscisaureus","message":"I can never win from nginx that way","date":"2013-12-21T11:08:21.526Z","type":"message"}
+{"nick":"indutny","message":"hm....","date":"2013-12-21T11:08:37.690Z","type":"message"}
+{"nick":"indutny","message":"does nginx do it?","date":"2013-12-21T11:08:41.178Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't know what nginx does","date":"2013-12-21T11:08:52.078Z","type":"message"}
+{"nick":"piscisaureus","message":"but it has to be faster!","date":"2013-12-21T11:08:57.598Z","type":"message"}
+{"nick":"piscisaureus","message":"indutny: I think cluster is lame, and I just want to build an http load balancer","date":"2013-12-21T11:09:33.806Z","type":"message"}
+{"nick":"janjongboom","date":"2013-12-21T11:12:22.705Z","type":"join"}
+{"nick":"deoxxa","date":"2013-12-21T11:26:24.814Z","type":"join"}
+{"nick":"deoxxa","message":"i'm getting a segfault that seems to come from uv_ip4_name on mac with libuv 0.10.18 - have there been any related fixes since that tag?","date":"2013-12-21T11:27:36.574Z","type":"message"}
+{"nick":"deoxxa","message":"strangely, the segfault happens a while after uv_ip4_name is called, but removing it makes it go away","date":"2013-12-21T11:28:12.934Z","type":"message"}
+{"nick":"deoxxa","message":"i'm about to update to 0.10.21 and see if it's still a thing","date":"2013-12-21T11:28:57.589Z","type":"message"}
+{"nick":"piscisaureus","message":"I don't know, but indutny does","date":"2013-12-21T11:30:05.851Z","type":"message"}
+{"nick":"deoxxa","message":"mmm, looks like it's still dying... weird.","date":"2013-12-21T11:31:27.694Z","type":"message"}
+{"nick":"indutny","message":"heya","date":"2013-12-21T11:32:16.821Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2013-12-21T11:32:29.965Z","type":"message"}
+{"nick":"indutny","message":"deoxxa: I'm not aware of any fixes, but perhaps there were","date":"2013-12-21T11:32:41.426Z","type":"message"}
+{"nick":"piscisaureus","message":"ok I am going to bed","date":"2013-12-21T11:32:57.116Z","type":"message"}
+{"nick":"indutny","message":"deoxxa: let me know if it doesn't work for you on 0.10.21 too","date":"2013-12-21T11:32:58.171Z","type":"message"}
+{"nick":"piscisaureus","message":"it's 3:30am here","date":"2013-12-21T11:33:03.622Z","type":"message"}
+{"nick":"piscisaureus","reason":"Quit: ~ Trillian Astra - www.trillian.im ~","date":"2013-12-21T11:33:09.410Z","type":"quit"}
+{"nick":"deoxxa","message":"i just tried it with 0.10.21, still crashing","date":"2013-12-21T11:33:12.321Z","type":"message"}
+{"nick":"deoxxa","message":"i'm going to do a debug build and get some stack traces","date":"2013-12-21T11:33:18.298Z","type":"message"}
+{"nick":"deoxxa","message":"indutny: https://gist.github.com/deoxxa/c85c62baeac6013a1e5b","date":"2013-12-21T11:38:06.675Z","type":"message"}
+{"nick":"deoxxa","message":"anything you want me to punch into lldb to poke around?","date":"2013-12-21T11:39:58.276Z","type":"message"}
+{"nick":"indutny","message":"deoxxa: how are you calling it?","date":"2013-12-21T11:41:58.714Z","type":"message"}
+{"nick":"deoxxa","message":"https://gist.github.com/deoxxa/c85c62baeac6013a1e5b#file-mesh-c-L20-L23 << like that","date":"2013-12-21T11:42:47.232Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2013-12-21T11:43:31.969Z","type":"message"}
+{"nick":"indutny","message":"I guess","date":"2013-12-21T11:43:33.293Z","type":"message"}
+{"nick":"indutny","message":"one sec","date":"2013-12-21T11:43:38.751Z","type":"message"}
+{"nick":"indutny","message":"I think that only sin_addr is filled there","date":"2013-12-21T11:45:03.939Z","type":"message"}
+{"nick":"indutny","message":"or sin6_addr depending on ip version","date":"2013-12-21T11:45:11.850Z","type":"message"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2013-12-21T11:45:17.536Z","type":"quit"}
+{"nick":"indutny","message":"h","date":"2013-12-21T11:45:23.900Z","type":"message"}
+{"nick":"indutny","message":"hm","date":"2013-12-21T11:45:24.829Z","type":"message"}
+{"nick":"indutny","message":"sin_port too","date":"2013-12-21T11:45:26.434Z","type":"message"}
+{"nick":"deoxxa","message":"oh, weird","date":"2013-12-21T11:45:47.808Z","type":"message"}
+{"nick":"deoxxa","message":"it's especially weird because it actually outputs the right value","date":"2013-12-21T11:45:58.831Z","type":"message"}
+{"nick":"indutny","message":"it's quite odd, actually","date":"2013-12-21T11:46:09.368Z","type":"message"}
+{"nick":"indutny","message":"it should be filled properly","date":"2013-12-21T11:46:20.024Z","type":"message"}
+{"nick":"indutny","message":"wtf","date":"2013-12-21T11:46:20.667Z","type":"message"}
+{"nick":"deoxxa","message":"https://gist.github.com/deoxxa/c85c62baeac6013a1e5b#file-lldb-output-L6 << see how it actually does give me back the right ip","date":"2013-12-21T11:46:40.689Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2013-12-21T11:46:55.968Z","type":"message"}
+{"nick":"indutny","message":"gosh","date":"2013-12-21T11:46:56.515Z","type":"message"}
+{"nick":"indutny","message":"deoxxa: addr is NULL","date":"2013-12-21T11:47:00.279Z","type":"message"}
+{"nick":"deoxxa","message":"it's really strange","date":"2013-12-21T11:47:00.755Z","type":"message"}
+{"nick":"indutny","message":":D","date":"2013-12-21T11:47:00.910Z","type":"message"}
+{"nick":"deoxxa","message":"oh","date":"2013-12-21T11:47:03.873Z","type":"message"}
+{"nick":"indutny","message":"mesh`on_read(req=0x00007fff5fbff868, nread=0, buf=uv_buf_t at 0x00007fff5fbf7468, addr=0x0000000000000000, flags=0)","date":"2013-12-21T11:47:10.951Z","type":"message"}
+{"nick":"deoxxa","message":"oh my","date":"2013-12-21T11:47:18.740Z","type":"message"}
+{"nick":"deoxxa","message":"der","date":"2013-12-21T11:47:20.437Z","type":"message"}
+{"nick":"deoxxa","message":"thanks :)","date":"2013-12-21T11:47:26.162Z","type":"message"}
+{"nick":"indutny","message":"np","date":"2013-12-21T11:49:01.810Z","type":"message"}
+{"nick":"indutny","message":"you're welcome","date":"2013-12-21T11:49:04.715Z","type":"message"}
+{"nick":"deoxxa","message":"well, i guess the second part to that question is \"why is addr null?\"","date":"2013-12-21T11:49:35.385Z","type":"message"}
+{"nick":"deoxxa","message":"lol","date":"2013-12-21T11:49:35.787Z","type":"message"}
+{"nick":"deoxxa","message":"and how is it getting the right value...","date":"2013-12-21T11:50:55.373Z","type":"message"}
+{"nick":"indutny","message":"I guess","date":"2013-12-21T11:52:02.903Z","type":"message"}
+{"nick":"indutny","message":"because nread==0","date":"2013-12-21T11:52:05.918Z","type":"message"}
+{"nick":"deoxxa","message":"oh","date":"2013-12-21T11:52:19.273Z","type":"message"}
+{"nick":"deoxxa","message":"jeez","date":"2013-12-21T11:52:20.689Z","type":"message"}
+{"nick":"deoxxa","message":"it must be amateur hour at my place","date":"2013-12-21T11:52:37.701Z","type":"message"}
+{"nick":"janjongboom","date":"2013-12-21T12:21:43.103Z","type":"join"}
+{"nick":"c4milo","date":"2013-12-21T12:41:45.439Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 240 seconds","date":"2013-12-21T12:46:09.900Z","type":"quit"}
+{"nick":"felixge","reason":"Quit: felixge","date":"2013-12-21T12:50:27.839Z","type":"quit"}
+{"nick":"rmg","date":"2013-12-21T12:55:18.429Z","type":"join"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2013-12-21T12:56:21.475Z","type":"quit"}
+{"nick":"deoxxa","reason":"Quit: Leaving.","date":"2013-12-21T12:57:23.960Z","type":"quit"}
+{"nick":"deoxxa","date":"2013-12-21T13:00:33.971Z","type":"join"}
+{"nick":"rmg","reason":"Ping timeout: 248 seconds","date":"2013-12-21T13:01:25.624Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2013-12-21T13:22:11.307Z","type":"quit"}
+{"nick":"brycebaril","reason":"Ping timeout: 252 seconds","date":"2013-12-21T13:26:41.665Z","type":"quit"}
+{"nick":"felixge","date":"2013-12-21T13:32:27.092Z","type":"join"}
+{"nick":"dqminh","reason":"Ping timeout: 264 seconds","date":"2013-12-21T13:39:50.737Z","type":"quit"}
+{"nick":"dqminh","date":"2013-12-21T13:43:45.950Z","type":"join"}
+{"nick":"brycebaril","date":"2013-12-21T13:44:42.163Z","type":"join"}
+{"nick":"dsantiago","reason":"Quit: Computer has gone to sleep.","date":"2013-12-21T13:45:20.587Z","type":"quit"}
+{"nick":"skypjack","date":"2013-12-21T13:48:47.921Z","type":"join"}
+{"nick":"deoxxa","reason":"Quit: Leaving.","date":"2013-12-21T13:51:02.901Z","type":"quit"}
+{"nick":"deoxxa","date":"2013-12-21T13:57:35.705Z","type":"join"}
+{"nick":"m76","date":"2013-12-21T14:07:19.287Z","type":"join"}
+{"nick":"kazupon","date":"2013-12-21T14:09:13.085Z","type":"join"}
+{"nick":"zheng","date":"2013-12-21T14:14:12.955Z","type":"join"}
+{"nick":"deoxxa","reason":"Quit: Leaving.","date":"2013-12-21T14:20:56.032Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2013-12-21T14:30:39.731Z","type":"quit"}
+{"nick":"c4milo","date":"2013-12-21T14:30:42.773Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 260 seconds","date":"2013-12-21T14:35:20.203Z","type":"quit"}
+{"nick":"zheng","reason":"Read error: Connection reset by peer","date":"2013-12-21T14:52:57.152Z","type":"quit"}
+{"nick":"AvianFlu","date":"2013-12-21T14:56:39.000Z","type":"join"}
+{"nick":"indutny","message":"tjfontaine: hey man!","date":"2013-12-21T15:03:59.380Z","type":"message"}
+{"nick":"tjfontaine","message":"hey fedor","date":"2013-12-21T15:07:23.862Z","type":"message"}
+{"nick":"kazupon","date":"2013-12-21T15:17:13.345Z","type":"join"}
+{"nick":"MI6","message":"\u0002nodejs-master\u0002: #802 \u00037UNSTABLE\u000f smartos-x64 (8/686) centos-ia32 (4/686) ubuntu-ia32 (2/686) smartos-ia32 (6/686) osx-ia32 (1/686) centos-x64 (4/686) ubuntu-x64 (1/686) http://jenkins.nodejs.org/job/nodejs-master/802/","date":"2013-12-21T15:21:26.933Z","type":"message"}
+{"nick":"bradleymeck","date":"2013-12-21T15:27:58.665Z","type":"join"}
+{"nick":"hz","date":"2013-12-21T15:30:47.374Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2013-12-21T15:32:24.661Z","type":"nick"}
+{"nick":"c4milo","date":"2013-12-21T15:45:51.104Z","type":"join"}
+{"nick":"tjfontaine","message":"trevnorris: I commented on the gist","date":"2013-12-21T15:49:43.105Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: ohai","date":"2013-12-21T15:52:43.849Z","type":"message"}
+{"nick":"indutny","message":"sorry, missed that you was around","date":"2013-12-21T15:52:47.152Z","type":"message"}
+{"nick":"indutny","message":"may I ask you to spawn freebsd server?","date":"2013-12-21T15:52:55.200Z","type":"message"}
