@@ -1,0 +1,261 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-01-08T00:00:00.786Z","type":"quit"}
+{"nick":"ircretary","date":"2014-01-08T00:00:08.363Z","type":"join"}
+{"nick":"paulfryzel","reason":"Remote host closed the connection","date":"2014-01-08T00:04:17.471Z","type":"quit"}
+{"nick":"paulfryzel","date":"2014-01-08T00:04:56.870Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 252 seconds","date":"2014-01-08T00:09:13.646Z","type":"quit"}
+{"nick":"groundwater","message":"tjfontaine trevnorris ACK","date":"2014-01-08T00:17:28.987Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: sec. think I have something figured out.","date":"2014-01-08T00:17:47.792Z","type":"message"}
+{"nick":"trevnorris","message":"now, for the horror of running the tests after a massive change...","date":"2014-01-08T00:18:05.890Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: here's my current insanity: https://github.com/trevnorris/node/compare/al-fix-storage","date":"2014-01-08T00:24:11.795Z","type":"message"}
+{"nick":"trevnorris","message":"if you want to take a look, and try to understand wtf i'm trying to do.","date":"2014-01-08T00:24:27.842Z","type":"message"}
+{"nick":"trevnorris","message":"(not so sure myself :P","date":"2014-01-08T00:24:35.125Z","type":"message"}
+{"nick":"groundwater","message":"trevnorris can you summarize this?","date":"2014-01-08T00:24:54.264Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: um..... yeah. give me 5 minutes.","date":"2014-01-08T00:25:06.629Z","type":"message"}
+{"nick":"AvianFlu","date":"2014-01-08T00:25:57.924Z","type":"join"}
+{"nick":"groundwater","message":"tjfontaine: compiling now","date":"2014-01-08T00:25:57.925Z","type":"message"}
+{"nick":"AvianFlu","reason":"Read error: Connection reset by peer","date":"2014-01-08T00:26:25.967Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-01-08T00:26:43.482Z","type":"quit"}
+{"nick":"tjfontaine","message":"groundwater: heh, it's still not perfect, but it's describing the API in my head","date":"2014-01-08T00:26:45.528Z","type":"message"}
+{"nick":"AvianFlu","date":"2014-01-08T00:26:57.954Z","type":"join"}
+{"nick":"trevnorris","message":"groundwater: each AsyncListener creates a new instance, each w/ their own uid. so every context now stores its own array of the asyncQueue as it was attached at the time the async event was created.","date":"2014-01-08T00:27:24.446Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: but also there's the asyncStorage array which uses the uid to store the storage from the create callback in case it was different","date":"2014-01-08T00:27:51.262Z","type":"message"}
+{"nick":"trevnorris","message":"that way we can always use the same AsyncListener instance, by separating the storage from the instance.","date":"2014-01-08T00:28:27.240Z","type":"message"}
+{"nick":"tjfontaine","message":"would it make the code lighter for you if we did the (parentId, thisId) mechanism instead?","date":"2014-01-08T00:28:31.940Z","type":"message"}
+{"nick":"tjfontaine","message":"instead of having to manage the storage yourself?","date":"2014-01-08T00:28:41.651Z","type":"message"}
+{"nick":"trevnorris","message":"there's also _asyncFlags which stores the flags of what callbacks are available to run.","date":"2014-01-08T00:29:00.034Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: tell you the truth, i still don't get the parentId, thisId thing. is parentId the Id of the context that called the \"thisId\" ?","date":"2014-01-08T00:29:46.034Z","type":"message"}
+{"nick":"tjfontaine","message":"obj.uid == thisId, parentId is one level up (if it exists)","date":"2014-01-08T00:30:16.055Z","type":"message"}
+{"nick":"trevnorris","message":"already done","date":"2014-01-08T00:30:36.681Z","type":"message"}
+{"nick":"trevnorris","message":"i store the current executing context (i.e. parent) when the \"before\" runs","date":"2014-01-08T00:30:51.322Z","type":"message"}
+{"nick":"tjfontaine","message":"right I know that logic exists today, I'm just wondering if the lift and maint required on the storage portions is necessary for core","date":"2014-01-08T00:30:59.271Z","type":"message"}
+{"nick":"trevnorris","message":"then unload it when the \"after\" runs ","date":"2014-01-08T00:31:00.300Z","type":"message"}
+{"nick":"tjfontaine","message":"or if it's somethign consumers should be doing","date":"2014-01-08T00:31:03.979Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine how do i register a callback for a probe? require('tracing').on?","date":"2014-01-08T00:32:06.788Z","type":"message"}
+{"nick":"trevnorris","message":"since you can createAsyncListener() and it returns a single object you can add/remove at will. the storage portion needs to be separated from it, but also tied to the context for which it is running","date":"2014-01-08T00:32:09.127Z","type":"message"}
+{"nick":"trevnorris","message":"so to do that outside of core the user would have to create a table of sorts to maintain that relationship, but then gc wouldn't allow for cleanup of any of  the contexts.","date":"2014-01-08T00:32:49.703Z","type":"message"}
+{"nick":"tjfontaine","message":"groundwater: right now it's require('tracing').register, but the interface is brittle and there's no on() at the moment, though you probably have the chops to implement it yourself if you decided to","date":"2014-01-08T00:32:52.986Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I'm just wondering if we need to store the context, vs keep track of our context, our id, and our parent's id","date":"2014-01-08T00:33:38.017Z","type":"message"}
+{"nick":"trevnorris","message":"i think we're confusing terms.","date":"2014-01-08T00:34:26.741Z","type":"message"}
+{"nick":"trevnorris","message":"other than the context that is currently executing callbacks, i'm not tracking anything else.","date":"2014-01-08T00:34:45.721Z","type":"message"}
+{"nick":"trevnorris","message":" /callbacks/context/","date":"2014-01-08T00:34:54.678Z","type":"message"}
+{"nick":"trevnorris","message":"wait. nm. it was right.","date":"2014-01-08T00:35:05.414Z","type":"message"}
+{"nick":"tjfontaine","message":"how many levels deep do we keep at any time?","date":"2014-01-08T00:35:18.815Z","type":"message"}
+{"nick":"trevnorris","message":"N","date":"2014-01-08T00:35:47.887Z","type":"message"}
+{"nick":"trevnorris","message":"well, we don't \"keep\" anything","date":"2014-01-08T00:36:10.844Z","type":"message"}
+{"nick":"trevnorris","message":"that's up to the user.","date":"2014-01-08T00:36:13.511Z","type":"message"}
+{"nick":"trevnorris","message":"we just attach the \"parentId\" (if you will) to every anonymous callback.","date":"2014-01-08T00:36:35.664Z","type":"message"}
+{"nick":"trevnorris","message":"so if the user wants, they could write code that traces back to the beginning of  script execution.","date":"2014-01-08T00:36:53.695Z","type":"message"}
+{"nick":"tjfontaine","message":"ok, I'll check that part out more closely as I try and get them into terms of this new api","date":"2014-01-08T00:37:19.248Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: like this: https://github.com/AndreasMadsen/trace","date":"2014-01-08T00:37:33.863Z","type":"message"}
+{"nick":"trevnorris","message":"he uses the AL API to create an infinitely long stack trace.","date":"2014-01-08T00:37:44.912Z","type":"message"}
+{"nick":"trevnorris","message":"but AL doesn't do any of that itself.","date":"2014-01-08T00:37:51.004Z","type":"message"}
+{"nick":"kazupon","date":"2014-01-08T00:41:17.943Z","type":"join"}
+{"nick":"zz_karupanerura","new_nick":"karupanerura","date":"2014-01-08T00:51:30.670Z","type":"nick"}
+{"nick":"tjfontaine","message":"groundwater: I updated to include a simple on/removeListener example, and here's a simple test script https://gist.github.com/tjfontaine/8309764","date":"2014-01-08T00:55:01.200Z","type":"message"}
+{"nick":"trevnorris","message":"ok. except for timers, i pretty much have it working. freaking timers.","date":"2014-01-08T00:58:52.917Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: sorry, this is probably about to get a lot slower before it gets faster. :P","date":"2014-01-08T01:07:55.021Z","type":"message"}
+{"nick":"trevnorris","message":"but, all in good time. :)","date":"2014-01-08T01:08:04.229Z","type":"message"}
+{"nick":"groundwater","message":"trevnorris: heh!","date":"2014-01-08T01:08:22.995Z","type":"message"}
+{"nick":"groundwater","message":"NO PROBLEM","date":"2014-01-08T01:08:27.746Z","type":"message"}
+{"nick":"LOUDBOT","message":"YOU CLIMB ROPES LIKE OLD PEOPLE FUCK","date":"2014-01-08T01:08:28.206Z","type":"message"}
+{"nick":"trevnorris","message":"LOUDBOT: jokes on you. I can't climb a rope at all.","date":"2014-01-08T01:08:53.920Z","type":"message"}
+{"nick":"LOUDBOT","message":"trevnorris: YA BETTA CHECK YOURSELF BEFORE YOU WRECK YOURSELF","date":"2014-01-08T01:08:54.371Z","type":"message"}
+{"nick":"trevnorris","message":"... wait... um.","date":"2014-01-08T01:09:01.526Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ok. i'll concede. the debugger repl has proven useful this last week. but console.log() is for Real Men","date":"2014-01-08T01:12:00.043Z","type":"message"}
+{"nick":"trevnorris","message":"wait... um Real People","date":"2014-01-08T01:12:08.849Z","type":"message"}
+{"nick":"trevnorris","message":"or um... Real Humans","date":"2014-01-08T01:12:43.381Z","type":"message"}
+{"nick":"tjfontaine","message":"if you say so, I probably wouldn't use the repl either :)","date":"2014-01-08T01:12:46.204Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2014-01-08T01:12:59.879Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine: success https://gist.github.com/tjfontaine/8309764","date":"2014-01-08T01:13:20.267Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm excited to get dtrace|etw provider into core though, it means a lot of awesome things","date":"2014-01-08T01:13:23.396Z","type":"message"}
+{"nick":"tjfontaine","message":"sweet","date":"2014-01-08T01:14:01.876Z","type":"message"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2014-01-08T01:15:48.124Z","type":"quit"}
+{"nick":"octetcloud","reason":"Ping timeout: 252 seconds","date":"2014-01-08T01:16:19.672Z","type":"quit"}
+{"nick":"isaacs_mobile","date":"2014-01-08T01:19:19.465Z","type":"join"}
+{"nick":"trevnorris","message":"HAHAHAHAH ALL TESTS PASSS!!!!","date":"2014-01-08T01:21:29.835Z","type":"message"}
+{"nick":"LOUDBOT","message":"ALL RIGHT LISTEN UP COCKGOBBLER","date":"2014-01-08T01:21:30.467Z","type":"message"}
+{"nick":"isaacs_mobile","reason":"Remote host closed the connection","date":"2014-01-08T01:24:55.908Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-01-08T01:24:59.136Z","type":"quit"}
+{"nick":"trevnorris","message":"groundwater: strange. there's zero slow down from the previous implementation. would not have expected that. at all.","date":"2014-01-08T01:28:48.967Z","type":"message"}
+{"nick":"kazupon","date":"2014-01-08T01:28:57.958Z","type":"join"}
+{"nick":"trevnorris","message":"ok. so maybe like 2-3%, but still in the margin of error.","date":"2014-01-08T01:29:45.979Z","type":"message"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-01-08T01:33:12.477Z","type":"quit"}
+{"nick":"mikeal","date":"2014-01-08T01:35:03.894Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-08T01:36:06.533Z","type":"join"}
+{"nick":"abraxas","date":"2014-01-08T01:37:41.972Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-01-08T01:40:14.897Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: all tests are passing here: https://github.com/joyent/node/pull/6820","date":"2014-01-08T01:43:06.465Z","type":"message"}
+{"nick":"trevnorris","message":"though I\"m going to throw up the branch on core so windows can run its thing","date":"2014-01-08T01:43:18.218Z","type":"message"}
+{"nick":"tjfontaine","message":"all hapi tests/","date":"2014-01-08T01:43:19.803Z","type":"message"}
+{"nick":"trevnorris","message":"oooh. no no no .","date":"2014-01-08T01:43:26.267Z","type":"message"}
+{"nick":"trevnorris","message":"all core tests.","date":"2014-01-08T01:43:28.454Z","type":"message"}
+{"nick":"tjfontaine","message":"k","date":"2014-01-08T01:43:32.964Z","type":"message"}
+{"nick":"tjfontaine","message":"btw why `new Array()`?","date":"2014-01-08T01:43:51.610Z","type":"message"}
+{"nick":"trevnorris","message":"dude, hapi is seriously one mother of a beast. i'm going to need hueniverse's help to track down wtf is going on there.","date":"2014-01-08T01:43:53.830Z","type":"message"}
+{"nick":"trevnorris","message":"faster that way for sparse arrays","date":"2014-01-08T01:44:12.362Z","type":"message"}
+{"nick":"tjfontaine","message":"oh because uid's won't be sequential","date":"2014-01-08T01:44:35.713Z","type":"message"}
+{"nick":"trevnorris","message":"yup","date":"2014-01-08T01:44:39.843Z","type":"message"}
+{"nick":"tjfontaine","message":"could use a comment block there for that, please and thank you :)","date":"2014-01-08T01:44:47.281Z","type":"message"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-01-08T01:45:08.013Z","type":"quit"}
+{"nick":"tjfontaine","message":"otherwise someone might come along later and not know why and fuck us :)","date":"2014-01-08T01:45:09.449Z","type":"message"}
+{"nick":"trevnorris","message":"true true. comming","date":"2014-01-08T01:45:22.180Z","type":"message"}
+{"nick":"trevnorris","message":"min","date":"2014-01-08T01:45:24.232Z","type":"message"}
+{"nick":"trevnorris","message":"lkdflsajflaskdjf","date":"2014-01-08T01:45:26.307Z","type":"message"}
+{"nick":"tjfontaine","message":"take your time","date":"2014-01-08T01:45:27.185Z","type":"message"}
+{"nick":"thlorenz","date":"2014-01-08T01:46:17.145Z","type":"join"}
+{"nick":"tjfontaine","message":"trevnorris: also, we when you get some rest from today, we could use a BigTheory comment block (somewhere) that describes the pieces of this","date":"2014-01-08T01:46:35.457Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ah, think I know what you mean. ok.","date":"2014-01-08T01:47:43.182Z","type":"message"}
+{"nick":"c4milo","date":"2014-01-08T01:48:50.243Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033trevnorris\u000f created branch al-fix-storage - http://git.io/go8-3w","date":"2014-01-08T01:50:17.454Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 240 seconds","date":"2014-01-08T01:53:03.794Z","type":"quit"}
+{"nick":"vigith","message":"can i wrap client uv_tcp_t into a different structure and use container_of(...) trick to get the wrapper struct in read_cb ?","date":"2014-01-08T02:04:18.794Z","type":"message"}
+{"nick":"vigith","message":"whenever i do it.. i am seeing a difference of 24 bytes in the wrapper address ","date":"2014-01-08T02:04:38.848Z","type":"message"}
+{"nick":"tjfontaine","message":"vigith: that's the pattern often used in node","date":"2014-01-08T02:04:49.093Z","type":"message"}
+{"nick":"vigith","message":"is there any reason i am seeing the address of wrapper offsetted a little bit","date":"2014-01-08T02:05:21.747Z","type":"message"}
+{"nick":"tjfontaine","message":"difficult to say, easier if you can show code in a repo or gist","date":"2014-01-08T02:06:23.580Z","type":"message"}
+{"nick":"vigith","message":"tjfontaine: http://pastebin.com/AcJ0iXCP","date":"2014-01-08T02:07:30.887Z","type":"message"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2014-01-08T02:13:51.869Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-08T02:14:34.125Z","type":"join"}
+{"nick":"rmg","date":"2014-01-08T02:15:49.424Z","type":"join"}
+{"nick":"vigith","message":"i tried couple of times.. i think there is something wrong the way i wrap it.. or type cast it","date":"2014-01-08T02:15:58.350Z","type":"message"}
+{"nick":"vigith","message":"any help would be great.. i have been banging my head for a while :-)","date":"2014-01-08T02:16:27.176Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm kinda neck deep in something else right now, but as soon as I can context switch out I will devote some cycles to it","date":"2014-01-08T02:16:55.932Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: after I've pushed a branch, will it be built under node-review in jenkins?","date":"2014-01-08T02:17:37.943Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-08T02:17:41.818Z","type":"quit"}
+{"nick":"trevnorris","message":"pushed a branch to joyent/node that is","date":"2014-01-08T02:17:57.321Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2014-01-08T02:18:38.832Z","type":"quit"}
+{"nick":"tjfontaine","message":"yes","date":"2014-01-08T02:19:02.468Z","type":"message"}
+{"nick":"vigith","message":"thank you","date":"2014-01-08T02:19:50.894Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: i think the openssl upgrade might have done something not nice to the hapi tests","date":"2014-01-08T02:23:31.320Z","type":"message"}
+{"nick":"trevnorris","message":"i'm going to check","date":"2014-01-08T02:23:33.393Z","type":"message"}
+{"nick":"rmg","reason":"Ping timeout: 240 seconds","date":"2014-01-08T02:25:26.676Z","type":"quit"}
+{"nick":"mcavage","date":"2014-01-08T02:26:25.806Z","type":"join"}
+{"nick":"trevnorris","message":"indutny: nm.","date":"2014-01-08T02:27:07.995Z","type":"message"}
+{"nick":"mcavage","reason":"Ping timeout: 252 seconds","date":"2014-01-08T02:31:07.678Z","type":"quit"}
+{"nick":"trevnorris","message":"hueniverse: yeah. starting tomorrow or whatever. i'm going to need your help determining what's going on w/ all these tests.","date":"2014-01-08T02:31:28.465Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: I should be around","date":"2014-01-08T02:33:50.296Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse: i had to check out v1.20.0","date":"2014-01-08T02:34:14.629Z","type":"message"}
+{"nick":"trevnorris","message":"latest master kept giving me some object method not found error","date":"2014-01-08T02:34:30.643Z","type":"message"}
+{"nick":"wavded","date":"2014-01-08T02:34:51.959Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: this is one reason why I need EEO: https://github.com/joyent/node/blob/master/lib/domain.js#L169-L174","date":"2014-01-08T02:34:54.174Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: i'm depending on obscure functionality to get net working because it doesn't instantiate itself until .listen()","date":"2014-01-08T02:35:28.329Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: I'll look later tonight","date":"2014-01-08T02:35:37.772Z","type":"message"}
+{"nick":"tjfontaine","message":"in lots of cases the handle wont' be created on instantiation","date":"2014-01-08T02:35:48.754Z","type":"message"}
+{"nick":"trevnorris","message":"yeah.... trust me. I found that out.","date":"2014-01-08T02:36:24.608Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse: fwiw, i'm working from this patch: https://github.com/joyent/node/pull/6820","date":"2014-01-08T02:36:43.928Z","type":"message"}
+{"nick":"paulfryzel","date":"2014-01-08T02:36:50.868Z","type":"join"}
+{"nick":"tjfontaine","message":"I'm not opposed to EEO, I just want to make sure it's absolutely necessary, and that for now the things that have already landed are in a good shape [if the only way to get that to be the case is with EEO then that's what it has to be]","date":"2014-01-08T02:36:57.410Z","type":"message"}
+{"nick":"trevnorris","message":"still a lot of failures, but not near as violent as current master","date":"2014-01-08T02:37:09.133Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: if we can get AL working w/ domains then i'm all for it.","date":"2014-01-08T02:37:20.208Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse: though, one strange thing is that the test runner just up and quits w/o any information about what happened.","date":"2014-01-08T02:37:42.899Z","type":"message"}
+{"nick":"trevnorris","message":"anyways. i'm out.","date":"2014-01-08T02:37:55.324Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2014-01-08T02:37:59.361Z","type":"action"}
+{"nick":"LOUDBOT","message":"HONEYBUNNY BE COOL BABY","date":"2014-01-08T02:37:59.888Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: if domains are fucked, everything is fucked","date":"2014-01-08T02:38:00.815Z","type":"message"}
+{"nick":"tjfontaine","message":"no doubt","date":"2014-01-08T02:38:27.842Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse: too bad domains were never properly implemented to begin w/. so we're stuck getting this insane backwards compatibility working.","date":"2014-01-08T02:38:32.516Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: I say fuck backwards comp. it is clearly marked as 2","date":"2014-01-08T02:39:20.976Z","type":"message"}
+{"nick":"mikeal","date":"2014-01-08T02:39:20.976Z","type":"join"}
+{"nick":"trevnorris","message":"true that","date":"2014-01-08T02:39:51.633Z","type":"message"}
+{"nick":"trevnorris","message":":)","date":"2014-01-08T02:39:54.145Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: I am not kidding. domains still have weird issues. if you can do a better job with a good API, I say do it!","date":"2014-01-08T02:40:00.162Z","type":"message"}
+{"nick":"trevnorris","message":"hueniverse: dink around w/ the AL api. there's a lot it can do for you.","date":"2014-01-08T02:40:25.249Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: https://github.com/spumko/hapi/issues/1299","date":"2014-01-08T02:40:38.740Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: I am willing to bet that's a node domains bug","date":"2014-01-08T02:40:51.651Z","type":"message"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-01-08T02:41:02.709Z","type":"quit"}
+{"nick":"hueniverse","message":"trevnorris: I looked at it last night but had to give up at 2am and go to sleep","date":"2014-01-08T02:41:40.596Z","type":"message"}
+{"nick":"trevnorris","message":"thanks. that's a mostly minimal case that I can work w/","date":"2014-01-08T02:41:42.512Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: that's 0.10","date":"2014-01-08T02:41:58.305Z","type":"message"}
+{"nick":"trevnorris","message":"ok","date":"2014-01-08T02:42:06.314Z","type":"message"}
+{"nick":"trevnorris","message":"don't you have to add the error event before calling .run() ?","date":"2014-01-08T02:42:35.039Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: it appears not :-)","date":"2014-01-08T02:43:04.025Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: doesn't matter I think","date":"2014-01-08T02:43:17.538Z","type":"message"}
+{"nick":"hueniverse","message":"trevnorris: inject is after multiple nextTicks","date":"2014-01-08T02:43:27.725Z","type":"message"}
+{"nick":"trevnorris","message":"ah, i see.","date":"2014-01-08T02:43:51.166Z","type":"message"}
+{"nick":"trevnorris","message":"ok. well. for tomorrow.","date":"2014-01-08T02:43:54.971Z","type":"message"}
+{"nick":"trevnorris","message":"night","date":"2014-01-08T02:43:58.719Z","type":"message"}
+{"nick":"daviddias","date":"2014-01-08T02:58:44.872Z","type":"join"}
+{"nick":"thlorenz","message":"I'm wondering if it's possible to pipe a file into a tcp stream using uv_pipe_init and uv_pipe_open?","date":"2014-01-08T03:00:10.824Z","type":"message"}
+{"nick":"thlorenz","message":"trying to pass tcp->accepted_fd to pipe open, but that is 0 -- any examples out there?","date":"2014-01-08T03:00:48.356Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2014-01-08T03:03:02.929Z","type":"quit"}
+{"nick":"thlorenz","message":"actually sorry it's -1","date":"2014-01-08T03:03:55.387Z","type":"message"}
+{"nick":"thlorenz","message":"read starting the file pipe now and just writing to the response on each read_cb, hope that's the way to do it","date":"2014-01-08T03:15:28.025Z","type":"message"}
+{"nick":"M28","date":"2014-01-08T03:21:59.852Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-01-08T03:28:54.267Z","type":"quit"}
+{"nick":"pquerna","reason":"Remote host closed the connection","date":"2014-01-08T03:34:16.271Z","type":"quit"}
+{"nick":"pquerna","date":"2014-01-08T03:34:29.832Z","type":"join"}
+{"nick":"pquerna","reason":"Changing host","date":"2014-01-08T03:34:29.986Z","type":"quit"}
+{"nick":"pquerna","date":"2014-01-08T03:34:29.986Z","type":"join"}
+{"nick":"kellabyte","reason":"Remote host closed the connection","date":"2014-01-08T03:34:50.195Z","type":"quit"}
+{"nick":"c4milo","date":"2014-01-08T03:37:15.213Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-08T03:37:38.823Z","type":"join"}
+{"nick":"wavded","reason":"Quit: Hasta la pasta","date":"2014-01-08T03:38:36.390Z","type":"quit"}
+{"nick":"paulfryzel","reason":"Ping timeout: 252 seconds","date":"2014-01-08T03:41:53.640Z","type":"quit"}
+{"nick":"c4milo","reason":"Ping timeout: 260 seconds","date":"2014-01-08T03:42:07.811Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-01-08T03:47:51.136Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2014-01-08T03:47:54.361Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-01-08T03:58:42.467Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-01-08T03:59:16.626Z","type":"join"}
+{"nick":"kazupon","date":"2014-01-08T03:59:36.876Z","type":"join"}
+{"nick":"kazupon_","date":"2014-01-08T04:01:37.725Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2014-01-08T04:01:51.953Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-08T04:02:30.964Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 265 seconds","date":"2014-01-08T04:03:46.218Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-08T04:05:08.903Z","type":"quit"}
+{"nick":"kazupon_","reason":"Ping timeout: 252 seconds","date":"2014-01-08T04:06:38.654Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 246 seconds","date":"2014-01-08T04:07:34.844Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-08T04:08:36.079Z","type":"join"}
+{"nick":"mikeal","date":"2014-01-08T04:12:44.016Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2014-01-08T04:13:03.256Z","type":"quit"}
+{"nick":"c4milo","date":"2014-01-08T04:17:38.513Z","type":"join"}
+{"nick":"kazupon","date":"2014-01-08T04:26:54.795Z","type":"join"}
+{"nick":"kellabyte","date":"2014-01-08T04:32:52.218Z","type":"join"}
+{"nick":"kellabyte","reason":"Changing host","date":"2014-01-08T04:33:04.247Z","type":"quit"}
+{"nick":"kellabyte","date":"2014-01-08T04:33:04.400Z","type":"join"}
+{"nick":"kellabyte","reason":"Changing host","date":"2014-01-08T04:33:04.401Z","type":"quit"}
+{"nick":"kellabyte","date":"2014-01-08T04:33:04.401Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 240 seconds","date":"2014-01-08T04:36:14.973Z","type":"quit"}
+{"nick":"paulfryzel","date":"2014-01-08T04:38:27.846Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-01-08T04:42:38.920Z","type":"quit"}
+{"nick":"M28","reason":"Read error: Connection reset by peer","date":"2014-01-08T04:51:25.809Z","type":"quit"}
+{"nick":"M28","date":"2014-01-08T04:51:54.672Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-08T04:53:10.770Z","type":"quit"}
+{"nick":"ik_","date":"2014-01-08T04:57:57.349Z","type":"join"}
+{"nick":"ik_","new_nick":"ik","date":"2014-01-08T04:58:30.840Z","type":"nick"}
+{"nick":"ik","date":"2014-01-08T04:59:13.318Z","type":"part"}
+{"nick":"Guest71961","reason":"Ping timeout: 245 seconds","date":"2014-01-08T05:03:45.385Z","type":"quit"}
+{"nick":"burlak","date":"2014-01-08T05:08:19.974Z","type":"join"}
+{"nick":"burlak","new_nick":"Guest14905","date":"2014-01-08T05:08:29.405Z","type":"nick"}
+{"nick":"indexzero","date":"2014-01-08T05:18:33.817Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: [\"Textual IRC Client: www.textualapp.com\"]","date":"2014-01-08T05:25:18.198Z","type":"quit"}
+{"nick":"stagas","date":"2014-01-08T05:33:21.946Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-01-08T05:37:23.324Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-01-08T05:37:43.170Z","type":"quit"}
+{"nick":"brson","date":"2014-01-08T05:38:00.927Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-08T05:39:10.823Z","type":"join"}
+{"nick":"m76","date":"2014-01-08T05:42:06.843Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 252 seconds","date":"2014-01-08T05:43:37.673Z","type":"quit"}
+{"nick":"Damn3d","reason":"Ping timeout: 240 seconds","date":"2014-01-08T06:06:17.182Z","type":"quit"}
+{"nick":"m76","reason":"Read error: Connection reset by peer","date":"2014-01-08T06:13:44.264Z","type":"quit"}
+{"nick":"m76","date":"2014-01-08T06:27:36.714Z","type":"join"}
+{"nick":"m76","reason":"Client Quit","date":"2014-01-08T06:29:06.912Z","type":"quit"}
+{"nick":"mikeal","date":"2014-01-08T06:33:57.962Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-08T06:40:00.888Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-01-08T06:44:14.752Z","type":"quit"}
+{"nick":"julian_duque","new_nick":"julianduque","date":"2014-01-08T06:47:22.411Z","type":"nick"}
+{"nick":"janjongboom","date":"2014-01-08T06:59:38.581Z","type":"join"}
+{"nick":"Damn3d","date":"2014-01-08T07:02:52.860Z","type":"join"}
+{"nick":"Damn3d","reason":"Changing host","date":"2014-01-08T07:02:52.860Z","type":"quit"}
+{"nick":"Damn3d","date":"2014-01-08T07:02:52.860Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-01-08T07:03:20.307Z","type":"quit"}
+{"nick":"c4milo","date":"2014-01-08T07:08:03.006Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2014-01-08T07:12:43.678Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-01-08T07:18:22.174Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-08T07:18:33.055Z","type":"quit"}
+{"nick":"hz","date":"2014-01-08T07:33:47.642Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-01-08T07:35:08.273Z","type":"quit"}
+{"nick":"paulfryzel","date":"2014-01-08T07:40:40.013Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-01-08T07:45:02.805Z","type":"quit"}
+{"nick":"mikeal","date":"2014-01-08T07:47:05.947Z","type":"join"}
+{"nick":"murukesh","date":"2014-01-08T07:51:25.474Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 260 seconds","date":"2014-01-08T07:54:07.811Z","type":"quit"}
