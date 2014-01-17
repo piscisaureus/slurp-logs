@@ -308,3 +308,285 @@
 {"nick":"AvianFlu","message":"mmalecki: that makes sense","date":"2014-01-16T15:59:45.178Z","type":"message"}
 {"nick":"AvianFlu","message":"I figured the couchdb churn was somehow involved","date":"2014-01-16T15:59:53.598Z","type":"message"}
 {"nick":"mmalecki","message":"we're trying to find why","date":"2014-01-16T15:59:54.035Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: unfortunately that strace only involves closed requests","date":"2014-01-16T16:01:06.542Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-01-16T16:01:15.222Z","type":"quit"}
+{"nick":"jan____","message":"mmalecki: I did a ssh -L tunnel into the VM and hit the node process directly without nginx, it behaves a little different, but generally also goes up.","date":"2014-01-16T16:01:30.838Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: I can get more strace","date":"2014-01-16T16:01:37.015Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: shall I?","date":"2014-01-16T16:03:53.760Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: yes, please. I'm curious how that not-properly-closed request looks on the strace","date":"2014-01-16T16:05:17.082Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: I revert my statement, bypassing nginx seems to not cause any issues","date":"2014-01-16T16:05:28.727Z","type":"message"}
+{"nick":"mmalecki","message":"oh!","date":"2014-01-16T16:05:38.574Z","type":"message"}
+{"nick":"daviddia_","new_nick":"daviddias","date":"2014-01-16T16:05:53.055Z","type":"nick"}
+{"nick":"mmalecki","message":"so it works even if it's locked up otherwise?","date":"2014-01-16T16:05:53.866Z","type":"message"}
+{"nick":"MI6","message":"\u0002libuv-master-windows\u0002: #12 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/libuv-master-windows/12/","date":"2014-01-16T16:06:55.052Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: no, sockets seem to get closed correctly when the browser terminates the connection","date":"2014-01-16T16:07:32.746Z","type":"message"}
+{"nick":"mmalecki","message":"oh :)","date":"2014-01-16T16:07:52.921Z","type":"message"}
+{"nick":"mmalecki","message":"hmm, that actually does make it harder to debug","date":"2014-01-16T16:08:03.285Z","type":"message"}
+{"nick":"mmalecki","message":"^ why I drink","date":"2014-01-16T16:08:07.175Z","type":"message"}
+{"nick":"jan____","message":"My theory is this: the request is _changes?feed=longpoll&heartbeat=10000 gets into nginx, out, into node, out into couch, now couch will send newline every 10 seconds to node and node to nginx, which for some reason does not cancel the request if the client terminates it","date":"2014-01-16T16:09:17.874Z","type":"message"}
+{"nick":"mmalecki","message":"maybe nginx doesn't terminate request properly?","date":"2014-01-16T16:09:43.827Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, exactly","date":"2014-01-16T16:09:55.777Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: fwiw, you might have just scored The Weirdest Bug Of The Month award","date":"2014-01-16T16:10:35.234Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: woha, new behaviour!","date":"2014-01-16T16:11:05.020Z","type":"message"}
+{"nick":"jan____","message":"now that node runs longer, I jsut got a whole bunch of 2014-01-16T16:08:09.078Z [www] GET 200 /_api/user%2Fxxxx/_changes?include_docs=true&since=490&heartbeat=10000&feed=longpoll 1464827ms","date":"2014-01-16T16:11:52.831Z","type":"message"}
+{"nick":"jan____","message":"with ms ranging from 500ms to 1492832ms","date":"2014-01-16T16:12:00.826Z","type":"message"}
+{"nick":"jan____","message":"make that 5000","date":"2014-01-16T16:12:04.698Z","type":"message"}
+{"nick":"jan____","message":"so they timeout eventually","date":"2014-01-16T16:12:09.683Z","type":"message"}
+{"nick":"mmalecki","message":"ah!","date":"2014-01-16T16:12:13.507Z","type":"message"}
+{"nick":"mmalecki","message":"so it's nginx!","date":"2014-01-16T16:12:18.180Z","type":"message"}
+{"nick":"jan____","message":"25 minutes?!","date":"2014-01-16T16:12:33.342Z","type":"message"}
+{"nick":"jan____","message":"the timings are weird though: https://gist.github.com/janl/e9cd380707ab25fae6ce","date":"2014-01-16T16:13:00.686Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, it's insanely weird. what logger?","date":"2014-01-16T16:13:04.252Z","type":"message"}
+{"nick":"mmalecki","message":"and how do you log?","date":"2014-01-16T16:13:09.852Z","type":"message"}
+{"nick":"mmalecki","message":"like, on what events/","date":"2014-01-16T16:13:17.425Z","type":"message"}
+{"nick":"jan____","message":"on each request in connect","date":"2014-01-16T16:13:37.303Z","type":"message"}
+{"nick":"mmalecki","message":"got it","date":"2014-01-16T16:14:03.187Z","type":"message"}
+{"nick":"mmalecki","message":"damn, you didn't happen to catch that on strace, did you?","date":"2014-01-16T16:14:13.874Z","type":"message"}
+{"nick":"jan____","message":"have not but can","date":"2014-01-16T16:14:25.913Z","type":"message"}
+{"nick":"jan____","message":"the long standing requests come in now more frequently","date":"2014-01-16T16:14:44.580Z","type":"message"}
+{"nick":"mmalecki","message":"please. if that doesn't give us any answers, we might have to resort to strace'ing nginx","date":"2014-01-16T16:15:11.122Z","type":"message"}
+{"nick":"jan____","message":"in pm","date":"2014-01-16T16:18:06.162Z","type":"message"}
+{"nick":"jan____","message":"from the top, you see 2014-01-16T16:16:19.102Z [www] POST 201 /_api/user%2Fxxxxxxxx/_bulk_docs 21ms - 3b","date":"2014-01-16T16:18:35.155Z","type":"message"}
+{"nick":"jan____","message":"xxxxxx= sent in PM","date":"2014-01-16T16:18:44.699Z","type":"message"}
+{"nick":"jan____","message":"right after that we have a _chances feed terminating with the same xxxxxx","date":"2014-01-16T16:18:58.793Z","type":"message"}
+{"nick":"jan____","message":"and then we have a long running _changes terminated with yyyyyyyy","date":"2014-01-16T16:19:11.097Z","type":"message"}
+{"nick":"jan____","message":"it should show up as a way older socket, e.g. lower fd number","date":"2014-01-16T16:19:39.463Z","type":"message"}
+{"nick":"mmalecki","message":"ahh. got it. I thought it was cat on a keyboard","date":"2014-01-16T16:20:01.577Z","type":"message"}
+{"nick":"jan____","message":"probably fd 555 566","date":"2014-01-16T16:20:18.337Z","type":"message"}
+{"nick":"jan____","message":"not seeign any close() there though","date":"2014-01-16T16:20:55.632Z","type":"message"}
+{"nick":"jan____","message":"mmalecki: that strace is a red herring","date":"2014-01-16T16:22:18.578Z","type":"message"}
+{"nick":"jan____","message":"not sure if I get another dump of the loare ms ones any time soon","date":"2014-01-16T16:22:32.225Z","type":"message"}
+{"nick":"jan____","message":"*loarge=longer ones","date":"2014-01-16T16:22:52.943Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: yeah, that's what I'd love to see","date":"2014-01-16T16:27:12.575Z","type":"message"}
+{"nick":"jan____","message":"stracing like a mofo now","date":"2014-01-16T16:27:26.993Z","type":"message"}
+{"nick":"jan____","message":"I am fairly certain this is the issue","date":"2014-01-16T16:28:01.685Z","type":"message"}
+{"nick":"jan____","action":"mmalecki: boom: https://www.ruby-forum.com/topic/4412004","date":"2014-01-16T16:29:21.521Z","type":"action"}
+{"nick":"jan____","message":"-/me","date":"2014-01-16T16:29:24.684Z","type":"message"}
+{"nick":"paulfryzel","date":"2014-01-16T16:30:52.394Z","type":"join"}
+{"nick":"jan____","message":"that explains why it doesn’t happen on max os x: kqueue vs. epoll","date":"2014-01-16T16:31:18.638Z","type":"message"}
+{"nick":"AvianFlu","message":"yep, there you go","date":"2014-01-16T16:32:24.557Z","type":"message"}
+{"nick":"mmalecki","message":"hah, nice. so it's https-specific","date":"2014-01-16T16:33:20.006Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: you can terminate SSL with bud instead of nfinx","date":"2014-01-16T16:34:40.891Z","type":"message"}
+{"nick":"mmalecki","message":"nginx","date":"2014-01-16T16:34:42.530Z","type":"message"}
+{"nick":"paulfryzel","reason":"Ping timeout: 276 seconds","date":"2014-01-16T16:35:54.281Z","type":"quit"}
+{"nick":"jan____","message":"mmalecki: trying something else, one sec","date":"2014-01-16T16:36:17.280Z","type":"message"}
+{"nick":"jan____","message":"but yeah","date":"2014-01-16T16:36:21.778Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-01-16T16:36:38.429Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-16T16:37:42.188Z","type":"join"}
+{"nick":"brson","date":"2014-01-16T16:38:03.297Z","type":"join"}
+{"nick":"tjfontaine","message":"ah, that makes me feel better","date":"2014-01-16T16:40:04.945Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Sam Roberts\u000f \u00037v0.10\u000f * \u0002abe0255\u0002 : doc: clarify Windows signal sending emulation - http://git.io/YvnZIA","date":"2014-01-16T16:41:13.377Z","type":"message"}
+{"nick":"jan____","message":"@tjfontaine: thanks so much though for your help (an mmalecki and AvianFlu of course), I’d never have found this","date":"2014-01-16T16:41:38.586Z","type":"message"}
+{"nick":"TooTallNate","date":"2014-01-16T16:41:38.891Z","type":"join"}
+{"nick":"tjfontaine","message":"jan____: glad to be of some service","date":"2014-01-16T16:42:06.991Z","type":"message"}
+{"nick":"AvianFlu","message":"jan____: likewise, glad to help","date":"2014-01-16T16:42:43.392Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny, trevnorris, isaacs, AlexisMocha, TooTallNate: call in 14min","date":"2014-01-16T16:46:51.486Z","type":"message"}
+{"nick":"indutny","message":"oh","date":"2014-01-16T16:47:02.123Z","type":"message"}
+{"nick":"tjfontaine","message":"able to make it?","date":"2014-01-16T16:47:27.641Z","type":"message"}
+{"nick":"mmalecki","message":"jan____: pleasure :)","date":"2014-01-16T16:49:05.861Z","type":"message"}
+{"nick":"indutny","message":"yeah, I think","date":"2014-01-16T16:50:10.021Z","type":"message"}
+{"nick":"indutny","message":"though, internet is far from perfect here","date":"2014-01-16T16:51:07.504Z","type":"message"}
+{"nick":"tjfontaine","message":"heh","date":"2014-01-16T16:51:37.067Z","type":"message"}
+{"nick":"tjfontaine","message":"I wish the jenkins slave/java would stop dying on the win2012 azure box","date":"2014-01-16T16:52:34.918Z","type":"message"}
+{"nick":"tjfontaine","message":"hmm or maybe that box is completely down","date":"2014-01-16T16:52:48.273Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #443 \u00037UNSTABLE\u000f windows-ia32 (9/610) windows-x64 (13/610) http://jenkins.nodejs.org/job/nodejs-v0.10-windows/443/","date":"2014-01-16T16:53:28.491Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1722 \u00037UNSTABLE\u000f osx-x64 (3/610) linux-ia32 (2/610) smartos-x64 (8/610) smartos-ia32 (8/610) linux-x64 (2/610) osx-ia32 (3/610) http://jenkins.nodejs.org/job/nodejs-v0.10/1722/","date":"2014-01-16T16:53:29.497Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-01-16T16:53:49.255Z","type":"quit"}
+{"nick":"AlexisMocha","message":"yep","date":"2014-01-16T16:53:52.809Z","type":"message"}
+{"nick":"kazupon","date":"2014-01-16T16:54:01.006Z","type":"join"}
+{"nick":"tjfontaine","message":"AlexisMocha: so I've been thinking re-timing on windows we may want a bit more generic solution","date":"2014-01-16T16:54:19.735Z","type":"message"}
+{"nick":"isaacs","message":"Hey, guys","date":"2014-01-16T16:54:47.547Z","type":"message"}
+{"nick":"tjfontaine","message":"hey","date":"2014-01-16T16:55:02.070Z","type":"message"}
+{"nick":"isaacs","message":"sorry, i realized last night that i'd made a dentist appt for 9:00 this morning","date":"2014-01-16T16:55:04.012Z","type":"message"}
+{"nick":"isaacs","message":"(made the appt 6 months ago)","date":"2014-01-16T16:55:09.886Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2014-01-16T16:55:10.171Z","type":"message"}
+{"nick":"isaacs","message":"you doing a call?","date":"2014-01-16T16:55:14.590Z","type":"message"}
+{"nick":"indutny","message":"sorry","date":"2014-01-16T16:55:17.582Z","type":"message"}
+{"nick":"indutny","message":"not going to join you","date":"2014-01-16T16:55:19.312Z","type":"message"}
+{"nick":"indutny","message":"internet is too bad","date":"2014-01-16T16:55:24.202Z","type":"message"}
+{"nick":"isaacs","message":"indutny: at the dentist?","date":"2014-01-16T16:55:26.141Z","type":"message"}
+{"nick":"tjfontaine","message":"well not if trevor doesn't show up :)","date":"2014-01-16T16:55:28.909Z","type":"message"}
+{"nick":"indutny","message":"can't even load G+","date":"2014-01-16T16:55:32.925Z","type":"message"}
+{"nick":"tjfontaine","message":"I'll just work with AlexisMocha here :)","date":"2014-01-16T16:55:35.497Z","type":"message"}
+{"nick":"isaacs","message":"indutny: i don't think they can do dentistry over G+, it's ok","date":"2014-01-16T16:55:39.313Z","type":"message"}
+{"nick":"indutny","message":"isaacs: at london :)","date":"2014-01-16T16:55:51.010Z","type":"message"}
+{"nick":"isaacs","message":"indutny: not high enough resolution on most web cams to check out your teeth","date":"2014-01-16T16:55:53.060Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2014-01-16T16:55:57.572Z","type":"message"}
+{"nick":"AlexisMocha","message":"happy to get your undivided attention :)","date":"2014-01-16T16:56:09.389Z","type":"message"}
+{"nick":"isaacs","message":":(E)","date":"2014-01-16T16:56:17.362Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: that ninja/gyp build fix seems fine","date":"2014-01-16T16:56:18.256Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: presuming you verified in output that the linker is still doing whole-archive :)","date":"2014-01-16T16:56:35.097Z","type":"message"}
+{"nick":"isaacs","message":"ok, i'll check in later on when i get into the offices","date":"2014-01-16T16:56:35.466Z","type":"message"}
+{"nick":"isaacs","message":"see ya in a bit.  my latest update is on the mailing list :)","date":"2014-01-16T16:56:47.413Z","type":"message"}
+{"nick":"hz_","date":"2014-01-16T16:56:49.925Z","type":"join"}
+{"nick":"hz","reason":"Disconnected by services","date":"2014-01-16T16:56:53.997Z","type":"quit"}
+{"nick":"hz_","new_nick":"hz","date":"2014-01-16T16:56:54.912Z","type":"nick"}
+{"nick":"tjfontaine","message":"isaacs: enjoy","date":"2014-01-16T16:56:59.125Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-01-16T16:57:39.766Z","type":"quit"}
+{"nick":"tjfontaine","message":"indutny: also, can you fix jslint on v0.10? :/","date":"2014-01-16T16:57:43.628Z","type":"message"}
+{"nick":"tjfontaine","message":"I need to add that to the PR tester","date":"2014-01-16T16:57:58.145Z","type":"message"}
+{"nick":"kazupon","date":"2014-01-16T16:58:06.833Z","type":"join"}
+{"nick":"inolen","date":"2014-01-16T16:58:59.846Z","type":"join"}
+{"nick":"tjfontaine","message":"so AlexisMocha","date":"2014-01-16T16:59:29.993Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 252 seconds","date":"2014-01-16T17:02:26.814Z","type":"quit"}
+{"nick":"daviddias","message":"Hey tjfontaine, are we starting the meeting now? I can't find the hangout link ","date":"2014-01-16T17:04:54.125Z","type":"message"}
+{"nick":"tjfontaine","message":"yup, https://plus.google.com/hangouts/_/calendar/dGpmb250YWluZUBub2RlanMub3Jn.7o3iugm5mbjqj81eb56fsoj118","date":"2014-01-16T17:05:41.704Z","type":"message"}
+{"nick":"rmg","date":"2014-01-16T17:09:10.185Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Fedor Indutny\u000f \u00037v0.10\u000f * \u000261c0d57\u0002 : gyp: fix `ninja` build on linux - http://git.io/VvTnkQ","date":"2014-01-16T17:11:13.793Z","type":"message"}
+{"nick":"kellabyte","message":"tjfontaine: congrats!","date":"2014-01-16T17:11:17.478Z","type":"message"}
+{"nick":"kellabyte","message":"isaacs: also congrats!","date":"2014-01-16T17:11:32.396Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1723 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/nodejs-v0.10/1723/","date":"2014-01-16T17:11:44.702Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #444 \u00037UNSTABLE\u000f http://jenkins.nodejs.org/job/nodejs-v0.10-windows/444/","date":"2014-01-16T17:12:01.663Z","type":"message"}
+{"nick":"Benvie","reason":"Remote host closed the connection","date":"2014-01-16T17:12:25.365Z","type":"quit"}
+{"nick":"indutny","message":"kellabyte: on what? :)","date":"2014-01-16T17:12:31.994Z","type":"message"}
+{"nick":"Benvie","date":"2014-01-16T17:13:00.961Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2014-01-16T17:16:59.590Z","type":"quit"}
+{"nick":"jmar777","date":"2014-01-16T17:18:00.439Z","type":"join"}
+{"nick":"kellabyte","message":"the position announcements yesterday!","date":"2014-01-16T17:20:38.734Z","type":"message"}
+{"nick":"janjongboom","reason":"Ping timeout: 276 seconds","date":"2014-01-16T17:22:03.260Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-01-16T17:23:28.114Z","type":"join"}
+{"nick":"m76","reason":"Ping timeout: 252 seconds","date":"2014-01-16T17:24:59.681Z","type":"quit"}
+{"nick":"indutny","message":"aaah","date":"2014-01-16T17:29:07.296Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2014-01-16T17:29:09.327Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2014-01-16T17:30:10.718Z","type":"quit"}
+{"nick":"octetcloud","date":"2014-01-16T17:32:05.748Z","type":"join"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2014-01-16T17:35:21.708Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-16T17:35:58.415Z","type":"join"}
+{"nick":"m76","date":"2014-01-16T17:36:31.305Z","type":"join"}
+{"nick":"jmar777","date":"2014-01-16T17:39:17.003Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-01-16T17:39:53.372Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 276 seconds","date":"2014-01-16T17:40:54.241Z","type":"quit"}
+{"nick":"calvinfo","date":"2014-01-16T17:50:34.823Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-master\u0002: #434 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/libuv-master/434/","date":"2014-01-16T17:53:20.142Z","type":"message"}
+{"nick":"rvagg","reason":"Ping timeout: 252 seconds","date":"2014-01-16T17:54:24.230Z","type":"quit"}
+{"nick":"hueniverse1","date":"2014-01-16T17:55:24.509Z","type":"join"}
+{"nick":"hueniverse","reason":"Ping timeout: 252 seconds","date":"2014-01-16T17:56:03.057Z","type":"quit"}
+{"nick":"paulfryz_","date":"2014-01-16T17:59:00.517Z","type":"join"}
+{"nick":"mikeal","date":"2014-01-16T17:59:33.067Z","type":"join"}
+{"nick":"rvagg","date":"2014-01-16T18:00:33.436Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 252 seconds","date":"2014-01-16T18:01:00.033Z","type":"quit"}
+{"nick":"einaros","reason":"Ping timeout: 252 seconds","date":"2014-01-16T18:01:33.072Z","type":"quit"}
+{"nick":"jxs","reason":"Ping timeout: 252 seconds","date":"2014-01-16T18:01:33.235Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 276 seconds","date":"2014-01-16T18:03:00.271Z","type":"quit"}
+{"nick":"einaros","date":"2014-01-16T18:03:12.654Z","type":"join"}
+{"nick":"jxs","date":"2014-01-16T18:07:42.049Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-16T18:07:52.067Z","type":"quit"}
+{"nick":"kazupon","date":"2014-01-16T18:08:35.300Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 245 seconds","date":"2014-01-16T18:13:28.122Z","type":"quit"}
+{"nick":"juliangruber","reason":"Ping timeout: 252 seconds","date":"2014-01-16T18:27:24.090Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-16T18:31:43.622Z","type":"join"}
+{"nick":"daviddias","reason":"Client Quit","date":"2014-01-16T18:36:32.434Z","type":"quit"}
+{"nick":"juliangruber","date":"2014-01-16T18:42:42.752Z","type":"join"}
+{"nick":"mordy__","date":"2014-01-16T18:51:54.322Z","type":"part"}
+{"nick":"Benvie","reason":"Remote host closed the connection","date":"2014-01-16T18:53:54.363Z","type":"quit"}
+{"nick":"calvinfo","date":"2014-01-16T18:55:55.807Z","type":"part"}
+{"nick":"m76","reason":"Read error: Connection reset by peer","date":"2014-01-16T18:56:27.143Z","type":"quit"}
+{"nick":"Benvie","date":"2014-01-16T18:56:35.822Z","type":"join"}
+{"nick":"daviddias","date":"2014-01-16T18:56:46.842Z","type":"join"}
+{"nick":"dshaw_","date":"2014-01-16T18:57:23.410Z","type":"join"}
+{"nick":"brunkle","date":"2014-01-16T19:01:16.323Z","type":"join"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2014-01-16T19:06:22.348Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-01-16T19:08:57.691Z","type":"join"}
+{"nick":"julianduque","date":"2014-01-16T19:13:21.818Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 252 seconds","date":"2014-01-16T19:13:44.791Z","type":"quit"}
+{"nick":"mikeal","date":"2014-01-16T19:19:03.414Z","type":"join"}
+{"nick":"janjongboom","date":"2014-01-16T19:20:45.037Z","type":"join"}
+{"nick":"m76","date":"2014-01-16T19:28:45.031Z","type":"join"}
+{"nick":"superjoe","date":"2014-01-16T19:31:55.677Z","type":"join"}
+{"nick":"inolen","reason":"Ping timeout: 272 seconds","date":"2014-01-16T19:38:02.250Z","type":"quit"}
+{"nick":"inolen","date":"2014-01-16T19:42:16.113Z","type":"join"}
+{"nick":"c4milo","date":"2014-01-16T19:44:21.105Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2014-01-16T19:51:46.946Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-01-16T19:53:17.408Z","type":"join"}
+{"nick":"Benvie","reason":"Ping timeout: 260 seconds","date":"2014-01-16T19:53:23.794Z","type":"quit"}
+{"nick":"Benvie","date":"2014-01-16T19:54:33.242Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2014-01-16T20:06:14.989Z","type":"quit"}
+{"nick":"stagas","date":"2014-01-16T20:07:46.884Z","type":"join"}
+{"nick":"dshaw_","date":"2014-01-16T20:09:07.696Z","type":"join"}
+{"nick":"octetcloud","message":"@tjfontaine: thanks for the pulls","date":"2014-01-16T20:09:37.318Z","type":"message"}
+{"nick":"c4milo","reason":"Ping timeout: 272 seconds","date":"2014-01-16T20:11:03.260Z","type":"quit"}
+{"nick":"c4milo","date":"2014-01-16T20:11:45.596Z","type":"join"}
+{"nick":"m76","reason":"Read error: Connection reset by peer","date":"2014-01-16T20:26:51.280Z","type":"quit"}
+{"nick":"octetcloud","reason":"Ping timeout: 252 seconds","date":"2014-01-16T20:31:26.680Z","type":"quit"}
+{"nick":"octetcloud","date":"2014-01-16T20:33:55.318Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-01-16T20:36:14.546Z","type":"join"}
+{"nick":"inolen","reason":"Ping timeout: 246 seconds","date":"2014-01-16T20:36:55.811Z","type":"quit"}
+{"nick":"inolen","date":"2014-01-16T20:37:26.070Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 276 seconds","date":"2014-01-16T20:39:39.313Z","type":"quit"}
+{"nick":"tjfontaine","message":"octetcloud: no problem","date":"2014-01-16T20:44:21.457Z","type":"message"}
+{"nick":"indutny","message":"hey hey","date":"2014-01-16T20:52:49.970Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: what wa main bullets of the call?","date":"2014-01-16T20:53:02.611Z","type":"message"}
+{"nick":"indutny","message":"s/wa/was/","date":"2014-01-16T20:53:04.495Z","type":"message"}
+{"nick":"calvinfo","date":"2014-01-16T20:53:20.854Z","type":"join"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2014-01-16T21:00:17.438Z","type":"quit"}
+{"nick":"brunkle","reason":"Quit: brunkle","date":"2014-01-16T21:01:41.407Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 272 seconds","date":"2014-01-16T21:06:03.929Z","type":"quit"}
+{"nick":"brunkle","date":"2014-01-16T21:09:25.285Z","type":"join"}
+{"nick":"tjfontaine","message":"indutny: I just worked through with sblom and AlexisMocha on some windows issues and paths forward on some tests and the DTrace/ETW stuff that I've been working on","date":"2014-01-16T21:11:58.708Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: I have a meeting at 3 with trevnorris, othiym23, and groundwater to go over the AsyncListener stuff","date":"2014-01-16T21:12:49.249Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: ideally there we will have hammered out the last few bits of that API and then first thing next week we feature freeze and branch","date":"2014-01-16T21:13:21.601Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: are there things you need from us?","date":"2014-01-16T21:13:32.524Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-01-16T21:15:46.056Z","type":"join"}
+{"nick":"indutny","message":"ah, ok","date":"2014-01-16T21:18:03.366Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: no, not much things","date":"2014-01-16T21:18:16.837Z","type":"message"}
+{"nick":"indutny","message":"though","date":"2014-01-16T21:18:23.157Z","type":"message"}
+{"nick":"indutny","message":"freeze","date":"2014-01-16T21:18:24.368Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2014-01-16T21:18:26.280Z","type":"message"}
+{"nick":"indutny","message":"would I be still able to make process.send async?","date":"2014-01-16T21:18:34.776Z","type":"message"}
+{"nick":"indutny","message":"this isn't really an API change","date":"2014-01-16T21:18:44.794Z","type":"message"}
+{"nick":"indutny","message":"but just keep it in mind","date":"2014-01-16T21:18:48.246Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: do you have a PR for it? or can you get one so I can review it this weekend maybe?","date":"2014-01-16T21:21:35.316Z","type":"message"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-01-16T21:26:16.815Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2014-01-16T21:29:39.572Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 272 seconds","date":"2014-01-16T21:29:51.816Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-master-windows\u0002: #13 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/libuv-master-windows/13/","date":"2014-01-16T21:34:46.214Z","type":"message"}
+{"nick":"AvianFlu_","date":"2014-01-16T21:49:33.973Z","type":"join"}
+{"nick":"AvianFlu","reason":"Disconnected by services","date":"2014-01-16T21:49:50.137Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2014-01-16T21:49:52.077Z","type":"nick"}
+{"nick":"indexzero","date":"2014-01-16T21:57:18.987Z","type":"join"}
+{"nick":"MI6","message":"\u0002libuv-v0.10-windows\u0002: #8 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/libuv-v0.10-windows/8/","date":"2014-01-16T21:59:49.446Z","type":"message"}
+{"nick":"hz","date":"2014-01-16T22:00:14.554Z","type":"quit"}
+{"nick":"AWinterman","date":"2014-01-16T22:03:59.012Z","type":"join"}
+{"nick":"Ralith","date":"2014-01-16T22:04:27.398Z","type":"join"}
+{"nick":"superjoe","reason":"Ping timeout: 248 seconds","date":"2014-01-16T22:04:53.645Z","type":"quit"}
+{"nick":"brson","reason":"Ping timeout: 276 seconds","date":"2014-01-16T22:13:15.305Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-01-16T22:18:00.843Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-01-16T22:20:25.672Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-01-16T22:35:33.247Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-01-16T22:36:25.447Z","type":"quit"}
+{"nick":"AvianFlu","date":"2014-01-16T22:37:31.825Z","type":"join"}
+{"nick":"superjoe","date":"2014-01-16T22:38:16.594Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2014-01-16T22:40:08.072Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-16T22:41:58.822Z","type":"join"}
+{"nick":"thlorenz","date":"2014-01-16T22:43:05.811Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Timothy J Fontaine\u000f \u00037v0.10\u000f * \u00021d57a5c\u0002 : blog: nodejs v0.12 roadmap update - http://git.io/jXSugA","date":"2014-01-16T22:44:54.889Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10\u0002: #1724 \u00034FAILURE\u000f http://jenkins.nodejs.org/job/nodejs-v0.10/1724/","date":"2014-01-16T22:45:21.902Z","type":"message"}
+{"nick":"MI6","message":"\u0002nodejs-v0.10-windows\u0002: #445 \u00037UNSTABLE\u000f http://jenkins.nodejs.org/job/nodejs-v0.10-windows/445/","date":"2014-01-16T22:45:31.864Z","type":"message"}
+{"nick":"hz","date":"2014-01-16T22:46:06.024Z","type":"join"}
+{"nick":"brson","date":"2014-01-16T22:47:14.820Z","type":"join"}
+{"nick":"rmg","date":"2014-01-16T22:48:34.218Z","type":"join"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-01-16T22:51:53.745Z","type":"quit"}
+{"nick":"rmg","date":"2014-01-16T22:52:07.415Z","type":"join"}
+{"nick":"mikeal","date":"2014-01-16T22:52:28.475Z","type":"join"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2014-01-16T23:02:40.947Z","type":"quit"}
+{"nick":"dsantiago","reason":"Ping timeout: 252 seconds","date":"2014-01-16T23:05:22.035Z","type":"quit"}
+{"nick":"daviddias","date":"2014-01-16T23:07:41.983Z","type":"join"}
+{"nick":"daviddias","reason":"Remote host closed the connection","date":"2014-01-16T23:09:33.127Z","type":"quit"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2014-01-16T23:17:02.526Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-01-16T23:19:20.374Z","type":"join"}
+{"nick":"rendar","reason":"Quit: Leaving","date":"2014-01-16T23:20:42.137Z","type":"quit"}
+{"nick":"paulfryz_","reason":"Remote host closed the connection","date":"2014-01-16T23:24:04.431Z","type":"quit"}
+{"nick":"AWinterman","reason":"Remote host closed the connection","date":"2014-01-16T23:26:29.102Z","type":"quit"}
+{"nick":"AWinterman","date":"2014-01-16T23:28:10.897Z","type":"join"}
+{"nick":"AWinterm_","date":"2014-01-16T23:30:18.186Z","type":"join"}
+{"nick":"AWinterman","reason":"Ping timeout: 248 seconds","date":"2014-01-16T23:32:53.744Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-01-16T23:34:20.645Z","type":"quit"}
+{"nick":"Benvie","reason":"Remote host closed the connection","date":"2014-01-16T23:38:54.525Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-01-16T23:38:59.392Z","type":"quit"}
+{"nick":"pachet","reason":"Quit: leaving","date":"2014-01-16T23:46:07.344Z","type":"quit"}
+{"nick":"brunkle","reason":"Quit: brunkle","date":"2014-01-16T23:50:08.149Z","type":"quit"}
+{"nick":"brunkle","date":"2014-01-16T23:52:02.825Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-01-16T23:55:05.189Z","type":"join"}
+{"nick":"brunkle","reason":"Client Quit","date":"2014-01-16T23:56:55.177Z","type":"quit"}
+{"nick":"MI6","message":"\u0002libuv-master-gyp\u0002: #392 \u00034FAILURE\u000f smartos-ia32 (4/203) http://jenkins.nodejs.org/job/libuv-master-gyp/392/","date":"2014-01-16T23:58:12.605Z","type":"message"}
+{"nick":"brunkle","date":"2014-01-16T23:59:39.756Z","type":"join"}
