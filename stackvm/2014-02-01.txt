@@ -1,0 +1,481 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-02-01T00:00:01.103Z","type":"quit"}
+{"nick":"ircretary","date":"2014-02-01T00:00:08.346Z","type":"join"}
+{"nick":"feross_","date":"2014-02-01T00:02:40.913Z","type":"join"}
+{"nick":"mikolalysenko","message":"or for object streams, what is the best way to handle streaming?","date":"2014-02-01T00:07:01.744Z","type":"message"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2014-02-01T00:10:27.572Z","type":"quit"}
+{"nick":"ogd","message":"mikolalysenko: what is your use case?","date":"2014-02-01T00:20:50.284Z","type":"message"}
+{"nick":"ogd","message":"mikolalysenko: most browser I/O sources dont actually handle backpressure","date":"2014-02-01T00:21:13.439Z","type":"message"}
+{"nick":"mikolalysenko","message":"ogd: so I would be creating all the streams","date":"2014-02-01T00:22:04.953Z","type":"message"}
+{"nick":"mikolalysenko","message":"the idea is to do mesh simplification as a streaming process","date":"2014-02-01T00:22:17.352Z","type":"message"}
+{"nick":"mikolalysenko","message":"like you have some isosurface polygonizer, it emits a mesh in a stream, the simplification code consumes it and then emits simplified vertices","date":"2014-02-01T00:22:46.264Z","type":"message"}
+{"nick":"ogd","message":"mikolalysenko: where does the i/o happen?","date":"2014-02-01T00:22:49.077Z","type":"message"}
+{"nick":"mikolalysenko","message":"IO happens in two places","date":"2014-02-01T00:23:05.661Z","type":"message"}
+{"nick":"ednapiranha","reason":"Quit: Leaving...","date":"2014-02-01T00:23:20.785Z","type":"quit"}
+{"nick":"mikolalysenko","message":"you have the source of mesh which could be maybe the isosurface polygonizer or is maybe read from a file","date":"2014-02-01T00:23:22.848Z","type":"message"}
+{"nick":"mikolalysenko","message":"and the output which can be dumpedto either a file or written to a webgl buffer","date":"2014-02-01T00:23:37.158Z","type":"message"}
+{"nick":"ogd","message":"are webgl buffers different from typed arrays?","date":"2014-02-01T00:23:54.600Z","type":"message"}
+{"nick":"mikolalysenko","message":"but in the intermediate states I don't want to allocate more memory than necessary","date":"2014-02-01T00:23:54.741Z","type":"message"}
+{"nick":"mikolalysenko","message":"it will be a typed array","date":"2014-02-01T00:24:02.281Z","type":"message"}
+{"nick":"ogd","message":"k","date":"2014-02-01T00:24:05.139Z","type":"message"}
+{"nick":"mikolalysenko","message":"but it might get split into chunks/multiple typedarrays","date":"2014-02-01T00:24:25.610Z","type":"message"}
+{"nick":"ogd","message":"i wrote https://github.com/maxogden/filereader-stream which can read huge files without running out of memory","date":"2014-02-01T00:24:38.598Z","type":"message"}
+{"nick":"ogd","message":"it uses a sort of hack in the FileReader API","date":"2014-02-01T00:24:52.619Z","type":"message"}
+{"nick":"ogd","message":"otherwise you have to buffer the entire file into one typed array","date":"2014-02-01T00:25:00.260Z","type":"message"}
+{"nick":"mikolalysenko","message":"looks interesting","date":"2014-02-01T00:25:06.819Z","type":"message"}
+{"nick":"mikolalysenko","message":"anyway, it is a bit speculative right now","date":"2014-02-01T00:25:25.942Z","type":"message"}
+{"nick":"ogd","message":"the tricky part is to try and control how much data is being read","date":"2014-02-01T00:25:43.553Z","type":"message"}
+{"nick":"ogd","message":"not all browser apis let you do that so easily","date":"2014-02-01T00:25:49.973Z","type":"message"}
+{"nick":"ogd","message":"cause then your stream just reads some fixed size at a time off of the available buffered data","date":"2014-02-01T00:26:13.940Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, but I might be able to control that","date":"2014-02-01T00:26:18.136Z","type":"message"}
+{"nick":"ogd","message":"and if you arent telling the data source to give you less data then you will eventually run out of memory","date":"2014-02-01T00:26:29.460Z","type":"message"}
+{"nick":"mikolalysenko","message":"so one possible application here is to make a pipeable mesh simplification work flow","date":"2014-02-01T00:26:46.965Z","type":"message"}
+{"nick":"mikolalysenko","message":"like you do:  createIsoSurface(field).pipe(simplify).pipe(writeToBuffer)","date":"2014-02-01T00:27:07.741Z","type":"message"}
+{"nick":"mikolalysenko","message":"or use the same simplify code to crunch down an arbitrary mesh","date":"2014-02-01T00:27:20.790Z","type":"message"}
+{"nick":"mikolalysenko","message":"the idea though is to do the simplification in a stream","date":"2014-02-01T00:27:35.077Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is not quite the same thing as progressive meshing, but it is kind of related","date":"2014-02-01T00:28:00.885Z","type":"message"}
+{"nick":"mikolalysenko","message":"maybe I could just use typedarray-pool...","date":"2014-02-01T00:32:02.879Z","type":"message"}
+{"nick":"mikolalysenko","message":"but it is kind of an evil application","date":"2014-02-01T00:32:21.135Z","type":"message"}
+{"nick":"mikolalysenko","message":"and it requires that all clients agree to dispose of the pools properly","date":"2014-02-01T00:32:33.738Z","type":"message"}
+{"nick":"feross__","date":"2014-02-01T00:33:45.501Z","type":"join"}
+{"nick":"mikolalysenko","message":"maybe the solution is to create a kind of homemade psuedo stream api","date":"2014-02-01T00:34:13.875Z","type":"message"}
+{"nick":"mikolalysenko","message":"that relies on pooling and also has sync processing for some chunks","date":"2014-02-01T00:34:46.555Z","type":"message"}
+{"nick":"mikolalysenko","message":"and if it is useful, I could make a wrapper that converts it to a proper stream whenever that makes sense","date":"2014-02-01T00:35:13.280Z","type":"message"}
+{"nick":"feross_","reason":"Ping timeout: 253 seconds","date":"2014-02-01T00:35:30.033Z","type":"quit"}
+{"nick":"mikolalysenko","message":"perhaps it makes more sense to call it something like mesh-iterator to avoid confusion","date":"2014-02-01T00:38:24.244Z","type":"message"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2014-02-01T00:39:31.578Z","type":"quit"}
+{"nick":"coderzach","date":"2014-02-01T00:40:23.159Z","type":"join"}
+{"nick":"thealphanerd","date":"2014-02-01T00:44:01.443Z","type":"join"}
+{"nick":"jxson","date":"2014-02-01T00:47:16.731Z","type":"join"}
+{"nick":"wolfeidau","date":"2014-02-01T00:47:56.370Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 26]","date":"2014-02-01T00:52:26.580Z","type":"message"}
+{"nick":"ceejbot","date":"2014-02-01T00:53:04.286Z","type":"join"}
+{"nick":"jxson","reason":"Ping timeout: 245 seconds","date":"2014-02-01T00:53:20.289Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 252 seconds","date":"2014-02-01T00:54:29.634Z","type":"quit"}
+{"nick":"parshap","date":"2014-02-01T00:57:18.587Z","type":"join"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2014-02-01T01:02:53.330Z","type":"quit"}
+{"nick":"funkytek","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2014-02-01T01:03:27.170Z","type":"quit"}
+{"nick":"contrahax","date":"2014-02-01T01:07:40.195Z","type":"join"}
+{"nick":"contrahax","reason":"Client Quit","date":"2014-02-01T01:10:24.225Z","type":"quit"}
+{"nick":"pkrumins","message":"New blog post: How to run unkillable* programs in Linux - http://www.catonmat.net/blog/unkillable-linux-programs/","date":"2014-02-01T01:11:42.732Z","type":"message"}
+{"nick":"pkrumins","message":"* by unkillable I mean one that respawns when you kill it.","date":"2014-02-01T01:13:08.803Z","type":"message"}
+{"nick":"indexzero","date":"2014-02-01T01:18:55.316Z","type":"join"}
+{"nick":"AvianFlu","date":"2014-02-01T01:20:35.775Z","type":"join"}
+{"nick":"mmckegg","date":"2014-02-01T01:28:18.844Z","type":"join"}
+{"nick":"jxson","date":"2014-02-01T01:30:53.738Z","type":"join"}
+{"nick":"contrahax","date":"2014-02-01T01:32:58.856Z","type":"join"}
+{"nick":"phated","date":"2014-02-01T01:35:49.207Z","type":"join"}
+{"nick":"feross__","message":"pkrumins: neat trick. i've always used supervisor for this sort of thing","date":"2014-02-01T01:42:35.541Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-02-01T01:46:46.671Z","type":"quit"}
+{"nick":"xero314","date":"2014-02-01T01:49:44.666Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-02-01T01:50:34.388Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 8]","date":"2014-02-01T01:52:26.576Z","type":"message"}
+{"nick":"defunctzombie","message":"pkrumins: what happens if the process keeps dying?","date":"2014-02-01T01:54:36.121Z","type":"message"}
+{"nick":"yorick","reason":"Remote host closed the connection","date":"2014-02-01T01:54:51.991Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 265 seconds","date":"2014-02-01T01:55:49.151Z","type":"quit"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T01:56:11.557Z","type":"nick"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T01:56:58.761Z","type":"nick"}
+{"nick":"pkrumins","message":"defunctzombie: init bans it for 5 minutes","date":"2014-02-01T01:57:06.382Z","type":"message"}
+{"nick":"defunctzombie","message":"pkrumins: really?","date":"2014-02-01T01:59:52.032Z","type":"message"}
+{"nick":"defunctzombie","message":"how fast does it need to restart?","date":"2014-02-01T01:59:57.557Z","type":"message"}
+{"nick":"feross__","reason":"Quit: feross__","date":"2014-02-01T02:00:50.546Z","type":"quit"}
+{"nick":"pkrumins","message":"defunctzombie: pretty fast, i dont know the exact limit","date":"2014-02-01T02:02:21.133Z","type":"message"}
+{"nick":"Maciek416","reason":"Remote host closed the connection","date":"2014-02-01T02:04:27.027Z","type":"quit"}
+{"nick":"Maciek416","date":"2014-02-01T02:04:51.090Z","type":"join"}
+{"nick":"thealphanerd","date":"2014-02-01T02:05:14.853Z","type":"join"}
+{"nick":"jxson","reason":"Remote host closed the connection","date":"2014-02-01T02:05:18.183Z","type":"quit"}
+{"nick":"jxson","date":"2014-02-01T02:05:50.442Z","type":"join"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T02:06:32.152Z","type":"nick"}
+{"nick":"pkrumins","message":"defunctzombie: respawns 10 times in 2 minutes and it gets banned for 5 minutes (http://svn.savannah.nongnu.org/viewvc/sysvinit/trunk/src/init.h?root=sysvinit&view=markup)","date":"2014-02-01T02:08:04.450Z","type":"message"}
+{"nick":"cpup","reason":"Read error: Connection reset by peer","date":"2014-02-01T02:08:10.539Z","type":"quit"}
+{"nick":"defunctzombie","message":"cool","date":"2014-02-01T02:08:18.127Z","type":"message"}
+{"nick":"ednapiranha","date":"2014-02-01T02:08:32.237Z","type":"join"}
+{"nick":"feross_","date":"2014-02-01T02:09:41.759Z","type":"join"}
+{"nick":"jxson","reason":"Ping timeout: 272 seconds","date":"2014-02-01T02:10:53.753Z","type":"quit"}
+{"nick":"thealphanerd","reason":"Ping timeout: 260 seconds","date":"2014-02-01T02:11:59.729Z","type":"quit"}
+{"nick":"thealphanerd","date":"2014-02-01T02:25:18.849Z","type":"join"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T02:26:45.297Z","type":"nick"}
+{"nick":"thlorenz","date":"2014-02-01T02:30:47.295Z","type":"join"}
+{"nick":"feross_","reason":"Quit: feross_","date":"2014-02-01T02:33:44.716Z","type":"quit"}
+{"nick":"feross_","date":"2014-02-01T02:35:52.172Z","type":"join"}
+{"nick":"feross_","message":"new module: https://github.com/feross/chrome-portfinder","date":"2014-02-01T02:39:54.880Z","type":"message"}
+{"nick":"ednapiranha","reason":"Remote host closed the connection","date":"2014-02-01T02:43:06.302Z","type":"quit"}
+{"nick":"funkytek","date":"2014-02-01T02:47:22.783Z","type":"join"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T02:48:25.156Z","type":"nick"}
+{"nick":"anvaka","date":"2014-02-01T02:49:12.972Z","type":"join"}
+{"nick":"chapel","message":"feross_: how do you like chromes packaged apps?","date":"2014-02-01T02:50:28.072Z","type":"message"}
+{"nick":"feross_","message":"chapel: they're alright","date":"2014-02-01T02:50:36.969Z","type":"message"}
+{"nick":"chapel","message":"I was thinking about building something, but not sure if I want to atm","date":"2014-02-01T02:50:44.310Z","type":"message"}
+{"nick":"jory","new_nick":"Guest80972","date":"2014-02-01T02:50:46.384Z","type":"nick"}
+{"nick":"Guest80972","reason":"Killed (hitchcock.freenode.net (Nickname regained by services))","date":"2014-02-01T02:50:46.510Z","type":"quit"}
+{"nick":"chapel","message":"node-webkit is an alternative","date":"2014-02-01T02:50:55.113Z","type":"message"}
+{"nick":"feross_","message":"chapel: i wish they didn't have as much chrome proprietary stuff, but for things like TCP, UDP, etc. there's not really much of a choice","date":"2014-02-01T02:51:13.771Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-02-01T02:51:21.043Z","type":"join"}
+{"nick":"jory`","date":"2014-02-01T02:51:26.766Z","type":"join"}
+{"nick":"chapel","message":"yeah, I understand there","date":"2014-02-01T02:51:26.968Z","type":"message"}
+{"nick":"feross_","message":"right now i'm building a bittorrent client as a chrome app, as first step for webtorrent","date":"2014-02-01T02:51:41.587Z","type":"message"}
+{"nick":"chapel","message":"cool","date":"2014-02-01T02:51:47.591Z","type":"message"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2014-02-01T02:52:01.070Z","type":"quit"}
+{"nick":"chapel","message":"like the idea with the portfinder","date":"2014-02-01T02:52:09.539Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 7]","date":"2014-02-01T02:52:26.646Z","type":"message"}
+{"nick":"feross_","message":"i also made chrome-net and chrome-dgram which mirror the node net/dgram apis exactly","date":"2014-02-01T02:52:28.204Z","type":"message"}
+{"nick":"feross_","message":"so you don't need to learn chrome's wonky api, you can just use the node one","date":"2014-02-01T02:52:41.072Z","type":"message"}
+{"nick":"chapel","message":"what would be great, is if someone wrapped all the native js interfaces, e.g. levelup for native js gui apps","date":"2014-02-01T02:52:43.873Z","type":"message"}
+{"nick":"chapel","message":"nice","date":"2014-02-01T02:52:51.415Z","type":"message"}
+{"nick":"rowbit","message":"substack, pkrumins: These encoders are STILL down: 50.57.171.229(dev-ie6-2)","date":"2014-02-01T02:52:55.128Z","type":"message"}
+{"nick":"thealphanerd","date":"2014-02-01T02:53:24.749Z","type":"join"}
+{"nick":"feross_","message":"chrome recently announced a project to compile chrome apps for iOS and android","date":"2014-02-01T02:53:33.700Z","type":"message"}
+{"nick":"feross_","message":"so you can build a web app, native mobile app, and chrome app with one codebase","date":"2014-02-01T02:53:55.473Z","type":"message"}
+{"nick":"feross_","message":"except for the nativey things like tcp, udp, etc.","date":"2014-02-01T02:54:08.314Z","type":"message"}
+{"nick":"chapel","message":"so node-webkityeah","date":"2014-02-01T02:54:08.519Z","type":"message"}
+{"nick":"chapel","message":"it just uses phonegap/cordova though","date":"2014-02-01T02:54:16.529Z","type":"message"}
+{"nick":"feross_","message":"oh cordova is the same as phonegap?","date":"2014-02-01T02:54:31.135Z","type":"message"}
+{"nick":"chapel","message":"cordova is the open source part of phonegap","date":"2014-02-01T02:54:43.867Z","type":"message"}
+{"nick":"feross_","message":"i've never used either before, and had never even heard of cordova until google mentioned it","date":"2014-02-01T02:54:50.657Z","type":"message"}
+{"nick":"feross_","message":"ahh","date":"2014-02-01T02:54:56.259Z","type":"message"}
+{"nick":"chapel","message":"I used phonegap a few years ago","date":"2014-02-01T02:55:07.107Z","type":"message"}
+{"nick":"chapel","message":"its not bad, and I'm sure it got better","date":"2014-02-01T02:55:12.649Z","type":"message"}
+{"nick":"chapel","message":"ogd is a good person to ask about it if you're curious","date":"2014-02-01T02:55:20.358Z","type":"message"}
+{"nick":"feross_","message":"hopefully they've fixed the slow scrolling issues, heh","date":"2014-02-01T02:55:30.851Z","type":"message"}
+{"nick":"feross_","message":"that's the #1 reason why native apps are winning right now, imo","date":"2014-02-01T02:55:41.343Z","type":"message"}
+{"nick":"chapel","message":"yeah","date":"2014-02-01T02:55:46.308Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2014-02-01T02:56:23.049Z","type":"quit"}
+{"nick":"feross_","message":"one nice thing about chrome apps is you can right click > inspect","date":"2014-02-01T02:56:34.927Z","type":"message"}
+{"nick":"xero0_0","date":"2014-02-01T02:56:53.632Z","type":"join"}
+{"nick":"feross_","message":"so ogd has done stuff with chrome apps before? neat, didn't know that","date":"2014-02-01T02:57:00.799Z","type":"message"}
+{"nick":"jxson","date":"2014-02-01T02:57:32.926Z","type":"join"}
+{"nick":"feross_","message":"or with phonegap?","date":"2014-02-01T02:57:35.681Z","type":"message"}
+{"nick":"chapel","message":"not chrome apps, but phonegap/cordova","date":"2014-02-01T02:58:52.308Z","type":"message"}
+{"nick":"feross_","message":"ah","date":"2014-02-01T02:59:53.090Z","type":"message"}
+{"nick":"xero314","reason":"Ping timeout: 252 seconds","date":"2014-02-01T03:00:37.622Z","type":"quit"}
+{"nick":"jxson","reason":"Remote host closed the connection","date":"2014-02-01T03:01:00.138Z","type":"quit"}
+{"nick":"jxson","date":"2014-02-01T03:01:28.451Z","type":"join"}
+{"nick":"jxson","reason":"Ping timeout: 240 seconds","date":"2014-02-01T03:05:59.188Z","type":"quit"}
+{"nick":"dominictarr","date":"2014-02-01T03:09:42.716Z","type":"join"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2014-02-01T03:09:52.272Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-02-01T03:14:14.042Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2014-02-01T03:19:18.077Z","type":"quit"}
+{"nick":"defunctzombie","action":"is working on a cordova app and loving it","date":"2014-02-01T03:20:00.376Z","type":"action"}
+{"nick":"xero314","date":"2014-02-01T03:20:55.552Z","type":"join"}
+{"nick":"chapel","message":"yeah defunctzombie ?","date":"2014-02-01T03:21:18.990Z","type":"message"}
+{"nick":"defunctzombie","message":"yep","date":"2014-02-01T03:21:25.688Z","type":"message"}
+{"nick":"chapel","message":"I don't remember what I didn't like about it, but for the most part it was good","date":"2014-02-01T03:21:35.429Z","type":"message"}
+{"nick":"xero0_0","reason":"Ping timeout: 248 seconds","date":"2014-02-01T03:22:45.604Z","type":"quit"}
+{"nick":"contrahax","reason":"Read error: Connection reset by peer","date":"2014-02-01T03:24:51.295Z","type":"quit"}
+{"nick":"contraha_","date":"2014-02-01T03:25:01.855Z","type":"join"}
+{"nick":"ednapiranha","date":"2014-02-01T03:26:36.188Z","type":"join"}
+{"nick":"nfroidure","reason":"Read error: Operation timed out","date":"2014-02-01T03:30:06.964Z","type":"quit"}
+{"nick":"paul_irish","reason":"Ping timeout: 252 seconds","date":"2014-02-01T03:37:47.540Z","type":"quit"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T03:37:52.916Z","type":"nick"}
+{"nick":"nfroidure","date":"2014-02-01T03:45:47.621Z","type":"join"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2014-02-01T03:49:15.382Z","type":"quit"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T03:49:21.345Z","type":"nick"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 9]","date":"2014-02-01T03:52:26.613Z","type":"message"}
+{"nick":"ednapiranha","reason":"Quit: Leaving...","date":"2014-02-01T03:55:28.124Z","type":"quit"}
+{"nick":"phated","reason":"Remote host closed the connection","date":"2014-02-01T03:58:58.448Z","type":"quit"}
+{"nick":"jxson","date":"2014-02-01T04:02:05.158Z","type":"join"}
+{"nick":"rvagg","message":"I wrote about readable-stream, with the link-bait title \"Why I Don't Use Node's Core Stream Module\" http://www.nearform.com/nodecrunch/dont-use-nodes-core-stream-module","date":"2014-02-01T04:02:57.734Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-02-01T04:03:18.731Z","type":"join"}
+{"nick":"rvagg","message":"covers *important info* about the versioning differences, 1.0 and 1.1","date":"2014-02-01T04:03:20.061Z","type":"message"}
+{"nick":"rvagg","message":"which everyone in here should be aware of!","date":"2014-02-01T04:03:28.708Z","type":"message"}
+{"nick":"jxson","reason":"Ping timeout: 264 seconds","date":"2014-02-01T04:06:50.651Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-02-01T04:08:25.324Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-02-01T04:09:00.659Z","type":"join"}
+{"nick":"thealphanerd","date":"2014-02-01T04:09:18.843Z","type":"join"}
+{"nick":"i_m_ca","date":"2014-02-01T04:10:00.972Z","type":"join"}
+{"nick":"jxson","date":"2014-02-01T04:12:38.251Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 252 seconds","date":"2014-02-01T04:13:33.199Z","type":"quit"}
+{"nick":"thealphanerd","reason":"Ping timeout: 272 seconds","date":"2014-02-01T04:17:11.686Z","type":"quit"}
+{"nick":"jxson","reason":"Ping timeout: 272 seconds","date":"2014-02-01T04:17:33.852Z","type":"quit"}
+{"nick":"thealphanerd","date":"2014-02-01T04:18:45.996Z","type":"join"}
+{"nick":"feross_","message":"rvagg: excellent post!","date":"2014-02-01T04:37:27.832Z","type":"message"}
+{"nick":"feross_","message":"the take away for me is that relying on a library that you can't \"pin\" to a particular version is a bad idea but that's precisely what relying on a standard library requires you to do","date":"2014-02-01T04:38:18.745Z","type":"message"}
+{"nick":"guybrush","message":"rvagg: cool post thx","date":"2014-02-01T04:38:31.183Z","type":"message"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T04:38:55.427Z","type":"nick"}
+{"nick":"feross_","message":"it's funny, even in node with it's super small core, we're finding that it does too much","date":"2014-02-01T04:38:56.642Z","type":"message"}
+{"nick":"guybrush","message":"but stream in core is ok i thnk, since it relies on it - which doesnt mean it shouldnt be in npm too","date":"2014-02-01T04:40:17.793Z","type":"message"}
+{"nick":"feross_","message":"is there any reason for \"core\" modules? couldn't 'http' and the rest be on npm?","date":"2014-02-01T04:41:42.111Z","type":"message"}
+{"nick":"guybrush","message":"hm maybe","date":"2014-02-01T04:42:00.026Z","type":"message"}
+{"nick":"paul_irish","date":"2014-02-01T04:42:24.775Z","type":"join"}
+{"nick":"guybrush","message":"the thing is, it doesnt matter if its in core - there could be another http in npm","date":"2014-02-01T04:43:38.563Z","type":"message"}
+{"nick":"jesusabdullah","message":"keep in mind npm does rely on http","date":"2014-02-01T04:44:14.531Z","type":"message"}
+{"nick":"jesusabdullah","message":"not a deal-breaker but keep in mind","date":"2014-02-01T04:44:27.770Z","type":"message"}
+{"nick":"guybrush","message":"haha true :D","date":"2014-02-01T04:44:39.619Z","type":"message"}
+{"nick":"feross_","message":"heh, npm could just bundle pinned versions of http and the other modules it depends on","date":"2014-02-01T04:45:26.664Z","type":"message"}
+{"nick":"feross_","message":"wouldn't the problem with 'stream' mostly go away if it were in npm and core modules like 'http' just depended on it? npm solved this problem already","date":"2014-02-01T04:46:06.025Z","type":"message"}
+{"nick":"guybrush","message":"i think core shouldnt depend on userland","date":"2014-02-01T04:46:42.058Z","type":"message"}
+{"nick":"feross_","message":"BUT WHAT IF THERE WAS NO CORE?!","date":"2014-02-01T04:47:14.877Z","type":"message"}
+{"nick":"LOUDBOT","message":"COME FOR THE BISCUITS, STAY FOR THE GOOD VIBRATIONS","date":"2014-02-01T04:47:15.346Z","type":"message"}
+{"nick":"guybrush","message":"core will at least be a libuv binding","date":"2014-02-01T04:47:34.620Z","type":"message"}
+{"nick":"guybrush","message":"but maybe it shouldnt be any more than that :)","date":"2014-02-01T04:48:23.328Z","type":"message"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T04:48:36.539Z","type":"nick"}
+{"nick":"dominictarr","message":"libuv = the kernel, node = the shell","date":"2014-02-01T04:50:19.754Z","type":"message"}
+{"nick":"dominictarr","message":"node could certainly depend on something that is _maintained_ in userland, it would just check in a static version of that.","date":"2014-02-01T04:50:54.234Z","type":"message"}
+{"nick":"dominictarr","message":"of course, this creates a chicken and egg problem, you need a core to build a package manager","date":"2014-02-01T04:51:31.717Z","type":"message"}
+{"nick":"guybrush","message":"haha that is like they do it with rust, where you need rust to build rust :D","date":"2014-02-01T04:51:58.407Z","type":"message"}
+{"nick":"dominictarr","message":"but maybe you really want a bootstrap-core, and then turn it into modules.","date":"2014-02-01T04:52:00.296Z","type":"message"}
+{"nick":"dominictarr","message":"yeah, exactly - a self hosting language, implemented in it's self","date":"2014-02-01T04:52:25.215Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 11]","date":"2014-02-01T04:52:26.580Z","type":"message"}
+{"nick":"dominictarr","message":"you have to first write a prototype in another language, and then you rewrite it","date":"2014-02-01T04:52:51.343Z","type":"message"}
+{"nick":"substack","message":"if core libraries were maintained outside of node as separate repos that would make it much easier to maintain","date":"2014-02-01T04:54:19.807Z","type":"message"}
+{"nick":"substack","message":"because you could make breaking changes and people could consume those versions immediately","date":"2014-02-01T04:54:37.551Z","type":"message"}
+{"nick":"substack","message":"or fix bugs and then you wouldn't need to upgrade node to get the fixes","date":"2014-02-01T04:54:48.931Z","type":"message"}
+{"nick":"guybrush","message":"oh i see the benefits","date":"2014-02-01T04:55:04.354Z","type":"message"}
+{"nick":"guybrush","message":"upgrade to newer v8 but still rely on older http","date":"2014-02-01T04:55:18.752Z","type":"message"}
+{"nick":"dominictarr","message":"also, those libraries could handle their own polyfils on top of changes in core node","date":"2014-02-01T04:55:24.659Z","type":"message"}
+{"nick":"dominictarr","message":"(like readable-stream does)","date":"2014-02-01T04:55:35.441Z","type":"message"}
+{"nick":"substack","message":"rvagg: cool post!","date":"2014-02-01T04:56:24.144Z","type":"message"}
+{"nick":"substack","message":"I think I will probably start doing this too once we can get browserify using readable-stream","date":"2014-02-01T04:56:47.366Z","type":"message"}
+{"nick":"dominictarr","message":"so, can we just refactor out http, and use it directly from userland?","date":"2014-02-01T04:58:16.857Z","type":"message"}
+{"nick":"rvagg","message":"substack: cheers","date":"2014-02-01T04:58:18.667Z","type":"message"}
+{"nick":"dominictarr","message":"or would we need to fork node to get this?","date":"2014-02-01T04:59:00.336Z","type":"message"}
+{"nick":"rvagg","message":"so re the above discussion keep in mind that npm is now bundled with core when you install it and it includes a ton of tiny modules that you would never use but they aren't exposed, just because a module is used by core doesn't mean it belongs in core!","date":"2014-02-01T04:59:04.348Z","type":"message"}
+{"nick":"rvagg","message":"dominictarr: #uvjs!","date":"2014-02-01T04:59:11.900Z","type":"message"}
+{"nick":"substack","message":"dominictarr: it's really easy to pull out the http.js and use it outside of node core","date":"2014-02-01T04:59:41.376Z","type":"message"}
+{"nick":"rvagg","message":"bootstrap a minimal uv wrapper with v8,then you even have to start and control the event loop with js (or multiple event loops!)","date":"2014-02-01T04:59:43.251Z","type":"message"}
+{"nick":"substack","message":"also https://github.com/substack/http-alt","date":"2014-02-01T04:59:54.699Z","type":"message"}
+{"nick":"substack","message":"which uses pure js but is slower and incomplete","date":"2014-02-01T05:00:04.068Z","type":"message"}
+{"nick":"substack","message":"but not *that* much slower","date":"2014-02-01T05:00:10.675Z","type":"message"}
+{"nick":"rvagg","message":"there's at least one http2 implementation in userland; it'll be interesting to see how the core guys handle http2 cause they could ignore it and leave it up to userland but more likely they'll implement it in core, so much for a stable api","date":"2014-02-01T05:00:59.509Z","type":"message"}
+{"nick":"wolfeidau","date":"2014-02-01T05:01:20.161Z","type":"join"}
+{"nick":"dominictarr","message":"for multiple event loops don't you need multiple libuvs?","date":"2014-02-01T05:01:22.181Z","type":"message"}
+{"nick":"eugeneware","date":"2014-02-01T05:02:00.760Z","type":"join"}
+{"nick":"rvagg","message":"dominictarr: no, libuv can do multiple event loops now, it's just not functionality used by node","date":"2014-02-01T05:02:00.880Z","type":"message"}
+{"nick":"dominictarr","message":"ah interesting","date":"2014-02-01T05:02:29.394Z","type":"message"}
+{"nick":"rvagg","message":"but you could have two loops acting on event queues independently but related in such a way as to be able to share data, difficult to imagine how it could be used but interesting nonetheless","date":"2014-02-01T05:02:36.471Z","type":"message"}
+{"nick":"dominictarr","message":"if you had isolates with their own event loop, that would be very great","date":"2014-02-01T05:02:49.605Z","type":"message"}
+{"nick":"dominictarr","message":"I think they would need to message each other - the best you could do is a memory swap","date":"2014-02-01T05:03:15.094Z","type":"message"}
+{"nick":"substack","message":"rvagg: this might be problematic https://github.com/isaacs/readable-stream/blob/master/readable.js#L2","date":"2014-02-01T05:03:32.204Z","type":"message"}
+{"nick":"dominictarr","message":"where I send you a buffer, and then can no longer access it, like in post-message","date":"2014-02-01T05:03:42.325Z","type":"message"}
+{"nick":"rvagg","message":"substack: yeah, feross_ and I have been discussing this, it's going to be tricky for browserify; all that really does is bring in EventEmitter and makes it so that no matter what stream impl you use (core, or any version of readable-stream), they all inherit from core Stream","date":"2014-02-01T05:05:15.504Z","type":"message"}
+{"nick":"rvagg","message":"the functionality of core Stream is overwritten (just pipe really), but it makes `foo instanceof Stream` work","date":"2014-02-01T05:05:41.145Z","type":"message"}
+{"nick":"rvagg","message":"I believe that's about all it's there for!","date":"2014-02-01T05:05:48.741Z","type":"message"}
+{"nick":"eugeneware","reason":"Ping timeout: 252 seconds","date":"2014-02-01T05:06:22.092Z","type":"quit"}
+{"nick":"feross_","message":"rvagg: if readable-stream becomes the default in browserify, then you won't need require('stream') anymore","date":"2014-02-01T05:09:21.144Z","type":"message"}
+{"nick":"feross_","message":"`instanceof Stream` will just work because 'readable-stream' WILL ITSELF provide Stream :)","date":"2014-02-01T05:09:46.438Z","type":"message"}
+{"nick":"feross_","message":"this is like what `Buffer` used to do. it provided its own `Buffer` class and everything that did `instanceof Buffer` just worked","date":"2014-02-01T05:10:18.958Z","type":"message"}
+{"nick":"feross_","message":"until I broke that by making Buffers actually Uint8Arrays","date":"2014-02-01T05:10:39.925Z","type":"message"}
+{"nick":"feross_","message":"but fortunately, there's Buffer.isBuffer for that case","date":"2014-02-01T05:10:49.477Z","type":"message"}
+{"nick":"feross_","message":"there's no equivalent Stream.isStream","date":"2014-02-01T05:11:01.482Z","type":"message"}
+{"nick":"rvagg","message":"feross_: yeah, but what does browserify do with the raw readable-stream file?","date":"2014-02-01T05:11:49.385Z","type":"message"}
+{"nick":"rvagg","message":"I can't just remove that require() from the main file","date":"2014-02-01T05:12:05.978Z","type":"message"}
+{"nick":"rvagg","message":"I guess there's a \"browser\" property in package.json to add that could specify an alternative to readable.js as the main?","date":"2014-02-01T05:12:30.499Z","type":"message"}
+{"nick":"feross_","message":"yep","date":"2014-02-01T05:12:33.747Z","type":"message"}
+{"nick":"rvagg","message":"✔","date":"2014-02-01T05:12:39.798Z","type":"message"}
+{"nick":"substack","message":"I should probably bump the major for this","date":"2014-02-01T05:12:41.083Z","type":"message"}
+{"nick":"rvagg","message":"easy then!","date":"2014-02-01T05:12:42.850Z","type":"message"}
+{"nick":"feross_","message":"yeah, that's why i was so looking forward to this change","date":"2014-02-01T05:12:58.661Z","type":"message"}
+{"nick":"dominictarr","message":"rvagg, feross_ what if we also have a classic-stream module that is like 0.8","date":"2014-02-01T05:13:32.477Z","type":"message"}
+{"nick":"jxson","date":"2014-02-01T05:13:36.256Z","type":"join"}
+{"nick":"feross_","message":"barring any weird browser compat issues, i think this will be surprisingly easy swap","date":"2014-02-01T05:13:46.729Z","type":"message"}
+{"nick":"rvagg","message":"we just need to get in replacements for indexOf and forEach in readable-stream and I believe it's on par with stream-browserify","date":"2014-02-01T05:13:55.659Z","type":"message"}
+{"nick":"feross_","message":"cool, i think substack might have packages for that already","date":"2014-02-01T05:14:14.031Z","type":"message"}
+{"nick":"feross_","message":"^ that was to rvagg","date":"2014-02-01T05:14:24.493Z","type":"message"}
+{"nick":"rvagg","message":"feross_: there are replacements at the bottom of stream-browserify/readable.js, I figured we'd just put them in","date":"2014-02-01T05:14:34.412Z","type":"message"}
+{"nick":"feross_","message":"rvagg: that works too","date":"2014-02-01T05:14:43.772Z","type":"message"}
+{"nick":"substack","message":"can you get the tests running on testling?","date":"2014-02-01T05:15:04.786Z","type":"message"}
+{"nick":"feross_","message":"that should be easy","date":"2014-02-01T05:15:23.289Z","type":"message"}
+{"nick":"rvagg","message":"substack: yeah, that's the plan, we can put them on the readme too","date":"2014-02-01T05:15:36.796Z","type":"message"}
+{"nick":"substack","message":"ok cool","date":"2014-02-01T05:15:55.583Z","type":"message"}
+{"nick":"substack","message":"there are some tests that use fs.*","date":"2014-02-01T05:16:00.116Z","type":"message"}
+{"nick":"substack","message":"or at least, they read a file","date":"2014-02-01T05:16:08.782Z","type":"message"}
+{"nick":"rvagg","message":"oh yeah, there's a bunch of tests in there that'll have to be removed from a browser version","date":"2014-02-01T05:16:15.117Z","type":"message"}
+{"nick":"feross_","message":"this is going to help bundle size so much! yay!","date":"2014-02-01T05:16:24.189Z","type":"message"}
+{"nick":"substack","message":"how about test/server/ for the node-only tests and test/ for all the tests that run in both places?","date":"2014-02-01T05:16:46.323Z","type":"message"}
+{"nick":"substack","message":"then https://github.com/isaacs/readable-stream/blob/master/package.json#L14 can be \"tap test/simple/*.js test/simple/server/*.js\"","date":"2014-02-01T05:17:26.238Z","type":"message"}
+{"nick":"feross_","message":"currently ~half of the packages i use have require('stream') and the other half have require('readable-stream') which itself has require('stream') so i end up getting 230KB of stream stuff immediately","date":"2014-02-01T05:18:03.204Z","type":"message"}
+{"nick":"jxson","reason":"Ping timeout: 272 seconds","date":"2014-02-01T05:18:21.863Z","type":"quit"}
+{"nick":"feross_","message":"after this change, it will be like ~120KB total","date":"2014-02-01T05:18:28.120Z","type":"message"}
+{"nick":"substack","message":"sweet","date":"2014-02-01T05:24:28.656Z","type":"message"}
+{"nick":"pfraze","reason":"Ping timeout: 245 seconds","date":"2014-02-01T05:28:03.082Z","type":"quit"}
+{"nick":"feross_","message":"defunctzombie: hey, would you accept a PR for node-process that adds dummy `on`, `off`, and 'emit` functions?","date":"2014-02-01T05:33:05.563Z","type":"message"}
+{"nick":"feross_","message":"some modules use process.on('exit', fn), etc.","date":"2014-02-01T05:33:29.307Z","type":"message"}
+{"nick":"feross_","message":"more specifically, the readable-stream tests do that","date":"2014-02-01T05:33:57.154Z","type":"message"}
+{"nick":"coderzach","reason":"Remote host closed the connection","date":"2014-02-01T05:36:15.297Z","type":"quit"}
+{"nick":"hoobdeebla","date":"2014-02-01T05:36:22.380Z","type":"quit"}
+{"nick":"dominictarr","message":"substack, dotc,browserify, idea: node_modules works great with duck typing, because we can gloss over the fact that types are singletons","date":"2014-02-01T05:36:30.851Z","type":"message"}
+{"nick":"dominictarr","message":"in a static language, any module that exports a type would need to be a single exact version","date":"2014-02-01T05:37:09.515Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 260 seconds","date":"2014-02-01T05:37:19.718Z","type":"quit"}
+{"nick":"dominictarr","message":"(probably best to put the type def in it's own module)","date":"2014-02-01T05:37:28.904Z","type":"message"}
+{"nick":"rowbit","message":"substack, pkrumins: These encoders are STILL down: 50.56.27.70(dev-ie6-1)","date":"2014-02-01T05:37:55.491Z","type":"message"}
+{"nick":"dominictarr","message":"although, that could probably be stretched to patches, and maybe even feature additions, if you didn't serialize them","date":"2014-02-01T05:38:38.312Z","type":"message"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T05:39:40.459Z","type":"nick"}
+{"nick":"contraha_","reason":"Quit: Sleeping","date":"2014-02-01T05:41:34.549Z","type":"quit"}
+{"nick":"dominictarr","message":"oh, idea... if you have flat structs that can have simple types, bool, byte, int16, int32, int64, plus unsigned versions of the numbers that is 9 types - which could be represented as one base 9 number","date":"2014-02-01T05:41:34.864Z","type":"message"}
+{"nick":"jlord","message":"dominictarr!!","date":"2014-02-01T05:42:36.747Z","type":"message"}
+{"nick":"dominictarr","message":"jlord, whats up?","date":"2014-02-01T05:42:45.497Z","type":"message"}
+{"nick":"dominictarr","message":"... so you could describe a huge number of possible structs with just a few bytes. you could also use a multibyte scheme like utf8","date":"2014-02-01T05:43:29.339Z","type":"message"}
+{"nick":"jlord","message":"dominictarr: I was just browsing the Craft Conference site","date":"2014-02-01T05:44:15.881Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) mike.hamstra@... successfully signed up for developer browserling plan ($20). Cash money! /!\\","date":"2014-02-01T05:44:25.266Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) paid account successfully upgraded /!\\","date":"2014-02-01T05:44:25.385Z","type":"message"}
+{"nick":"dominictarr","message":"ah very good! I'm looking forward to that! I have never been to budapest and it sounds exotic","date":"2014-02-01T05:44:50.904Z","type":"message"}
+{"nick":"jlord","message":"dominictarr: GH has a ticket and I was wondering if I should take it and think of a reason to go to Budapest","date":"2014-02-01T05:44:57.419Z","type":"message"}
+{"nick":"jlord","message":"it is very far away though","date":"2014-02-01T05:45:47.696Z","type":"message"}
+{"nick":"dominictarr","message":"I like to go to places that have songs about them: http://www.youtube.com/watch?v=bjnwmMX9fsQ","date":"2014-02-01T05:46:03.690Z","type":"message"}
+{"nick":"feross_","message":"jlord: you should go, i'm speaking there too :)","date":"2014-02-01T05:46:12.602Z","type":"message"}
+{"nick":"dominictarr","message":"^ same dude who was \"blinded by science\"","date":"2014-02-01T05:46:22.462Z","type":"message"}
+{"nick":"jlord","message":"feross_ dominictarr Ooo!","date":"2014-02-01T05:46:39.623Z","type":"message"}
+{"nick":"dominictarr","message":"I think that is reason enough!","date":"2014-02-01T05:46:45.322Z","type":"message"}
+{"nick":"feross_","message":"to be clear, Thomas Dolby was blinded by science, not me :)","date":"2014-02-01T05:47:15.148Z","type":"message"}
+{"nick":"feross_","message":"dominictarr: classic-stream module sounds cool, though i personally don't have a use for it","date":"2014-02-01T05:48:54.453Z","type":"message"}
+{"nick":"jlord","message":"Hmmmmhmmmm","date":"2014-02-01T05:48:55.307Z","type":"message"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T05:49:33.355Z","type":"nick"}
+{"nick":"i_m_ca","reason":"Ping timeout: 252 seconds","date":"2014-02-01T05:49:49.943Z","type":"quit"}
+{"nick":"dominictarr","message":"feross_, it would allow modules that only use classic-streams to only require them and not readable stream in browserify","date":"2014-02-01T05:49:54.627Z","type":"message"}
+{"nick":"coderzach","date":"2014-02-01T05:50:07.726Z","type":"join"}
+{"nick":"feross_","message":"oh, that's interesting","date":"2014-02-01T05:50:46.635Z","type":"message"}
+{"nick":"dominictarr","message":"substack, does testling abort the rest of the tests if one timesout?","date":"2014-02-01T05:51:04.425Z","type":"message"}
+{"nick":"substack","message":"dominictarr: it should restart but there are some bugs in the restart logic","date":"2014-02-01T05:51:19.880Z","type":"message"}
+{"nick":"dominictarr","message":"I'm trying to get this to run on all browsers https://ci.testling.com/dominictarr/sha.js","date":"2014-02-01T05:51:28.508Z","type":"message"}
+{"nick":"feross_","message":"rvagg: will we need to bundle a 0.8 version of streams into the browser version of readable-stream?","date":"2014-02-01T05:51:48.564Z","type":"message"}
+{"nick":"feross_","message":"or is the pipe in there sufficient? (i'm not very familiar with 0.8 streams)","date":"2014-02-01T05:52:04.112Z","type":"message"}
+{"nick":"substack","message":"dominictarr: I'll take a look at the restart logic soon","date":"2014-02-01T05:52:21.746Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 104, free: 13]","date":"2014-02-01T05:52:26.820Z","type":"message"}
+{"nick":"substack","message":"that's probably where most of the instability is coming from","date":"2014-02-01T05:52:31.652Z","type":"message"}
+{"nick":"rvagg","message":"feross_: I don't think so, the pipe is completely replaced with readable stream, just make it the default stream impl","date":"2014-02-01T05:53:23.912Z","type":"message"}
+{"nick":"coderzach","reason":"Ping timeout: 272 seconds","date":"2014-02-01T05:54:43.686Z","type":"quit"}
+{"nick":"dominictarr","message":"feross_, yeah, it's only .pipe() & inherits from EventEmitter","date":"2014-02-01T05:55:44.117Z","type":"message"}
+{"nick":"dominictarr","message":"about 107 lines.","date":"2014-02-01T05:55:51.029Z","type":"message"}
+{"nick":"dominictarr","message":"I reckon I could probably type it out from memory just about!","date":"2014-02-01T05:56:02.797Z","type":"message"}
+{"nick":"feross_","message":"dominictarr: hardcore!","date":"2014-02-01T05:56:20.931Z","type":"message"}
+{"nick":"guybrush","reason":"Excess Flood","date":"2014-02-01T05:56:46.652Z","type":"quit"}
+{"nick":"dominictarr","message":"I read that code that many times, I even read the commit history to see when various features where added.","date":"2014-02-01T05:56:47.786Z","type":"message"}
+{"nick":"guybrush","date":"2014-02-01T05:56:59.994Z","type":"join"}
+{"nick":"rvagg","message":"feross_, substack: https://github.com/isaacs/readable-stream/pull/77","date":"2014-02-01T06:02:02.004Z","type":"message"}
+{"nick":"rvagg","message":"I'll squash and merge to v0.10 and cherry-pick to master","date":"2014-02-01T06:02:15.742Z","type":"message"}
+{"nick":"guybrush","message":"hmm is there something to know with leveldb when storing Buffers? somehow the buffer i get out isnt exactly the buffer i put in","date":"2014-02-01T06:02:28.597Z","type":"message"}
+{"nick":"rvagg","message":"feross_: is it needed in test/common.js? or will you be avoiding that for the tests?","date":"2014-02-01T06:02:29.962Z","type":"message"}
+{"nick":"guybrush","message":"but im doing something wrong maybe :D looking at tests now","date":"2014-02-01T06:03:00.805Z","type":"message"}
+{"nick":"rvagg","message":"guybrush: you can valueEncoding: 'binary' to be explicit","date":"2014-02-01T06:03:22.122Z","type":"message"}
+{"nick":"guybrush","message":"oh i see  { encoding: 'binary' }","date":"2014-02-01T06:03:25.988Z","type":"message"}
+{"nick":"guybrush","message":"thx!","date":"2014-02-01T06:03:30.071Z","type":"message"}
+{"nick":"substack","message":"guybrush: careful to only set 'binary' encoding where you actually need it","date":"2014-02-01T06:03:50.082Z","type":"message"}
+{"nick":"substack","message":"it's a parameter to .get and .put","date":"2014-02-01T06:04:02.749Z","type":"message"}
+{"nick":"feross_","message":"rvagg: not sure yet... so far i'm keeping it there","date":"2014-02-01T06:04:06.128Z","type":"message"}
+{"nick":"guybrush","message":"kk","date":"2014-02-01T06:04:06.597Z","type":"message"}
+{"nick":"substack","message":"but if you also need other kinds of encodings like json it can get tricky","date":"2014-02-01T06:04:30.703Z","type":"message"}
+{"nick":"guybrush","message":"nice that did the trick :D","date":"2014-02-01T06:04:30.928Z","type":"message"}
+{"nick":"feross_","message":"rvagg: if i get to a test that can't be fixed easily without removing it, then we can do that","date":"2014-02-01T06:04:35.133Z","type":"message"}
+{"nick":"dominictarr","message":"rvagg, shouldn't binary encoding use binary strings?","date":"2014-02-01T06:04:35.259Z","type":"message"}
+{"nick":"guybrush","message":"the whole leveldb-stuff in npm is really impressing, looking forward to play with it a lot","date":"2014-02-01T06:05:18.968Z","type":"message"}
+{"nick":"rvagg","message":"dominictarr: binary encoding just means \"leave this buffer alone\" really (from memory)","date":"2014-02-01T06:05:40.731Z","type":"message"}
+{"nick":"rvagg","message":"DO NOT MOLEST THE BUFFER","date":"2014-02-01T06:05:51.383Z","type":"message"}
+{"nick":"LOUDBOT","message":"GUYS YOU'RE KILLING ME","date":"2014-02-01T06:05:51.850Z","type":"message"}
+{"nick":"guybrush","message":"rvagg: i should read more docs but can it stream the buffer too?","date":"2014-02-01T06:06:24.356Z","type":"message"}
+{"nick":"rvagg","message":"guybrush: yeah","date":"2014-02-01T06:06:34.660Z","type":"message"}
+{"nick":"rvagg","message":"guybrush: as long as you have the right encoding set up for the whole database or for the createReadStream","date":"2014-02-01T06:06:49.204Z","type":"message"}
+{"nick":"rvagg","message":"guybrush: every read & write operation allows you to override encodings so you can set it on individual items if you need","date":"2014-02-01T06:07:03.214Z","type":"message"}
+{"nick":"guybrush","message":"oh ok","date":"2014-02-01T06:07:14.487Z","type":"message"}
+{"nick":"guybrush","message":"but i can mix binary and other stuff in one db right?","date":"2014-02-01T06:07:28.243Z","type":"message"}
+{"nick":"guybrush","message":"just set encoding for every operation individually","date":"2014-02-01T06:07:38.812Z","type":"message"}
+{"nick":"rvagg","message":"guybrush: if you do a createValueStream() of only binary encoded buffers then you ought to get a pure binary stream! which would be helpful if you had them sorted in some special way","date":"2014-02-01T06:07:49.510Z","type":"message"}
+{"nick":"dominictarr","message":"rvagg, because there is also Buffer#toString('binary')","date":"2014-02-01T06:07:59.851Z","type":"message"}
+{"nick":"dominictarr","message":"I've been getting to know this stuff doing crypto stuff.","date":"2014-02-01T06:08:20.376Z","type":"message"}
+{"nick":"guybrush","message":"ok sweet, will play with it and read more doc","date":"2014-02-01T06:08:28.720Z","type":"message"}
+{"nick":"feross_","message":"rvagg: so an interesting problem with the tests, lots of them do process.on('exit', function () { assert(something) })","date":"2014-02-01T06:11:25.890Z","type":"message"}
+{"nick":"feross_","message":"one thing that works is:","date":"2014-02-01T06:11:39.056Z","type":"message"}
+{"nick":"feross_","message":"process.on = function (event, fn) {","date":"2014-02-01T06:11:42.431Z","type":"message"}
+{"nick":"feross_","message":"  if (event === 'exit') setTimeout(fn, 1000)","date":"2014-02-01T06:11:43.037Z","type":"message"}
+{"nick":"feross_","message":"}","date":"2014-02-01T06:11:43.782Z","type":"message"}
+{"nick":"feross_","message":"^ to make it work in a browser environment","date":"2014-02-01T06:11:54.445Z","type":"message"}
+{"nick":"feross_","message":"though it feels super gross","date":"2014-02-01T06:11:58.092Z","type":"message"}
+{"nick":"jxson","date":"2014-02-01T06:14:22.992Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-02-01T06:14:30.332Z","type":"join"}
+{"nick":"rowbit","message":"substack, pkrumins: Encoders down: 184.106.106.46 (dev-ie8-1)","date":"2014-02-01T06:17:25.555Z","type":"message"}
+{"nick":"ceejbot","reason":"Remote host closed the connection","date":"2014-02-01T06:18:18.422Z","type":"quit"}
+{"nick":"jxson","reason":"Ping timeout: 252 seconds","date":"2014-02-01T06:18:37.625Z","type":"quit"}
+{"nick":"dominictarr","message":"mk30, for some reason this one http://oaklandwiki.org/Breuner_Building reminds me of the jawa sandcrawler http://starwars.wikia.com/wiki/Sandcrawler","date":"2014-02-01T06:18:47.440Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 245 seconds","date":"2014-02-01T06:19:35.164Z","type":"quit"}
+{"nick":"mk30","message":"dominictarr i can see it","date":"2014-02-01T06:22:27.857Z","type":"message"}
+{"nick":"dominictarr","message":"the shadows of the awnings makes it look detached from the sidewalk, it appears to have just crawled over the street and is departing the scene","date":"2014-02-01T06:24:31.302Z","type":"message"}
+{"nick":"ceejbot","date":"2014-02-01T06:24:49.854Z","type":"join"}
+{"nick":"contrahax","date":"2014-02-01T06:25:18.434Z","type":"join"}
+{"nick":"ceejbot","reason":"Ping timeout: 264 seconds","date":"2014-02-01T06:29:38.656Z","type":"quit"}
+{"nick":"rowbit","message":"substack, pkrumins: Encoders down: 166.78.104.64 (dev-ie10-2), 162.242.164.84 (dev-ie11-1)","date":"2014-02-01T06:31:55.637Z","type":"message"}
+{"nick":"contrahax","reason":"Read error: Connection reset by peer","date":"2014-02-01T06:40:17.563Z","type":"quit"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T06:40:25.741Z","type":"nick"}
+{"nick":"contrahax","date":"2014-02-01T06:40:57.348Z","type":"join"}
+{"nick":"jxson","date":"2014-02-01T06:45:23.415Z","type":"join"}
+{"nick":"ceejbot","date":"2014-02-01T06:49:10.852Z","type":"join"}
+{"nick":"shama","date":"2014-02-01T06:50:01.244Z","type":"quit"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T06:50:08.668Z","type":"nick"}
+{"nick":"gildean","message":"would it make sense to use multilevel and save binary data to a certain level and then json on another?","date":"2014-02-01T06:50:25.464Z","type":"message"}
+{"nick":"gildean","message":"then you could just create two streams ready and write to them directly the correct type of data","date":"2014-02-01T06:50:50.257Z","type":"message"}
+{"nick":"ceejbot","reason":"Read error: Connection reset by peer","date":"2014-02-01T06:51:33.484Z","type":"quit"}
+{"nick":"ceejbot","date":"2014-02-01T06:52:06.779Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 19, free: 13]","date":"2014-02-01T06:52:26.530Z","type":"message"}
+{"nick":"ceejbot","reason":"Remote host closed the connection","date":"2014-02-01T06:55:23.473Z","type":"quit"}
+{"nick":"ceejbot","date":"2014-02-01T06:55:41.187Z","type":"join"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2014-02-01T06:56:38.325Z","type":"quit"}
+{"nick":"feross_","message":"substack: any idea why browserify would complain about this line https://github.com/isaacs/readable-stream/blob/v0.10/test/simple/test-stream-pipe-cleanup.js#L31","date":"2014-02-01T06:56:55.606Z","type":"message"}
+{"nick":"feross_","message":"SyntaxError: Line 31: Illegal return statement while parsing /Users/feross/code/readable-stream/test/simple/test-stream-pipe-cleanup.js","date":"2014-02-01T06:57:11.022Z","type":"message"}
+{"nick":"feross_","message":"actually, do'h, it's not in a function, that's why","date":"2014-02-01T07:01:34.779Z","type":"message"}
+{"nick":"dominictarr","message":"feross_, I encountered that the other day","date":"2014-02-01T07:02:21.488Z","type":"message"}
+{"nick":"feross_","message":"why the heck is that in readable-stream tests?","date":"2014-02-01T07:02:34.658Z","type":"message"}
+{"nick":"feross_","message":"looks like a bad replacement rule","date":"2014-02-01T07:02:38.580Z","type":"message"}
+{"nick":"feross_","message":"dominictarr: in what context?","date":"2014-02-01T07:02:42.840Z","type":"message"}
+{"nick":"dominictarr","message":"it's because insert-module-globals parses the source without putting a closure around it","date":"2014-02-01T07:03:02.177Z","type":"message"}
+{"nick":"dominictarr","message":"- node js runs inside a closure -","date":"2014-02-01T07:03:17.816Z","type":"message"}
+{"nick":"substack","message":"I thought I fixed that bug recently","date":"2014-02-01T07:03:28.435Z","type":"message"}
+{"nick":"dominictarr","message":"and return is illegal if it's not inside a function","date":"2014-02-01T07:03:36.616Z","type":"message"}
+{"nick":"dominictarr","message":"maybe feross_ doesn't have the most up to date version?","date":"2014-02-01T07:03:53.154Z","type":"message"}
+{"nick":"feross_","message":"so, it's legal to return from a module in node","date":"2014-02-01T07:04:23.694Z","type":"message"}
+{"nick":"feross_","message":"?","date":"2014-02-01T07:04:24.424Z","type":"message"}
+{"nick":"substack","message":"nevermind, I can reproduce it","date":"2014-02-01T07:04:40.480Z","type":"message"}
+{"nick":"substack","message":"$ echo 'global.blah; return' | browserify","date":"2014-02-01T07:04:46.449Z","type":"message"}
+{"nick":"substack","message":"SyntaxError: Line 1: Illegal return statement while parsing /home/substack/fake_3e9af3bd.js","date":"2014-02-01T07:04:46.628Z","type":"message"}
+{"nick":"feross_","message":"i'm running latest browserify","date":"2014-02-01T07:04:56.508Z","type":"message"}
+{"nick":"feross_","message":"okay, so this isn't actually rvagg's fault ;)","date":"2014-02-01T07:05:10.694Z","type":"message"}
+{"nick":"substack","message":"this is either a bug in lexical-scope, astw, or insert-module-globals","date":"2014-02-01T07:05:17.002Z","type":"message"}
+{"nick":"substack","message":"blarg I was in the middle of some other patches","date":"2014-02-01T07:05:42.147Z","type":"message"}
+{"nick":"feross_","message":"lol did you forget to push it?","date":"2014-02-01T07:06:15.157Z","type":"message"}
+{"nick":"Maciek416","reason":"Remote host closed the connection","date":"2014-02-01T07:06:33.868Z","type":"quit"}
+{"nick":"ceejbot","reason":"Remote host closed the connection","date":"2014-02-01T07:07:20.569Z","type":"quit"}
+{"nick":"ceejbot","date":"2014-02-01T07:08:01.881Z","type":"join"}
+{"nick":"grncdr","message":"ircretary: tell mikolalysenko about http://www.jakobm.com/semver-in-nodejs-and-npm","date":"2014-02-01T07:12:27.212Z","type":"message"}
+{"nick":"ircretary","message":"grncdr: I'll be sure to tell mikolalysenko","date":"2014-02-01T07:12:27.563Z","type":"message"}
+{"nick":"ceejbot","reason":"Ping timeout: 272 seconds","date":"2014-02-01T07:13:53.725Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-02-01T07:15:18.027Z","type":"join"}
+{"nick":"feross_","message":"can ci.testling test branches?","date":"2014-02-01T07:16:25.142Z","type":"message"}
+{"nick":"substack","message":"feross_: probably not","date":"2014-02-01T07:16:43.424Z","type":"message"}
+{"nick":"substack","message":"although the underlying libraries should theoretically support it","date":"2014-02-01T07:16:53.209Z","type":"message"}
+{"nick":"substack","message":"we might still be on old versions of things","date":"2014-02-01T07:17:03.862Z","type":"message"}
+{"nick":"substack","message":"but try it and see","date":"2014-02-01T07:17:09.100Z","type":"message"}
+{"nick":"feross_","message":"k, will try","date":"2014-02-01T07:17:18.987Z","type":"message"}
+{"nick":"rvagg","message":"ugh, hard laptop death, had to boot with a usb stick and repair root partition","date":"2014-02-01T07:17:30.436Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 252 seconds","date":"2014-02-01T07:20:18.037Z","type":"quit"}
+{"nick":"gildean","message":"rvagg: old ssd?","date":"2014-02-01T07:21:10.250Z","type":"message"}
+{"nick":"gildean","message":"i've had that happen to me twice now with old ssd's","date":"2014-02-01T07:21:22.262Z","type":"message"}
+{"nick":"rvagg","message":"gildean: no, very new, problem is I've switched to xmonad and I don't have a power monitor warning me any more and it doesn't do a gentle suspend when it gets low so I just run out and it does a sudden power-off","date":"2014-02-01T07:25:02.182Z","type":"message"}
+{"nick":"rvagg","message":"... and I think cause it's bios-raided I end up with corrupt boot partition, and cause ext4 isn't all it's cracked up to be I get a corrupted fs that needs hardcore fixing ...","date":"2014-02-01T07:25:51.577Z","type":"message"}
+{"nick":"rvagg","message":"but such is the linux life! these things must be embraced for the embiggening of the spirit, or something","date":"2014-02-01T07:26:13.438Z","type":"message"}
+{"nick":"owen1","message":"rvagg: give i3 i try (never used xmonad btw)","date":"2014-02-01T07:29:21.569Z","type":"message"}
+{"nick":"owen1","message":"s/i/a","date":"2014-02-01T07:29:43.797Z","type":"message"}
+{"nick":"ceejbot","date":"2014-02-01T07:38:12.780Z","type":"join"}
+{"nick":"rvagg","message":"yeah, I've heard it's worth a try ... big investement in getting xmonad set up though, not sure I can abandon it very easily","date":"2014-02-01T07:39:51.837Z","type":"message"}
+{"nick":"marcello3d_zzZ","new_nick":"marcello3d","date":"2014-02-01T07:41:11.089Z","type":"nick"}
+{"nick":"gildean","message":"rvagg: yeah, the unexpected poweroff isn't too nice but it shouldn't really fail that hard imo.","date":"2014-02-01T07:42:50.250Z","type":"message"}
+{"nick":"rvagg","message":"ya, I know! but this is the second time now","date":"2014-02-01T07:43:07.567Z","type":"message"}
+{"nick":"rvagg","message":"might spur me into action","date":"2014-02-01T07:43:13.559Z","type":"message"}
+{"nick":"dominictarr","message":"rvagg, I have a thing for that","date":"2014-02-01T07:46:16.472Z","type":"message"}
+{"nick":"dominictarr","message":"https://github.com/dominictarr/low-battery-warning","date":"2014-02-01T07:46:33.336Z","type":"message"}
+{"nick":"dominictarr","message":"run it as a system process and it flashes the keyboard backlight when you are down to 10% battery","date":"2014-02-01T07:47:00.003Z","type":"message"}
+{"nick":"rvagg","message":"nice","date":"2014-02-01T07:47:20.340Z","type":"message"}
+{"nick":"dominictarr","message":"you could adapt it to flash a different light if you don't have kb backlight.","date":"2014-02-01T07:48:11.456Z","type":"message"}
+{"nick":"substack","message":"my thinkpad beeps at me","date":"2014-02-01T07:48:56.539Z","type":"message"}
+{"nick":"substack","message":"and the LED goes from green to orange when I have <20% left","date":"2014-02-01T07:49:09.336Z","type":"message"}
+{"nick":"substack","message":"and I type `acpi` all the time","date":"2014-02-01T07:49:27.368Z","type":"message"}
+{"nick":"marcello3d","new_nick":"marcello3d_zzZ","date":"2014-02-01T07:51:05.115Z","type":"nick"}
+{"nick":"feross_","message":"rvagg: why do the readable-stream tests use console.error to report test progress?","date":"2014-02-01T07:51:45.015Z","type":"message"}
+{"nick":"rvagg","message":"feross_: all of the node core tests do, can't tell you the reason","date":"2014-02-01T07:52:09.292Z","type":"message"}
+{"nick":"feross_","message":"odd","date":"2014-02-01T07:52:20.716Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 20]","date":"2014-02-01T07:52:26.642Z","type":"message"}
+{"nick":"feross_","message":"so a test only truly fails when it fails an assert(), right?","date":"2014-02-01T07:53:12.521Z","type":"message"}
+{"nick":"feross_","message":"some tests don't seem to even print 'ok' when they're done","date":"2014-02-01T07:53:21.773Z","type":"message"}
+{"nick":"feross_","message":"^ rvagg","date":"2014-02-01T07:53:27.612Z","type":"message"}
+{"nick":"rvagg","message":"feross_: yeah, they are pretty raw cause core uses a python test runner to execute them all as separate processes","date":"2014-02-01T07:54:26.423Z","type":"message"}
+{"nick":"rvagg","message":"so readable-stream emulates that","date":"2014-02-01T07:54:32.851Z","type":"message"}
+{"nick":"feross_","message":"rvagg: how does it emulate it? by running tap?","date":"2014-02-01T07:55:02.609Z","type":"message"}
+{"nick":"feross_","message":"i guess that probably enough because tap will fail if something throws","date":"2014-02-01T07:56:24.751Z","type":"message"}
+{"nick":"feross_","message":"lol, i found a bug in native-buffer-browserify while trying to get these readable-stream tests to pass in the browser!","date":"2014-02-01T07:56:56.346Z","type":"message"}
+{"nick":"feross_","message":"i don't support all the encodings from core, specifically: 'ucs2', 'ucs-2', 'utf16le', 'utf-16le'","date":"2014-02-01T07:57:50.166Z","type":"message"}
+{"nick":"feross_","message":"hmm, what to do about that...","date":"2014-02-01T07:58:06.940Z","type":"message"}
