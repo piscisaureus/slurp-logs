@@ -1,0 +1,152 @@
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-02-02T00:16:14.432Z","type":"quit"}
+{"nick":"amin80","message":"is it possible to run mpipe and mtee from normal SDC instances rather than manta compute instances?","date":"2014-02-02T01:03:01.515Z","type":"message"}
+{"nick":"rmustacc","message":"amin80: You can, but I'm not sure if they're as useful outside of the compute environment.","date":"2014-02-02T01:07:02.484Z","type":"message"}
+{"nick":"rmustacc","message":"The tools are all here: https://github.com/joyent/manta-compute-bin","date":"2014-02-02T01:07:28.433Z","type":"message"}
+{"nick":"amin80","message":"great","date":"2014-02-02T01:08:18.351Z","type":"message"}
+{"nick":"amin80","message":"there is no pkgin for it yet, right?","date":"2014-02-02T01:09:11.063Z","type":"message"}
+{"nick":"rmustacc","message":"I'm not sure, but I'd expect not.","date":"2014-02-02T01:09:35.183Z","type":"message"}
+{"nick":"rmustacc","message":"Is there something particular you're hoping to do with them?","date":"2014-02-02T01:09:54.613Z","type":"message"}
+{"nick":"ed209","reason":"Remote host closed the connection","date":"2014-02-02T01:20:00.998Z","type":"quit"}
+{"nick":"ed209","date":"2014-02-02T01:20:08.376Z","type":"join"}
+{"nick":"therealkoopa","reason":"Remote host closed the connection","date":"2014-02-02T01:24:09.989Z","type":"quit"}
+{"nick":"amin80","message":"i want to tail logs from compute nodes into manta","date":"2014-02-02T01:24:48.639Z","type":"message"}
+{"nick":"rmustacc","message":"So how are you going to chunk up the logs?","date":"2014-02-02T01:26:38.326Z","type":"message"}
+{"nick":"rmustacc","message":"Generally this is done with logadm to rotate the logs and then making the rotated logs available.","date":"2014-02-02T01:26:59.504Z","type":"message"}
+{"nick":"rmustacc","message":"The challenge with something like tail -f | mtee is that you need it will never chunk up an object.","date":"2014-02-02T01:27:48.414Z","type":"message"}
+{"nick":"amin80","message":"what's the suggested way to stream live data to manta?","date":"2014-02-02T01:29:47.745Z","type":"message"}
+{"nick":"amin80","message":"i thought i can do tail -f | mtee, and mtee would handle chunking","date":"2014-02-02T01:30:14.952Z","type":"message"}
+{"nick":"rmustacc","message":"I don't recall if mtee does chunking like that automatically.","date":"2014-02-02T01:30:35.994Z","type":"message"}
+{"nick":"amin80","message":"generally, can I append to an object with HTTP POST or PUT?","date":"2014-02-02T01:31:20.758Z","type":"message"}
+{"nick":"amin80","message":"if that's possible, I can write my own client to chunk up in 1-2k blocks","date":"2014-02-02T01:31:37.839Z","type":"message"}
+{"nick":"rmustacc","message":"There is no appending.","date":"2014-02-02T01:31:52.078Z","type":"message"}
+{"nick":"rmustacc","message":"With the object store you have to always write the entire object.","date":"2014-02-02T01:32:07.080Z","type":"message"}
+{"nick":"rmustacc","message":"So you'll want your own version of mtee that does that kind of chunking.","date":"2014-02-02T01:32:56.621Z","type":"message"}
+{"nick":"amin80","message":"really? real data normally comes in streams, which end up appending really","date":"2014-02-02T01:33:16.495Z","type":"message"}
+{"nick":"amin80","message":"if there is no appending into the object, then technically it's impossible, right?","date":"2014-02-02T01:33:54.611Z","type":"message"}
+{"nick":"rmustacc","message":"If you want to have partial writes, the tradeoffs for CAP change substantially.","date":"2014-02-02T01:34:03.655Z","type":"message"}
+{"nick":"rmustacc","message":"You have to manually discritize your data. Generally with things like logs, folks are doing that already anyways.","date":"2014-02-02T01:34:45.823Z","type":"message"}
+{"nick":"amin80","message":"how, do they store in small split object?","date":"2014-02-02T01:35:49.546Z","type":"message"}
+{"nick":"rmustacc","message":"What do you mean?","date":"2014-02-02T01:35:59.473Z","type":"message"}
+{"nick":"rmustacc","message":"I'm not sure I understand your question.","date":"2014-02-02T01:36:19.330Z","type":"message"}
+{"nick":"amin80","message":"i mean split an stream of log into e.g. 1k object and write thousands of them","date":"2014-02-02T01:36:33.935Z","type":"message"}
+{"nick":"rmustacc","message":"Well, I don't make them that small.","date":"2014-02-02T01:36:52.243Z","type":"message"}
+{"nick":"rmustacc","message":"But the way we do the granularity is on an hourly log rotation basis.","date":"2014-02-02T01:37:02.179Z","type":"message"}
+{"nick":"rmustacc","message":"At least, that's what we're doing for our logs.","date":"2014-02-02T01:37:10.922Z","type":"message"}
+{"nick":"amin80","message":"i want to provide near real time access to logs over manta","date":"2014-02-02T01:37:27.276Z","type":"message"}
+{"nick":"rmustacc","message":"Sure, then what I'd do is just write something that works on a time/data basis.","date":"2014-02-02T01:37:58.619Z","type":"message"}
+{"nick":"rmustacc","message":"And then just directories to get down to a day or hour and then files inside of them that represent what you want.","date":"2014-02-02T01:38:17.897Z","type":"message"}
+{"nick":"rmustacc","message":"eg. if I was doing something like a syslog end point that put data into manta, then, I'd probably buffer up to 1-2 Mb of data or some set amount of time, and make that be one object.","date":"2014-02-02T01:39:03.898Z","type":"message"}
+{"nick":"amin80","message":"you mean i write hourly into local disk and rotate to manta at the end of the hour","date":"2014-02-02T01:39:10.583Z","type":"message"}
+{"nick":"rmustacc","message":"Well, I only mentioned the local disk strategy as that's something that we do.","date":"2014-02-02T01:39:36.778Z","type":"message"}
+{"nick":"rmustacc","message":"And folks generally use log rotation, so it's a natural fit.","date":"2014-02-02T01:39:48.740Z","type":"message"}
+{"nick":"amin80","message":"then my API should search two places, real time data in local disk and archive in manta","date":"2014-02-02T01:40:04.634Z","type":"message"}
+{"nick":"rmustacc","message":"You could also do something like write a syslog server that writes locally, chunks, and writes to manta.","date":"2014-02-02T01:40:13.736Z","type":"message"}
+{"nick":"amin80","message":"that's exactly what i'm doing at the moment","date":"2014-02-02T01:40:28.133Z","type":"message"}
+{"nick":"rmustacc","message":"Okay.","date":"2014-02-02T01:40:51.537Z","type":"message"}
+{"nick":"amin80","message":"i wanted to avoid local writes, but looks like it's a must then","date":"2014-02-02T01:40:54.413Z","type":"message"}
+{"nick":"rmustacc","message":"Well, what happens when you have a network outage?","date":"2014-02-02T01:41:09.079Z","type":"message"}
+{"nick":"amin80","message":"i use scribe which stores data in a buffer","date":"2014-02-02T01:41:34.587Z","type":"message"}
+{"nick":"rmustacc","message":"And the local writes aren't a must. Your server can just close one file and start putting to the next. You can certainly stream data into manta.","date":"2014-02-02T01:41:54.049Z","type":"message"}
+{"nick":"amin80","message":"and I want to use an f5/stringray to really cover single node outage","date":"2014-02-02T01:41:59.000Z","type":"message"}
+{"nick":"rmustacc","message":"The issue is that at some point in time you have to say I'm going to stop streaming this file and create another.","date":"2014-02-02T01:42:29.144Z","type":"message"}
+{"nick":"rmustacc","message":"And that stream is a single HTTP PUT.","date":"2014-02-02T01:42:37.257Z","type":"message"}
+{"nick":"amin80","message":"the issue is if the server with 1h local data goes down","date":"2014-02-02T01:43:13.274Z","type":"message"}
+{"nick":"amin80","message":"then it's lost","date":"2014-02-02T01:43:16.368Z","type":"message"}
+{"nick":"rmustacc","message":"Well, you don't have to do a one hour granularity, you can choose whatever you want.","date":"2014-02-02T01:43:32.587Z","type":"message"}
+{"nick":"rmustacc","message":"Or if you're using your syslog server, I don't see why the one hour matters.","date":"2014-02-02T01:43:43.169Z","type":"message"}
+{"nick":"amin80","message":"can you explain last one?","date":"2014-02-02T01:44:13.869Z","type":"message"}
+{"nick":"rmustacc","message":"So, you have some syslog server right?","date":"2014-02-02T01:44:42.693Z","type":"message"}
+{"nick":"amin80","message":"yep","date":"2014-02-02T01:44:49.594Z","type":"message"}
+{"nick":"rmustacc","message":"It receives all the logs as they're generated.","date":"2014-02-02T01:44:51.815Z","type":"message"}
+{"nick":"amin80","message":"yep","date":"2014-02-02T01:44:55.898Z","type":"message"}
+{"nick":"amin80","message":"and forwards to my central log server","date":"2014-02-02T01:45:09.823Z","type":"message"}
+{"nick":"rmustacc","message":"And that central log server should put stuff up into manta right?","date":"2014-02-02T01:45:21.161Z","type":"message"}
+{"nick":"amin80","message":"right","date":"2014-02-02T01:45:26.858Z","type":"message"}
+{"nick":"rmustacc","message":"So that central syslog server just needs to take a given stream of data, make a request, stream some fixed amount of data in, or some fixed amount of time, and then make another request for the next lot.","date":"2014-02-02T01:46:07.745Z","type":"message"}
+{"nick":"rmustacc","message":"Given that you're going across the WAN, I'd suggest buffering to local disk, but you certainly don't have to.","date":"2014-02-02T01:46:36.647Z","type":"message"}
+{"nick":"amin80","message":"i want to write small local files","date":"2014-02-02T01:46:54.481Z","type":"message"}
+{"nick":"amin80","message":"and push to manta when a file is closed","date":"2014-02-02T01:47:05.625Z","type":"message"}
+{"nick":"rmustacc","message":"Okay, don't see anything that wouldn't work with that.","date":"2014-02-02T01:47:22.900Z","type":"message"}
+{"nick":"rmustacc","message":"But, I think the sweet spot for object size, is larger.","date":"2014-02-02T01:47:43.061Z","type":"message"}
+{"nick":"amin80","message":"but if single server dies, some small part of data is lost","date":"2014-02-02T01:47:44.389Z","type":"message"}
+{"nick":"rmustacc","message":"That's a property of your internal logging system, not manta though right?","date":"2014-02-02T01:48:23.347Z","type":"message"}
+{"nick":"amin80","message":"maybe i can write a job to aggregate small hourly object into daily/monthly at the end of the dayt","date":"2014-02-02T01:48:36.434Z","type":"message"}
+{"nick":"amin80","message":"right","date":"2014-02-02T01:48:47.318Z","type":"message"}
+{"nick":"rmustacc","message":"Sure, you could.","date":"2014-02-02T01:49:05.569Z","type":"message"}
+{"nick":"amin80","message":"regarding file rotation","date":"2014-02-02T01:49:25.591Z","type":"message"}
+{"nick":"amin80","message":"does it sound strange, if i capture d-trace i-node events of fs-close of the syslog PID?","date":"2014-02-02T01:50:00.833Z","type":"message"}
+{"nick":"amin80","message":"if I don't want to change the code the syslog to send me events directly?","date":"2014-02-02T01:50:14.201Z","type":"message"}
+{"nick":"rmustacc","message":"That's not the first approach I'd take.","date":"2014-02-02T01:50:37.813Z","type":"message"}
+{"nick":"rmustacc","message":"I'd use event ports and use file change notifications on the directory.","date":"2014-02-02T01:50:49.164Z","type":"message"}
+{"nick":"amin80","message":"happy to know what you'd do","date":"2014-02-02T01:50:51.161Z","type":"message"}
+{"nick":"rmustacc","message":"But it all depends on what exactly the setup you have with your syslog daemon is.","date":"2014-02-02T01:51:12.066Z","type":"message"}
+{"nick":"amin80","message":"event ports? don't know what it's","date":"2014-02-02T01:51:13.061Z","type":"message"}
+{"nick":"rmustacc","message":"https://www.illumos.org/man/port_create","date":"2014-02-02T01:51:54.119Z","type":"message"}
+{"nick":"rmustacc","message":"It's a C API, similar to kqueue and epoll/inotify.","date":"2014-02-02T01:52:06.617Z","type":"message"}
+{"nick":"amin80","message":"this is awesome","date":"2014-02-02T01:52:24.664Z","type":"message"}
+{"nick":"abraxas","date":"2014-02-02T01:52:42.098Z","type":"join"}
+{"nick":"rmustacc","message":"Ideally you'd want to basically have your syslog code stage the file and then move it into some target directory for upload.","date":"2014-02-02T01:53:17.543Z","type":"message"}
+{"nick":"amin80","message":"and another process scan the folder ?","date":"2014-02-02T01:53:44.630Z","type":"message"}
+{"nick":"rmustacc","message":"Well, you said you didn't want to change your syslog stuff, so has to be.","date":"2014-02-02T01:54:19.470Z","type":"message"}
+{"nick":"therealkoopa","date":"2014-02-02T01:54:38.067Z","type":"join"}
+{"nick":"amin80","message":"my log server already supports rotation to another folder","date":"2014-02-02T01:55:10.791Z","type":"message"}
+{"nick":"amin80","message":"over that folder, then i can use port_create or simply do cron scan","date":"2014-02-02T01:55:37.516Z","type":"message"}
+{"nick":"amin80","message":"sound's logical?","date":"2014-02-02T01:56:11.562Z","type":"message"}
+{"nick":"rmustacc","message":"Sure.","date":"2014-02-02T01:56:11.775Z","type":"message"}
+{"nick":"amin80","message":"my only concern is that now I have to look for data in 2 places","date":"2014-02-02T01:56:27.949Z","type":"message"}
+{"nick":"amin80","message":"local disk + manta","date":"2014-02-02T01:56:32.119Z","type":"message"}
+{"nick":"amin80","message":"suppose I have a dashboard that people can grep a text in log","date":"2014-02-02T01:56:47.121Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 245 seconds","date":"2014-02-02T01:57:13.234Z","type":"quit"}
+{"nick":"amin80","message":"then I should send this to both places, which is a bit of pain. but that's how manta is designed i would say","date":"2014-02-02T01:57:14.200Z","type":"message"}
+{"nick":"rmustacc","message":"I thought you had basically turned down the interval so data would make into manta every minute or so.","date":"2014-02-02T01:57:15.622Z","type":"message"}
+{"nick":"amin80","message":"right","date":"2014-02-02T01:57:45.153Z","type":"message"}
+{"nick":"amin80","message":"and i'm eagerly waiting for LDAP based access control over manta","date":"2014-02-02T01:58:17.004Z","type":"message"}
+{"nick":"amin80","message":"i think that's in plan","date":"2014-02-02T01:58:24.158Z","type":"message"}
+{"nick":"amin80","message":"do you know by any chance, how that's gonna be. separate pub keys or a single pub key with different user names?","date":"2014-02-02T01:59:16.785Z","type":"message"}
+{"nick":"rmustacc","message":"I don't remember the specifics, sorry.","date":"2014-02-02T01:59:35.696Z","type":"message"}
+{"nick":"therealkoopa","reason":"Ping timeout: 264 seconds","date":"2014-02-02T01:59:38.806Z","type":"quit"}
+{"nick":"amin80","message":"that's all right","date":"2014-02-02T01:59:45.204Z","type":"message"}
+{"nick":"amin80","message":"thanks for your time","date":"2014-02-02T01:59:49.055Z","type":"message"}
+{"nick":"notmatt","date":"2014-02-02T02:05:14.909Z","type":"join"}
+{"nick":"amin80","reason":"Quit: amin80","date":"2014-02-02T02:13:38.891Z","type":"quit"}
+{"nick":"notmatt","reason":"Remote host closed the connection","date":"2014-02-02T02:33:45.197Z","type":"quit"}
+{"nick":"notmatt","date":"2014-02-02T02:34:18.319Z","type":"join"}
+{"nick":"notmatt","reason":"Ping timeout: 272 seconds","date":"2014-02-02T02:39:13.853Z","type":"quit"}
+{"nick":"mjn","message":"browsing the docs, I see this: \"Joyent Manta Storage Service ... bounds the number of objects in a single directory so that list operations can be performed efficiently.\"","date":"2014-02-02T02:44:54.123Z","type":"message"}
+{"nick":"mjn","message":"but unless i'm blind it doesn't give a number for the bound","date":"2014-02-02T02:45:11.649Z","type":"message"}
+{"nick":"mjn","message":"is there a rule of thumb for what to keep a dir to? a few hundred objects? a few thousand?","date":"2014-02-02T02:45:26.336Z","type":"message"}
+{"nick":"therealkoopa","date":"2014-02-02T02:55:58.405Z","type":"join"}
+{"nick":"therealkoopa","reason":"Ping timeout: 245 seconds","date":"2014-02-02T03:00:08.274Z","type":"quit"}
+{"nick":"sintaxi","date":"2014-02-02T03:01:08.044Z","type":"join"}
+{"nick":"abraxas","date":"2014-02-02T03:32:20.736Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 272 seconds","date":"2014-02-02T03:37:29.856Z","type":"quit"}
+{"nick":"abraxas","date":"2014-02-02T03:42:20.848Z","type":"join"}
+{"nick":"abraxas_","date":"2014-02-02T03:44:09.476Z","type":"join"}
+{"nick":"abraxas","reason":"Read error: Connection reset by peer","date":"2014-02-02T03:44:21.244Z","type":"quit"}
+{"nick":"abraxas_","reason":"Ping timeout: 248 seconds","date":"2014-02-02T03:48:53.833Z","type":"quit"}
+{"nick":"therealkoopa","date":"2014-02-02T03:56:35.149Z","type":"join"}
+{"nick":"ghostbar","reason":"Remote host closed the connection","date":"2014-02-02T03:58:53.517Z","type":"quit"}
+{"nick":"ghostbar","date":"2014-02-02T04:00:11.596Z","type":"join"}
+{"nick":"therealkoopa","reason":"Ping timeout: 260 seconds","date":"2014-02-02T04:01:19.865Z","type":"quit"}
+{"nick":"sintaxi","reason":"Quit: sintaxi","date":"2014-02-02T04:10:05.784Z","type":"quit"}
+{"nick":"therealkoopa","date":"2014-02-02T04:58:39.924Z","type":"join"}
+{"nick":"therealkoopa","reason":"Ping timeout: 245 seconds","date":"2014-02-02T05:02:22.883Z","type":"quit"}
+{"nick":"abraxas","date":"2014-02-02T05:45:11.019Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2014-02-02T05:50:00.190Z","type":"quit"}
+{"nick":"therealkoopa","date":"2014-02-02T05:58:17.360Z","type":"join"}
+{"nick":"therealkoopa","reason":"Ping timeout: 252 seconds","date":"2014-02-02T06:02:39.132Z","type":"quit"}
+{"nick":"bsdguru","reason":"Quit: bsdguru","date":"2014-02-02T06:07:58.552Z","type":"quit"}
+{"nick":"bsdguru","date":"2014-02-02T06:08:22.658Z","type":"join"}
+{"nick":"therealkoopa","date":"2014-02-02T06:45:19.913Z","type":"join"}
+{"nick":"techwraith","reason":"\"Palaver http://palaverapp.com/\"","date":"2014-02-02T06:45:37.623Z","type":"part"}
+{"nick":"therealkoopa","reason":"Ping timeout: 252 seconds","date":"2014-02-02T06:49:35.335Z","type":"quit"}
+{"nick":"bsdguru","reason":"Quit: bsdguru","date":"2014-02-02T06:58:02.367Z","type":"quit"}
+{"nick":"ghostbar","reason":"Remote host closed the connection","date":"2014-02-02T07:05:41.153Z","type":"quit"}
+{"nick":"ghostbar","date":"2014-02-02T07:06:11.218Z","type":"join"}
+{"nick":"ghostbar","reason":"Remote host closed the connection","date":"2014-02-02T07:06:12.573Z","type":"quit"}
+{"nick":"notmatt","date":"2014-02-02T07:16:14.238Z","type":"join"}
+{"nick":"ghostbar","date":"2014-02-02T07:30:19.272Z","type":"join"}
+{"nick":"marsell","reason":"Quit: marsell","date":"2014-02-02T07:34:51.801Z","type":"quit"}
+{"nick":"notmatt","reason":"Remote host closed the connection","date":"2014-02-02T07:53:36.846Z","type":"quit"}
+{"nick":"notmatt","date":"2014-02-02T07:54:13.706Z","type":"join"}
+{"nick":"notmatt","reason":"Ping timeout: 265 seconds","date":"2014-02-02T07:59:06.295Z","type":"quit"}
