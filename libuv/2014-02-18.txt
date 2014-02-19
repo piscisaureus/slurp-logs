@@ -1,0 +1,328 @@
+{"nick":"trevnorris","message":"Domenic_: also, as a side note, I think it's a design flaw to open a TCPSocket w/o first being able to setup your callback handlers. because it necessitates the ability to buffer data in the background until the callbacks are setup.","date":"2014-02-18T19:33:11.571Z","type":"message"}
+{"nick":"piscisaureus","message":"Now I missed everything","date":"2014-02-18T19:33:15.974Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2014-02-18T19:33:20.639Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus: i'm just showing Domenic_ how being able to pass v8::External's as callback handlers will be a big win for Node: https://gist.github.com/trevnorris/9077794","date":"2014-02-18T19:33:58.132Z","type":"message"}
+{"nick":"piscisaureus","message":"ah, ok :)","date":"2014-02-18T19:34:36.493Z","type":"message"}
+{"nick":"piscisaureus","message":"I didn't miss any standards decision making phew","date":"2014-02-18T19:34:50.661Z","type":"message"}
+{"nick":"kazupon","date":"2014-02-18T19:34:57.109Z","type":"join"}
+{"nick":"trevnorris","message":"heh, no. when i'm around it's hard to make any decisions. ;-P","date":"2014-02-18T19:35:11.807Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-02-18T19:36:56.190Z","type":"quit"}
+{"nick":"kpdecker","reason":"Read error: Connection reset by peer","date":"2014-02-18T19:37:58.591Z","type":"quit"}
+{"nick":"kpdecker","date":"2014-02-18T19:38:19.873Z","type":"join"}
+{"nick":"paulfryz_","date":"2014-02-18T19:43:39.214Z","type":"join"}
+{"nick":"eugeneware","reason":"Remote host closed the connection","date":"2014-02-18T19:44:48.118Z","type":"quit"}
+{"nick":"trevnorris","message":"Domenic_: also on the side, there are, imo, features missing necessary for stability (also currently missing from Node).","date":"2014-02-18T19:46:10.163Z","type":"message"}
+{"nick":"trevnorris","message":"like, say I notice that memory is filling up. so I could do a TCP.pause(); which pauses _all_ TCP. Then do TCP.transverse(fn); which allows me to step through each connection and check its state (e.g. how much data is waiting to be written, time of last write, etc.)","date":"2014-02-18T19:46:10.382Z","type":"message"}
+{"nick":"trevnorris","message":"then if I find a \"bad\" connection (e.g. data not being written) I can simply close that connection then TCP.resume(); to keep things going normally.","date":"2014-02-18T19:46:49.135Z","type":"message"}
+{"nick":"paulfryz_","reason":"Ping timeout: 252 seconds","date":"2014-02-18T19:47:59.743Z","type":"quit"}
+{"nick":"bajtos","date":"2014-02-18T19:50:20.225Z","type":"join"}
+{"nick":"thlorenz","date":"2014-02-18T19:54:10.828Z","type":"join"}
+{"nick":"bajtos","reason":"Ping timeout: 260 seconds","date":"2014-02-18T19:54:59.952Z","type":"quit"}
+{"nick":"Domenic_","message":"trevnorris: ok, so this is basically saying that on('data', ...) gives you possible perf wins because then you can process the data in C++ by passing a C++ callback?","date":"2014-02-18T19:58:38.056Z","type":"message"}
+{"nick":"Domenic_","message":"and it wouldn't work to do cppOndata(server.read()) ?","date":"2014-02-18T20:00:42.244Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: data comes in through then native layer, right? so what this does is allow the native layer to hand off the data directly to another native method, bypassing the need to interface w/ JS.","date":"2014-02-18T20:07:22.798Z","type":"message"}
+{"nick":"trevnorris","message":"cppOndata(server.read()) would require transversing from C++ to JS and creating as Object/ArrayBuffer/etc. then passing that back down to C++ where it then has to be parsed and the data extracted.","date":"2014-02-18T20:08:24.788Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 264 seconds","date":"2014-02-18T20:08:38.796Z","type":"quit"}
+{"nick":"Domenic_","message":"oh i see that's where the void* comes in","date":"2014-02-18T20:09:26.069Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2014-02-18T20:09:30.021Z","type":"message"}
+{"nick":"trevnorris","message":"in the native layer, it would detect there's a native method waiting for the data then do a static_cast<FreeCallback>(cb_info->cb)(char*, length);","date":"2014-02-18T20:10:21.732Z","type":"message"}
+{"nick":"Domenic_","message":"well i mean ideally the C++ could just reach into the stream directly, but in this case you are trying to mediate it via a setup in JS---i.e. via server.ondata(cppOndata). Hmmm...","date":"2014-02-18T20:10:32.607Z","type":"message"}
+{"nick":"Domenic_","message":"you could mediate via pipe I guess :-S","date":"2014-02-18T20:10:56.202Z","type":"message"}
+{"nick":"trevnorris","message":"the advantage here is i can start to chain c++ methods together and create complex data paths, but never have the data reach JS.","date":"2014-02-18T20:11:13.205Z","type":"message"}
+{"nick":"Domenic_","message":"server.pipeTo(cppWritableStream), where pipeTo detects C++ streams and does some nice stuff.","date":"2014-02-18T20:11:19.709Z","type":"message"}
+{"nick":"Domenic_","message":"pipeTo in this case being implemented in C++ as well","date":"2014-02-18T20:11:27.968Z","type":"message"}
+{"nick":"trevnorris","message":"i'm not sure what you mean by c++ stream. under the hood it's all a c++ stream.","date":"2014-02-18T20:11:59.302Z","type":"message"}
+{"nick":"Domenic_","message":"well, you can also create streams purely in JS","date":"2014-02-18T20:12:34.680Z","type":"message"}
+{"nick":"trevnorris","message":"in my version server.ondata() is also implemented in C++, because you can create a Persistent reference to the callback and call it more quickly. instead, like how we now do it, and query out the callback from a new Object on every event.","date":"2014-02-18T20:12:54.722Z","type":"message"}
+{"nick":"trevnorris","message":"it's a pain, and very slow.","date":"2014-02-18T20:13:02.950Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: sure. but that's an abstraction. in this case, i only care about the C++ to JS binding layer.","date":"2014-02-18T20:13:30.301Z","type":"message"}
+{"nick":"trevnorris","message":"then people can use that to implement whatever fluffy JS based streams interface they want","date":"2014-02-18T20:13:46.373Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: heya","date":"2014-02-18T20:14:29.670Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: what do you think about doing js API and feature freeze?","date":"2014-02-18T20:14:46.298Z","type":"message"}
+{"nick":"indutny","message":"in node","date":"2014-02-18T20:14:47.409Z","type":"message"}
+{"nick":"indutny","message":"I mean like","date":"2014-02-18T20:15:04.329Z","type":"message"}
+{"nick":"indutny","message":"today","date":"2014-02-18T20:15:04.872Z","type":"message"}
+{"nick":"indutny","message":":P","date":"2014-02-18T20:15:05.535Z","type":"message"}
+{"nick":"eugeneware","date":"2014-02-18T20:15:10.659Z","type":"join"}
+{"nick":"indutny","message":"trevnorris: piscisaureus: any objections?","date":"2014-02-18T20:15:13.895Z","type":"message"}
+{"nick":"indutny","message":"AlexisMocha: ?","date":"2014-02-18T20:15:15.410Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: basically, node core has Streams and EventEmitters. Both abstractions that make it difficult for people to implement their own interfaces w/o a lot of overhead.","date":"2014-02-18T20:15:30.518Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: by focusing on the JS/C++ binding layer users can then implement whatever interface they want at practically zero unnecessary overhead.","date":"2014-02-18T20:16:00.507Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: what? and when?","date":"2014-02-18T20:16:07.730Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Fedor Indutny\u000f \u00037v0.10\u000f * \u0002703a9e6\u0002 : sunos: handle rearm errors - http://git.io/yEiEiQ","date":"2014-02-18T20:16:10.284Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: this is why I hate the idea of forcing promises in these types of APIs. Something like a TCPSocket should be very low level and allow users to implement a Promise based abstraction on top of that.","date":"2014-02-18T20:17:18.326Z","type":"message"}
+{"nick":"trevnorris","message":"it definitely shouldn't be defined in a standard. because then writing any sort of uber-performant code becomes much harder.","date":"2014-02-18T20:17:55.928Z","type":"message"}
+{"nick":"Domenic_","action":"eyerolls","date":"2014-02-18T20:18:03.166Z","type":"action"}
+{"nick":"trevnorris","message":"Domenic_: what is hard to grasp here? the only way for C++ and JS to interface is via basic callbacks. how is it difficult to understand that it would be good to define the \"standard\" where there is as little abstraction as possible?","date":"2014-02-18T20:19:26.187Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: node.js","date":"2014-02-18T20:19:53.908Z","type":"message"}
+{"nick":"indutny","message":"v0.11","date":"2014-02-18T20:19:54.709Z","type":"message"}
+{"nick":"Domenic_","message":"promises are a fine JS <-> C++ interface as well. you are thinking that the way you have always done things is the only way.","date":"2014-02-18T20:20:05.779Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: um. not until I am able to finish my last AL patch.","date":"2014-02-18T20:20:08.383Z","type":"message"}
+{"nick":"indutny","message":"oh, ok","date":"2014-02-18T20:20:13.734Z","type":"message"}
+{"nick":"indutny","message":"is it happening soon?","date":"2014-02-18T20:20:17.484Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2014-02-18T20:20:18.100Z","type":"message"}
+{"nick":"trevnorris","message":"indutny: yeah. hopefully i'll have it ready for review by the end of the day.","date":"2014-02-18T20:20:31.460Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: seriously? so you're telling me there's a C++ API that allows Promise::Call(), like the v8 Function::Call()?","date":"2014-02-18T20:21:08.629Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: i'm doing things the way that are the only possible way based on how the v8 api exists.","date":"2014-02-18T20:21:44.492Z","type":"message"}
+{"nick":"Domenic_","message":"trevnorris: of course there is. You think promises are implemented in JS when they're in V8?","date":"2014-02-18T20:21:44.940Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: i'd love for you to show me where that API is.","date":"2014-02-18T20:22:24.720Z","type":"message"}
+{"nick":"Domenic_","message":"V8PromiseCustom::call","date":"2014-02-18T20:23:04.209Z","type":"message"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 272 seconds","date":"2014-02-18T20:23:15.818Z","type":"quit"}
+{"nick":"kenperkins_","reason":"Remote host closed the connection","date":"2014-02-18T20:23:41.405Z","type":"quit"}
+{"nick":"indutny","message":"trevnorris: good :)","date":"2014-02-18T20:23:50.811Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: file please?","date":"2014-02-18T20:24:10.849Z","type":"message"}
+{"nick":"kenperkins","date":"2014-02-18T20:24:17.520Z","type":"join"}
+{"nick":"Domenic_","message":"http://src.chromium.org/viewvc/blink/trunk/Source/bindings/v8/custom/V8PromiseCustom.cpp?pathrev=153560#1284","date":"2014-02-18T20:24:29.819Z","type":"message"}
+{"nick":"Domenic_","message":"this is an old version, not sure about newer ones","date":"2014-02-18T20:24:42.116Z","type":"message"}
+{"nick":"Domenic_","message":"but it was in my awesomebar","date":"2014-02-18T20:24:48.844Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: really? do you look at the v8 API itself?","date":"2014-02-18T20:24:56.302Z","type":"message"}
+{"nick":"trevnorris","message":"that's all implemented for the browser, not in v8 proper","date":"2014-02-18T20:25:07.006Z","type":"message"}
+{"nick":"sblom","reason":"Read error: Connection reset by peer","date":"2014-02-18T20:25:08.256Z","type":"quit"}
+{"nick":"Domenic_","message":"yes, they are working in blink first, then porting to v8","date":"2014-02-18T20:25:21.940Z","type":"message"}
+{"nick":"sblom","date":"2014-02-18T20:25:32.259Z","type":"join"}
+{"nick":"eugeneware","reason":"Ping timeout: 260 seconds","date":"2014-02-18T20:27:39.938Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-02-18T20:29:27.675Z","type":"quit"}
+{"nick":"rmg","date":"2014-02-18T20:30:52.238Z","type":"join"}
+{"nick":"trevnorris","message":"Domenic_: well, if you've read my latest blog post responding to that asinine tweet taking what I said way out of context, it says I'll legitimately give alternative APIs a try once they actually exist in v8.","date":"2014-02-18T20:31:20.633Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-02-18T20:31:26.407Z","type":"join"}
+{"nick":"trevnorris","message":"Domenic_: regardless, have a link for v8 team saying they'll implement that into v8 after blink?","date":"2014-02-18T20:31:44.856Z","type":"message"}
+{"nick":"Domenic_","message":"https://groups.google.com/forum/#!topic/v8-users/A2ODAZ6kKaE","date":"2014-02-18T20:32:09.833Z","type":"message"}
+{"nick":"rmg","reason":"Ping timeout: 252 seconds","date":"2014-02-18T20:35:17.742Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Fedor Indutny\u000f \u00037master\u000f * \u0002fc40836\u0002 : Merge branch 'v0.10' (+1 more commits) - http://git.io/zQKkkw","date":"2014-02-18T20:38:39.478Z","type":"message"}
+{"nick":"indutny","message":"ok, one less thing","date":"2014-02-18T20:38:52.653Z","type":"message"}
+{"nick":"trevnorris","message":"sorry. was tending to the infant. :)","date":"2014-02-18T20:42:12.159Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: your comment of \"you are thinking that the way you have always done things is the only way\" is a bit obtuse. my api decisions are based on how things can be improved now, not on api designs that aren't implemented.","date":"2014-02-18T20:44:26.657Z","type":"message"}
+{"nick":"paulfryz_","date":"2014-02-18T20:44:30.309Z","type":"join"}
+{"nick":"trevnorris","message":"if a Promises based C++ api existed right now, then i'd add it to my implementation benchmarks","date":"2014-02-18T20:44:44.929Z","type":"message"}
+{"nick":"trevnorris","message":"Domenic_: and you're also missing the point that the key part of Node is that it basically makes libuv calls accessible from JS. this also only uses basic callbacks. so, again, using promises in between is a layer of abstraction.","date":"2014-02-18T20:46:22.337Z","type":"message"}
+{"nick":"dshaw_","date":"2014-02-18T20:48:27.446Z","type":"join"}
+{"nick":"paulfryz_","reason":"Ping timeout: 264 seconds","date":"2014-02-18T20:49:26.814Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 265 seconds","date":"2014-02-18T20:52:30.583Z","type":"quit"}
+{"nick":"tjfontaine","message":"indutny: I can release libuv v0.10 then?","date":"2014-02-18T20:57:58.008Z","type":"message"}
+{"nick":"indutny","message":"yep","date":"2014-02-18T20:58:02.989Z","type":"message"}
+{"nick":"indutny","message":"definitely","date":"2014-02-18T20:58:06.680Z","type":"message"}
+{"nick":"tjfontaine","message":"ok, anything else due for v0.10?","date":"2014-02-18T20:58:16.016Z","type":"message"}
+{"nick":"indutny","message":"hm...","date":"2014-02-18T20:58:36.139Z","type":"message"}
+{"nick":"indutny","message":"well there was one bug fix","date":"2014-02-18T20:58:41.179Z","type":"message"}
+{"nick":"indutny","message":"in libuv","date":"2014-02-18T20:58:42.566Z","type":"message"}
+{"nick":"indutny","message":"but the guy hasn't signed CLA yet","date":"2014-02-18T20:58:51.182Z","type":"message"}
+{"nick":"tjfontaine","message":"oh right the epoll stuff","date":"2014-02-18T20:59:00.538Z","type":"message"}
+{"nick":"prettyrobots","message":"How do I do a debug build of Bud?","date":"2014-02-18T20:59:05.930Z","type":"message"}
+{"nick":"indutny","message":"so, I guess it should be fine for now","date":"2014-02-18T20:59:14.500Z","type":"message"}
+{"nick":"indutny","message":"unless saghul has something to say","date":"2014-02-18T20:59:18.384Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: https://github.com/joyent/libuv/pull/1100","date":"2014-02-18T20:59:23.729Z","type":"message"}
+{"nick":"indutny","message":"prettyrobots: are you building with `make`? If yes - `BUILDTYPE=Debug make -C out/`","date":"2014-02-18T20:59:43.196Z","type":"message"}
+{"nick":"prettyrobots","message":"Yes.","date":"2014-02-18T20:59:50.667Z","type":"message"}
+{"nick":"prettyrobots","message":"Thank you.","date":"2014-02-18T20:59:52.112Z","type":"message"}
+{"nick":"rmg","date":"2014-02-18T20:59:57.368Z","type":"join"}
+{"nick":"tjfontaine","message":"indutny: nod","date":"2014-02-18T21:00:09.214Z","type":"message"}
+{"nick":"indutny","message":"prettyrobots: you are welcome :)","date":"2014-02-18T21:00:26.820Z","type":"message"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-02-18T21:00:46.574Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033tjfontaine\u000f created tag v0.10.25 - http://git.io/dr2g-w","date":"2014-02-18T21:02:08.714Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Timothy J Fontaine\u000f \u00037v0.10\u000f * \u0002714bec1\u0002 : Now working on v0.10.26 (+1 more commits) - http://git.io/DN5Uvg","date":"2014-02-18T21:02:10.715Z","type":"message"}
+{"nick":"AvianFlu_","date":"2014-02-18T21:02:35.388Z","type":"join"}
+{"nick":"indutny","message":"yay! :)","date":"2014-02-18T21:02:42.460Z","type":"message"}
+{"nick":"AvianFlu","reason":"Disconnected by services","date":"2014-02-18T21:04:35.814Z","type":"quit"}
+{"nick":"AvianFlu_","new_nick":"AvianFlu","date":"2014-02-18T21:04:42.723Z","type":"nick"}
+{"nick":"kazupon","date":"2014-02-18T21:04:57.885Z","type":"join"}
+{"nick":"abraxas","date":"2014-02-18T21:05:52.714Z","type":"join"}
+{"nick":"WalrusPony","message":"oh boy","date":"2014-02-18T21:10:29.325Z","type":"message"}
+{"nick":"WalrusPony","message":"new stable version of libuv!","date":"2014-02-18T21:10:33.951Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 260 seconds","date":"2014-02-18T21:10:46.176Z","type":"quit"}
+{"nick":"txdv","reason":"Ping timeout: 245 seconds","date":"2014-02-18T21:12:46.626Z","type":"quit"}
+{"nick":"tjfontaine","message":"isaacs: hey you around?","date":"2014-02-18T21:13:18.179Z","type":"message"}
+{"nick":"txdv","date":"2014-02-18T21:14:37.761Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Timothy J Fontaine\u000f \u00037v0.10\u000f * \u00023e6e634\u0002 : test: make test-net-error-twice less racey (+1 more commits) - http://git.io/yCZBDA","date":"2014-02-18T21:20:54.915Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-02-18T21:24:15.997Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-02-18T21:28:14.659Z","type":"quit"}
+{"nick":"sh1mmer","date":"2014-02-18T21:28:55.107Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: it's taking my muscle memory a while to get out of the habit of typing process.*AsyncListener() :P","date":"2014-02-18T21:31:18.463Z","type":"message"}
+{"nick":"prettyrobots","message":"indutny: Can I target for an XCode build/project with this gyp configuration?","date":"2014-02-18T21:31:40.840Z","type":"message"}
+{"nick":"prettyrobots","message":"For Bud?","date":"2014-02-18T21:31:43.296Z","type":"message"}
+{"nick":"rmg_","date":"2014-02-18T21:36:04.643Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Pedro Ballesteros\u000f \u00037v0.10\u000f * \u00021d734a7\u0002 : doc: stdout blocking or non-blocking behaviour - http://git.io/_huOTw","date":"2014-02-18T21:36:21.075Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 252 seconds","date":"2014-02-18T21:38:32.289Z","type":"quit"}
+{"nick":"prettyrobots","message":"What if I made a libuv TLS library.","date":"2014-02-18T21:40:45.152Z","type":"message"}
+{"nick":"prettyrobots","message":"?","date":"2014-02-18T21:40:53.801Z","type":"message"}
+{"nick":"prettyrobots","message":"Would that be interesting? Or is that not that interesting.","date":"2014-02-18T21:41:07.909Z","type":"message"}
+{"nick":"prettyrobots","message":"I need a TLS client socket. I'm seeing how I could extract it from Bud. I might be able to do it as an open source project.","date":"2014-02-18T21:41:33.112Z","type":"message"}
+{"nick":"mmalecki","message":"prettyrobots: that's be freaking awesome","date":"2014-02-18T21:46:35.228Z","type":"message"}
+{"nick":"prettyrobots","message":"Okay. So, no one else has done it.","date":"2014-02-18T21:46:47.965Z","type":"message"}
+{"nick":"prettyrobots","message":"Wow.","date":"2014-02-18T21:46:50.852Z","type":"message"}
+{"nick":"prettyrobots","message":"Cool. Maybe I can. I'd rip apart Bud to get it done.","date":"2014-02-18T21:47:08.192Z","type":"message"}
+{"nick":"mmalecki","message":"prettyrobots: if that library did work in uv_queue, I'll write a node binding for it","date":"2014-02-18T21:47:18.074Z","type":"message"}
+{"nick":"mikeal","date":"2014-02-18T21:51:57.110Z","type":"join"}
+{"nick":"mikeal","reason":"Client Quit","date":"2014-02-18T21:52:03.850Z","type":"quit"}
+{"nick":"m76","reason":"Read error: Connection reset by peer","date":"2014-02-18T21:52:30.674Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Anton Khlynovskiy\u000f \u00037v0.10\u000f * \u00021fa5cff\u0002 : docs: clarify process.stdin and old mode - http://git.io/2YFAsA","date":"2014-02-18T21:53:52.229Z","type":"message"}
+{"nick":"trevnorris","message":"ah yes. for the love of... finally got it working. now, to just write up a massive number of tests and update all the docs to match the new functionality. :P","date":"2014-02-18T21:54:41.007Z","type":"message"}
+{"nick":"trevnorris","message":"damn you setImmediate()....","date":"2014-02-18T21:55:29.567Z","type":"message"}
+{"nick":"mikeal","date":"2014-02-18T21:56:23.286Z","type":"join"}
+{"nick":"trevnorris","message":"groundwater: you around?","date":"2014-02-18T21:59:48.657Z","type":"message"}
+{"nick":"groundwater","message":"trevnorris ahoy!","date":"2014-02-18T21:59:55.458Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: hey dude. so AL just got a lot more complex... (didn't think that was possible)","date":"2014-02-18T22:00:14.912Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: here you can see there are a set number of providers that can be filtered: https://github.com/trevnorris/node/blob/al-pass-provider/lib/tracing.js#L119-L137","date":"2014-02-18T22:01:08.818Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: and the name of that provider is now passed as the second argument to the create() callback. so you can know where the call is coming from.","date":"2014-02-18T22:01:35.430Z","type":"message"}
+{"nick":"groundwater","message":"right","date":"2014-02-18T22:01:43.512Z","type":"message"}
+{"nick":"groundwater","message":"trevnorris so this is changing the user-facing api, right?","date":"2014-02-18T22:02:07.521Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: extending it. don't think there's anything that will break backwards compatibility.","date":"2014-02-18T22:02:36.826Z","type":"message"}
+{"nick":"trevnorris","message":"but there is one strange quirk. process.nextTick() doesn't have its own provider type, since it's more of an \"extension\" of where it's being called. so it inherits the provider type of the caller.","date":"2014-02-18T22:03:12.973Z","type":"message"}
+{"nick":"tjfontaine","message":"to make nextTick be viable I think you can't filter any messages","date":"2014-02-18T22:03:39.596Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: also, the error() callback will pass the context of the originating context of the callstack. _not_ the context of the object that actually threw.","date":"2014-02-18T22:03:56.611Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: come again?","date":"2014-02-18T22:04:02.414Z","type":"message"}
+{"nick":"isaacs","message":"tjfontaine: whassup?","date":"2014-02-18T22:04:20.555Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: so I filter only TCP, the only next ticks I get notified for are those that are cleared through a makecallback out of the tcp wrap?","date":"2014-02-18T22:04:30.303Z","type":"message"}
+{"nick":"groundwater","message":"trevnorris okay i understand","date":"2014-02-18T22:04:30.520Z","type":"message"}
+{"nick":"tjfontaine","message":"isaacs: LeftWing had some shasum mismatches, he's in #npm","date":"2014-02-18T22:04:46.663Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: well, whose callstack originates from TCP. so you can be several calls deep, but it all depends on where the call originated from.","date":"2014-02-18T22:05:33.000Z","type":"message"}
+{"nick":"tjfontaine","message":"where the original cb was enqueued, or who called MakeCallback?","date":"2014-02-18T22:06:11.618Z","type":"message"}
+{"nick":"trevnorris","message":"where the cb was enqueued. because, for example, StreamWrap makes calls to MakeCallback for a lot of different things.","date":"2014-02-18T22:07:28.567Z","type":"message"}
+{"nick":"trevnorris","message":"but StreamWrap doesn't have a provider type itself.","date":"2014-02-18T22:07:40.058Z","type":"message"}
+{"nick":"tjfontaine","message":"no the cb is enqueued in process.nextTick, so that's where you store it's provider?","date":"2014-02-18T22:07:51.603Z","type":"message"}
+{"nick":"trevnorris","message":"code will help. tracing.addAL(TCP, { create: fn(stor, provider) { log(provider); }});","date":"2014-02-18T22:09:31.085Z","type":"message"}
+{"nick":"trevnorris","message":"net.createServer(fn() { process.nextTick(fn() { });","date":"2014-02-18T22:09:31.297Z","type":"message"}
+{"nick":"trevnorris","message":"output: TCP\\nTCP","date":"2014-02-18T22:09:31.516Z","type":"message"}
+{"nick":"trevnorris","message":"the nextTick will have the TCP provider because it was called within the callback of another TCP","date":"2014-02-18T22:10:01.320Z","type":"message"}
+{"nick":"tjfontaine","message":"no, the fn will be called by whomever happens to transition through makecallback","date":"2014-02-18T22:10:23.555Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: It is a bit complicated.","date":"2014-02-18T22:10:33.435Z","type":"message"}
+{"nick":"rendar","message":"prettyrobots: ? why?","date":"2014-02-18T22:10:41.772Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: But, it looks like Bud has done most of the work.","date":"2014-02-18T22:10:47.662Z","type":"message"}
+{"nick":"tjfontaine","message":"we may not actually be in tcp's stack when that happens","date":"2014-02-18T22:10:49.124Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: More complicated than nothing.","date":"2014-02-18T22:11:09.193Z","type":"message"}
+{"nick":"tjfontaine","message":"bah, indutny ping","date":"2014-02-18T22:11:26.545Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: when fn() is called, that is the beginning of another callstack. and it was queued in the creation context of TCP. still with me?","date":"2014-02-18T22:11:30.538Z","type":"message"}
+{"nick":"rendar","message":"prettyrobots: i see","date":"2014-02-18T22:11:37.482Z","type":"message"}
+{"nick":"trevnorris","message":"so the provider of fn() will be TCP","date":"2014-02-18T22:11:42.889Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: so you're storing the provider from when nextTick was enqueued, and what if I'm at the start of the node process?","date":"2014-02-18T22:11:59.002Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: This could be extracted to create a TLS wrapper for a stream.","date":"2014-02-18T22:12:11.658Z","type":"message"}
+{"nick":"prettyrobots","message":"https://github.com/indutny/bud/blob/master/src/client.c","date":"2014-02-18T22:12:12.268Z","type":"message"}
+{"nick":"trevnorris","message":"then it will be NONE","date":"2014-02-18T22:12:12.484Z","type":"message"}
+{"nick":"rendar","message":"prettyrobots: got it, but why then one couldn't use Bud directly, at that point?","date":"2014-02-18T22:12:37.886Z","type":"message"}
+{"nick":"prettyrobots","message":"The wrapper could expose the same interface as any other `libuv` stream.","date":"2014-02-18T22:12:41.145Z","type":"message"}
+{"nick":"prettyrobots","message":"What does Bud do?","date":"2014-02-18T22:12:52.371Z","type":"message"}
+{"nick":"trevnorris","message":"well, at least it should be. right now that test is failing.","date":"2014-02-18T22:13:22.533Z","type":"message"}
+{"nick":"rendar","message":"a terminator, isn't it?","date":"2014-02-18T22:13:23.985Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: have any qualms w/ how this operates?","date":"2014-02-18T22:13:40.139Z","type":"message"}
+{"nick":"trevnorris","message":"haha, wait. it is passing. wasn't passing because I had set a provider. :P","date":"2014-02-18T22:14:09.805Z","type":"message"}
+{"nick":"tjfontaine","message":"I am reading the code,  because I'm not explaining myself well enough over irc for you to understand what I'm trying to get across","date":"2014-02-18T22:14:48.944Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: there is still some issues with the code. allow me to get the tests up and that should make a lot more sense.","date":"2014-02-18T22:15:17.375Z","type":"message"}
+{"nick":"tjfontaine","message":"no that's not the problem","date":"2014-02-18T22:15:26.385Z","type":"message"}
+{"nick":"rmg_","reason":"Remote host closed the connection","date":"2014-02-18T22:15:35.867Z","type":"quit"}
+{"nick":"prettyrobots","message":"rendar: Yes. I'd like to extract a TLS wrapper from Bud.","date":"2014-02-18T22:15:38.305Z","type":"message"}
+{"nick":"tjfontaine","message":"I'm trying to rationalize the logic of when the provider is to be stored","date":"2014-02-18T22:15:48.009Z","type":"message"}
+{"nick":"prettyrobots","message":"A TLS socket wrapper.","date":"2014-02-18T22:15:48.410Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine trevnorris i'm listening/following, i just don't have anything to add yet","date":"2014-02-18T22:17:46.083Z","type":"message"}
+{"nick":"trevnorris","message":"groundwater: thanks :)","date":"2014-02-18T22:17:53.602Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: I'm in a tcp cb, say on connection, and I call an fs operation that immediately nextTick's, the nextTick will be registered to TCP and not to FS","date":"2014-02-18T22:18:09.096Z","type":"message"}
+{"nick":"tjfontaine","message":"or it could be anythign that does a dns.lookup and uses an ip that gets immediately deferred","date":"2014-02-18T22:18:43.995Z","type":"message"}
+{"nick":"trevnorris","message":"net.connect(..., fn0() { fs.stat(..., fn1() { p.nextTick(); }); }); <- the nextTick will be FS","date":"2014-02-18T22:19:04.591Z","type":"message"}
+{"nick":"tjfontaine","message":"it's not about the result of fs.stat, it's if fs.<foo> called nextTick implicitly","date":"2014-02-18T22:19:32.088Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ah, you're taking about if inside node core code we call a nextTick() ?","date":"2014-02-18T22:20:31.357Z","type":"message"}
+{"nick":"tjfontaine","message":"yes, that's where the peril is most obvious","date":"2014-02-18T22:20:55.475Z","type":"message"}
+{"nick":"rendar","message":"prettyrobots: i see","date":"2014-02-18T22:21:04.363Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: He's using `ringbuffer`.","date":"2014-02-18T22:21:24.648Z","type":"message"}
+{"nick":"rendar","message":"prettyrobots: well i need some sleep now, we'll talk about this tomorrow if you want, where are you from?","date":"2014-02-18T22:21:27.763Z","type":"message"}
+{"nick":"trevnorris","message":"ahhhhhhh. yeah. because we screw w/ some stuff and make the call look async even though it's in another... got you.","date":"2014-02-18T22:21:33.709Z","type":"message"}
+{"nick":"prettyrobots","message":"rendar: A `ringbuffer` that is a wrapper around SSL BIO.","date":"2014-02-18T22:21:51.317Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: thanks for thinking of this case. so, have an idea to mitigate the issue?","date":"2014-02-18T22:21:51.823Z","type":"message"}
+{"nick":"prettyrobots","message":"New Orleans. I'm currently in California.","date":"2014-02-18T22:22:15.077Z","type":"message"}
+{"nick":"tjfontaine","message":"well, I'm just kinda worried about trying to shoe horn AL in for nextTick/timers beyond the first transition, that is AW doing its thing saying \"Hey, I moved from C++ to JS\"","date":"2014-02-18T22:22:26.419Z","type":"message"}
+{"nick":"tjfontaine","message":"that's where ALs bread and butter is","date":"2014-02-18T22:22:43.118Z","type":"message"}
+{"nick":"tjfontaine","message":"more often than not it's where the majority of the logic is handled as well","date":"2014-02-18T22:22:57.871Z","type":"message"}
+{"nick":"trevnorris","message":"i think I got timers working well. because of the screwy way setImmediate is handled it did require some finagling. but nextTick does worry me.","date":"2014-02-18T22:23:51.442Z","type":"message"}
+{"nick":"trevnorris","message":"we can't just blindly call AL for every nextTick. that's where a large amount of perf hit is coming from. nextTick is used all over the place.","date":"2014-02-18T22:24:19.780Z","type":"message"}
+{"nick":"trevnorris","message":"and if we don't handle nextTick at all, then that's a lot of callstacks that will be lost in the process.","date":"2014-02-18T22:25:04.900Z","type":"message"}
+{"nick":"tjfontaine","message":"I know, I'm mostly worried about lost call stacks if we say we are trying to handle it, and then the bug reports and the question about how we fix that in stables","date":"2014-02-18T22:25:35.987Z","type":"message"}
+{"nick":"tjfontaine","message":"I worry that the fallback here *would* be just to always fire next ticks regardless of provider","date":"2014-02-18T22:25:51.068Z","type":"message"}
+{"nick":"trevnorris","message":"ok... i'm not a fan, but for the time being it's a viable fallback.","date":"2014-02-18T22:26:52.791Z","type":"message"}
+{"nick":"kenperkins","reason":"Ping timeout: 272 seconds","date":"2014-02-18T22:27:23.862Z","type":"quit"}
+{"nick":"austo","reason":"Quit: austo","date":"2014-02-18T22:27:36.150Z","type":"quit"}
+{"nick":"tjfontaine","message":"groundwater: I presume you're tracing call stacks when something is enqueued, and binding, and on call checking the latency at that point?","date":"2014-02-18T22:27:47.219Z","type":"message"}
+{"nick":"trevnorris","message":"oh wait... son of a bitch. this means keeping a simple list of async callstacks would also be affected by this.","date":"2014-02-18T22:27:56.852Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 248 seconds","date":"2014-02-18T22:28:21.724Z","type":"quit"}
+{"nick":"trevnorris","message":"it's so sad. the C++ side  is so simple. working this around all the JS fluff is where almost all my pain has come.","date":"2014-02-18T22:28:41.368Z","type":"message"}
+{"nick":"tjfontaine","message":"which is why I vote for a different solution, because AW is pretty clear cut","date":"2014-02-18T22:28:59.697Z","type":"message"}
+{"nick":"austo","date":"2014-02-18T22:29:18.741Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: I am totally for probes. in my mind these always just had a different use case.","date":"2014-02-18T22:29:35.616Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2014-02-18T22:29:41.540Z","type":"message"}
+{"nick":"trevnorris","message":"hm. well, at the least I have the mechanics to pass in the provider type of the call. that should help with probe filtering.","date":"2014-02-18T22:31:08.061Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: on the side.didn't you say that dtrace or the like will replace bits of assembly with its own execution stuff?","date":"2014-02-18T22:31:45.359Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: yes it replaces 3 noop instructions with it's own jump when the probe is enabled","date":"2014-02-18T22:32:18.041Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: think I already brought this up, but calling an empty v8::Function from JS is < 10ns. sprinkling those around core and allowing dtrace to hook into those functions would come at almost no performance cost.","date":"2014-02-18T22:33:25.384Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: https://www.usenix.org/legacy/event/usenix04/tech/general/full_papers/cantrill/cantrill_html/","date":"2014-02-18T22:33:40.666Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: that's what we already do","date":"2014-02-18T22:33:47.548Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: yeah, but it's not a cross platform solution right?","date":"2014-02-18T22:34:05.035Z","type":"message"}
+{"nick":"tjfontaine","message":"that's part of what my 5940 is for","date":"2014-02-18T22:34:27.312Z","type":"message"}
+{"nick":"tjfontaine","message":"on platforms where dtrace works (sunos, freebsd, darwin) use that, where you have etw (windows) you're fine","date":"2014-02-18T22:34:51.911Z","type":"message"}
+{"nick":"tjfontaine","message":"on linux you get our static probes with systemtap","date":"2014-02-18T22:35:00.633Z","type":"message"}
+{"nick":"trevnorris","message":"and, um. linux?","date":"2014-02-18T22:35:04.560Z","type":"message"}
+{"nick":"kazupon","date":"2014-02-18T22:35:05.272Z","type":"join"}
+{"nick":"trevnorris","message":"ok","date":"2014-02-18T22:35:07.372Z","type":"message"}
+{"nick":"tjfontaine","message":"for user defined you'll only get our probes in process (like with NR)","date":"2014-02-18T22:35:14.923Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: fyi, this type of thing is going to eat your face: https://github.com/joyent/node/pull/5940/files#diff-e3bc37430eb078ccbafe3aa3b570c91aR157","date":"2014-02-18T22:37:02.702Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine everything we do around async-listeners is encapsulated in continuation-local-storage","date":"2014-02-18T22:37:07.616Z","type":"message"}
+{"nick":"trevnorris","message":"that's the type of thing i'm trying to mitigate against.","date":"2014-02-18T22:37:14.775Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: the style of the javascript can be massaged, you can pass variables to the function so they can be hoisted out, stop freaking out about that part, substance over style","date":"2014-02-18T22:37:53.513Z","type":"message"}
+{"nick":"trevnorris","message":"what i'm getting at is that noop JS calls that have to make a context jump are more expensive than a noop C++ call.","date":"2014-02-18T22:39:00.533Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/joyent/node/pull/5940/files#diff-e6ef024c3775d787c38487a6309e491dR414","date":"2014-02-18T22:39:02.592Z","type":"message"}
+{"nick":"tjfontaine","message":"that's where I already do what you're worrying about","date":"2014-02-18T22:39:08.972Z","type":"message"}
+{"nick":"hz","date":"2014-02-18T22:39:23.984Z","type":"join"}
+{"nick":"trevnorris","message":"sorry, I didn't mean the call style in general. i meant more of calling the function at all.","date":"2014-02-18T22:40:27.143Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, if I stop calling all functions, the cpu can idle very quickly ;)","date":"2014-02-18T22:40:53.589Z","type":"message"}
+{"nick":"trevnorris","message":";-P","date":"2014-02-18T22:41:04.288Z","type":"message"}
+{"nick":"trevnorris","message":"i mean, going with noop C++ calls that dtrace can hook into would be far more efficient.","date":"2014-02-18T22:41:22.734Z","type":"message"}
+{"nick":"tjfontaine","message":"but not in a way that's cross platform","date":"2014-02-18T22:41:52.170Z","type":"message"}
+{"nick":"morganhelocker","reason":"Quit: morganhelocker","date":"2014-02-18T22:42:16.638Z","type":"quit"}
+{"nick":"tjfontaine","message":"the point of the user definable api is such that we can let NR and others consume the same static probe points","date":"2014-02-18T22:42:16.855Z","type":"message"}
+{"nick":"tjfontaine","message":"I ask this probably knowing the answer, but I presume you don't want us to ever call .emit() as well?","date":"2014-02-18T22:43:10.427Z","type":"message"}
+{"nick":"rendar","date":"2014-02-18T22:43:53.232Z","type":"quit"}
+{"nick":"paulfryz_","date":"2014-02-18T22:46:01.042Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: my first concern is how this will affect performance when probes aren't being used. i'll manage from there.","date":"2014-02-18T22:47:08.955Z","type":"message"}
+{"nick":"trevnorris","message":"but in terms of perf, never touch Function#bind() or declare a function within another function. but emit() I could probably live with.","date":"2014-02-18T22:47:43.132Z","type":"message"}
+{"nick":"tjfontaine","message":"it's roughly the same concern as calling emit when there are no listeners, in the event you're on a system with dtrace/etw/systemtap you'll get one extra call to a noop c++ function","date":"2014-02-18T22:47:52.119Z","type":"message"}
+{"nick":"trevnorris","message":"ok. i'll think about it. bbiab","date":"2014-02-18T22:48:15.171Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2014-02-18T22:48:16.327Z","type":"action"}
+{"nick":"LOUDBOT","message":"I GOT BLISTERS ON THESE FINGERS","date":"2014-02-18T22:48:16.585Z","type":"message"}
+{"nick":"paulfryz_","reason":"Ping timeout: 265 seconds","date":"2014-02-18T22:50:28.433Z","type":"quit"}
+{"nick":"kazupon","reason":"Ping timeout: 260 seconds","date":"2014-02-18T22:55:35.865Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033tjfontaine\u000f created branch v0.10.26-release - http://git.io/zmsrvQ","date":"2014-02-18T22:56:10.791Z","type":"message"}
+{"nick":"austo","reason":"Quit: austo","date":"2014-02-18T22:57:03.876Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-02-18T23:00:52.191Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-02-18T23:01:38.420Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-02-18T23:02:27.418Z","type":"quit"}
+{"nick":"abraxas","date":"2014-02-18T23:06:46.397Z","type":"join"}
+{"nick":"rmg","date":"2014-02-18T23:09:09.046Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-02-18T23:11:29.064Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2014-02-18T23:11:29.778Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-02-18T23:15:09.732Z","type":"quit"}
+{"nick":"kpdecker","reason":"*.net *.split","date":"2014-02-18T23:16:50.551Z","type":"quit"}
+{"nick":"piscisaureus","reason":"*.net *.split","date":"2014-02-18T23:16:50.551Z","type":"quit"}
+{"nick":"octetcloud","reason":"*.net *.split","date":"2014-02-18T23:16:52.223Z","type":"quit"}
+{"nick":"seldo","reason":"*.net *.split","date":"2014-02-18T23:16:55.865Z","type":"quit"}
+{"nick":"trevnorris","reason":"*.net *.split","date":"2014-02-18T23:16:58.468Z","type":"quit"}
+{"nick":"kpdecker","date":"2014-02-18T23:18:36.910Z","type":"join"}
+{"nick":"piscisaureus","date":"2014-02-18T23:18:36.910Z","type":"join"}
+{"nick":"octetcloud","date":"2014-02-18T23:18:36.910Z","type":"join"}
+{"nick":"seldo","date":"2014-02-18T23:18:36.910Z","type":"join"}
+{"nick":"trevnorris","date":"2014-02-18T23:18:36.910Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-02-18T23:18:49.664Z","type":"quit"}
+{"nick":"morganhelocker","date":"2014-02-18T23:26:51.175Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-02-18T23:27:51.716Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-02-18T23:32:16.012Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Timothy J Fontaine\u000f \u00037v0.10.26-release\u000f * \u0002cc56c62\u0002 : build: readd missing installer resources - http://git.io/hYKvjQ","date":"2014-02-18T23:35:14.226Z","type":"message"}
+{"nick":"kpdecker","reason":"Quit: Leaving.","date":"2014-02-18T23:39:40.174Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Ping timeout: 260 seconds","date":"2014-02-18T23:42:43.929Z","type":"quit"}
+{"nick":"jmar777_","date":"2014-02-18T23:46:26.824Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2014-02-18T23:46:32.088Z","type":"quit"}
+{"nick":"paulfryz_","date":"2014-02-18T23:46:49.075Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 272 seconds","date":"2014-02-18T23:50:59.861Z","type":"quit"}
+{"nick":"paulfryz_","reason":"Ping timeout: 252 seconds","date":"2014-02-18T23:51:07.619Z","type":"quit"}
+{"nick":"mikeal","date":"2014-02-18T23:55:48.889Z","type":"join"}
+{"nick":"Ralith","message":"indutny: woops, trivial mistake; will push a fix tonight","date":"2014-02-18T23:57:39.982Z","type":"message"}
+{"nick":"eugeneware","date":"2014-02-18T23:57:54.598Z","type":"join"}
+{"nick":"Ralith","message":"shame the buildbot doesn't do windows","date":"2014-02-18T23:57:58.668Z","type":"message"}
+{"nick":"inolen","reason":"Read error: Connection reset by peer","date":"2014-02-18T23:58:26.612Z","type":"quit"}
+{"nick":"inolen","date":"2014-02-18T23:58:45.592Z","type":"join"}
+{"nick":"dqminh","reason":"Ping timeout: 260 seconds","date":"2014-02-18T23:58:46.816Z","type":"quit"}
+{"nick":"paulfryzel","reason":"Remote host closed the connection","date":"2014-02-18T23:59:36.295Z","type":"quit"}
+{"nick":"indutny","reason":"Ping timeout: 260 seconds","date":"2014-02-18T23:59:42.328Z","type":"quit"}
