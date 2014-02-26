@@ -281,3 +281,413 @@
 {"nick":"dguttman","date":"2014-02-25T15:44:14.310Z","type":"join"}
 {"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 32]","date":"2014-02-25T15:47:19.235Z","type":"message"}
 {"nick":"AvianFlu","date":"2014-02-25T15:50:28.805Z","type":"join"}
+{"nick":"kenperkins","date":"2014-02-25T16:03:22.115Z","type":"join"}
+{"nick":"creationix","message":"jesusabdullah, I like your tweet","date":"2014-02-25T16:05:22.620Z","type":"message"}
+{"nick":"jesusabdullah","message":"creationix: YOU get it XD","date":"2014-02-25T16:07:11.712Z","type":"message"}
+{"nick":"creationix","message":"not sure I get what you were trying to say, but I've long thought that callbacks didn't belong in libuv","date":"2014-02-25T16:07:50.786Z","type":"message"}
+{"nick":"creationix","message":"and whatever JS or Lua binding was written for libuv didn't need callbacks either","date":"2014-02-25T16:08:13.153Z","type":"message"}
+{"nick":"creationix","message":"that could be added in userland by code that uses the bindings","date":"2014-02-25T16:08:22.211Z","type":"message"}
+{"nick":"creationix","message":"I know that would make bindings much easier to write and luajit run much faster","date":"2014-02-25T16:08:43.827Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2014-02-25T16:10:04.143Z","type":"quit"}
+{"nick":"jesusabdullah","message":"creationix: I meant in javascript land, where I can't think of a lower level abstraction to async","date":"2014-02-25T16:15:17.653Z","type":"message"}
+{"nick":"jesusabdullah","message":"creationix: in libuv? That's a whole nother ball game","date":"2014-02-25T16:15:27.196Z","type":"message"}
+{"nick":"thlorenz","message":"creationix: I'm not even sure how you'd remove callbacks from libuv (how would you express getting notified with the result of an async op)?","date":"2014-02-25T16:16:08.986Z","type":"message"}
+{"nick":"creationix","message":"to remove callbacks from libuv or a scripting language that binds to it (same task)","date":"2014-02-25T16:16:36.743Z","type":"message"}
+{"nick":"creationix","message":"you break the concept or the event loop forcing everything to be non-blockink","date":"2014-02-25T16:16:53.464Z","type":"message"}
+{"nick":"ednapiranha","date":"2014-02-25T16:16:58.795Z","type":"join"}
+{"nick":"creationix","message":"you allow putting the event loop into userspace","date":"2014-02-25T16:17:09.460Z","type":"message"}
+{"nick":"creationix","message":"once you allow putting the event loop into userspace (instead of being explicit), you can change how it works","date":"2014-02-25T16:17:50.864Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2014-02-25T16:18:04.430Z","type":"quit"}
+{"nick":"creationix","message":"do instead of using callbacks to register event callbacks, you put some data marker in the original request","date":"2014-02-25T16:18:11.501Z","type":"message"}
+{"nick":"creationix","message":"and eventually, your data will come out of the blocking event loop as a return value","date":"2014-02-25T16:18:22.192Z","type":"message"}
+{"nick":"creationix","message":"which you then route to the right place, probably using userland callbacks","date":"2014-02-25T16:18:33.477Z","type":"message"}
+{"nick":"thlorenz","message":"creationix: interesting idea, I believe that'd be really hard to do, the entire libuv API depends on the event loop and callbacks","date":"2014-02-25T16:18:35.377Z","type":"message"}
+{"nick":"creationix","message":"thlorenz, oh, I know.  I've talked to bert and ben about this.  Basically, they think it's a great idea, but too late for libuv","date":"2014-02-25T16:18:59.178Z","type":"message"}
+{"nick":"creationix","message":"though I did have an idea to implement my idea on top of libuv","date":"2014-02-25T16:19:30.282Z","type":"message"}
+{"nick":"creationix","message":"my motivitaion was to be able to use luajit's FFI","date":"2014-02-25T16:19:45.360Z","type":"message"}
+{"nick":"creationix","message":"callbacks kill performance in luajit ffi","date":"2014-02-25T16:19:53.518Z","type":"message"}
+{"nick":"creationix","message":"like literally they change it from being near C speed, to slower than interpreted lua","date":"2014-02-25T16:20:10.284Z","type":"message"}
+{"nick":"creationix","message":"but if libuv didn't use callbacks and I had a C library I could FFI from lua, it would be blazing fast","date":"2014-02-25T16:20:29.567Z","type":"message"}
+{"nick":"creationix","message":"I would still use generators or callbacks for user code, but it would be lifted up a layer or two","date":"2014-02-25T16:20:47.140Z","type":"message"}
+{"nick":"thlorenz","message":"creationix: but if you build something on top of libuv how would that make things faster, you'd still use event loop and callbacks under the hood?","date":"2014-02-25T16:20:53.049Z","type":"message"}
+{"nick":"creationix","message":"thlorenz, that's fine, C callbacks are pretty fast in C","date":"2014-02-25T16:21:05.939Z","type":"message"}
+{"nick":"creationix","message":"it's callbacks from C to lua that's slow","date":"2014-02-25T16:21:11.855Z","type":"message"}
+{"nick":"thlorenz","message":"ah","date":"2014-02-25T16:21:15.866Z","type":"message"}
+{"nick":"creationix","message":"and having written libuv bindings for 4 different scripting engines, I can tell you, that's the hardest part to get right too","date":"2014-02-25T16:21:51.463Z","type":"message"}
+{"nick":"thlorenz","message":"creationix: so what would you expose to interact with libuv if it's not callback?","date":"2014-02-25T16:21:58.331Z","type":"message"}
+{"nick":"creationix","message":"so in libuv the event loop isn't implicit","date":"2014-02-25T16:22:13.301Z","type":"message"}
+{"nick":"creationix","message":"you have to explicitly call uv_run","date":"2014-02-25T16:22:18.890Z","type":"message"}
+{"nick":"thlorenz","message":"yes, so you can pass whatever you want","date":"2014-02-25T16:22:29.841Z","type":"message"}
+{"nick":"creationix","message":"and that blocks till there is an event (or in the default mode, till there are no more at all)","date":"2014-02-25T16:22:33.293Z","type":"message"}
+{"nick":"creationix","message":"in my proposed modification, it would block till the next event and then *return* the event","date":"2014-02-25T16:22:52.997Z","type":"message"}
+{"nick":"creationix","message":"you can put whatever metadata you want in the event when you register it.  It could even be a lua function","date":"2014-02-25T16:23:15.300Z","type":"message"}
+{"nick":"creationix","message":"and then some lua routing code would extract the function and call it","date":"2014-02-25T16:23:32.527Z","type":"message"}
+{"nick":"creationix","message":"so the C <-> Lua interface would be vanilla sync function that returns value","date":"2014-02-25T16:23:56.117Z","type":"message"}
+{"nick":"creationix","message":"and userland code would still be callback based if you wanted","date":"2014-02-25T16:24:12.124Z","type":"message"}
+{"nick":"creationix","message":"(though I could then skip callbacks alltogether and use generators instead like copas does)","date":"2014-02-25T16:24:25.967Z","type":"message"}
+{"nick":"creationix","message":"s/generators/coroutines/","date":"2014-02-25T16:24:36.875Z","type":"message"}
+{"nick":"thlorenz","message":"interesting, so you'd spin up a different event loop for each event? - not sure I'm understanding","date":"2014-02-25T16:24:56.051Z","type":"message"}
+{"nick":"creationix","message":"no, there is still one event loop","date":"2014-02-25T16:25:05.223Z","type":"message"}
+{"nick":"creationix","message":"you can only block the thread once","date":"2014-02-25T16:25:10.527Z","type":"message"}
+{"nick":"thlorenz","message":"but it gets unblocked for each event instead of waiting til there are no more events?","date":"2014-02-25T16:26:08.914Z","type":"message"}
+{"nick":"creationix","message":"right, you can return NULL when there are no more events","date":"2014-02-25T16:26:27.784Z","type":"message"}
+{"nick":"creationix","message":"but if there are events pending, it will just block and wait","date":"2014-02-25T16:26:38.225Z","type":"message"}
+{"nick":"creationix","message":"uv_run does that already more-or-less","date":"2014-02-25T16:26:48.278Z","type":"message"}
+{"nick":"pfraze","message":"creationix, so in lua, you'd have access to that run()","date":"2014-02-25T16:26:50.338Z","type":"message"}
+{"nick":"creationix","message":"right","date":"2014-02-25T16:26:57.292Z","type":"message"}
+{"nick":"pfraze","message":"?","date":"2014-02-25T16:26:57.554Z","type":"message"}
+{"nick":"pfraze","message":"that's pretty interesting. How hard would it be to prototype?","date":"2014-02-25T16:27:16.763Z","type":"message"}
+{"nick":"creationix","message":"I wrote some bare libuv bindings for lua that expose run https://github.com/creationix/luv/blob/master/examples/test-timer.lua#L66-L68","date":"2014-02-25T16:27:28.405Z","type":"message"}
+{"nick":"creationix","message":"but that's still using callbacks from C into Lua","date":"2014-02-25T16:27:40.434Z","type":"message"}
+{"nick":"creationix","message":"pfraze, I'm only average at C, so writing the wrapping API is hard for me","date":"2014-02-25T16:28:05.721Z","type":"message"}
+{"nick":"creationix","message":"but I think it should be possible","date":"2014-02-25T16:28:15.578Z","type":"message"}
+{"nick":"creationix","message":"pfraze, once there is a wrapper API, even for a subset of the libuv API, someone could write quick FFI bindings to test it out","date":"2014-02-25T16:28:43.793Z","type":"message"}
+{"nick":"pfraze","message":"creationix, where's our open-source research fund when we need it","date":"2014-02-25T16:29:20.792Z","type":"message"}
+{"nick":"creationix","message":"I started on a prototype for this, but I can't seem to find it","date":"2014-02-25T16:30:40.397Z","type":"message"}
+{"nick":"creationix","message":"I have too many github projects (~300)","date":"2014-02-25T16:30:45.827Z","type":"message"}
+{"nick":"creationix","message":"oh well, it didn't get very far anyway","date":"2014-02-25T16:32:35.732Z","type":"message"}
+{"nick":"creationix","message":"pfraze, cloud9 was funding libuv research, but then money got tight","date":"2014-02-25T16:32:56.948Z","type":"message"}
+{"nick":"pfraze","message":"creationix, too bad. I would like a scripting env that lived outside the event loop... 10x better if near-C speed","date":"2014-02-25T16:34:06.239Z","type":"message"}
+{"nick":"creationix","message":"Mike Pall (the author of luajit) says to just ffi epoll directly","date":"2014-02-25T16:34:37.154Z","type":"message"}
+{"nick":"creationix","message":"but that's not very cross-platform","date":"2014-02-25T16:34:42.039Z","type":"message"}
+{"nick":"creationix","message":"I want the primitives in libuv in a ffi friendly API","date":"2014-02-25T16:34:57.481Z","type":"message"}
+{"nick":"pfraze","message":"could do that for a quick proof-of-concept","date":"2014-02-25T16:35:24.776Z","type":"message"}
+{"nick":"xaq","date":"2014-02-25T16:35:38.885Z","type":"join"}
+{"nick":"shama","date":"2014-02-25T16:35:47.844Z","type":"join"}
+{"nick":"dlmanning","reason":"Ping timeout: 264 seconds","date":"2014-02-25T16:38:39.320Z","type":"quit"}
+{"nick":"creationix","message":"pfraze, go for it.  I'm already drowning in unpaid experiments","date":"2014-02-25T16:39:01.518Z","type":"message"}
+{"nick":"pfraze","message":"creationix, I'll put it in my stack. Always wanted to learn a bit about ffi bindings","date":"2014-02-25T16:39:48.199Z","type":"message"}
+{"nick":"creationix","message":"pfraze, now, keep in mind that most FFI interfaces are actually slower than C bindings","date":"2014-02-25T16:40:29.747Z","type":"message"}
+{"nick":"creationix","message":"but luajit is special.  It's FFI is baked into the JIT engine and is super fast","date":"2014-02-25T16:40:42.050Z","type":"message"}
+{"nick":"pfraze","message":"creationix, I didn't know they were distinct. Is FFI more generalized than c bindings?","date":"2014-02-25T16:41:12.310Z","type":"message"}
+{"nick":"creationix","message":"FFI is run-time","date":"2014-02-25T16:41:22.542Z","type":"message"}
+{"nick":"creationix","message":"you define the C interface from a lua script, dlopen the library and call it","date":"2014-02-25T16:41:38.637Z","type":"message"}
+{"nick":"creationix","message":"you don't compile against it","date":"2014-02-25T16:41:44.119Z","type":"message"}
+{"nick":"pfraze","message":"ok, and I guess the alternative is like a statc link?","date":"2014-02-25T16:42:03.718Z","type":"message"}
+{"nick":"creationix","message":"C bindings, you write glue code in C that includes lua and libuv headers and does conversions between them","date":"2014-02-25T16:42:13.739Z","type":"message"}
+{"nick":"creationix","message":"they also dlopen usually","date":"2014-02-25T16:42:26.722Z","type":"message"}
+{"nick":"creationix","message":"with node, the native addons dlopen","date":"2014-02-25T16:42:44.403Z","type":"message"}
+{"nick":"creationix","message":"a node addon is just a C library that has a specefic interface that V8 and node know how to use","date":"2014-02-25T16:43:10.007Z","type":"message"}
+{"nick":"creationix","message":"same with a luvit addon using the lua C api","date":"2014-02-25T16:43:19.758Z","type":"message"}
+{"nick":"pfraze","message":"ok interesting","date":"2014-02-25T16:44:00.769Z","type":"message"}
+{"nick":"creationix","message":"C bindings are written in C and compiled.  FFI bindings are written in the scripting language and not compiled","date":"2014-02-25T16:44:03.738Z","type":"message"}
+{"nick":"creationix","message":"the only reason we don't use ffi for everything it because it's generally slow","date":"2014-02-25T16:44:41.051Z","type":"message"}
+{"nick":"creationix","message":"luajit is an exception to that","date":"2014-02-25T16:44:47.679Z","type":"message"}
+{"nick":"pfraze","message":"creationix, cool, thanks for the primer. If I get a chance to dive into it, I'll ping you","date":"2014-02-25T16:47:11.453Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 0, free: 42]","date":"2014-02-25T16:47:19.357Z","type":"message"}
+{"nick":"creationix","message":"ok","date":"2014-02-25T16:47:19.694Z","type":"message"}
+{"nick":"mrb_bk","date":"2014-02-25T16:52:49.057Z","type":"join"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2014-02-25T17:02:30.230Z","type":"quit"}
+{"nick":"shama","date":"2014-02-25T17:02:41.095Z","type":"join"}
+{"nick":"timoxley","message":"creationix: very interesting","date":"2014-02-25T17:05:50.788Z","type":"message"}
+{"nick":"creationix","message":"timoxley, thanks","date":"2014-02-25T17:08:42.183Z","type":"message"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2014-02-25T17:11:56.287Z","type":"quit"}
+{"nick":"DTrejo","date":"2014-02-25T17:15:53.773Z","type":"join"}
+{"nick":"thlorenz","message":"calvinmetcalf: derequire is super slow for me (makes my test time out actually) any idea why that is?","date":"2014-02-25T17:17:33.455Z","type":"message"}
+{"nick":"thlorenz","message":"the derequire tests itself run quite fast, but when calling it from where I need it, it is sooo slow","date":"2014-02-25T17:18:34.796Z","type":"message"}
+{"nick":"calvinmetcalf","message":"how big is your thing ?","date":"2014-02-25T17:19:43.197Z","type":"message"}
+{"nick":"thlorenz","message":"super small, it's a test case in browserify-shim","date":"2014-02-25T17:19:55.262Z","type":"message"}
+{"nick":"thlorenz","message":"I'm not sure what's happening","date":"2014-02-25T17:20:02.866Z","type":"message"}
+{"nick":"calvinmetcalf","message":"can you link me?","date":"2014-02-25T17:20:18.132Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: nm - it's not derequire, lower in the chain -- sorry","date":"2014-02-25T17:20:36.140Z","type":"message"}
+{"nick":"thlorenz","message":"but it'd be nice if you could merge my PR - that will optimize it still :)","date":"2014-02-25T17:20:53.182Z","type":"message"}
+{"nick":"calvinmetcalf","message":"doing that right now","date":"2014-02-25T17:21:08.646Z","type":"message"}
+{"nick":"thlorenz","message":"awesome","date":"2014-02-25T17:21:13.919Z","type":"message"}
+{"nick":"calvinmetcalf","message":"had to add a test to get back up to 100% coverage","date":"2014-02-25T17:21:20.893Z","type":"message"}
+{"nick":"thlorenz","message":"ah - wasn't aware you had coverage","date":"2014-02-25T17:21:35.298Z","type":"message"}
+{"nick":"calvinmetcalf","message":"done boom","date":"2014-02-25T17:22:26.468Z","type":"message"}
+{"nick":"thlorenz","message":"thanks will use that now instead of my fork","date":"2014-02-25T17:23:05.065Z","type":"message"}
+{"nick":"phated","date":"2014-02-25T17:27:33.792Z","type":"join"}
+{"nick":"kenperkins","date":"2014-02-25T17:28:01.708Z","type":"join"}
+{"nick":"thlorenz","message":"calvinmetcalf: found a case that it doesn't handle (nested require inside if), pushing a failing test in a sec","date":"2014-02-25T17:32:13.522Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: why are you hashing the strings to compare in your tests, that makes for useless test failure output?","date":"2014-02-25T17:34:30.631Z","type":"message"}
+{"nick":"DTrejo","message":"derequire makes it easy to shim require?","date":"2014-02-25T17:37:08.090Z","type":"message"}
+{"nick":"DTrejo","message":"or something?","date":"2014-02-25T17:37:09.831Z","type":"message"}
+{"nick":"DTrejo","message":"working with esprima is pretty fun..","date":"2014-02-25T17:37:52.362Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: I'm gonna rewrite this with detective similarly to https://github.com/thlorenz/exposify/blob/master/expose.js","date":"2014-02-25T17:38:00.416Z","type":"message"}
+{"nick":"thlorenz","message":"that will also allow replacements to have any length since I'll keep track of the offset","date":"2014-02-25T17:38:16.967Z","type":"message"}
+{"nick":"thlorenz","message":"will you accept a PR for that or should I just make my own module?","date":"2014-02-25T17:38:32.854Z","type":"message"}
+{"nick":"calvinmetcalf","message":"hey","date":"2014-02-25T17:38:56.206Z","type":"message"}
+{"nick":"calvinmetcalf","message":"sorry wasn't paying attention","date":"2014-02-25T17:39:03.194Z","type":"message"}
+{"nick":"calvinmetcalf","message":"DTrejo: derequire makes it so that other libraries (**cough** dojo **cough**) don't see internal requires and try to download them","date":"2014-02-25T17:40:13.273Z","type":"message"}
+{"nick":"calvinmetcalf","message":"hashing strings?","date":"2014-02-25T17:40:24.574Z","type":"message"}
+{"nick":"DTrejo","message":"oh","date":"2014-02-25T17:40:30.013Z","type":"message"}
+{"nick":"calvinmetcalf","message":"thlorenz: I don't understand","date":"2014-02-25T17:40:34.234Z","type":"message"}
+{"nick":"DTrejo","message":"oh dojo... I used that on a project once","date":"2014-02-25T17:40:37.632Z","type":"message"}
+{"nick":"DTrejo","message":"they were like migrate from mootools to dojo! and then \"actually we're going to use jquery now, but just leave the dojo as-is for now\"","date":"2014-02-25T17:41:16.968Z","type":"message"}
+{"nick":"calvinmetcalf","message":"thlorenz:","date":"2014-02-25T17:41:26.892Z","type":"message"}
+{"nick":"calvinmetcalf","message":"ok I see that is just for that one massive test file","date":"2014-02-25T17:41:34.063Z","type":"message"}
+{"nick":"calvinmetcalf","message":"so it dosn't crash my terminal when it tries to compare them","date":"2014-02-25T17:41:50.598Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: ah, ok well doesn't matter","date":"2014-02-25T17:41:53.133Z","type":"message"}
+{"nick":"thlorenz","message":"will you accept a total rewrite PR?","date":"2014-02-25T17:42:05.446Z","type":"message"}
+{"nick":"thlorenz","message":"I have something that's working for exposify, I'd just adjust that a bit to work for any require","date":"2014-02-25T17:42:31.055Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: if not that is fine, and I'll write a *competing* module :P","date":"2014-02-25T17:42:51.940Z","type":"message"}
+{"nick":"calvinmetcalf","message":"thlorenz: that case your talking about is intentional, it only rewrites requries that are bound to functions if you wrapped it in a function(require){blah} it would work","date":"2014-02-25T17:43:07.345Z","type":"message"}
+{"nick":"thlorenz","message":"the entire es-travers stuff is way too complex, detective is much more reliable","date":"2014-02-25T17:43:19.117Z","type":"message"}
+{"nick":"thlorenz","message":"ah, ok, well then I do need to make my own module","date":"2014-02-25T17:43:34.520Z","type":"message"}
+{"nick":"thlorenz","message":"since I want to replace ALL requires","date":"2014-02-25T17:43:44.892Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: thanks","date":"2014-02-25T17:44:00.629Z","type":"message"}
+{"nick":"calvinmetcalf","message":"do it as a pull, im not sure the benifit from using estreverse is worth it","date":"2014-02-25T17:44:34.653Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: but I don't want to break your usecase?","date":"2014-02-25T17:44:55.170Z","type":"message"}
+{"nick":"thlorenz","message":"when would I want to keep script level requires?","date":"2014-02-25T17:45:04.360Z","type":"message"}
+{"nick":"thlorenz","message":"so if I rewrite it to replace ALL requires you'll accept the PR and it won't break anyone?","date":"2014-02-25T17:45:30.696Z","type":"message"}
+{"nick":"calvinmetcalf","message":"exactly I'm not sure if that use case is worth saving","date":"2014-02-25T17:45:31.165Z","type":"message"}
+{"nick":"thlorenz","message":"ok, got it - PR in the works then","date":"2014-02-25T17:45:43.759Z","type":"message"}
+{"nick":"calvinmetcalf","message":"thlorenz: I'll do it as a major version bump just in case","date":"2014-02-25T17:45:47.116Z","type":"message"}
+{"nick":"thlorenz","message":"sounds good","date":"2014-02-25T17:45:54.467Z","type":"message"}
+{"nick":"calvinmetcalf","message":"because if we don't have to parse the code with esprima we can put it earlier in the browserify process where it gets invalid js","date":"2014-02-25T17:46:31.620Z","type":"message"}
+{"nick":"calvinmetcalf","message":"which would allow us to avoid parsing no-parse files","date":"2014-02-25T17:46:55.647Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 1, free: 41]","date":"2014-02-25T17:47:19.187Z","type":"message"}
+{"nick":"rowbit","message":"substack, pkrumins: These encoders are STILL down: 50.57.72.216(free8)","date":"2014-02-25T17:48:35.161Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2014-02-25T17:49:28.976Z","type":"quit"}
+{"nick":"indexzero","date":"2014-02-25T17:51:45.778Z","type":"join"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2014-02-25T17:54:40.788Z","type":"quit"}
+{"nick":"thealphanerd","date":"2014-02-25T17:56:54.934Z","type":"join"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2014-02-25T17:58:02.729Z","type":"quit"}
+{"nick":"thlorenz","message":"calvinmetcalf: I suppose it doesn't matter that it uses quotes even if original require used single quotes right?","date":"2014-02-25T17:58:36.601Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: I see now that you are actually replacing 'require' args as well","date":"2014-02-25T18:02:04.920Z","type":"message"}
+{"nick":"thlorenz","message":"in that case detective won't work","date":"2014-02-25T18:02:12.860Z","type":"message"}
+{"nick":"thlorenz","action":"is starting to understand derequire","date":"2014-02-25T18:02:33.136Z","type":"action"}
+{"nick":"calvinmetcalf","message":"yeah","date":"2014-02-25T18:02:40.139Z","type":"message"}
+{"nick":"calvinmetcalf","message":"though if we wanted to write something just for browserify","date":"2014-02-25T18:03:02.896Z","type":"message"}
+{"nick":"thlorenz","message":"ok, so never mind it won't be a rewrite","date":"2014-02-25T18:03:15.262Z","type":"message"}
+{"nick":"thealphanerd_","date":"2014-02-25T18:04:22.828Z","type":"join"}
+{"nick":"thlorenz","message":"I'll just try to fix that case I mentioned instead","date":"2014-02-25T18:04:32.113Z","type":"message"}
+{"nick":"calvinmetcalf","message":"so if you wrap your whole code in a !function (require) {}","date":"2014-02-25T18:05:00.315Z","type":"message"}
+{"nick":"Guest15224","reason":"Ping timeout: 244 seconds","date":"2014-02-25T18:06:15.422Z","type":"quit"}
+{"nick":"thealphanerd","reason":"Ping timeout: 244 seconds","date":"2014-02-25T18:07:07.936Z","type":"quit"}
+{"nick":"DTrejo","reason":"Read error: Connection reset by peer","date":"2014-02-25T18:07:08.400Z","type":"quit"}
+{"nick":"thealphanerd_","new_nick":"thealphanerd","date":"2014-02-25T18:07:08.636Z","type":"nick"}
+{"nick":"thlorenz","reason":"Read error: Connection reset by peer","date":"2014-02-25T18:07:09.267Z","type":"quit"}
+{"nick":"prettyrobots_","date":"2014-02-25T18:07:24.626Z","type":"join"}
+{"nick":"thlorenz","date":"2014-02-25T18:07:29.281Z","type":"join"}
+{"nick":"DTrejo","date":"2014-02-25T18:07:34.776Z","type":"join"}
+{"nick":"prettyrobots_","new_nick":"Guest37960","date":"2014-02-25T18:07:48.379Z","type":"nick"}
+{"nick":"tobie","date":"2014-02-25T18:15:09.704Z","type":"join"}
+{"nick":"tobie","reason":"Client Quit","date":"2014-02-25T18:16:22.335Z","type":"quit"}
+{"nick":"tobie_","new_nick":"tobie","date":"2014-02-25T18:16:22.696Z","type":"nick"}
+{"nick":"calvinfo","date":"2014-02-25T18:16:55.859Z","type":"join"}
+{"nick":"Guest10706","reason":"Ping timeout: 264 seconds","date":"2014-02-25T18:17:02.720Z","type":"quit"}
+{"nick":"ITpro","date":"2014-02-25T18:17:10.758Z","type":"join"}
+{"nick":"ITpro","new_nick":"Guest75952","date":"2014-02-25T18:17:34.158Z","type":"nick"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2014-02-25T18:20:09.900Z","type":"quit"}
+{"nick":"hughsk__","reason":"Ping timeout: 279 seconds","date":"2014-02-25T18:21:05.056Z","type":"quit"}
+{"nick":"gozala","reason":"Ping timeout: 279 seconds","date":"2014-02-25T18:21:05.391Z","type":"quit"}
+{"nick":"gozala","date":"2014-02-25T18:21:30.485Z","type":"join"}
+{"nick":"hughsk__","date":"2014-02-25T18:22:11.455Z","type":"join"}
+{"nick":"jan____","reason":"Ping timeout: 983 seconds","date":"2014-02-25T18:22:54.664Z","type":"quit"}
+{"nick":"jan____-","date":"2014-02-25T18:23:38.086Z","type":"join"}
+{"nick":"ins0mnia","message":"anyone happens to know when ECDH support is coming to node?","date":"2014-02-25T18:24:12.111Z","type":"message"}
+{"nick":"jan____-","new_nick":"jan____","date":"2014-02-25T18:24:19.225Z","type":"nick"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-02-25T18:25:49.483Z","type":"quit"}
+{"nick":"phated","reason":"Read error: Connection reset by peer","date":"2014-02-25T18:30:44.172Z","type":"quit"}
+{"nick":"phated","date":"2014-02-25T18:31:13.250Z","type":"join"}
+{"nick":"h0ke","date":"2014-02-25T18:34:37.280Z","type":"join"}
+{"nick":"stagas","date":"2014-02-25T18:34:58.247Z","type":"join"}
+{"nick":"thlorenz","date":"2014-02-25T18:38:11.711Z","type":"join"}
+{"nick":"kevino80","date":"2014-02-25T18:42:03.860Z","type":"join"}
+{"nick":"dguttman","date":"2014-02-25T18:46:27.247Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 6, free: 48]","date":"2014-02-25T18:47:19.336Z","type":"message"}
+{"nick":"kenperkins","date":"2014-02-25T18:51:42.063Z","type":"join"}
+{"nick":"feross_","date":"2014-02-25T18:55:59.450Z","type":"join"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2014-02-25T18:56:20.574Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 264 seconds","date":"2014-02-25T18:59:38.818Z","type":"quit"}
+{"nick":"Raynos","reason":"Ping timeout: 265 seconds","date":"2014-02-25T19:02:31.832Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-02-25T19:04:04.698Z","type":"join"}
+{"nick":"Raynos_","date":"2014-02-25T19:04:11.571Z","type":"join"}
+{"nick":"dguttman","date":"2014-02-25T19:06:00.713Z","type":"join"}
+{"nick":"nickleefly___","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:07:26.081Z","type":"quit"}
+{"nick":"gozala","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:07:51.071Z","type":"quit"}
+{"nick":"daleharvey","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:08:41.088Z","type":"quit"}
+{"nick":"addisonj","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:09:06.181Z","type":"quit"}
+{"nick":"gozala","date":"2014-02-25T19:09:50.320Z","type":"join"}
+{"nick":"parshap","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:09:56.083Z","type":"quit"}
+{"nick":"Raynos_","reason":"Ping timeout: 245 seconds","date":"2014-02-25T19:10:21.158Z","type":"quit"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2014-02-25T19:10:39.834Z","type":"quit"}
+{"nick":"daleharvey","date":"2014-02-25T19:11:08.948Z","type":"join"}
+{"nick":"nickleefly___","date":"2014-02-25T19:11:29.159Z","type":"join"}
+{"nick":"kevino80","date":"2014-02-25T19:11:38.909Z","type":"join"}
+{"nick":"addisonj","date":"2014-02-25T19:12:33.725Z","type":"join"}
+{"nick":"parshap","date":"2014-02-25T19:13:27.061Z","type":"join"}
+{"nick":"Raynos_","date":"2014-02-25T19:13:56.766Z","type":"join"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2014-02-25T19:23:02.082Z","type":"quit"}
+{"nick":"jesusabdullah","message":"ogd: with concat-stream, do I listen for an \"error\" event if I don't want shit to asplode?","date":"2014-02-25T19:24:18.258Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2014-02-25T19:27:17.310Z","type":"quit"}
+{"nick":"thlorenz","message":"jesusabdullah: stream errors don't bubble, so you have to add an on('error', ..) handler above every pipe","date":"2014-02-25T19:28:19.301Z","type":"message"}
+{"nick":"kenperkins","date":"2014-02-25T19:28:19.417Z","type":"join"}
+{"nick":"rowbit","message":"substack, pkrumins: At least 10 people waiting in the queue for free servers! (Waiting: 36)","date":"2014-02-25T19:32:05.361Z","type":"message"}
+{"nick":"jesusabdullah","message":"thlorenz: above? clarify?","date":"2014-02-25T19:33:50.090Z","type":"message"}
+{"nick":"thlorenz","message":"so if you pipe one stream into another, each stream needs it's own error handler","date":"2014-02-25T19:34:14.536Z","type":"message"}
+{"nick":"thlorenz","message":"i.e. you'd have s1.on('error').pipe(tx).on('error').pipe(tx2)","date":"2014-02-25T19:34:45.703Z","type":"message"}
+{"nick":"jesusabdullah","message":"uhuh","date":"2014-02-25T19:36:59.131Z","type":"message"}
+{"nick":"jesusabdullah","message":"okay","date":"2014-02-25T19:37:23.049Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) jonathan@... successfully signed up for developer browserling plan ($20). Cash money! /!\\","date":"2014-02-25T19:38:05.923Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) paid account successfully upgraded /!\\","date":"2014-02-25T19:38:06.039Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 3, free: 35]","date":"2014-02-25T19:47:19.140Z","type":"message"}
+{"nick":"hij1nx","date":"2014-02-25T19:48:53.686Z","type":"join"}
+{"nick":"hij1nx","reason":"Client Quit","date":"2014-02-25T19:48:53.802Z","type":"quit"}
+{"nick":"hij1nx_","reason":"Quit: leaving","date":"2014-02-25T19:49:00.879Z","type":"quit"}
+{"nick":"hij1nx","date":"2014-02-25T19:49:09.040Z","type":"join"}
+{"nick":"xaq","date":"2014-02-25T19:51:12.880Z","type":"join"}
+{"nick":"indexzero","date":"2014-02-25T19:52:53.839Z","type":"join"}
+{"nick":"indexzero","reason":"Client Quit","date":"2014-02-25T19:53:14.936Z","type":"quit"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2014-02-25T20:01:38.938Z","type":"quit"}
+{"nick":"kenperkins","reason":"Remote host closed the connection","date":"2014-02-25T20:06:10.270Z","type":"quit"}
+{"nick":"kenperkins","date":"2014-02-25T20:06:56.215Z","type":"join"}
+{"nick":"Kessler","date":"2014-02-25T20:07:27.818Z","type":"join"}
+{"nick":"rowbit","message":"substack, pkrumins: A developer is waiting in the queue for explorer/8.0","date":"2014-02-25T20:08:35.303Z","type":"message"}
+{"nick":"Guest18503","new_nick":"sindresorhus","date":"2014-02-25T20:09:26.954Z","type":"nick"}
+{"nick":"funkytek","date":"2014-02-25T20:10:46.806Z","type":"join"}
+{"nick":"ogd","message":"jesusabdullah: you listen for errors on whatever stream you are piping into concat-stream","date":"2014-02-25T20:19:20.800Z","type":"message"}
+{"nick":"ogd","message":"jesusabdullah: also https://github.com/visionmedia/node-mongroup/pull/7","date":"2014-02-25T20:19:24.299Z","type":"message"}
+{"nick":"ogd","message":"jesusabdullah: plz +1 it :D","date":"2014-02-25T20:19:29.978Z","type":"message"}
+{"nick":"Domenic_","message":"this lack of stream error bubbling is something i think we can fix nicely in whatwg/streams. explained at around 28:07 at http://www.ustream.tv/recorded/43963594","date":"2014-02-25T20:20:44.736Z","type":"message"}
+{"nick":"ogd","message":"its not broken, its just a low level api","date":"2014-02-25T20:21:28.234Z","type":"message"}
+{"nick":"ogd","message":"(just for clarity)","date":"2014-02-25T20:21:39.365Z","type":"message"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2014-02-25T20:22:32.972Z","type":"quit"}
+{"nick":"kevino80","date":"2014-02-25T20:30:14.821Z","type":"join"}
+{"nick":"substack","message":"https://soundcloud.com/substack/chirp","date":"2014-02-25T20:30:23.602Z","type":"message"}
+{"nick":"jxson","date":"2014-02-25T20:30:49.521Z","type":"join"}
+{"nick":"jesusabdullah","message":"ogd: Done","date":"2014-02-25T20:31:14.542Z","type":"message"}
+{"nick":"tilgovi","date":"2014-02-25T20:41:35.594Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 6, free: 42]","date":"2014-02-25T20:47:19.312Z","type":"message"}
+{"nick":"thealphanerd","date":"2014-02-25T20:48:08.818Z","type":"join"}
+{"nick":"rowbit","message":"substack, pkrumins: These encoders are STILL down: 184.106.106.66(dev-ie7-1)","date":"2014-02-25T20:53:35.328Z","type":"message"}
+{"nick":"rowbit","message":"substack, pkrumins: These encoders are STILL down: 50.57.171.229(dev-ie6-2)","date":"2014-02-25T20:54:35.386Z","type":"message"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2014-02-25T20:55:56.275Z","type":"quit"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) dan.wetherill@... successfully signed up for developer browserling plan ($20). Cash money! /!\\","date":"2014-02-25T20:57:09.934Z","type":"message"}
+{"nick":"rowbit","message":"/!\\ ATTENTION: (default-local) paid account successfully upgraded /!\\","date":"2014-02-25T20:57:10.052Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2014-02-25T21:03:07.398Z","type":"quit"}
+{"nick":"dominictarr","date":"2014-02-25T21:05:52.700Z","type":"join"}
+{"nick":"funkytek","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2014-02-25T21:06:14.179Z","type":"quit"}
+{"nick":"thlorenz","message":"calvinmetcalf: Ember: 1 derequire: 0 https://github.com/calvinmetcalf/derequire/pull/9","date":"2014-02-25T21:09:55.074Z","type":"message"}
+{"nick":"thlorenz","message":"I hate incorrectly authored/installed libs so much","date":"2014-02-25T21:10:13.696Z","type":"message"}
+{"nick":"h0ke","reason":"Ping timeout: 244 seconds","date":"2014-02-25T21:10:42.697Z","type":"quit"}
+{"nick":"dominictarr","message":"substack, hey trying to specify the syntax for json-select better","date":"2014-02-25T21:11:10.427Z","type":"message"}
+{"nick":"dominictarr","message":"the tricky part is that sometimes you want to grab the first value in a match","date":"2014-02-25T21:11:33.400Z","type":"message"}
+{"nick":"dominictarr","message":"but other times you want a collection","date":"2014-02-25T21:11:38.611Z","type":"message"}
+{"nick":"dominictarr","message":"what if you use a function in the path syntax?","date":"2014-02-25T21:12:19.432Z","type":"message"}
+{"nick":"dominictarr","message":"maybe just use the object it returns?","date":"2014-02-25T21:12:59.737Z","type":"message"}
+{"nick":"Maciek416","reason":"Remote host closed the connection","date":"2014-02-25T21:13:00.793Z","type":"quit"}
+{"nick":"calvinmetcalf","message":"thlorenz, its because it swallows errors, I need to add a verbose mode","date":"2014-02-25T21:14:05.041Z","type":"message"}
+{"nick":"thlorenz","message":"calvinmetcalf: that shit's broken :)","date":"2014-02-25T21:14:24.404Z","type":"message"}
+{"nick":"thlorenz","message":"I'm writing another module for now that only removes calls to require since that is all I need","date":"2014-02-25T21:14:45.190Z","type":"message"}
+{"nick":"tilgovi","reason":"Ping timeout: 269 seconds","date":"2014-02-25T21:17:29.437Z","type":"quit"}
+{"nick":"contrahax","date":"2014-02-25T21:18:20.856Z","type":"join"}
+{"nick":"jxson","reason":"Remote host closed the connection","date":"2014-02-25T21:19:27.293Z","type":"quit"}
+{"nick":"tilgovi","date":"2014-02-25T21:19:30.685Z","type":"join"}
+{"nick":"h0ke","date":"2014-02-25T21:22:48.710Z","type":"join"}
+{"nick":"calvinmetcalf","message":"requirejs = require = requireModule = function(name) {","date":"2014-02-25T21:25:19.871Z","type":"message"}
+{"nick":"calvinmetcalf","message":"line 222","date":"2014-02-25T21:25:25.589Z","type":"message"}
+{"nick":"calvinmetcalf","message":"it's bound to that require not the global one","date":"2014-02-25T21:25:35.351Z","type":"message"}
+{"nick":"calvinmetcalf","message":"so thlorenz it isn't bound to your wrapper","date":"2014-02-25T21:27:12.244Z","type":"message"}
+{"nick":"thlorenz","message":"ok, but the point is I want it to be renamed and it doesn't","date":"2014-02-25T21:27:50.654Z","type":"message"}
+{"nick":"thlorenz","message":"I don't care about what it's bound to","date":"2014-02-25T21:27:57.514Z","type":"message"}
+{"nick":"thlorenz","message":"I just want browserify to stop looking for these modules that don't exist","date":"2014-02-25T21:28:13.922Z","type":"message"}
+{"nick":"thlorenz","message":"so I'm about to publish rename-function-call that does exactly just that","date":"2014-02-25T21:28:38.109Z","type":"message"}
+{"nick":"thlorenz","message":"it'll work for any function including require","date":"2014-02-25T21:28:48.175Z","type":"message"}
+{"nick":"calvinmetcalf","message":"why don't you just use ignore missing?","date":"2014-02-25T21:30:37.743Z","type":"message"}
+{"nick":"calvinmetcalf","message":"derequire just renames ones that have now been bound to the browserify require, if isn't bound to the browserify require it isn't renamed by this","date":"2014-02-25T21:31:27.126Z","type":"message"}
+{"nick":"xaq","date":"2014-02-25T21:32:43.795Z","type":"join"}
+{"nick":"thlorenz","message":"ok, well I guess i need something slightly different (before the bundleing)","date":"2014-02-25T21:32:57.136Z","type":"message"}
+{"nick":"calvinmetcalf","message":"yeah you need to get in earlier","date":"2014-02-25T21:33:12.565Z","type":"message"}
+{"nick":"calvinmetcalf","message":"so that explains your frustration with derequire, you were trying to do something else","date":"2014-02-25T21:33:34.955Z","type":"message"}
+{"nick":"calvinmetcalf","message":"anywho im heading good, I look forward to seeing the module","date":"2014-02-25T21:34:01.453Z","type":"message"}
+{"nick":"dominictarr","reason":"Ping timeout: 272 seconds","date":"2014-02-25T21:36:51.689Z","type":"quit"}
+{"nick":"thlorenz","message":"calvinmetcalf: cool, thanks for your help - it must be that I tried to use it for wrong purpose","date":"2014-02-25T21:37:46.342Z","type":"message"}
+{"nick":"thlorenz","action":"reminds himself that reinventing the wheel is not always a bad thing ","date":"2014-02-25T21:38:05.500Z","type":"action"}
+{"nick":"addisonj","reason":"Quit: Connection closed for inactivity","date":"2014-02-25T21:40:56.157Z","type":"quit"}
+{"nick":"jan____","reason":"Changing host","date":"2014-02-25T21:45:45.625Z","type":"quit"}
+{"nick":"jan____","date":"2014-02-25T21:45:45.625Z","type":"join"}
+{"nick":"Maciek416","date":"2014-02-25T21:47:14.660Z","type":"join"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 2, free: 56]","date":"2014-02-25T21:47:19.197Z","type":"message"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2014-02-25T21:49:02.900Z","type":"quit"}
+{"nick":"funkytek","date":"2014-02-25T21:50:58.180Z","type":"join"}
+{"nick":"kevino80","date":"2014-02-25T21:52:13.850Z","type":"join"}
+{"nick":"brianloveswords","message":"substack: didn't you have a project called \"beepboop\" that was for audio generation? Did you delete it or rename it OR AM I CRAZY?","date":"2014-02-25T21:53:50.661Z","type":"message"}
+{"nick":"substack","message":"brianloveswords: baudio","date":"2014-02-25T21:54:05.457Z","type":"message"}
+{"nick":"xaq","reason":"Remote host closed the connection","date":"2014-02-25T21:54:40.337Z","type":"quit"}
+{"nick":"substack","message":"brianloveswords: https://www.youtube.com/watch?v=2oz_SwhBixs","date":"2014-02-25T21:55:00.776Z","type":"message"}
+{"nick":"phated","reason":"Remote host closed the connection","date":"2014-02-25T21:55:15.081Z","type":"quit"}
+{"nick":"tilgovi","reason":"Ping timeout: 244 seconds","date":"2014-02-25T21:59:47.768Z","type":"quit"}
+{"nick":"ins0mnia","reason":"Ping timeout: 264 seconds","date":"2014-02-25T22:01:26.698Z","type":"quit"}
+{"nick":"brianloveswords","message":"substack: radical, thanks :D","date":"2014-02-25T22:04:16.970Z","type":"message"}
+{"nick":"wolfeidau","date":"2014-02-25T22:04:21.763Z","type":"quit"}
+{"nick":"dominictarr","date":"2014-02-25T22:07:56.742Z","type":"join"}
+{"nick":"wolfeidau","date":"2014-02-25T22:11:44.385Z","type":"join"}
+{"nick":"tilgovi","date":"2014-02-25T22:12:19.738Z","type":"join"}
+{"nick":"rowbit","message":"substack, pkrumins: Encoders down: 50.56.32.168 (dev4)","date":"2014-02-25T22:17:05.606Z","type":"message"}
+{"nick":"tilgovi","reason":"Ping timeout: 272 seconds","date":"2014-02-25T22:18:01.695Z","type":"quit"}
+{"nick":"tilgovi","date":"2014-02-25T22:19:40.663Z","type":"join"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2014-02-25T22:19:58.042Z","type":"quit"}
+{"nick":"jxson","date":"2014-02-25T22:21:44.857Z","type":"join"}
+{"nick":"djcoin","reason":"Write error: Broken pipe","date":"2014-02-25T22:22:14.878Z","type":"quit"}
+{"nick":"contrahax","date":"2014-02-25T22:24:36.185Z","type":"join"}
+{"nick":"tilgovi","reason":"Read error: No route to host","date":"2014-02-25T22:25:34.770Z","type":"quit"}
+{"nick":"tilgovi","date":"2014-02-25T22:26:30.671Z","type":"join"}
+{"nick":"jxson","date":"2014-02-25T22:30:10.343Z","type":"quit"}
+{"nick":"addisonj","date":"2014-02-25T22:34:36.046Z","type":"join"}
+{"nick":"fuz","date":"2014-02-25T22:35:01.734Z","type":"join"}
+{"nick":"jxson","date":"2014-02-25T22:39:20.965Z","type":"join"}
+{"nick":"Raynos_","reason":"Ping timeout: 246 seconds","date":"2014-02-25T22:41:23.098Z","type":"quit"}
+{"nick":"parshap","reason":"Ping timeout: 245 seconds","date":"2014-02-25T22:41:36.092Z","type":"quit"}
+{"nick":"parshap","date":"2014-02-25T22:43:28.043Z","type":"join"}
+{"nick":"Raynos_","date":"2014-02-25T22:44:14.270Z","type":"join"}
+{"nick":"Maciek416","reason":"Remote host closed the connection","date":"2014-02-25T22:46:36.981Z","type":"quit"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 1, free: 39]","date":"2014-02-25T22:47:19.216Z","type":"message"}
+{"nick":"Raynos_","new_nick":"Raynos","date":"2014-02-25T22:48:53.723Z","type":"nick"}
+{"nick":"funkytek","reason":"Ping timeout: 246 seconds","date":"2014-02-25T22:49:05.059Z","type":"quit"}
+{"nick":"contrahax","reason":"Ping timeout: 246 seconds","date":"2014-02-25T22:50:29.010Z","type":"quit"}
+{"nick":"contrahax","date":"2014-02-25T22:54:50.924Z","type":"join"}
+{"nick":"phated","date":"2014-02-25T22:55:26.721Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 244 seconds","date":"2014-02-25T22:58:10.724Z","type":"quit"}
+{"nick":"h0ke","reason":"Ping timeout: 272 seconds","date":"2014-02-25T22:59:11.803Z","type":"quit"}
+{"nick":"tmcw","date":"2014-02-25T22:59:34.657Z","type":"join"}
+{"nick":"joshwnj","date":"2014-02-25T23:00:13.775Z","type":"join"}
+{"nick":"funkytek","date":"2014-02-25T23:02:11.829Z","type":"join"}
+{"nick":"tmcw","date":"2014-02-25T23:16:38.497Z","type":"quit"}
+{"nick":"funkytek","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2014-02-25T23:17:03.395Z","type":"quit"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2014-02-25T23:17:06.054Z","type":"quit"}
+{"nick":"maksimlin","date":"2014-02-25T23:26:45.167Z","type":"join"}
+{"nick":"rxgx","date":"2014-02-25T23:26:59.012Z","type":"join"}
+{"nick":"dominictarr","reason":"Remote host closed the connection","date":"2014-02-25T23:31:52.693Z","type":"quit"}
+{"nick":"jxson","reason":"Remote host closed the connection","date":"2014-02-25T23:33:47.188Z","type":"quit"}
+{"nick":"Kessler","reason":"Ping timeout: 272 seconds","date":"2014-02-25T23:34:39.728Z","type":"quit"}
+{"nick":"kevino80","reason":"Remote host closed the connection","date":"2014-02-25T23:38:50.444Z","type":"quit"}
+{"nick":"isaacs","message":"substack: https://twitter.com/substack/status/438457453672296449 <-- just wait, man","date":"2014-02-25T23:43:59.775Z","type":"message"}
+{"nick":"isaacs","message":"substack: it's coming to the website soon.","date":"2014-02-25T23:44:04.995Z","type":"message"}
+{"nick":"tilgovi","reason":"Ping timeout: 244 seconds","date":"2014-02-25T23:44:40.737Z","type":"quit"}
+{"nick":"substack","message":"isaacs: what will happen if I start storing arbitrary metadata in stars?","date":"2014-02-25T23:45:13.025Z","type":"message"}
+{"nick":"isaacs","message":"substack: not allowed","date":"2014-02-25T23:45:30.284Z","type":"message"}
+{"nick":"isaacs","message":"substack: only boolean values allowed in the \"users\" field.","date":"2014-02-25T23:45:38.828Z","type":"message"}
+{"nick":"isaacs","message":"substack: otherwise it's a dos","date":"2014-02-25T23:45:51.154Z","type":"message"}
+{"nick":"tilgovi","date":"2014-02-25T23:45:51.724Z","type":"join"}
+{"nick":"substack","message":"drat there goes my plan for ta[Dgging","date":"2014-02-25T23:45:52.596Z","type":"message"}
+{"nick":"isaacs","message":"ta[Dgging?","date":"2014-02-25T23:46:06.584Z","type":"message"}
+{"nick":"substack","message":"tagging","date":"2014-02-25T23:46:10.357Z","type":"message"}
+{"nick":"isaacs","message":"oh, right","date":"2014-02-25T23:46:13.294Z","type":"message"}
+{"nick":"isaacs","message":"yeah, that's planned.","date":"2014-02-25T23:46:15.684Z","type":"message"}
+{"nick":"isaacs","message":"but we have to think through a data model that will scale to 50k users * 100k packages.","date":"2014-02-25T23:46:33.674Z","type":"message"}
+{"nick":"isaacs","message":"and also be searchable, sortable, etc.","date":"2014-02-25T23:46:46.153Z","type":"message"}
+{"nick":"substack","message":"cool","date":"2014-02-25T23:46:51.341Z","type":"message"}
+{"nick":"isaacs","message":"not just \"throw a pile of crap on the couch\"","date":"2014-02-25T23:46:53.910Z","type":"message"}
+{"nick":"isaacs","message":"that works for small piles.","date":"2014-02-25T23:46:59.270Z","type":"message"}
+{"nick":"isaacs","message":"not for big ones","date":"2014-02-25T23:47:01.793Z","type":"message"}
+{"nick":"rowbit","message":"Hourly usage stats: [developer: 2, free: 29]","date":"2014-02-25T23:47:19.175Z","type":"message"}
+{"nick":"substack","message":"isaacs: in your new office yet?","date":"2014-02-25T23:47:30.191Z","type":"message"}
+{"nick":"phated","reason":"Read error: Connection reset by peer","date":"2014-02-25T23:47:39.058Z","type":"quit"}
+{"nick":"isaacs","message":"not yet, no","date":"2014-02-25T23:47:49.210Z","type":"message"}
+{"nick":"isaacs","message":"but we've seen it!  it's awesome.","date":"2014-02-25T23:47:53.400Z","type":"message"}
+{"nick":"substack","message":"rad","date":"2014-02-25T23:47:56.893Z","type":"message"}
+{"nick":"substack","action":"is going to get a burrito pretty soon","date":"2014-02-25T23:48:03.215Z","type":"action"}
+{"nick":"phated","date":"2014-02-25T23:48:06.745Z","type":"join"}
+{"nick":"isaacs","message":"we're gonna make npm the literal as well as figurative center of Oakland JavaScript community","date":"2014-02-25T23:48:08.310Z","type":"message"}
+{"nick":"substack","action":"is at tierra mia on broadway","date":"2014-02-25T23:48:21.271Z","type":"action"}
+{"nick":"AvianFlu","message":"I kinda miss dealing with couchdb under load","date":"2014-02-25T23:48:24.820Z","type":"message"}
+{"nick":"AvianFlu","message":"mongo's problems are just so much sillier and more pointless","date":"2014-02-25T23:48:32.542Z","type":"message"}
+{"nick":"substack","message":"isaacs: I got a bunch of stickers from rockbot already","date":"2014-02-25T23:48:49.055Z","type":"message"}
+{"nick":"substack","message":"you should start seeing them around town","date":"2014-02-25T23:48:56.710Z","type":"message"}
+{"nick":"isaacs","message":"substack: <3 <3 <3","date":"2014-02-25T23:49:02.432Z","type":"message"}
+{"nick":"isaacs","message":"there should be no bike lock bars without npm stickers on them","date":"2014-02-25T23:49:25.312Z","type":"message"}
+{"nick":"substack","message":"that's the plan","date":"2014-02-25T23:49:32.768Z","type":"message"}
+{"nick":"mikolalysenko","date":"2014-02-25T23:59:08.702Z","type":"join"}
