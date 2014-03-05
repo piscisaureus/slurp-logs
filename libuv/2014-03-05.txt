@@ -1,0 +1,284 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-03-05T00:00:00.509Z","type":"quit"}
+{"nick":"ircretary","date":"2014-03-05T00:00:08.925Z","type":"join"}
+{"nick":"euoia","message":"I understood from your previous comment that I ought to instantiate the Stats object in JS (hence ->Call) rather than C++ and ->New","date":"2014-03-05T00:00:13.912Z","type":"message"}
+{"nick":"trevnorris","message":"euoia: ah, yeah. I guess the fastest way to do it would be to create a thin wrapper that is called from C++ that basically just returns \"new Stats(...)\", but with the number of arguments being passed I think that would actually be slower","date":"2014-03-05T00:02:42.383Z","type":"message"}
+{"nick":"trevnorris","message":"so using the ->NewInstance() from C++, I believe, would be the fastest way to execute that code.","date":"2014-03-05T00:03:09.606Z","type":"message"}
+{"nick":"austo","reason":"Quit: austo","date":"2014-03-05T00:03:33.872Z","type":"quit"}
+{"nick":"trevnorris","message":"either way, at this point, we're talking about saving ~100 ns/op. so I'd say it's probably not worth the time investigating, unless you want to. :)","date":"2014-03-05T00:04:20.158Z","type":"message"}
+{"nick":"euoia","message":"if I use ->NewInstance I can get rid of createStatsObject in JS completely","date":"2014-03-05T00:05:52.243Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-03-05T00:06:27.094Z","type":"join"}
+{"nick":"euoia","message":"I'll investigate it - I'll also see whether creating the Date object in JS makes any difference - I noticed when I was testing before that v8::Date::New is quite slow","date":"2014-03-05T00:06:40.839Z","type":"message"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-03-05T00:07:44.388Z","type":"quit"}
+{"nick":"trevnorris","message":"euoia: forgot one thing and updated with a comment in the pr with it","date":"2014-03-05T00:08:02.570Z","type":"message"}
+{"nick":"trevnorris","message":"ooh. yeah. Date::New is going to be much slower in C++","date":"2014-03-05T00:08:25.138Z","type":"message"}
+{"nick":"trevnorris","message":"(\"much slower\" is completely relative here)","date":"2014-03-05T00:08:47.542Z","type":"message"}
+{"nick":"trevnorris","message":"euoia: ah, yeah. didn't notice the createStatsObject(). yeah, go ahead and remove that and just use ->NewInstance on the Stats function.","date":"2014-03-05T00:09:45.041Z","type":"message"}
+{"nick":"tjfontaine","message":"Date::New and new Date will always be \"slow\" as they result in a gettimeofday call","date":"2014-03-05T00:10:05.617Z","type":"message"}
+{"nick":"euoia","message":"ok... And basically I'll be renaming SetCreateStatsObjectFunction to FSInitialize","date":"2014-03-05T00:10:07.573Z","type":"message"}
+{"nick":"euoia","message":"(and adding the extra bits to it that you suggested)","date":"2014-03-05T00:10:37.532Z","type":"message"}
+{"nick":"euoia","message":"I'll investigate whether any meaningful time saving comes from creating the dates in JS","date":"2014-03-05T00:11:15.809Z","type":"message"}
+{"nick":"trevnorris","message":"euoia: awesome. thanks for doing this work. this should really speed things up.","date":"2014-03-05T00:11:29.493Z","type":"message"}
+{"nick":"euoia","message":"that's okay, it's fun. Thanks for the feedback.","date":"2014-03-05T00:11:46.878Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: there's also the slight extra cost of creating the actual Object in JS vs C++. which has a savings. though i'm interested to see what v3.24 brings to the table in terms of performance.","date":"2014-03-05T00:12:09.095Z","type":"message"}
+{"nick":"trevnorris","message":"euoia: np. anytime","date":"2014-03-05T00:12:15.900Z","type":"message"}
+{"nick":"tjfontaine","message":"the paths that stat()s are used I expect to be noise as compared to time spent getting through the worker queue","date":"2014-03-05T00:12:45.048Z","type":"message"}
+{"nick":"trevnorris","message":"how do you mean?","date":"2014-03-05T00:13:22.275Z","type":"message"}
+{"nick":"tjfontaine","message":"not that I have any problem with this work, it should be done, but I wouldn't obsess over Date","date":"2014-03-05T00:13:34.999Z","type":"message"}
+{"nick":"trevnorris","message":"ah, ok.","date":"2014-03-05T00:14:05.564Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: just that a large proportion of the time will be spent getting queued into and out of the thread pool and doing the actual stat() vs the ultimate time spent creating and passing the stats object","date":"2014-03-05T00:14:26.804Z","type":"message"}
+{"nick":"trevnorris","message":"too bad we can't like get the current time at program startup then use hrtime to resolve the amount of time after that :P","date":"2014-03-05T00:14:34.148Z","type":"message"}
+{"nick":"tjfontaine","message":"and will be difficult to quantify unless you are completely taking a real filesystem out of the mix","date":"2014-03-05T00:14:57.108Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: that might be true after this rework, but right now more than 60% of stat execution time is spent constructing that object in C++","date":"2014-03-05T00:15:10.207Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-03-05T00:15:34.121Z","type":"quit"}
+{"nick":"euoia","message":"trevnorris: just to make sure - you understood that I added the createStatsObject function so that the \"new\" is in JS and not in C++ - it's preferable to have this bit in C++ (using ->Newinstance)?","date":"2014-03-05T00:16:43.791Z","type":"message"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2014-03-05T00:17:51.833Z","type":"nick"}
+{"nick":"trevnorris","message":"euoia: any time savings would be sub 50ns/op, and that doesn't take into consideration the massive number of arguments you're passing. so imo it's not worth the extra code complexity.","date":"2014-03-05T00:18:15.900Z","type":"message"}
+{"nick":"euoia","message":"trevnorris: great, I'll make the refactor we discussed then","date":"2014-03-05T00:18:36.158Z","type":"message"}
+{"nick":"trevnorris","message":"euoia: see, a NewInstance() call is about the same as just ->Call(), and either would have to be made.","date":"2014-03-05T00:18:51.445Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-03-05T00:22:30.059Z","type":"quit"}
+{"nick":"wolfeida_","date":"2014-03-05T00:23:22.871Z","type":"join"}
+{"nick":"dshaw_","date":"2014-03-05T00:25:46.276Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: i'm finishing up the doc changes and tests. though I'm going to wait on cleaning up the commits until after the review.","date":"2014-03-05T00:25:52.515Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2014-03-05T00:25:57.321Z","type":"quit"}
+{"nick":"wolfeidau","reason":"Ping timeout: 240 seconds","date":"2014-03-05T00:25:58.189Z","type":"quit"}
+{"nick":"paulfryz_","reason":"Remote host closed the connection","date":"2014-03-05T00:26:14.453Z","type":"quit"}
+{"nick":"mcavage","date":"2014-03-05T00:30:56.780Z","type":"join"}
+{"nick":"abraxas","date":"2014-03-05T00:32:22.651Z","type":"join"}
+{"nick":"mcavage_","date":"2014-03-05T00:34:13.320Z","type":"join"}
+{"nick":"mcavage","reason":"Read error: Connection reset by peer","date":"2014-03-05T00:34:44.962Z","type":"quit"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-03-05T00:35:48.103Z","type":"quit"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2014-03-05T00:37:05.859Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-03-05T00:41:57.596Z","type":"quit"}
+{"nick":"mikeal","date":"2014-03-05T00:44:27.392Z","type":"join"}
+{"nick":"WalrusPony1","new_nick":"WalrusPony","date":"2014-03-05T00:45:51.339Z","type":"nick"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 240 seconds","date":"2014-03-05T00:48:29.106Z","type":"quit"}
+{"nick":"euoia","reason":"Ping timeout: 264 seconds","date":"2014-03-05T00:56:00.335Z","type":"quit"}
+{"nick":"paulfryzel","date":"2014-03-05T00:57:08.253Z","type":"join"}
+{"nick":"paulfryz_","date":"2014-03-05T00:59:09.251Z","type":"join"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-03-05T01:01:29.171Z","type":"quit"}
+{"nick":"wolfeida_","reason":"Remote host closed the connection","date":"2014-03-05T01:01:32.556Z","type":"quit"}
+{"nick":"mrhooray","date":"2014-03-05T01:02:50.408Z","type":"join"}
+{"nick":"paulfryz_","reason":"Ping timeout: 240 seconds","date":"2014-03-05T01:03:29.177Z","type":"quit"}
+{"nick":"mrhooray","reason":"Client Quit","date":"2014-03-05T01:04:49.779Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2014-03-05T01:06:35.579Z","type":"nick"}
+{"nick":"jmar777","date":"2014-03-05T01:09:34.384Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-03-05T01:20:22.006Z","type":"quit"}
+{"nick":"euoia","date":"2014-03-05T01:29:54.439Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: ping","date":"2014-03-05T01:33:47.191Z","type":"message"}
+{"nick":"tjfontaine","message":"pong","date":"2014-03-05T01:35:02.486Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: so, noticed that for some reason fs.write[Sync](fd, msg) only accepts a 'string' for the msg. I find that sort of annoying. mind a PR to change that?","date":"2014-03-05T01:36:45.554Z","type":"message"}
+{"nick":"tjfontaine","message":"sorry missing context","date":"2014-03-05T01:37:23.696Z","type":"message"}
+{"nick":"trevnorris","message":"fs.writeSync(1, new Buffer('hi')) doesn't write anything.","date":"2014-03-05T01:38:06.849Z","type":"message"}
+{"nick":"tjfontaine","message":"you mean you want it to work without passing in offset, lenght, and position?","date":"2014-03-05T01:39:22.017Z","type":"message"}
+{"nick":"tjfontaine","message":"string isn't even publicly documented :)","date":"2014-03-05T01:40:16.717Z","type":"message"}
+{"nick":"kenperkins_","reason":"Quit: Textual IRC Client: http://www.textualapp.com/","date":"2014-03-05T01:40:39.252Z","type":"quit"}
+{"nick":"tjfontaine","message":"I guess I dont' see much harm at the moment to changinging writeBuffer to knowing how to handle if offset, length, and position are undefined","date":"2014-03-05T01:41:21.529Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: oh, wtf. never noticed in the documentation. there's a usage discrepancy when writing to stdout/stderr","date":"2014-03-05T01:41:44.275Z","type":"message"}
+{"nick":"tjfontaine","message":"it seems like currently it's expecting it to be null if that's the path they wanted","date":"2014-03-05T01:41:47.054Z","type":"message"}
+{"nick":"trevnorris","message":"where in those two cases it only accepts a string","date":"2014-03-05T01:41:59.387Z","type":"message"}
+{"nick":"tjfontaine","message":"you mean stdout.write and stderr.write?","date":"2014-03-05T01:42:04.779Z","type":"message"}
+{"nick":"tjfontaine","message":"which case is that?","date":"2014-03-05T01:42:08.241Z","type":"message"}
+{"nick":"trevnorris","message":"no. fs.writeSync(1, 'hi there\\n');","date":"2014-03-05T01:42:22.524Z","type":"message"}
+{"nick":"trevnorris","message":"will write to stdout","date":"2014-03-05T01:42:25.986Z","type":"message"}
+{"nick":"tjfontaine","message":"presuming someone hasn't fs.closeSync(1)'d first","date":"2014-03-05T01:42:46.522Z","type":"message"}
+{"nick":"tjfontaine","message":"and then immediately did fs.openSync()","date":"2014-03-05T01:42:57.151Z","type":"message"}
+{"nick":"trevnorris","message":"you can't close stdout, can you?","date":"2014-03-05T01:42:59.273Z","type":"message"}
+{"nick":"tjfontaine","message":"you cant process.stdout.close() but you can fs.closeSync(1)","date":"2014-03-05T01:43:13.210Z","type":"message"}
+{"nick":"trevnorris","message":"> fs.closeSync(1);","date":"2014-03-05T01:43:35.185Z","type":"message"}
+{"nick":"trevnorris","message":"events.js:82","date":"2014-03-05T01:43:35.312Z","type":"message"}
+{"nick":"trevnorris","message":"      throw er; // Unhandled 'error' event","date":"2014-03-05T01:43:35.429Z","type":"message"}
+{"nick":"trevnorris","message":"            ^","date":"2014-03-05T01:43:35.429Z","type":"message"}
+{"nick":"trevnorris","message":"Error: write EBADF","date":"2014-03-05T01:43:35.816Z","type":"message"}
+{"nick":"trevnorris","message":"you can't","date":"2014-03-05T01:43:39.707Z","type":"message"}
+{"nick":"tjfontaine","message":"sigh libuv","date":"2014-03-05T01:43:49.518Z","type":"message"}
+{"nick":"tjfontaine","message":"it's a perfectly fine fd to be allowed to close","date":"2014-03-05T01:43:54.840Z","type":"message"}
+{"nick":"tjfontaine","message":"it's the wrong place to enforce it, in libuv","date":"2014-03-05T01:44:05.389Z","type":"message"}
+{"nick":"trevnorris","message":"oh, well. it's not allowed right now. :)","date":"2014-03-05T01:44:08.929Z","type":"message"}
+{"nick":"tjfontaine","message":"it's an anti-pattern","date":"2014-03-05T01:44:22.661Z","type":"message"}
+{"nick":"tjfontaine","message":"anyway the point is, there are lots of places that do close standard in,out,err","date":"2014-03-05T01:44:40.397Z","type":"message"}
+{"nick":"tjfontaine","message":"you shouldn't really rely on them necessarily always being what you think they are","date":"2014-03-05T01:44:50.484Z","type":"message"}
+{"nick":"trevnorris","message":"ok. i don't really care. i just need a way to write to stdout/stderr w/o triggering the async callbacks","date":"2014-03-05T01:44:51.583Z","type":"message"}
+{"nick":"trevnorris","message":"which is either process._rawDebug or this.","date":"2014-03-05T01:45:01.940Z","type":"message"}
+{"nick":"tjfontaine","message":"why?","date":"2014-03-05T01:45:04.465Z","type":"message"}
+{"nick":"trevnorris","message":"users are going to want to log stuff from those callbacks. I do quite often.","date":"2014-03-05T01:45:39.423Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-03-05T01:45:45.529Z","type":"quit"}
+{"nick":"tjfontaine","message":"but this is why the caveat exists","date":"2014-03-05T01:45:48.286Z","type":"message"}
+{"nick":"trevnorris","message":"what caveat?","date":"2014-03-05T01:45:58.157Z","type":"message"}
+{"nick":"tjfontaine","message":"performing async activity in this path is explicitly wrong","date":"2014-03-05T01:46:06.490Z","type":"message"}
+{"nick":"tjfontaine","message":"if your intent is to write this to stderr and stdout you should store it in a ring buffer","date":"2014-03-05T01:46:21.358Z","type":"message"}
+{"nick":"tjfontaine","message":"such that it can be done outside of this mechanism","date":"2014-03-05T01:46:34.422Z","type":"message"}
+{"nick":"trevnorris","message":"we now even have execSync. I think logging something out to stdout/stderr in a sync manner is something that should be easily supported.","date":"2014-03-05T01:47:08.070Z","type":"message"}
+{"nick":"tjfontaine","message":"var info = []; tracing.AL(function() { info.push('this happened') }); setInterval(function() { info.forEach(function(i) { console.log(i); }); info = []; }, 1000);","date":"2014-03-05T01:48:05.866Z","type":"message"}
+{"nick":"tjfontaine","message":"the problem is you want to except out stdout and stderr, but in reality it's *any* async operation that is dangerous -- more of these people will want to socket.write() and writestream.write() than they will want to stdout.write","date":"2014-03-05T01:49:13.088Z","type":"message"}
+{"nick":"trevnorris","message":"seriously? if stdout/stderr is considered a normal fd, and we're allowed to writeSync to an fd, then why is this complicated solution necessary?","date":"2014-03-05T01:49:15.051Z","type":"message"}
+{"nick":"othiym23","message":"not that anybody asked, but I'm with trevnorris on this one","date":"2014-03-05T01:50:03.025Z","type":"message"}
+{"nick":"trevnorris","message":"well technically, and stupidly, users could just do fs.writeSync(socket._handle.fd, 'some message'); and it would work the same.","date":"2014-03-05T01:50:27.268Z","type":"message"}
+{"nick":"tjfontaine","message":"not on windows, but that's beside the point","date":"2014-03-05T01:50:40.517Z","type":"message"}
+{"nick":"othiym23","message":"either we have an async-safe logging method exposed for AL dev use, or we just let people use stdout / stderr directly","date":"2014-03-05T01:50:51.599Z","type":"message"}
+{"nick":"tjfontaine","message":"are we having a conversation abotu writeSync being able to support Buffer, or about if we should move process.stdout|stderr.write to something else entirely","date":"2014-03-05T01:51:05.427Z","type":"message"}
+{"nick":"trevnorris","message":"heh, guess it migrated. seems that writeSync doesn't support writing Buffers to stdout/stderr, but don't really care about that.","date":"2014-03-05T01:51:39.250Z","type":"message"}
+{"nick":"tjfontaine","message":"writeSync does, you just need to pass more arguments","date":"2014-03-05T01:52:09.631Z","type":"message"}
+{"nick":"tjfontaine","message":"and I'm +-0 on the change, I can't see the harm in it at the moment","date":"2014-03-05T01:52:31.293Z","type":"message"}
+{"nick":"trevnorris","message":"haha, you're right","date":"2014-03-05T01:52:40.767Z","type":"message"}
+{"nick":"dshaw_","date":"2014-03-05T01:52:58.192Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: guess since the arguments are documented as explicit i was expecting it to throw if the arguments were not passed","date":"2014-03-05T01:53:07.708Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: well, right now it's possible for stderr via process._rawDebug(), but i'm not about to tell users to use that.","date":"2014-03-05T01:53:34.184Z","type":"message"}
+{"nick":"tjfontaine","message":"having a sync logging mechanism that is AL safe, is completely doable by those who understand fs.writeSync though, I don't advocate node going any further out of its way to support something beyond that","date":"2014-03-05T01:53:53.801Z","type":"message"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-03-05T01:54:04.673Z","type":"quit"}
+{"nick":"tjfontaine","message":"trevnorris: I'm fine with being explicit about the failure for writeBuffer in this case, or supporting the model, it seems sane to write out the whole buffer at the current position","date":"2014-03-05T01:54:38.241Z","type":"message"}
+{"nick":"trevnorris","message":"fine by me. i'm documenting using fs.writeSync() and if they want console type output then pass the message to util.inspect(","date":"2014-03-05T01:54:41.986Z","type":"message"}
+{"nick":"trevnorris","message":")","date":"2014-03-05T01:54:42.969Z","type":"message"}
+{"nick":"tjfontaine","message":"I would avoid mentioning util.inspect in the create case, because that will definitely it the \"it's not safe\" part, unless we decouple the create method firing from the constructor","date":"2014-03-05T01:55:13.330Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: oh, I was just confused why an entire string was being written, but the arguments for a Buffer are explicit. that I don't care about.","date":"2014-03-05T01:55:20.338Z","type":"message"}
+{"nick":"trevnorris","message":"dinner bbiab","date":"2014-03-05T01:55:52.133Z","type":"message"}
+{"nick":"trevnorris","action":"&","date":"2014-03-05T01:55:54.754Z","type":"action"}
+{"nick":"LOUDBOT","message":"IF YOU CAN DETECT HEAT THROUGH WALLS, SEEK MEDICAL ATTENTION","date":"2014-03-05T01:55:55.049Z","type":"message"}
+{"nick":"othiym23","message":"that's pretty inscrutable, LOUDBOT","date":"2014-03-05T01:56:43.617Z","type":"message"}
+{"nick":"tjfontaine","message":"othiym23: how do you deliver stats currently while avoiding the feedback loop?","date":"2014-03-05T01:57:13.112Z","type":"message"}
+{"nick":"wolfeidau","date":"2014-03-05T01:57:50.587Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-03-05T01:58:26.300Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-03-05T02:00:36.326Z","type":"join"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 240 seconds","date":"2014-03-05T02:00:59.192Z","type":"quit"}
+{"nick":"euoia","reason":"Ping timeout: 264 seconds","date":"2014-03-05T02:04:24.313Z","type":"quit"}
+{"nick":"othiym23","message":"tjfontaine: how do you mean?","date":"2014-03-05T02:06:32.939Z","type":"message"}
+{"nick":"othiym23","message":"the only thing happening inside AL is CLS, which doesn't do any action, per se, just propagates state","date":"2014-03-05T02:06:49.539Z","type":"message"}
+{"nick":"othiym23","message":"when things are acting wacky I use the debugger, as was intended by the inscrutable, evanescent autocthonic machine intelligence who rules us all","date":"2014-03-05T02:07:23.481Z","type":"message"}
+{"nick":"indexzero","date":"2014-03-05T02:10:10.429Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-03-05T02:11:10.653Z","type":"quit"}
+{"nick":"Ralith","reason":"Ping timeout: 264 seconds","date":"2014-03-05T02:17:00.310Z","type":"quit"}
+{"nick":"euoia","date":"2014-03-05T02:32:51.483Z","type":"join"}
+{"nick":"mikeal","date":"2014-03-05T02:32:53.185Z","type":"join"}
+{"nick":"abraxas","date":"2014-03-05T02:33:07.433Z","type":"join"}
+{"nick":"AWinterman","reason":"Remote host closed the connection","date":"2014-03-05T02:33:26.755Z","type":"quit"}
+{"nick":"abraxas","reason":"Ping timeout: 252 seconds","date":"2014-03-05T02:38:08.010Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T02:38:15.419Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2014-03-05T02:41:50.048Z","type":"quit"}
+{"nick":"Ralith","date":"2014-03-05T02:44:43.092Z","type":"join"}
+{"nick":"kpdecker","reason":"Quit: Leaving.","date":"2014-03-05T02:45:05.175Z","type":"quit"}
+{"nick":"indexzero","reason":"Quit: indexzero","date":"2014-03-05T02:45:11.413Z","type":"quit"}
+{"nick":"kpdecker","date":"2014-03-05T02:49:22.903Z","type":"join"}
+{"nick":"mikeal","reason":"Quit: Leaving.","date":"2014-03-05T02:50:11.829Z","type":"quit"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2014-03-05T02:51:31.607Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T02:52:06.929Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-03-05T02:55:25.566Z","type":"join"}
+{"nick":"Ralith","reason":"Read error: Connection reset by peer","date":"2014-03-05T02:55:48.629Z","type":"quit"}
+{"nick":"abraxas","reason":"Ping timeout: 240 seconds","date":"2014-03-05T02:56:29.083Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-03-05T02:56:42.195Z","type":"join"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2014-03-05T02:58:17.787Z","type":"nick"}
+{"nick":"abraxas","date":"2014-03-05T03:00:08.283Z","type":"join"}
+{"nick":"tjfontaine","message":"othiym23: I guess my question is more accurately, how often is the information that was collected phoned home, and do you do anything to squelch out the fact that you may potentially be including yourself in those numbers","date":"2014-03-05T03:01:50.137Z","type":"message"}
+{"nick":"othiym23","message":"tjfontaine: data is sent once a minute, in three different chunks (metrics, errors, slow transaction trace(s)), and all of the metric and tracing work is done in such a way that NR-specific data are confined in supportability metrics","date":"2014-03-05T03:04:06.423Z","type":"message"}
+{"nick":"othiym23","message":"however, there are very few supportability metrics (I think there's only 1 right now)","date":"2014-03-05T03:04:22.002Z","type":"message"}
+{"nick":"othiym23","message":"this is going to change very soon","date":"2014-03-05T03:04:25.712Z","type":"message"}
+{"nick":"othiym23","message":"the work I've been doing to add SSL support is also adding true keep-alive support so that ideally only 1 HTTP / TLS socket will be used for each data submission run","date":"2014-03-05T03:05:00.488Z","type":"message"}
+{"nick":"indexzero","date":"2014-03-05T03:05:11.999Z","type":"join"}
+{"nick":"tjfontaine","message":"right, and you're not doing fine grained resource tracking around a lot of the events that are generated in AL","date":"2014-03-05T03:05:30.440Z","type":"message"}
+{"nick":"othiym23","message":"of course, we do in-memory aggregation for the metrics, so only the slow transaction trace (and potentially errors, although rarely in practice) will use up lots of memory","date":"2014-03-05T03:05:33.755Z","type":"message"}
+{"nick":"indexzero","reason":"Client Quit","date":"2014-03-05T03:05:38.591Z","type":"quit"}
+{"nick":"othiym23","message":"no, the events generated within the AL are only kept as byproducts of generating the transaction trace","date":"2014-03-05T03:05:58.555Z","type":"message"}
+{"nick":"othiym23","message":"which is built up from monkeypatched instrumentation for specific modules","date":"2014-03-05T03:06:15.823Z","type":"message"}
+{"nick":"tjfontaine","message":"in your exisitng AL/CLS land, are you operating on _handle or on actual Socket like objects?","date":"2014-03-05T03:07:09.527Z","type":"message"}
+{"nick":"othiym23","message":"if / when bnoordhuis's profiler patch lands, we may leverage that to generate \"X-ray sessions\" for Node, and there's some other high-frequency sampling we'll probably be doing sooner rather than later","date":"2014-03-05T03:07:09.669Z","type":"message"}
+{"nick":"tjfontaine","message":"do you have any problem with that being landed in a patch release?","date":"2014-03-05T03:07:32.914Z","type":"message"}
+{"nick":"tjfontaine","message":"to me adding instrumentation probes during patch releases is not a very controversial thing","date":"2014-03-05T03:08:01.114Z","type":"message"}
+{"nick":"othiym23","message":"the AL polyfill monkeypatches Socket to make sure that the relevant events are handled properly","date":"2014-03-05T03:08:04.896Z","type":"message"}
+{"nick":"tjfontaine","message":"but you're not storing anything directly on _handle or Socket?","date":"2014-03-05T03:08:18.367Z","type":"message"}
+{"nick":"othiym23","message":"for CLS / New Relic, all we care about is that we can track everything that happens after the HTTP connect, because (for now) it's the new HTTP connection that triggers the creation of a NR transaction trace","date":"2014-03-05T03:08:41.402Z","type":"message"}
+{"nick":"eugeneware","date":"2014-03-05T03:09:02.317Z","type":"join"}
+{"nick":"othiym23","message":"no, all data storage is done within CLS, which depends on AL passing along the storage object","date":"2014-03-05T03:09:06.145Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2014-03-05T03:09:14.538Z","type":"message"}
+{"nick":"othiym23","message":"so I'm anticipating having to do some significant work if you and trevnorris do switch all that around to be ID-based instead","date":"2014-03-05T03:09:28.983Z","type":"message"}
+{"nick":"othiym23","message":"the lifecycle management aspects of that latter approach concern me a little from a performance point of view, too, because that means I have to listen for object lifecycle events and then do post hoc cleanup on whatever storage object is dealing with the storage","date":"2014-03-05T03:10:11.490Z","type":"message"}
+{"nick":"othiym23","message":"gotta go!","date":"2014-03-05T03:10:18.653Z","type":"message"}
+{"nick":"othiym23","message":"bbiab","date":"2014-03-05T03:10:20.664Z","type":"message"}
+{"nick":"tjfontaine","message":"enjoy","date":"2014-03-05T03:10:29.754Z","type":"message"}
+{"nick":"tjfontaine","message":"but the maintanence cost for Node to manage the whole AL stack is quite expensive","date":"2014-03-05T03:11:07.873Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine agreed","date":"2014-03-05T03:11:28.882Z","type":"message"}
+{"nick":"groundwater","message":"also we may decide theres a better way","date":"2014-03-05T03:11:37.804Z","type":"message"}
+{"nick":"tjfontaine","message":"and increasingly walking down the path of domains, as being an environment where the semantics and side effects aren't understood until later","date":"2014-03-05T03:11:55.960Z","type":"message"}
+{"nick":"mikeal","date":"2014-03-05T03:11:59.424Z","type":"join"}
+{"nick":"tjfontaine","message":"actually/frankly not already having the lifecycle portion seems like a hole anyway, because if we're tracking when allocations happen why aren't we tracking when deallocations happen","date":"2014-03-05T03:13:15.207Z","type":"message"}
+{"nick":"groundwater","message":"would those only fire during/after a GC event?","date":"2014-03-05T03:13:58.860Z","type":"message"}
+{"nick":"tjfontaine","message":"depends on how they were implemented","date":"2014-03-05T03:14:28.183Z","type":"message"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2014-03-05T03:15:06.049Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T03:15:40.792Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 241 seconds","date":"2014-03-05T03:16:29.211Z","type":"quit"}
+{"nick":"groundwater","message":"looks like we're punching the ._handle's onread handler","date":"2014-03-05T03:18:59.053Z","type":"message"}
+{"nick":"tjfontaine","message":"during create?","date":"2014-03-05T03:19:08.443Z","type":"message"}
+{"nick":"groundwater","message":"so... yeah, it all comes down to the handle object","date":"2014-03-05T03:19:09.535Z","type":"message"}
+{"nick":"groundwater","message":"on connect","date":"2014-03-05T03:20:14.117Z","type":"message"}
+{"nick":"groundwater","message":"not the listening socket","date":"2014-03-05T03:20:23.092Z","type":"message"}
+{"nick":"abraxas","reason":"Ping timeout: 264 seconds","date":"2014-03-05T03:20:36.292Z","type":"quit"}
+{"nick":"tjfontaine","message":"k","date":"2014-03-05T03:20:39.267Z","type":"message"}
+{"nick":"groundwater","message":"https://github.com/othiym23/async-listener/blob/master/index.js#L64-L66","date":"2014-03-05T03:20:41.206Z","type":"message"}
+{"nick":"tjfontaine","message":"right so finding the balance of what and where to use certain kinds of AL will be interesting for you, even in this new fangled world","date":"2014-03-05T03:21:30.016Z","type":"message"}
+{"nick":"tjfontaine","message":"frankly in a lot of these places it seems like it would be far easier for node to just provide static probes for you to consume","date":"2014-03-05T03:22:15.652Z","type":"message"}
+{"nick":"tjfontaine","message":"so instead of having to monkey patch _listen2 we fire a probe that says \"no really, here's the handle you care about\"","date":"2014-03-05T03:22:37.491Z","type":"message"}
+{"nick":"tjfontaine","message":"and we should have that concept at tcp and http layer","date":"2014-03-05T03:23:06.216Z","type":"message"}
+{"nick":"groundwater","message":"so i'm probably agreeing with you, but i'm gonna phrase it differently","date":"2014-03-05T03:25:55.057Z","type":"message"}
+{"nick":"groundwater","message":"i think we should, as close as possible, make visible what node is doing","date":"2014-03-05T03:26:26.677Z","type":"message"}
+{"nick":"groundwater","message":"without interpreting the data too much in core","date":"2014-03-05T03:26:42.708Z","type":"message"}
+{"nick":"groundwater","message":"leave that for user land","date":"2014-03-05T03:26:46.879Z","type":"message"}
+{"nick":"tjfontaine","message":"I would also agree with that","date":"2014-03-05T03:27:25.241Z","type":"message"}
+{"nick":"groundwater","message":"tjfontaine yah if there was an onConnect probe that fired with the handle, that could probably be used to glue some initial state onto the handle","date":"2014-03-05T03:27:32.976Z","type":"message"}
+{"nick":"abraxas","date":"2014-03-05T03:29:27.432Z","type":"join"}
+{"nick":"groundwater","message":"so, looks like we patch the onread function, with a wrapped function which holds the state in a closure","date":"2014-03-05T03:30:54.926Z","type":"message"}
+{"nick":"groundwater","message":"wheeee","date":"2014-03-05T03:30:58.923Z","type":"message"}
+{"nick":"indexzero","date":"2014-03-05T03:33:43.673Z","type":"join"}
+{"nick":"indexzero","reason":"Client Quit","date":"2014-03-05T03:33:51.893Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2014-03-05T03:40:46.250Z","type":"nick"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2014-03-05T03:52:47.991Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T03:53:23.864Z","type":"join"}
+{"nick":"abraxas_","date":"2014-03-05T03:55:51.252Z","type":"join"}
+{"nick":"abraxas","reason":"Read error: Connection reset by peer","date":"2014-03-05T03:56:14.889Z","type":"quit"}
+{"nick":"defunctzombie_zz","new_nick":"defunctzombie","date":"2014-03-05T03:56:20.308Z","type":"nick"}
+{"nick":"abraxas_","reason":"Remote host closed the connection","date":"2014-03-05T04:04:28.898Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T04:05:12.165Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 240 seconds","date":"2014-03-05T04:09:12.994Z","type":"quit"}
+{"nick":"mikeal","date":"2014-03-05T04:12:28.610Z","type":"join"}
+{"nick":"mikeal","reason":"Ping timeout: 265 seconds","date":"2014-03-05T04:17:07.561Z","type":"quit"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2014-03-05T04:20:19.453Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-03-05T04:30:04.996Z","type":"quit"}
+{"nick":"othiym23","message":"tjfontaine: I think my position is a little different from groundwater's, just because getting CLS and the NR tracer working was such an unholy pain in the ass that I'm scared that things will change in such a way that I have to go through that whole process again","date":"2014-03-05T04:34:22.584Z","type":"message"}
+{"nick":"othiym23","message":"CLS isn't magic, but it is pretty fragile","date":"2014-03-05T04:34:35.458Z","type":"message"}
+{"nick":"octetcloud","reason":"Ping timeout: 240 seconds","date":"2014-03-05T04:36:01.046Z","type":"quit"}
+{"nick":"othiym23","message":"selfishly, what we had in 0.11.10 was pretty much ideal for my purposes (setting aside the overhead), because the necessary state was directly attached to the execution context","date":"2014-03-05T04:36:47.610Z","type":"message"}
+{"nick":"othiym23","message":"and it was automatically invoked everywhere it needed to be","date":"2014-03-05T04:37:02.146Z","type":"message"}
+{"nick":"othiym23","message":"so I could just register the CLS listener and leave it on all the time and things just worked","date":"2014-03-05T04:37:27.879Z","type":"message"}
+{"nick":"othiym23","message":"the changes we've been discussing make me nervous, because when the tracer loses data, it's not always visible, and fixing those kinds of bugs is excruciatingly time-consuming and frustrating","date":"2014-03-05T04:38:03.098Z","type":"message"}
+{"nick":"othiym23","message":"like, my darkest fear is that we'll get this new tracing module finished and it'll just straight up break the transaction tracer and then it's another couple months to write a new one","date":"2014-03-05T04:38:29.872Z","type":"message"}
+{"nick":"othiym23","message":"I'm probably carrying around some PTSD related to all this ;)","date":"2014-03-05T04:38:42.673Z","type":"message"}
+{"nick":"mikeal","date":"2014-03-05T04:42:17.706Z","type":"join"}
+{"nick":"indexzero","date":"2014-03-05T04:43:58.385Z","type":"join"}
+{"nick":"m76","date":"2014-03-05T04:55:29.441Z","type":"join"}
+{"nick":"paulfryzel","date":"2014-03-05T05:02:08.211Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-03-05T05:02:21.201Z","type":"join"}
+{"nick":"bradleymeck","message":"tjfontaine: put up my branch since we talked about bundling earlier https://twitter.com/bradleymeck/status/441006691530727424","date":"2014-03-05T05:06:14.704Z","type":"message"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-03-05T05:06:29.139Z","type":"quit"}
+{"nick":"bradleymeck","message":"its an extraction based one which is diff than what you wanted I think","date":"2014-03-05T05:06:31.819Z","type":"message"}
+{"nick":"Kakera","date":"2014-03-05T05:16:55.123Z","type":"join"}
+{"nick":"euoia","reason":"Ping timeout: 265 seconds","date":"2014-03-05T05:22:22.757Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-03-05T05:24:05.090Z","type":"quit"}
+{"nick":"eugeneware","reason":"Remote host closed the connection","date":"2014-03-05T05:41:30.660Z","type":"quit"}
+{"nick":"eugeneware","date":"2014-03-05T05:42:04.862Z","type":"join"}
+{"nick":"eugeneware","reason":"Ping timeout: 244 seconds","date":"2014-03-05T05:46:30.753Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T06:05:42.365Z","type":"join"}
+{"nick":"abraxas","reason":"Ping timeout: 244 seconds","date":"2014-03-05T06:10:16.813Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 265 seconds","date":"2014-03-05T06:16:01.786Z","type":"quit"}
+{"nick":"abraxas","date":"2014-03-05T06:16:55.918Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2014-03-05T06:34:39.024Z","type":"quit"}
+{"nick":"defunctzombie","new_nick":"defunctzombie_zz","date":"2014-03-05T06:39:13.251Z","type":"nick"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2014-03-05T06:39:30.339Z","type":"quit"}
+{"nick":"brson","date":"2014-03-05T06:39:52.233Z","type":"join"}
+{"nick":"abraxas","date":"2014-03-05T06:42:43.599Z","type":"join"}
+{"nick":"mikolalysenko","date":"2014-03-05T06:42:58.329Z","type":"join"}
+{"nick":"abraxas","reason":"Remote host closed the connection","date":"2014-03-05T06:45:04.377Z","type":"quit"}
+{"nick":"Kakera","reason":"Read error: Operation timed out","date":"2014-03-05T07:02:35.536Z","type":"quit"}
+{"nick":"paulfryzel","date":"2014-03-05T07:03:54.183Z","type":"join"}
+{"nick":"brson_","date":"2014-03-05T07:05:43.225Z","type":"join"}
+{"nick":"bajtos","date":"2014-03-05T07:07:28.233Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 264 seconds","date":"2014-03-05T07:09:12.232Z","type":"quit"}
+{"nick":"paulfryzel","reason":"Ping timeout: 240 seconds","date":"2014-03-05T07:09:59.069Z","type":"quit"}
+{"nick":"daviddias","date":"2014-03-05T07:24:27.628Z","type":"join"}
+{"nick":"txdv_","reason":"Ping timeout: 264 seconds","date":"2014-03-05T07:30:48.233Z","type":"quit"}
+{"nick":"txdv","date":"2014-03-05T07:42:54.911Z","type":"join"}
