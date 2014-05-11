@@ -1,0 +1,215 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-05-11T00:00:00.791Z","type":"quit"}
+{"nick":"Dirkson","message":"Ralith: Sorry?","date":"2014-05-11T00:00:02.654Z","type":"message"}
+{"nick":"ircretary","date":"2014-05-11T00:00:12.376Z","type":"join"}
+{"nick":"Ralith","message":"just an idle observation","date":"2014-05-11T00:00:19.945Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: I don't understand what a \"free variable\" means here : )","date":"2014-05-11T00:00:36.521Z","type":"message"}
+{"nick":"Ralith","message":"https://en.wikipedia.org/wiki/Free_variables_and_bound_variables","date":"2014-05-11T00:00:51.865Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Global variables? Yes, there are - This is not true of most of my code, but I'm really not 100% sure how to design libuv code without a fair amount of them.","date":"2014-05-11T00:01:41.780Z","type":"message"}
+{"nick":"Ralith","message":"you stick a pointer to a state structure in the user data field, generally","date":"2014-05-11T00:02:06.537Z","type":"message"}
+{"nick":"Ralith","message":"Dirkson: it looks like you're using an old version of libuv","date":"2014-05-11T00:02:10.387Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: That's true, I am - The available non-.h documentation appears to be for that version, and it's the version supplied by my distro","date":"2014-05-11T00:02:51.136Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: I do use that trick for the actual tcp data stuff.","date":"2014-05-11T00:03:20.474Z","type":"message"}
+{"nick":"Dirkson","message":"I should probably have a convention for global variables, so I can more easily spot when they'","date":"2014-05-11T00:04:34.487Z","type":"message"}
+{"nick":"Dirkson","message":"they're being used in a function.","date":"2014-05-11T00:04:39.586Z","type":"message"}
+{"nick":"Ralith","message":"oh, well, this is a simple issue","date":"2014-05-11T00:04:59.372Z","type":"message"}
+{"nick":"Ralith","message":"your uv_connect_t is on the stack","date":"2014-05-11T00:05:09.862Z","type":"message"}
+{"nick":"Dirkson","message":"Excellent. That's my favorite sort of issue.","date":"2014-05-11T00:05:13.369Z","type":"message"}
+{"nick":"mmalecki","message":"aren't you trying to reuse uv_tcp_t accross server and client?","date":"2014-05-11T00:05:28.626Z","type":"message"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 258 seconds","date":"2014-05-11T00:05:42.158Z","type":"quit"}
+{"nick":"Ralith","message":"it's mildly surprising this code doesn't crash immediately","date":"2014-05-11T00:05:52.250Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: In a limited way. This file is the same for server and client.","date":"2014-05-11T00:05:52.397Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Well, that's my code for you - Always mildly surprising.","date":"2014-05-11T00:06:19.118Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-05-11T00:06:23.341Z","type":"join"}
+{"nick":"mmalecki","message":"you seem to be calling bind *and* connect on UvTcp4","date":"2014-05-11T00:06:23.928Z","type":"message"}
+{"nick":"Ralith","message":"mmalecki: presumably not in the same process","date":"2014-05-11T00:06:32.869Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith has it, mmalecki : )","date":"2014-05-11T00:06:43.086Z","type":"message"}
+{"nick":"mmalecki","message":"fair enough","date":"2014-05-11T00:06:46.706Z","type":"message"}
+{"nick":"Ralith","message":"Dirkson: when you return control to the uv mainloop, it will try to access the pointer you passed to uv_tcp_connect, which is to a dead location on the stack","date":"2014-05-11T00:07:02.309Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Should I calloc uv_connect, or is malloc enough?","date":"2014-05-11T00:07:03.098Z","type":"message"}
+{"nick":"mrvisser","date":"2014-05-11T00:07:07.734Z","type":"join"}
+{"nick":"mmalecki","message":"okay, are you sure you uv_tcp_init in client?","date":"2014-05-11T00:07:08.016Z","type":"message"}
+{"nick":"Ralith","message":"Dirkson: the header comments document what initialization is expected, if any, for each structure","date":"2014-05-11T00:07:27.861Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: Yup. That's in a function shared by both client and server. I can hand it to ya' if you're curious","date":"2014-05-11T00:07:34.607Z","type":"message"}
+{"nick":"Ralith","message":"in my version, it says to \"provide an uninitialized uv_connect_t*\", so malloc should be fine","date":"2014-05-11T00:08:08.345Z","type":"message"}
+{"nick":"mmalecki","message":"ah, Ralith found it already, didn't read back","date":"2014-05-11T00:08:08.637Z","type":"message"}
+{"nick":"Ralith","message":"remember, libuv handles always need to exist in memory for as long as the loop holds a reference to them","date":"2014-05-11T00:08:43.001Z","type":"message"}
+{"nick":"Ralith","message":"Dirkson: I usually find it's useful to have a single state structure which contains all the handles a certain system needs; that way it's easier to be sure you don't forget to malloc or free anything","date":"2014-05-11T00:09:57.833Z","type":"message"}
+{"nick":"Dirkson","message":"Right","date":"2014-05-11T00:10:15.627Z","type":"message"}
+{"nick":"Ralith","message":"makes it easier to allocate everything at startup, too","date":"2014-05-11T00:10:28.799Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Well, I've fixed that bit of code, but my callback still doesn't seem to run.","date":"2014-05-11T00:10:34.728Z","type":"message"}
+{"nick":"Ralith","message":"have you ran this code under asan?","date":"2014-05-11T00:11:48.702Z","type":"message"}
+{"nick":"Dirkson","message":"Yup","date":"2014-05-11T00:12:02.737Z","type":"message"}
+{"nick":"Dirkson","message":"Currently it powers through the whole connection process without complaint","date":"2014-05-11T00:12:40.522Z","type":"message"}
+{"nick":"mrvisser","reason":"Ping timeout: 255 seconds","date":"2014-05-11T00:12:41.668Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-11T00:13:48.279Z","type":"join"}
+{"nick":"AlexisMocha_","date":"2014-05-11T00:13:48.399Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 264 seconds","date":"2014-05-11T00:14:41.428Z","type":"quit"}
+{"nick":"quijote_","date":"2014-05-11T00:15:21.302Z","type":"join"}
+{"nick":"Ralith","message":"as mmalecki suggested, ensure that uv_tcp_init is getting called on the client","date":"2014-05-11T00:15:54.064Z","type":"message"}
+{"nick":"Ralith","message":"and the server, for that matter","date":"2014-05-11T00:16:29.356Z","type":"message"}
+{"nick":"Dirkson","message":"Absolutely happening on both. I can hand you the whole code if you like","date":"2014-05-11T00:16:46.022Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: www.orangehattech.com/ScrumbleUv.c  ( .h works too ) ","date":"2014-05-11T00:17:32.352Z","type":"message"}
+{"nick":"quijote","reason":"Ping timeout: 264 seconds","date":"2014-05-11T00:18:17.261Z","type":"quit"}
+{"nick":"Ralith","message":"don't have time to go through that right now, unfortunately","date":"2014-05-11T00:19:24.467Z","type":"message"}
+{"nick":"Dirkson","message":"Gotcha","date":"2014-05-11T00:19:33.025Z","type":"message"}
+{"nick":"quijote_","reason":"Ping timeout: 252 seconds","date":"2014-05-11T00:19:45.296Z","type":"quit"}
+{"nick":"Dirkson","message":"mmalecki: Any chance you still have an interest in poking at it? : )","date":"2014-05-11T00:19:57.116Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: sure, could take a look, is that source you linked to updated?","date":"2014-05-11T00:20:30.515Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: Yup, it's the lastest version I have","date":"2014-05-11T00:20:56.179Z","type":"message"}
+{"nick":"Dirkson","message":"OH. HAHA.","date":"2014-05-11T00:23:12.885Z","type":"message"}
+{"nick":"LOUDBOT_","message":"IRC NEEDS A KILL FILE","date":"2014-05-11T00:23:13.346Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: hmm, you do uv_run that loop right?","date":"2014-05-11T00:23:17.173Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: /No/","date":"2014-05-11T00:23:24.025Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: That what I just figured out.","date":"2014-05-11T00:23:29.325Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: :D","date":"2014-05-11T00:23:41.410Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: I wait until ScrumbleOptions.ConnectedToServer==1 to run the uv_loop... But that only ever gets set after the loop runs and the callback fires :D","date":"2014-05-11T00:23:56.829Z","type":"message"}
+{"nick":"Ralith","message":"haha","date":"2014-05-11T00:24:04.127Z","type":"message"}
+{"nick":"Ralith","message":"that'll do it","date":"2014-05-11T00:24:06.052Z","type":"message"}
+{"nick":"Dirkson","message":"Excellent! Now I have an entirely different error ^^","date":"2014-05-11T00:24:58.376Z","type":"message"}
+{"nick":"Dirkson","message":"Thanks Ralith, mmalecki : )","date":"2014-05-11T00:25:02.755Z","type":"message"}
+{"nick":"Ralith","message":"note that generally you want to exit when uv's loop returns","date":"2014-05-11T00:25:12.361Z","type":"message"}
+{"nick":"mrvisser","date":"2014-05-11T00:26:48.469Z","type":"join"}
+{"nick":"dshaw_","date":"2014-05-11T00:27:07.462Z","type":"join"}
+{"nick":"Dirkson","message":"Ralith: I run it with UV_RUN_NOWAIT  : )","date":"2014-05-11T00:27:23.314Z","type":"message"}
+{"nick":"Ralith","message":"that seems imprudent","date":"2014-05-11T00:28:01.013Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Whyso?","date":"2014-05-11T00:28:09.935Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: If I can't use that, it sort of puts the kaibash of the whole \"use libuv!\" idea.","date":"2014-05-11T00:28:24.706Z","type":"message"}
+{"nick":"Ralith","message":"why is that?","date":"2014-05-11T00:28:31.436Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Well, the client is a gui app. It needs to do things other than respond to network events.","date":"2014-05-11T00:29:49.267Z","type":"message"}
+{"nick":"daviddias","date":"2014-05-11T00:29:52.296Z","type":"join"}
+{"nick":"Ralith","message":"most programs do","date":"2014-05-11T00:30:22.783Z","type":"message"}
+{"nick":"Ralith","message":"GUI input is, unfortunately, not yet natively supported by libuv","date":"2014-05-11T00:31:20.528Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Might be quicker if you explained why UV_RUN_NOWAIT is a bad idea","date":"2014-05-11T00:31:30.516Z","type":"message"}
+{"nick":"dshaw_","reason":"Ping timeout: 240 seconds","date":"2014-05-11T00:31:30.799Z","type":"quit"}
+{"nick":"mmalecki","message":"Dirkson: as I understand it, you're integrating with a separate event loop?","date":"2014-05-11T00:31:52.064Z","type":"message"}
+{"nick":"Ralith","message":"it is not a bad idea in and of itself, but it is easy to use in a way that can introduce latency and waste CPU time","date":"2014-05-11T00:32:18.369Z","type":"message"}
+{"nick":"Dirkson","message":"mmalecki: Yes? I don't have a formal name for it, but the client does things like graphics, input, etc.","date":"2014-05-11T00:32:18.819Z","type":"message"}
+{"nick":"Ralith","message":"for example, if you just call it N times a second, then you're wasting CPU time, and if it's a loop that's shared with your graphics, you might impose arbitrary amounts of latency to IO when framerates drop","date":"2014-05-11T00:33:17.099Z","type":"message"}
+{"nick":"Ralith","message":"even without graphics sharing the loop, you're introducing latency any time an event comes in at a time other than immediately prior to your call","date":"2014-05-11T00:33:48.299Z","type":"message"}
+{"nick":"daviddias","reason":"Ping timeout: 252 seconds","date":"2014-05-11T00:34:25.296Z","type":"quit"}
+{"nick":"Dirkson","message":"Ralith: *reads* So your point is that calling other stuff will increase libuv latency?","date":"2014-05-11T00:35:16.330Z","type":"message"}
+{"nick":"Ralith","message":"that's not quite what I said","date":"2014-05-11T00:35:41.966Z","type":"message"}
+{"nick":"Ralith","message":"but if 'other stuff' includes things like 3D rendering which can be quite slow, then it is close enough","date":"2014-05-11T00:36:10.994Z","type":"message"}
+{"nick":"Ralith","message":"unfortunately, in lieu of a significant libuv extension, the only real solution here is multithreading--though one generally wants a distinct thread for graphics anyway, so that other work can proceed when you're blocked on buffer swap","date":"2014-05-11T00:38:01.621Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: I'm not sure what the other stuff includes. I think on dual core machines they might run in the same thread","date":"2014-05-11T00:38:10.220Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: you might also look into UV_RUN_ONCE","date":"2014-05-11T00:38:26.251Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: and call it on every tick of your second loop","date":"2014-05-11T00:38:43.016Z","type":"message"}
+{"nick":"mmalecki","message":"Dirkson: not sure how feasible that would be","date":"2014-05-11T00:38:49.905Z","type":"message"}
+{"nick":"Ralith","message":"you're not sure? do you have some sort of dynamic work stealing scheme going on?","date":"2014-05-11T00:38:54.416Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: It's a big program and I forget ^^ Just a tick","date":"2014-05-11T00:39:07.728Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: On a dual core machine, it looks like I do actually run the graphics and networking frames on the same core. I admit, my game performance is more or less shot on dual cores anyway.","date":"2014-05-11T00:41:42.021Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-05-11T00:43:12.296Z","type":"join"}
+{"nick":"Ralith","message":"you may get very unpredictable behavior from the network in that case","date":"2014-05-11T00:43:17.360Z","type":"message"}
+{"nick":"Dirkson","message":"How \"unpredictable\"? Latency or dropped packets?","date":"2014-05-11T00:43:35.158Z","type":"message"}
+{"nick":"Ralith","message":"both, depending on circumstances","date":"2014-05-11T00:43:50.908Z","type":"message"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 252 seconds","date":"2014-05-11T00:43:57.295Z","type":"quit"}
+{"nick":"Ralith","message":"TCP in particular can introduce immense amounts of latency in response to transient packet loss such as you might encounter during a framerate hiccup","date":"2014-05-11T00:44:20.070Z","type":"message"}
+{"nick":"Ralith","message":"presuming sufficient network load","date":"2014-05-11T00:44:31.542Z","type":"message"}
+{"nick":"Dirkson","message":"I suppose with a bit of a redesign, I really could hand a lot of logic over to libuv - All my of work units are currently time-separated void functions with no arguments... I just hand those to libuv and have IT deal with running the damn things...","date":"2014-05-11T00:44:54.176Z","type":"message"}
+{"nick":"Ralith","message":"you certainly should never have a call to sleep in the same thread as libuv is running","date":"2014-05-11T00:45:22.939Z","type":"message"}
+{"nick":"Dirkson","message":"I.e. I have void DoCpuGpuLink(); . If I hand that to libuv on a timer, everything's cherry.","date":"2014-05-11T00:45:26.561Z","type":"message"}
+{"nick":"Ralith","message":"nor indeed any other blocking or particularly CPU-intensive calls","date":"2014-05-11T00:45:42.989Z","type":"message"}
+{"nick":"Ralith","message":"(beware that many OpenGL calls can block)","date":"2014-05-11T00:45:59.263Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Ok, now I need to know more about how libuv works. Does libuv do any threading on its own?","date":"2014-05-11T00:46:21.216Z","type":"message"}
+{"nick":"Dirkson","message":"I imagine it must not.","date":"2014-05-11T00:46:28.541Z","type":"message"}
+{"nick":"Ralith","message":"if by \"do any threading\" you mean have internal threads, then yes, it does","date":"2014-05-11T00:46:44.073Z","type":"message"}
+{"nick":"Ralith","message":"that isn't of concern to you, however","date":"2014-05-11T00:46:50.155Z","type":"message"}
+{"nick":"Dirkson","message":"Right. MY stuff will always run in the thread I run uv_loop in, aye?","date":"2014-05-11T00:47:13.203Z","type":"message"}
+{"nick":"Ralith","message":"correct","date":"2014-05-11T00:47:17.619Z","type":"message"}
+{"nick":"Ralith","message":"callbacks are issued from inside your call to run the loop","date":"2014-05-11T00:47:41.575Z","type":"message"}
+{"nick":"Dirkson","message":"Cool.","date":"2014-05-11T00:47:54.195Z","type":"message"}
+{"nick":"Dirkson","message":"If I hand it a bunch of stuff to do every, say, 50ms, will it space those calls out so that it's not doing nothing for 50ms, then trying to do 50ms of work the instant the timer runs out?","date":"2014-05-11T00:48:31.188Z","type":"message"}
+{"nick":"Dirkson","message":"Ah, yup. By calling uv_timer_start with various delays.","date":"2014-05-11T00:49:19.287Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Ok. What happens if one of my functions /does/ block for a while? Is there any amount of blocking it can do that will mess libuv up?","date":"2014-05-11T00:50:24.260Z","type":"message"}
+{"nick":"Ralith","message":"it won't break libuv, it'll just prevent you from handling any other events for that period, which can have various adverse effects","date":"2014-05-11T00:51:16.655Z","type":"message"}
+{"nick":"Ralith","message":"timers running late, the network issues we already discussed, etc","date":"2014-05-11T00:51:37.917Z","type":"message"}
+{"nick":"Dirkson","message":"Right.","date":"2014-05-11T00:53:39.077Z","type":"message"}
+{"nick":"Dirkson","message":"Basically, all the normal stuff that happens when stuff blocks the cpu too long :D","date":"2014-05-11T00:53:57.340Z","type":"message"}
+{"nick":"Ralith","message":"generally one schedules such work asynchronously or in another thread as appropriate","date":"2014-05-11T00:54:52.336Z","type":"message"}
+{"nick":"AlexisMocha_","date":"2014-05-11T00:54:53.295Z","type":"join"}
+{"nick":"Dirkson","message":"Right","date":"2014-05-11T00:55:00.511Z","type":"message"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 252 seconds","date":"2014-05-11T00:55:19.296Z","type":"quit"}
+{"nick":"Ralith","message":"libuv does in fact allow you to schedule work on its internal worker threads, but you shouldn't use this too heavily as it shares a work queue with filesystem access","date":"2014-05-11T00:55:57.109Z","type":"message"}
+{"nick":"Dirkson","message":"Interesting","date":"2014-05-11T00:56:32.869Z","type":"message"}
+{"nick":"Dirkson","message":"This amuses me. I'm not sure it'll result in a huge performance boost - But whatever libuv does has got to be more advanced than what I'm doing. It'll make it Pretty Darn Trivial to expand to 8 cores too, which is something I've been intended to do.","date":"2014-05-11T00:57:18.778Z","type":"message"}
+{"nick":"mrvisser","reason":"Remote host closed the connection","date":"2014-05-11T00:57:51.041Z","type":"quit"}
+{"nick":"Dirkson","message":"Ralith: I am somewhat excited about this ^^ Seems like a better solution than trying to make libuv conform.","date":"2014-05-11T01:07:38.368Z","type":"message"}
+{"nick":"calvinfo","date":"2014-05-11T01:11:54.325Z","type":"join"}
+{"nick":"Ralith","message":"effective refactoring is always a nice feeling","date":"2014-05-11T01:15:36.071Z","type":"message"}
+{"nick":"quijote","date":"2014-05-11T01:15:57.346Z","type":"join"}
+{"nick":"Dirkson","message":"Ralith: Oh - Can I call uv_write from any thread, or should I restrict it to the thread its uv_stream_t came from?","date":"2014-05-11T01:19:00.837Z","type":"message"}
+{"nick":"Ralith","message":"you may only operate on a libuv loop from the thread it is running on","date":"2014-05-11T01:19:35.942Z","type":"message"}
+{"nick":"Ralith","message":"use uv_async, the one exception to this, if you need to wake up the loop from another thread","date":"2014-05-11T01:20:24.595Z","type":"message"}
+{"nick":"quijote","reason":"Ping timeout: 265 seconds","date":"2014-05-11T01:20:41.343Z","type":"quit"}
+{"nick":"Dirkson","message":"Ralith: Excellent. I may or may not end up needing that - Depends if I can get the opengl rendering off my main thread or not : )","date":"2014-05-11T01:23:22.094Z","type":"message"}
+{"nick":"petka_","reason":"Quit: Connection closed for inactivity","date":"2014-05-11T01:26:13.986Z","type":"quit"}
+{"nick":"calvinfo","reason":"Read error: Connection reset by peer","date":"2014-05-11T01:26:14.192Z","type":"quit"}
+{"nick":"calvinfo","date":"2014-05-11T01:28:54.732Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-11T01:41:41.040Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-05-11T01:45:48.050Z","type":"quit"}
+{"nick":"kellabyte","date":"2014-05-11T01:48:49.692Z","type":"join"}
+{"nick":"sinclair|work","message":"tjfontaine: hi mate, are you there?","date":"2014-05-11T01:55:48.578Z","type":"message"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-05-11T02:01:10.419Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-05-11T02:03:19.250Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 252 seconds","date":"2014-05-11T02:04:59.295Z","type":"quit"}
+{"nick":"mrvisser","date":"2014-05-11T02:08:26.792Z","type":"join"}
+{"nick":"mrvisser","reason":"Ping timeout: 255 seconds","date":"2014-05-11T02:13:44.572Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-11T02:16:44.295Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-11T02:19:45.295Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 252 seconds","date":"2014-05-11T02:21:07.295Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 252 seconds","date":"2014-05-11T02:27:21.295Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-05-11T02:28:31.168Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 245 seconds","date":"2014-05-11T02:32:53.059Z","type":"quit"}
+{"nick":"rje","reason":"Excess Flood","date":"2014-05-11T02:40:29.111Z","type":"quit"}
+{"nick":"rje","date":"2014-05-11T02:41:06.288Z","type":"join"}
+{"nick":"quijote","date":"2014-05-11T03:17:30.366Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 265 seconds","date":"2014-05-11T03:22:29.336Z","type":"quit"}
+{"nick":"daviddias","date":"2014-05-11T03:24:16.616Z","type":"join"}
+{"nick":"thlorenz","date":"2014-05-11T03:27:35.755Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 252 seconds","date":"2014-05-11T03:29:02.611Z","type":"quit"}
+{"nick":"AlexisMocha_","date":"2014-05-11T03:34:58.331Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 250 seconds","date":"2014-05-11T03:35:33.293Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-11T03:38:24.378Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-05-11T04:01:01.061Z","type":"join"}
+{"nick":"bradleymeck_","date":"2014-05-11T04:04:01.038Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-05-11T04:10:28.433Z","type":"quit"}
+{"nick":"kellabyte","reason":"Quit: Connection closed for inactivity","date":"2014-05-11T04:16:15.455Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-11T04:18:16.409Z","type":"join"}
+{"nick":"yunong","date":"2014-05-11T04:19:35.947Z","type":"join"}
+{"nick":"yunong__","date":"2014-05-11T04:21:23.668Z","type":"join"}
+{"nick":"yunong_","reason":"Ping timeout: 240 seconds","date":"2014-05-11T04:21:58.206Z","type":"quit"}
+{"nick":"quijote","reason":"Ping timeout: 265 seconds","date":"2014-05-11T04:22:54.333Z","type":"quit"}
+{"nick":"yunong","reason":"Ping timeout: 240 seconds","date":"2014-05-11T04:24:19.836Z","type":"quit"}
+{"nick":"bradleymeck_","reason":"Quit: bradleymeck_","date":"2014-05-11T04:32:51.711Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-05-11T04:38:57.153Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 245 seconds","date":"2014-05-11T04:45:48.056Z","type":"quit"}
+{"nick":"kellabyte","date":"2014-05-11T04:57:15.958Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-11T05:12:33.046Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-05-11T05:17:03.035Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-11T05:19:02.674Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 240 seconds","date":"2014-05-11T05:23:14.649Z","type":"quit"}
+{"nick":"Chilledheart","date":"2014-05-11T05:47:50.117Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-05-11T05:51:27.367Z","type":"join"}
+{"nick":"m76","date":"2014-05-11T05:52:05.273Z","type":"join"}
+{"nick":"Chilledheart","reason":"Client Quit","date":"2014-05-11T05:52:29.075Z","type":"quit"}
+{"nick":"Chilledheart","date":"2014-05-11T05:52:42.248Z","type":"join"}
+{"nick":"Chilledheart","reason":"Remote host closed the connection","date":"2014-05-11T05:52:58.618Z","type":"quit"}
+{"nick":"Chilledheart","date":"2014-05-11T05:53:08.875Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 265 seconds","date":"2014-05-11T05:53:17.337Z","type":"quit"}
+{"nick":"Chilledheart","date":"2014-05-11T06:06:02.493Z","type":"part"}
+{"nick":"quijote","date":"2014-05-11T06:19:49.044Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 245 seconds","date":"2014-05-11T06:24:08.041Z","type":"quit"}
+{"nick":"AlexisMocha_","date":"2014-05-11T06:37:34.329Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 265 seconds","date":"2014-05-11T06:37:45.372Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-05-11T06:43:25.281Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 265 seconds","date":"2014-05-11T06:44:02.346Z","type":"quit"}
+{"nick":"AlexisMocha_","date":"2014-05-11T06:50:03.235Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 250 seconds","date":"2014-05-11T06:51:25.244Z","type":"quit"}
+{"nick":"daviddias","date":"2014-05-11T07:00:41.066Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-05-11T07:04:58.048Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-11T07:20:33.288Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 250 seconds","date":"2014-05-11T07:25:13.239Z","type":"quit"}
+{"nick":"rendar","date":"2014-05-11T07:28:16.930Z","type":"join"}
+{"nick":"quijote","date":"2014-05-11T07:33:08.242Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-05-11T07:35:44.306Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 250 seconds","date":"2014-05-11T07:36:03.246Z","type":"quit"}
