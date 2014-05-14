@@ -1,0 +1,199 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-05-14T00:00:00.822Z","type":"quit"}
+{"nick":"ircretary","date":"2014-05-14T00:00:08.399Z","type":"join"}
+{"nick":"WalrusPony","date":"2014-05-14T00:02:37.329Z","type":"join"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-05-14T00:03:41.363Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-05-14T00:05:17.365Z","type":"join"}
+{"nick":"trevnorris","message":"oy, maybe i'll get this. now i'm getting: FATAL: ThreadSanitizer: failed to intercept pthread_mutex_lock","date":"2014-05-14T00:06:46.808Z","type":"message"}
+{"nick":"brunkle","date":"2014-05-14T00:06:52.409Z","type":"join"}
+{"nick":"mmalecki","message":"trevnorris: this is an LD_PRELOAD thingy, I assume?","date":"2014-05-14T00:07:10.272Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-14T00:07:34.653Z","type":"quit"}
+{"nick":"trevnorris","message":"don't think so. already had to take care of that just to load libuv","date":"2014-05-14T00:07:40.588Z","type":"message"}
+{"nick":"trevnorris","message":"here's the actual error:","date":"2014-05-14T00:08:02.842Z","type":"message"}
+{"nick":"trevnorris","message":"FATAL: ThreadSanitizer CHECK failed: /build/buildd/llvm-toolchain-3.4-3.4/projects/compiler-rt/lib/sanitizer_common/sanitizer_allocator.h:316 \"((kSpaceBeg)) == (( reinterpret_cast<uptr>(Mprotect(kSpaceBeg, kSpaceSize))))\" (0x7d0000000000, 0xfffffffffffffff4)","date":"2014-05-14T00:08:02.978Z","type":"message"}
+{"nick":"mmalecki","message":"trevnorris: this is why I drink","date":"2014-05-14T00:08:34.747Z","type":"message"}
+{"nick":"trevnorris","message":"hehe","date":"2014-05-14T00:08:39.695Z","type":"message"}
+{"nick":"mmalecki","message":"trevnorris: is there anything more?","date":"2014-05-14T00:08:40.551Z","type":"message"}
+{"nick":"trevnorris","message":"nope. just those two lines.","date":"2014-05-14T00:08:51.256Z","type":"message"}
+{"nick":"mmalecki","message":"let me actually pull this thing and see if I can reproduce","date":"2014-05-14T00:08:57.847Z","type":"message"}
+{"nick":"brson","reason":"Ping timeout: 258 seconds","date":"2014-05-14T00:10:05.283Z","type":"quit"}
+{"nick":"mmalecki","message":"trevnorris: you built it from source or got binaries?","date":"2014-05-14T00:10:48.810Z","type":"message"}
+{"nick":"trevnorris","message":"everything's from source","date":"2014-05-14T00:11:04.659Z","type":"message"}
+{"nick":"brson","date":"2014-05-14T00:11:43.364Z","type":"join"}
+{"nick":"trevnorris","message":"well. not llvm","date":"2014-05-14T00:11:59.100Z","type":"message"}
+{"nick":"mmalecki","message":"all right, running their script thingy. seems fairly terrible.","date":"2014-05-14T00:12:06.087Z","type":"message"}
+{"nick":"brson","reason":"Client Quit","date":"2014-05-14T00:12:23.351Z","type":"quit"}
+{"nick":"mmalecki","message":"ah, SVN.","date":"2014-05-14T00:12:30.608Z","type":"message"}
+{"nick":"mmalecki","message":"hmmm, okay, that failed for me: https://gist.github.com/mmalecki/9a92e8e1d15cf92546fb","date":"2014-05-14T00:14:48.268Z","type":"message"}
+{"nick":"trevnorris","message":"hm. ok","date":"2014-05-14T00:15:20.219Z","type":"message"}
+{"nick":"trevnorris","message":"i just ran their most basic test case on the faq page and that failed w/ the same message","date":"2014-05-14T00:15:44.557Z","type":"message"}
+{"nick":"trevnorris","message":"well... bummer","date":"2014-05-14T00:16:07.405Z","type":"message"}
+{"nick":"mmalecki","message":"with the check message?","date":"2014-05-14T00:16:10.125Z","type":"message"}
+{"nick":"mmalecki","message":"I'm afraid debugging LLVM code might be a little bit over my pay grade","date":"2014-05-14T00:16:42.390Z","type":"message"}
+{"nick":"trevnorris","message":"haha, ditto","date":"2014-05-14T00:16:50.037Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-05-14T00:16:51.181Z","type":"quit"}
+{"nick":"trevnorris","message":"yeah, with the check message","date":"2014-05-14T00:16:57.752Z","type":"message"}
+{"nick":"mmalecki","message":"although, https://github.com/llvm-mirror/compiler-rt/blob/master/lib/sanitizer_common/sanitizer_allocator.h#L288-L303","date":"2014-05-14T00:18:40.018Z","type":"message"}
+{"nick":"mmalecki","message":"and https://github.com/llvm-mirror/compiler-rt/blob/master/lib/sanitizer_common/sanitizer_allocator.h#L315-L316","date":"2014-05-14T00:18:58.652Z","type":"message"}
+{"nick":"mmalecki","message":"hmm, my best guess would be that it's failing to mprotect?","date":"2014-05-14T00:19:47.922Z","type":"message"}
+{"nick":"trevnorris","message":"sounds probable.","date":"2014-05-14T00:19:58.828Z","type":"message"}
+{"nick":"mmalecki","message":"trevnorris: could you possibly strace it and see if calls mprotect at all?","date":"2014-05-14T00:20:16.567Z","type":"message"}
+{"nick":"trevnorris","message":"i'll try it out. need to head in a sec.","date":"2014-05-14T00:20:33.732Z","type":"message"}
+{"nick":"mmalecki","message":"I have no clue where their Mprotect comes from tho, because yay C++","date":"2014-05-14T00:20:58.345Z","type":"message"}
+{"nick":"trevnorris","message":"the reason for this is i'm trying to create a lock-less queue for SPSC: https://gist.github.com/trevnorris/1b17e2d4f567e754e728","date":"2014-05-14T00:22:00.761Z","type":"message"}
+{"nick":"mmalecki","message":"haha, love the name","date":"2014-05-14T00:22:31.192Z","type":"message"}
+{"nick":"mmalecki","message":"what are your requirements?","date":"2014-05-14T00:23:26.617Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-05-14T00:24:15.574Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-14T00:25:04.073Z","type":"join"}
+{"nick":"trevnorris","message":"heh, yeah. name was actually an accident, but decided to go with it. :)","date":"2014-05-14T00:25:11.243Z","type":"message"}
+{"nick":"trevnorris","message":"one thread pushes data in, one thread shifts data off.","date":"2014-05-14T00:25:11.384Z","type":"message"}
+{"nick":"brson","date":"2014-05-14T00:25:17.690Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 245 seconds","date":"2014-05-14T00:25:23.042Z","type":"quit"}
+{"nick":"trevnorris","message":"so far I haven't been able to make it fail in any way, which for some reason worries me.","date":"2014-05-14T00:25:57.097Z","type":"message"}
+{"nick":"mmalecki","message":"right. so iirc binding process to a core can be achieved fairly easily","date":"2014-05-14T00:26:51.309Z","type":"message"}
+{"nick":"mmalecki","message":"your other options include clever fusing of pthread through LD_PRELOAD","date":"2014-05-14T00:27:15.496Z","type":"message"}
+{"nick":"mmalecki","message":"*fuzzing","date":"2014-05-14T00:27:18.526Z","type":"message"}
+{"nick":"mmalecki","message":"s/process/thread/","date":"2014-05-14T00:27:25.071Z","type":"message"}
+{"nick":"trevnorris","message":"ok cool","date":"2014-05-14T00:29:03.332Z","type":"message"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2014-05-14T00:29:23.703Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-05-14T00:29:33.049Z","type":"quit"}
+{"nick":"AlexisMocha_","date":"2014-05-14T00:30:47.229Z","type":"join"}
+{"nick":"mmalecki","message":"trevnorris: let me know if you need anything, this is something I'd love to help with. can't really contribute code at this point due to amount of things tho","date":"2014-05-14T00:31:25.706Z","type":"message"}
+{"nick":"trevnorris","message":"no worries. thanks for the help so far.","date":"2014-05-14T00:31:47.118Z","type":"message"}
+{"nick":"zz_karupa","new_nick":"karupa","date":"2014-05-14T00:32:01.949Z","type":"nick"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 255 seconds","date":"2014-05-14T00:32:29.491Z","type":"quit"}
+{"nick":"mordy_","message":"curious, in which cases does a read callback receive a 0 for nread?","date":"2014-05-14T00:32:53.429Z","type":"message"}
+{"nick":"mordy_","message":"too lazy to dive into the source code, but the \"UV is done reading for now\" description is rather vague","date":"2014-05-14T00:33:09.407Z","type":"message"}
+{"nick":"mmalecki","message":"trevnorris: pleasure :)","date":"2014-05-14T00:33:23.909Z","type":"message"}
+{"nick":"mmalecki","message":"mordy_: I think it's EOF","date":"2014-05-14T00:33:39.791Z","type":"message"}
+{"nick":"mmalecki","message":"oh wait, I'm wrong there","date":"2014-05-14T00:34:20.960Z","type":"message"}
+{"nick":"mmalecki","message":"uvbook disagrees","date":"2014-05-14T00:34:23.832Z","type":"message"}
+{"nick":"mordy_","message":"yeah","date":"2014-05-14T00:34:50.797Z","type":"message"}
+{"nick":"mordy_","message":"i was expecting it to be EOF, but the header says EOF will contain UV_EOF","date":"2014-05-14T00:35:04.530Z","type":"message"}
+{"nick":"mmalecki","message":"hmm. 0 is confusing then. did you ever see this happen?","date":"2014-05-14T00:35:44.070Z","type":"message"}
+{"nick":"mordy_","message":"no; i'm getting -1 on a socket close it seems like","date":"2014-05-14T00:36:07.983Z","type":"message"}
+{"nick":"mordy_","message":"let me abort/debug this properly","date":"2014-05-14T00:36:12.581Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, -1 is a generic error","date":"2014-05-14T00:36:19.819Z","type":"message"}
+{"nick":"mmalecki","message":"(could also be an EOF)","date":"2014-05-14T00:36:25.412Z","type":"message"}
+{"nick":"mordy_","message":"bleh, wtd","date":"2014-05-14T00:37:01.563Z","type":"message"}
+{"nick":"mordy_","message":"i'm getting -1, UV_EOF is 1","date":"2014-05-14T00:37:16.335Z","type":"message"}
+{"nick":"mordy_","message":"which makes little sense as well","date":"2014-05-14T00:37:25.947Z","type":"message"}
+{"nick":"mordy_","message":"lemme check the 0.10 headers too and see what they say","date":"2014-05-14T00:37:45.206Z","type":"message"}
+{"nick":"mmalecki","message":"mordy_: you need to check last loop error to find out if this was an EOF","date":"2014-05-14T00:37:45.513Z","type":"message"}
+{"nick":"mordy_","message":"ahh ok","date":"2014-05-14T00:38:03.144Z","type":"message"}
+{"nick":"mordy_","message":"ok, so i've properly modified my code to handle UV_EOF","date":"2014-05-14T00:49:01.593Z","type":"message"}
+{"nick":"mordy_","message":"still, what does '0' mean and where do i get it","date":"2014-05-14T00:49:08.246Z","type":"message"}
+{"nick":"mordy_","message":"(this error/eof confusion is bliss compared to the openssl integration i've been doing for most of this week)","date":"2014-05-14T00:49:38.010Z","type":"message"}
+{"nick":"Qard","reason":"Quit: Leaving.","date":"2014-05-14T00:52:58.308Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-05-14T00:53:44.292Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-05-14T00:55:04.279Z","type":"quit"}
+{"nick":"calvinfo","date":"2014-05-14T00:56:42.728Z","type":"join"}
+{"nick":"mmalecki","message":"mordy_: hmm, where'd find info about '0'?","date":"2014-05-14T01:07:02.130Z","type":"message"}
+{"nick":"sh1mmer","date":"2014-05-14T01:07:16.370Z","type":"join"}
+{"nick":"brunkle","reason":"Quit: brunkle","date":"2014-05-14T01:10:13.053Z","type":"quit"}
+{"nick":"mordy_","message":"mmalecki: https://github.com/joyent/libuv/blob/master/include/uv.h#L390","date":"2014-05-14T01:10:13.417Z","type":"message"}
+{"nick":"mmalecki","message":"mordy_: ah https://github.com/joyent/libuv/blob/4ce5470f3ab110cb969bfb5c6a6cacb181bb6700/src/unix/stream.c#L1110-L1117","date":"2014-05-14T01:11:59.958Z","type":"message"}
+{"nick":"mmalecki","message":"hmm. this is somewhat confusing, as an API","date":"2014-05-14T01:12:18.295Z","type":"message"}
+{"nick":"mordy_","message":"uv has really strange semantics in a way sometimes","date":"2014-05-14T01:12:44.386Z","type":"message"}
+{"nick":"mordy_","message":"i'd expect 0 to be delivered as an EOF","date":"2014-05-14T01:12:54.018Z","type":"message"}
+{"nick":"mordy_","message":"like uh, any other socket API","date":"2014-05-14T01:13:00.205Z","type":"message"}
+{"nick":"mmalecki","message":"yeah, I have to admit, this is confusing","date":"2014-05-14T01:13:50.804Z","type":"message"}
+{"nick":"mmalecki","message":"if we get EAGAIN or EWOULDBLOCK, that should be an implementation detail","date":"2014-05-14T01:14:07.980Z","type":"message"}
+{"nick":"mmalecki","message":"curious what tjfontaine thinks about this ^","date":"2014-05-14T01:14:16.219Z","type":"message"}
+{"nick":"mordy_","message":"mmalecki: maybe it's when the alloc_cb returns an empty buffer","date":"2014-05-14T01:14:26.051Z","type":"message"}
+{"nick":"mordy_","message":"?","date":"2014-05-14T01:14:27.347Z","type":"message"}
+{"nick":"mmalecki","message":"mordy_: no, that's https://github.com/joyent/libuv/blob/4ce5470f3ab110cb969bfb5c6a6cacb181bb6700/src/unix/stream.c#L1077-L1081","date":"2014-05-14T01:14:57.378Z","type":"message"}
+{"nick":"mordy_","message":"hrm","date":"2014-05-14T01:16:12.663Z","type":"message"}
+{"nick":"petka_","reason":"Quit: Connection closed for inactivity","date":"2014-05-14T01:16:14.034Z","type":"quit"}
+{"nick":"mordy_","message":"hrm, i see","date":"2014-05-14T01:16:59.496Z","type":"message"}
+{"nick":"mordy_","message":"the rationale, it seems like, is to indicate that the last allocated buffer did not contain any data","date":"2014-05-14T01:17:28.230Z","type":"message"}
+{"nick":"mordy_","message":"because it seems like alloc_cb is called directly in front of the actual read function","date":"2014-05-14T01:17:42.300Z","type":"message"}
+{"nick":"mordy_","message":"so if you didn't handle it inside that callback, the data would be \"lost\"","date":"2014-05-14T01:18:05.548Z","type":"message"}
+{"nick":"mordy_","message":"http://paste.scsys.co.uk/372995","date":"2014-05-14T01:19:45.944Z","type":"message"}
+{"nick":"mordy_","message":"the uvc_* stuff are compatibility macros for transition between 0.8 <-> 0.10 <-> 0.11","date":"2014-05-14T01:20:02.143Z","type":"message"}
+{"nick":"ryancole","date":"2014-05-14T01:20:53.603Z","type":"join"}
+{"nick":"brson","reason":"Ping timeout: 240 seconds","date":"2014-05-14T01:23:34.727Z","type":"quit"}
+{"nick":"brson","date":"2014-05-14T01:27:28.880Z","type":"join"}
+{"nick":"seldo","reason":"Remote host closed the connection","date":"2014-05-14T01:59:16.460Z","type":"quit"}
+{"nick":"rossk_","reason":"Remote host closed the connection","date":"2014-05-14T02:07:45.047Z","type":"quit"}
+{"nick":"rossk","date":"2014-05-14T02:08:20.697Z","type":"join"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-05-14T02:09:24.109Z","type":"quit"}
+{"nick":"rossk","reason":"Read error: Connection reset by peer","date":"2014-05-14T02:10:39.098Z","type":"quit"}
+{"nick":"rossk","date":"2014-05-14T02:11:29.843Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-14T02:13:24.087Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 245 seconds","date":"2014-05-14T02:17:53.047Z","type":"quit"}
+{"nick":"Ralith","reason":"Ping timeout: 276 seconds","date":"2014-05-14T02:29:54.853Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-05-14T02:31:25.699Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-14T02:38:10.014Z","type":"quit"}
+{"nick":"kellabyte","date":"2014-05-14T02:44:32.006Z","type":"join"}
+{"nick":"Ralith","date":"2014-05-14T02:59:46.629Z","type":"join"}
+{"nick":"calvinfo","date":"2014-05-14T03:01:20.727Z","type":"join"}
+{"nick":"TooTallNate","date":"2014-05-14T03:02:30.371Z","type":"join"}
+{"nick":"TooTallNate","reason":"Client Quit","date":"2014-05-14T03:02:30.486Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-05-14T03:07:42.057Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-05-14T03:17:52.374Z","type":"join"}
+{"nick":"ryancole","date":"2014-05-14T03:23:39.238Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-05-14T03:28:51.299Z","type":"quit"}
+{"nick":"mrvisser_","date":"2014-05-14T03:29:32.386Z","type":"join"}
+{"nick":"mrvisser","reason":"Ping timeout: 240 seconds","date":"2014-05-14T03:29:58.249Z","type":"quit"}
+{"nick":"sh1mmer","date":"2014-05-14T03:30:24.365Z","type":"join"}
+{"nick":"rossk","date":"2014-05-14T03:33:01.185Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 264 seconds","date":"2014-05-14T03:35:41.234Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-05-14T03:36:30.282Z","type":"quit"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-05-14T03:36:56.114Z","type":"quit"}
+{"nick":"mikolalysenko","date":"2014-05-14T03:42:27.936Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-05-14T04:00:20.812Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 258 seconds","date":"2014-05-14T04:00:51.261Z","type":"quit"}
+{"nick":"daviddias","date":"2014-05-14T04:01:26.649Z","type":"join"}
+{"nick":"AlexisMocha_","date":"2014-05-14T04:02:51.640Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 276 seconds","date":"2014-05-14T04:05:27.851Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2014-05-14T04:05:30.661Z","type":"quit"}
+{"nick":"WalrusPony1","date":"2014-05-14T04:12:17.619Z","type":"join"}
+{"nick":"WalrusPony","reason":"Ping timeout: 265 seconds","date":"2014-05-14T04:14:43.393Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 276 seconds","date":"2014-05-14T04:21:42.864Z","type":"quit"}
+{"nick":"bradleymeck","date":"2014-05-14T04:21:54.309Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-05-14T04:36:46.487Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-05-14T05:26:40.329Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 240 seconds","date":"2014-05-14T05:26:54.644Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-05-14T05:27:03.999Z","type":"join"}
+{"nick":"bajtos","date":"2014-05-14T05:33:47.524Z","type":"join"}
+{"nick":"seldo","date":"2014-05-14T05:47:03.316Z","type":"join"}
+{"nick":"daviddias","date":"2014-05-14T05:50:05.647Z","type":"join"}
+{"nick":"seldo","reason":"Ping timeout: 240 seconds","date":"2014-05-14T05:50:58.190Z","type":"quit"}
+{"nick":"calvinfo","date":"2014-05-14T05:53:43.812Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 252 seconds","date":"2014-05-14T05:54:29.608Z","type":"quit"}
+{"nick":"WalrusPony","date":"2014-05-14T06:05:15.297Z","type":"join"}
+{"nick":"WalrusPony1","reason":"Ping timeout: 255 seconds","date":"2014-05-14T06:08:38.534Z","type":"quit"}
+{"nick":"c4milo","date":"2014-05-14T06:16:57.765Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 265 seconds","date":"2014-05-14T06:21:50.400Z","type":"quit"}
+{"nick":"petka_","date":"2014-05-14T06:23:37.190Z","type":"join"}
+{"nick":"AlexisMocha_","date":"2014-05-14T06:34:24.235Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 265 seconds","date":"2014-05-14T06:34:53.331Z","type":"quit"}
+{"nick":"mrvisser_","reason":"Remote host closed the connection","date":"2014-05-14T06:41:58.549Z","type":"quit"}
+{"nick":"mrvisser","date":"2014-05-14T06:47:29.853Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-05-14T06:56:21.575Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-05-14T07:02:15.000Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-05-14T07:08:16.741Z","type":"quit"}
+{"nick":"saghul_","message":"trevnorris: you may find this useful: http://concurrencykit.org/","date":"2014-05-14T07:13:18.385Z","type":"message"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-05-14T07:16:12.357Z","type":"quit"}
+{"nick":"mrvisser","reason":"Ping timeout: 240 seconds","date":"2014-05-14T07:17:34.711Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-05-14T07:18:55.639Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 264 seconds","date":"2014-05-14T07:20:41.329Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-05-14T07:20:48.031Z","type":"join"}
+{"nick":"AlexisMocha_","date":"2014-05-14T07:26:10.183Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-05-14T07:26:37.365Z","type":"quit"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 245 seconds","date":"2014-05-14T07:26:38.080Z","type":"quit"}
+{"nick":"calvinfo","reason":"Quit: Leaving.","date":"2014-05-14T07:32:36.566Z","type":"quit"}
+{"nick":"bajtos","date":"2014-05-14T07:32:37.833Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-05-14T07:35:21.033Z","type":"join"}
+{"nick":"AlexisMocha_","reason":"Ping timeout: 240 seconds","date":"2014-05-14T07:35:58.183Z","type":"quit"}
+{"nick":"bajtos","reason":"Ping timeout: 276 seconds","date":"2014-05-14T07:38:00.767Z","type":"quit"}
+{"nick":"daviddias","date":"2014-05-14T07:38:19.213Z","type":"join"}
+{"nick":"dshaw_","date":"2014-05-14T07:38:46.415Z","type":"join"}
+{"nick":"dshaw_","reason":"Read error: Connection reset by peer","date":"2014-05-14T07:40:26.422Z","type":"quit"}
+{"nick":"dshaw_","date":"2014-05-14T07:40:36.413Z","type":"join"}
+{"nick":"daviddias","reason":"Ping timeout: 240 seconds","date":"2014-05-14T07:42:38.187Z","type":"quit"}
+{"nick":"dshaw_","reason":"Ping timeout: 252 seconds","date":"2014-05-14T07:49:21.296Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-05-14T07:49:56.639Z","type":"join"}
+{"nick":"janjongboom","reason":"Read error: Connection reset by peer","date":"2014-05-14T07:54:50.273Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-05-14T07:57:21.402Z","type":"join"}
+{"nick":"dshaw_","date":"2014-05-14T07:58:39.009Z","type":"join"}
