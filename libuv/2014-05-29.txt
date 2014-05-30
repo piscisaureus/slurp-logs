@@ -316,3 +316,220 @@
 {"nick":"kellabyte_","message":"lol","date":"2014-05-29T15:55:39.062Z","type":"message"}
 {"nick":"kellabyte_","message":"I'm good with that, I declare it evening!","date":"2014-05-29T15:55:48.776Z","type":"message"}
 {"nick":"tjfontaine","message":"sold.","date":"2014-05-29T15:56:20.522Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: you travelling?","date":"2014-05-29T16:02:07.448Z","type":"message"}
+{"nick":"kazupon","date":"2014-05-29T16:05:17.672Z","type":"quit"}
+{"nick":"kellabyte_","message":"I find this multi-accept stuff hard to follow and debug","date":"2014-05-29T16:05:36.625Z","type":"message"}
+{"nick":"tjfontaine","message":"which multi accept stuff","date":"2014-05-29T16:06:10.082Z","type":"message"}
+{"nick":"kazupon","date":"2014-05-29T16:06:33.455Z","type":"join"}
+{"nick":"kellabyte_","message":"do you have scroll buffer from a little before you yawned? :P I was talking about it just a bit ago, if not I can relink!","date":"2014-05-29T16:07:06.026Z","type":"message"}
+{"nick":"tjfontaine","message":"oh the benchmark","date":"2014-05-29T16:07:51.280Z","type":"message"}
+{"nick":"kellabyte_","message":"yeah, bnorris pointed me to it over a year ago as an example how to load balance across cores","date":"2014-05-29T16:08:44.936Z","type":"message"}
+{"nick":"tjfontaine","message":"right","date":"2014-05-29T16:08:56.135Z","type":"message"}
+{"nick":"kellabyte_","message":"so I've updated libuv but I'm getting that assert on windows (not on linux or osx)","date":"2014-05-29T16:08:57.988Z","type":"message"}
+{"nick":"kellabyte_","message":"it would be nice if it were easier to pass connections to new event loops though rather than going through all this IPC stuff","date":"2014-05-29T16:09:51.698Z","type":"message"}
+{"nick":"tjfontaine","message":"ya, we've talked about it before, we really need the ability to pass a uv_handle_t to a new event loop","date":"2014-05-29T16:10:25.570Z","type":"message"}
+{"nick":"kellabyte_","message":"yeah","date":"2014-05-29T16:10:31.618Z","type":"message"}
+{"nick":"kellabyte_","message":"can I log a feature request?","date":"2014-05-29T16:10:40.359Z","type":"message"}
+{"nick":"tjfontaine","message":"absolutely. issues are always ok :)","date":"2014-05-29T16:10:50.819Z","type":"message"}
+{"nick":"tjfontaine","message":"from an api perspective I don't think this is actually a problem I think it's just a difference between unix and windows and this benchmark probably isn't run often","date":"2014-05-29T16:11:18.022Z","type":"message"}
+{"nick":"tjfontaine","message":"oh wait, this is listen not accept","date":"2014-05-29T16:11:31.745Z","type":"message"}
+{"nick":"rossk","date":"2014-05-29T16:11:37.511Z","type":"join"}
+{"nick":"kellabyte_","message":"the error might be in my code somewhere","date":"2014-05-29T16:11:42.616Z","type":"message"}
+{"nick":"tjfontaine","message":"kellabyte_: you definitely want to cache the return value and inspect it","date":"2014-05-29T16:11:56.164Z","type":"message"}
+{"nick":"tjfontaine","message":"it will be quite helpful here","date":"2014-05-29T16:12:01.130Z","type":"message"}
+{"nick":"kellabyte_","message":"return value from what?","date":"2014-05-29T16:12:08.810Z","type":"message"}
+{"nick":"kellabyte_","message":"it's landing on the assert on line 42 of stream.c","date":"2014-05-29T16:13:03.587Z","type":"message"}
+{"nick":"kellabyte_","message":"basically stream->type is unknown, so it asserts","date":"2014-05-29T16:13:18.539Z","type":"message"}
+{"nick":"SMD2","date":"2014-05-29T16:13:28.750Z","type":"join"}
+{"nick":"tjfontaine","message":"oh I thought you were saying the assert from uv_listen in the multi-accept was a problem","date":"2014-05-29T16:13:40.011Z","type":"message"}
+{"nick":"kellabyte_","message":"I haven't run that benchmark on windows yet to see if that code suffers from the same problem as mine","date":"2014-05-29T16:14:18.720Z","type":"message"}
+{"nick":"piscisaureus","date":"2014-05-29T16:14:50.409Z","type":"join"}
+{"nick":"kellabyte_","message":"I'm blaming my code first, maybe I'm losing a pointer somewhere, but I'm not sure where stream->type should be set in that benchmark","date":"2014-05-29T16:14:51.943Z","type":"message"}
+{"nick":"tjfontaine","message":"should probablye be a UV_PIPE or UV_TCP","date":"2014-05-29T16:16:32.056Z","type":"message"}
+{"nick":"kellabyte_","message":"yeah, it's not, its unknown","date":"2014-05-29T16:16:45.962Z","type":"message"}
+{"nick":"kellabyte_","message":"but where in that multi-accept benchmark would it be set to UV_PIPE or UV_TCP?","date":"2014-05-29T16:17:09.853Z","type":"message"}
+{"nick":"tjfontaine","message":"uv_*_init","date":"2014-05-29T16:17:26.310Z","type":"message"}
+{"nick":"tjfontaine","message":"looks like server_handle is init'd in ipc_read_cb, which maybe hasn't been called yet?","date":"2014-05-29T16:18:13.167Z","type":"message"}
+{"nick":"yunong","date":"2014-05-29T16:19:39.166Z","type":"join"}
+{"nick":"kellabyte_","message":"why would it do it on a read callback?","date":"2014-05-29T16:19:44.329Z","type":"message"}
+{"nick":"tjfontaine","message":"because that's when it's being sent the server it should be calling listen on","date":"2014-05-29T16:20:03.358Z","type":"message"}
+{"nick":"tjfontaine","message":"the master creates the handles, and sends via ipc the server handle to the child so the child can call accept on it","date":"2014-05-29T16:20:35.669Z","type":"message"}
+{"nick":"kellabyte_","message":"but from how I read it, server_cb() happens first from the spawned threads","date":"2014-05-29T16:22:37.112Z","type":"message"}
+{"nick":"quijote","reason":"Ping timeout: 265 seconds","date":"2014-05-29T16:22:47.366Z","type":"quit"}
+{"nick":"tjfontaine","message":"oh I missed get_listen_handle","date":"2014-05-29T16:24:19.512Z","type":"message"}
+{"nick":"tjfontaine","message":"so it does do server_cb but that calls get_listen_handle which sets up the ipc and tries to prime the ipc between them","date":"2014-05-29T16:25:01.607Z","type":"message"}
+{"nick":"tjfontaine","message":"which hopefully results in ipc_cb happening","date":"2014-05-29T16:25:12.037Z","type":"message"}
+{"nick":"kellabyte_","message":"oh right, good catch. is this a potential race condition?","date":"2014-05-29T16:26:11.253Z","type":"message"}
+{"nick":"kellabyte_","message":"or is uv_pipe_connect() and the ipc_cb() going to be synchronous before uv_listen() gets called?","date":"2014-05-29T16:26:59.866Z","type":"message"}
+{"nick":"tjfontaine","message":"it's definitely a race","date":"2014-05-29T16:28:17.289Z","type":"message"}
+{"nick":"tjfontaine","message":"well, not an unexpected race","date":"2014-05-29T16:28:29.535Z","type":"message"}
+{"nick":"tjfontaine","message":"I bet this benchmark can be flakey as is on windows for us as well","date":"2014-05-29T16:28:41.933Z","type":"message"}
+{"nick":"SMD3","date":"2014-05-29T16:28:49.029Z","type":"join"}
+{"nick":"SMD2","reason":"Ping timeout: 258 seconds","date":"2014-05-29T16:30:43.241Z","type":"quit"}
+{"nick":"kellabyte_","message":"ok, so I'm not insane then :P","date":"2014-05-29T16:30:46.614Z","type":"message"}
+{"nick":"tjfontaine","message":"no, presumably you already have access to a windows machine to test this benchmark as is?","date":"2014-05-29T16:31:24.890Z","type":"message"}
+{"nick":"m76","date":"2014-05-29T16:32:25.391Z","type":"join"}
+{"nick":"kellabyte_","message":"yeah","date":"2014-05-29T16:33:22.421Z","type":"message"}
+{"nick":"kellabyte_","message":"will that assert surface if I run the executable?","date":"2014-05-29T16:33:57.399Z","type":"message"}
+{"nick":"quijote","date":"2014-05-29T16:34:59.255Z","type":"join"}
+{"nick":"kellabyte_","message":"I'm running run-benchmarks.exe now","date":"2014-05-29T16:37:39.844Z","type":"message"}
+{"nick":"c4milo_","date":"2014-05-29T16:38:27.812Z","type":"join"}
+{"nick":"kellabyte_","message":"logged the feature request: https://github.com/joyent/libuv/issues/1301","date":"2014-05-29T16:40:57.728Z","type":"message"}
+{"nick":"tjfontaine","message":"thanks","date":"2014-05-29T16:43:05.323Z","type":"message"}
+{"nick":"kellabyte_","message":"oh yeah, benchmark fails with asserts, but different asserts than my code","date":"2014-05-29T16:43:24.224Z","type":"message"}
+{"nick":"kellabyte_","message":"but I guess timing could be different","date":"2014-05-29T16:43:28.712Z","type":"message"}
+{"nick":"SMD3","message":"Hey guys, need some advice.","date":"2014-05-29T16:43:36.438Z","type":"message"}
+{"nick":"SMD3","message":"I write c++ lib using libuv. So I need for example open file and then close it asyncronycally. So i call uv_fs_open(..., On_Open) and then uv_fs_close(..., On_Close) and then uv_run(loop).","date":"2014-05-29T16:43:36.558Z","type":"message"}
+{"nick":"SMD3","message":"So the problem is that On_Start callback isn't called before uv_fs_close() function. Is there any possibility to add some sleep or wait to get On_Open callback to be called.","date":"2014-05-29T16:43:36.558Z","type":"message"}
+{"nick":"SMD3","message":"If I do sort of uv_fs_open(On_start(uv_fs_close(on_stop))), it works fine.","date":"2014-05-29T16:43:36.558Z","type":"message"}
+{"nick":"kellabyte_","message":"also pipe_pump100_client fails","date":"2014-05-29T16:43:59.906Z","type":"message"}
+{"nick":"c4milo_","reason":"Ping timeout: 264 seconds","date":"2014-05-29T16:44:05.294Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-05-29T16:44:24.111Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-05-29T16:44:51.132Z","type":"join"}
+{"nick":"mcavage","date":"2014-05-29T16:46:24.466Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 252 seconds","date":"2014-05-29T16:49:09.884Z","type":"quit"}
+{"nick":"zoink","message":"if you register a signal handler with uv_signal_start, is it called from the \"real\" signal handler that the kernel knows about, or is it actually called from the event loop?","date":"2014-05-29T16:49:56.968Z","type":"message"}
+{"nick":"quijote","reason":"Read error: Connection reset by peer","date":"2014-05-29T16:50:10.860Z","type":"quit"}
+{"nick":"brson","date":"2014-05-29T16:50:20.484Z","type":"join"}
+{"nick":"quijote","date":"2014-05-29T16:50:47.045Z","type":"join"}
+{"nick":"c4milo","date":"2014-05-29T16:52:47.782Z","type":"join"}
+{"nick":"tjfontaine","message":"zoink: they're proxied over to the main thread","date":"2014-05-29T16:56:42.582Z","type":"message"}
+{"nick":"avalanche123","date":"2014-05-29T17:04:31.296Z","type":"join"}
+{"nick":"kellabyte_","message":"tjfontaine: should I log the bench assertion failures too?","date":"2014-05-29T17:05:08.535Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-05-29T17:07:44.640Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-05-29T17:15:00.025Z","type":"quit"}
+{"nick":"AvianFlu","date":"2014-05-29T17:16:18.493Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 240 seconds","date":"2014-05-29T17:21:48.014Z","type":"quit"}
+{"nick":"TooTallNate","date":"2014-05-29T17:24:45.501Z","type":"join"}
+{"nick":"Ralith","message":"zoink: it's called from the event loop; one of the reasons to use that sort of thing, after all, is to work around the difficult concurrency problem signals usually present","date":"2014-05-29T17:25:16.932Z","type":"message"}
+{"nick":"quijote","date":"2014-05-29T17:29:40.217Z","type":"join"}
+{"nick":"kellabyte_","message":"logged the multi-accept failures on windows: https://github.com/joyent/libuv/issues/1302","date":"2014-05-29T17:37:43.940Z","type":"message"}
+{"nick":"sblom","date":"2014-05-29T17:39:20.352Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 255 seconds","date":"2014-05-29T17:40:17.730Z","type":"quit"}
+{"nick":"quijote","reason":"Ping timeout: 240 seconds","date":"2014-05-29T17:46:18.233Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-05-29T17:50:11.040Z","type":"quit"}
+{"nick":"yunong","reason":"Remote host closed the connection","date":"2014-05-29T17:54:08.336Z","type":"quit"}
+{"nick":"yunong","date":"2014-05-29T17:54:26.406Z","type":"join"}
+{"nick":"yunong","reason":"Remote host closed the connection","date":"2014-05-29T17:54:30.063Z","type":"quit"}
+{"nick":"yunong","date":"2014-05-29T17:55:05.325Z","type":"join"}
+{"nick":"yunong","reason":"Ping timeout: 276 seconds","date":"2014-05-29T18:00:06.155Z","type":"quit"}
+{"nick":"sh1mmer","date":"2014-05-29T18:12:09.378Z","type":"join"}
+{"nick":"sblom","reason":"Read error: Connection reset by peer","date":"2014-05-29T18:15:38.316Z","type":"quit"}
+{"nick":"Ralith","date":"2014-05-29T18:17:26.185Z","type":"join"}
+{"nick":"quijote","date":"2014-05-29T18:29:59.220Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-05-29T18:32:08.170Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-05-29T18:32:37.735Z","type":"join"}
+{"nick":"yunong","date":"2014-05-29T18:33:38.437Z","type":"join"}
+{"nick":"mrvisser","reason":"Remote host closed the connection","date":"2014-05-29T18:36:47.067Z","type":"quit"}
+{"nick":"avalanche123","reason":"Ping timeout: 255 seconds","date":"2014-05-29T18:36:59.624Z","type":"quit"}
+{"nick":"AvianFlu","date":"2014-05-29T18:42:44.981Z","type":"join"}
+{"nick":"AvianFlu","reason":"Client Quit","date":"2014-05-29T18:43:22.391Z","type":"quit"}
+{"nick":"AvianFlu","date":"2014-05-29T18:43:52.300Z","type":"join"}
+{"nick":"avalanche123","date":"2014-05-29T18:45:17.372Z","type":"join"}
+{"nick":"thlorenz","date":"2014-05-29T18:47:50.627Z","type":"join"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-05-29T18:53:57.869Z","type":"quit"}
+{"nick":"rendar","reason":"Ping timeout: 258 seconds","date":"2014-05-29T18:56:00.387Z","type":"quit"}
+{"nick":"rendar","date":"2014-05-29T18:57:23.609Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-05-29T18:59:11.628Z","type":"quit"}
+{"nick":"thlorenz","reason":"Ping timeout: 252 seconds","date":"2014-05-29T19:01:03.297Z","type":"quit"}
+{"nick":"tjfontaine","message":"kellabyte_: yes and thank you","date":"2014-05-29T19:06:54.370Z","type":"message"}
+{"nick":"kellabyte_","message":"tjfontaine: thank you for the help :) I was pretty confused for a couple days","date":"2014-05-29T19:08:55.989Z","type":"message"}
+{"nick":"quijote","reason":"Ping timeout: 258 seconds","date":"2014-05-29T19:09:48.310Z","type":"quit"}
+{"nick":"tjfontaine","message":"kellabyte_: yup, no problem, I have a pretty good idea what could be the change that made it more racey -- the arch there should be reasonably sound though, I just think you need to be a bit more crisp and tolerant of when things happen","date":"2014-05-29T19:12:27.479Z","type":"message"}
+{"nick":"tjfontaine","message":"kellabyte_: this is essentially how node's clustering works, but across processes not threads (fine fine the OS can represent that in any way it likes)","date":"2014-05-29T19:13:01.174Z","type":"message"}
+{"nick":"kellabyte_","message":"right","date":"2014-05-29T19:13:20.735Z","type":"message"}
+{"nick":"tjfontaine","message":"bbiab lunch","date":"2014-05-29T19:13:55.493Z","type":"message"}
+{"nick":"kellabyte_","message":"yeah, it just seems like a lot of work when everything is in process and hard to follow","date":"2014-05-29T19:14:28.021Z","type":"message"}
+{"nick":"kellabyte_","message":"enjoy lunch :)","date":"2014-05-29T19:14:38.305Z","type":"message"}
+{"nick":"nathan7","message":"cluster should be able to work within the same process, no?","date":"2014-05-29T19:17:22.403Z","type":"message"}
+{"nick":"nathan7","message":"in theory","date":"2014-05-29T19:17:25.671Z","type":"message"}
+{"nick":"nathan7","message":"now that we're passing isolates around everywhere and such","date":"2014-05-29T19:17:35.129Z","type":"message"}
+{"nick":"nathan7","message":"could do nice things like share a LevelDB across cluster threads (it's threadsafe but single-process)","date":"2014-05-29T19:18:20.898Z","type":"message"}
+{"nick":"sh1mmer","date":"2014-05-29T19:22:31.421Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-05-29T19:23:28.316Z","type":"quit"}
+{"nick":"kellabyte_","message":"I'd rather hand off the handle in a more efficient way","date":"2014-05-29T19:24:59.893Z","type":"message"}
+{"nick":"mrvisser","date":"2014-05-29T19:28:10.176Z","type":"join"}
+{"nick":"avalanch_","date":"2014-05-29T19:28:13.334Z","type":"join"}
+{"nick":"TooTallNate","reason":"Quit: Computer has gone to sleep.","date":"2014-05-29T19:38:58.394Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-05-29T19:50:50.354Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-29T19:53:55.910Z","type":"join"}
+{"nick":"quijote","reason":"Ping timeout: 252 seconds","date":"2014-05-29T19:58:21.843Z","type":"quit"}
+{"nick":"TooTallNate","date":"2014-05-29T20:11:52.305Z","type":"join"}
+{"nick":"avalanch_","reason":"Remote host closed the connection","date":"2014-05-29T20:16:07.005Z","type":"quit"}
+{"nick":"c4milo","date":"2014-05-29T20:18:27.472Z","type":"join"}
+{"nick":"zoink","message":"Ralith: ah, thanks :)","date":"2014-05-29T20:20:37.471Z","type":"message"}
+{"nick":"c4milo","date":"2014-05-29T20:28:58.615Z","type":"quit"}
+{"nick":"c4milo","date":"2014-05-29T20:32:08.331Z","type":"join"}
+{"nick":"avalanche123","date":"2014-05-29T20:32:42.593Z","type":"join"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-05-29T20:33:34.479Z","type":"quit"}
+{"nick":"dap_","date":"2014-05-29T20:34:00.480Z","type":"join"}
+{"nick":"cjb","date":"2014-05-29T20:37:49.209Z","type":"join"}
+{"nick":"thlorenz","date":"2014-05-29T20:38:55.459Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-05-29T20:46:04.541Z","type":"quit"}
+{"nick":"roxlu","reason":"Quit: leaving","date":"2014-05-29T20:50:28.156Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-29T20:54:48.977Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-29T20:57:17.419Z","type":"quit"}
+{"nick":"quijote","reason":"Ping timeout: 240 seconds","date":"2014-05-29T20:58:59.984Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-05-29T20:59:44.430Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-29T21:04:21.981Z","type":"quit"}
+{"nick":"tjfontaine","message":"nathan7: it can, and should, the example as it exists today though isn't very resilient","date":"2014-05-29T21:05:01.382Z","type":"message"}
+{"nick":"nathan7","message":"tjfontaine: mhm","date":"2014-05-29T21:08:24.953Z","type":"message"}
+{"nick":"sblom","date":"2014-05-29T21:14:48.385Z","type":"join"}
+{"nick":"sblom","reason":"Read error: Connection reset by peer","date":"2014-05-29T21:17:55.374Z","type":"quit"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-05-29T21:31:47.993Z","type":"quit"}
+{"nick":"mrvisser","reason":"Remote host closed the connection","date":"2014-05-29T21:37:04.707Z","type":"quit"}
+{"nick":"dap_","date":"2014-05-29T21:37:04.955Z","type":"join"}
+{"nick":"jmar777","date":"2014-05-29T21:40:19.433Z","type":"join"}
+{"nick":"sh1mmer_","date":"2014-05-29T21:42:06.381Z","type":"join"}
+{"nick":"sh1mmer","reason":"Ping timeout: 258 seconds","date":"2014-05-29T21:44:17.171Z","type":"quit"}
+{"nick":"sh1mmer_","new_nick":"sh1mmer","date":"2014-05-29T21:44:17.431Z","type":"nick"}
+{"nick":"thlorenz","date":"2014-05-29T21:51:24.394Z","type":"join"}
+{"nick":"quijote","date":"2014-05-29T21:55:25.406Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-29T21:59:13.524Z","type":"quit"}
+{"nick":"quijote","reason":"Ping timeout: 265 seconds","date":"2014-05-29T22:00:09.337Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-05-29T22:01:20.027Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-05-29T22:04:12.919Z","type":"quit"}
+{"nick":"rendar","date":"2014-05-29T22:07:45.877Z","type":"quit"}
+{"nick":"jwilm","date":"2014-05-29T22:07:57.067Z","type":"join"}
+{"nick":"indutny","message":"hey hey hey","date":"2014-05-29T22:11:10.860Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: yep","date":"2014-05-29T22:11:17.379Z","type":"message"}
+{"nick":"indutny","message":"tjfontaine: currently in Edinburgh","date":"2014-05-29T22:11:25.201Z","type":"message"}
+{"nick":"euoia","reason":"Ping timeout: 240 seconds","date":"2014-05-29T22:14:18.202Z","type":"quit"}
+{"nick":"qard","message":"Anyone have a minute to help me figure out how to do something in V8? I'm trying to have a method of one C++ class return an instance of another in JS. See here; https://gist.github.com/Qard/2970e09ae96475c8a41a","date":"2014-05-29T22:15:22.291Z","type":"message"}
+{"nick":"qard","message":"I tried constructor->GetFunction()->NewInstance(0, argv), but the class takes non-v8 values as arguments.","date":"2014-05-29T22:16:14.523Z","type":"message"}
+{"nick":"qard","message":"I basically need a new args.This() pointing to the correct function instance. I'm not sure if you can do that without NewInstance() though.","date":"2014-05-29T22:17:48.393Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: what days are you in the bay area then?","date":"2014-05-29T22:19:37.614Z","type":"message"}
+{"nick":"indutny","message":"I think June 4th","date":"2014-05-29T22:19:48.894Z","type":"message"}
+{"nick":"indutny","message":"is the first day when I'll get there","date":"2014-05-29T22:19:55.827Z","type":"message"}
+{"nick":"tjfontaine","message":"indutny: ok","date":"2014-05-29T22:19:58.989Z","type":"message"}
+{"nick":"indutny","message":"and will be there until 18th","date":"2014-05-29T22:20:02.858Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2014-05-29T22:20:08.219Z","type":"message"}
+{"nick":"sh1mmer","reason":"Quit: sh1mmer","date":"2014-05-29T22:26:08.383Z","type":"quit"}
+{"nick":"sblom","date":"2014-05-29T22:31:02.297Z","type":"join"}
+{"nick":"sh1mmer","date":"2014-05-29T22:31:02.415Z","type":"join"}
+{"nick":"c4milo","date":"2014-05-29T22:32:17.554Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2014-05-29T22:33:20.281Z","type":"quit"}
+{"nick":"Left_Turn","reason":"Read error: Connection reset by peer","date":"2014-05-29T22:34:23.775Z","type":"quit"}
+{"nick":"Left_Turn","date":"2014-05-29T22:37:18.521Z","type":"join"}
+{"nick":"janjongboom","date":"2014-05-29T22:39:13.036Z","type":"join"}
+{"nick":"wrl","message":"hey, i'm having an odd issue on windows","date":"2014-05-29T22:39:30.289Z","type":"message"}
+{"nick":"wrl","message":"i'm using libuv as the event loop in a widget toolkit, and right now my event handling loop is just libuv with a uv_timer_t firing at ~60fps (16ms, repeating)","date":"2014-05-29T22:39:56.590Z","type":"message"}
+{"nick":"wrl","message":"i'm seeing extremely high CPU usage (~50%), which i don't see when i use a SetTimer/WM_TIMER","date":"2014-05-29T22:40:32.017Z","type":"message"}
+{"nick":"wrl","message":"my animation is considerably less smooth with SetTimer however","date":"2014-05-29T22:40:41.467Z","type":"message"}
+{"nick":"m76","reason":"Read error: Connection reset by peer","date":"2014-05-29T22:40:53.585Z","type":"quit"}
+{"nick":"c4milo_","date":"2014-05-29T22:43:03.367Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 252 seconds","date":"2014-05-29T22:43:37.453Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-29T22:56:27.302Z","type":"join"}
+{"nick":"sblom","reason":"Read error: Connection reset by peer","date":"2014-05-29T22:58:41.134Z","type":"quit"}
+{"nick":"rossk","date":"2014-05-29T22:59:25.589Z","type":"quit"}
+{"nick":"quijote","reason":"Ping timeout: 252 seconds","date":"2014-05-29T23:00:51.297Z","type":"quit"}
+{"nick":"Kakera","reason":"Ping timeout: 276 seconds","date":"2014-05-29T23:13:24.109Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-05-29T23:34:49.622Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-05-29T23:35:15.482Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 240 seconds","date":"2014-05-29T23:39:18.253Z","type":"quit"}
+{"nick":"mcavage","reason":"Remote host closed the connection","date":"2014-05-29T23:45:30.597Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-05-29T23:52:15.797Z","type":"quit"}
+{"nick":"yunong","reason":"Ping timeout: 258 seconds","date":"2014-05-29T23:56:55.266Z","type":"quit"}
+{"nick":"quijote","date":"2014-05-29T23:56:58.298Z","type":"join"}
+{"nick":"wwicks","date":"2014-05-29T23:58:40.075Z","type":"join"}
+{"nick":"jmar777_","date":"2014-05-29T23:59:25.461Z","type":"join"}
