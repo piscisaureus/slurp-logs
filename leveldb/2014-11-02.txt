@@ -13,3 +13,50 @@
 {"nick":"aaronlidman","date":"2014-11-02T14:54:30.864Z","type":"join"}
 {"nick":"lca","date":"2014-11-02T15:57:05.576Z","type":"join"}
 {"nick":"lca","message":"I am getting \"too many open files\" error.","date":"2014-11-02T15:59:16.061Z","type":"message"}
+{"nick":"lca","message":"any hints?","date":"2014-11-02T16:00:21.006Z","type":"message"}
+{"nick":"rescrv","message":"lca: increase the maximum number of open files","date":"2014-11-02T16:00:24.476Z","type":"message"}
+{"nick":"rescrv","message":"first using ulimit -n","date":"2014-11-02T16:00:31.920Z","type":"message"}
+{"nick":"rescrv","message":"you may need to edit /etc/security/limits.conf or equivalent to set a higher number","date":"2014-11-02T16:00:43.221Z","type":"message"}
+{"nick":"rescrv","message":"then look at the leveldb options for the same parameter","date":"2014-11-02T16:00:52.228Z","type":"message"}
+{"nick":"rescrv","message":"I recommend setting the nofile parameter to somewhere between 65536 and 262144","date":"2014-11-02T16:01:17.843Z","type":"message"}
+{"nick":"lca","message":"rescrv, how many files should I have for each db?","date":"2014-11-02T16:01:33.310Z","type":"message"}
+{"nick":"lca","message":"I see. that is a lot. would it be enough even if I have many databases?","date":"2014-11-02T16:03:10.540Z","type":"message"}
+{"nick":"rescrv","message":"figure one file for every 2.5MB of data","date":"2014-11-02T16:04:14.818Z","type":"message"}
+{"nick":"rescrv","message":"fewer files if you are using level-hyper","date":"2014-11-02T16:04:23.066Z","type":"message"}
+{"nick":"rescrv","message":"err.. one file per 1.5MB of data","date":"2014-11-02T16:04:37.290Z","type":"message"}
+{"nick":"lca","message":"what is level-hyper?","date":"2014-11-02T16:05:11.448Z","type":"message"}
+{"nick":"rescrv","message":"it's a fork of leveldb that I made for use in HyperDex (http://hyperdex.org).  It has some performance optimizations that kick in on larger databases.","date":"2014-11-02T16:05:48.136Z","type":"message"}
+{"nick":"rescrv","message":"how many databases do you anticipate having?","date":"2014-11-02T16:06:19.330Z","type":"message"}
+{"nick":"lca","message":"~100","date":"2014-11-02T16:06:52.127Z","type":"message"}
+{"nick":"rescrv","message":"if they don't have to reside in distinct areas on disk, you might consider multiplexing one database, using a common prefix for each logical db.  I believe sublevel is the JS way to do that","date":"2014-11-02T16:07:37.555Z","type":"message"}
+{"nick":"lca","message":"would multiplexing not be a performance problem when I do forward iteration over one logical db?","date":"2014-11-02T16:10:10.298Z","type":"message"}
+{"nick":"rescrv","message":"too many variables to answer that as it depends on how often you insert, how often you iterate, the size of your data, and how long it's been since you loaded the majority of it.","date":"2014-11-02T16:11:04.857Z","type":"message"}
+{"nick":"rescrv","message":"it also depends on your hardware","date":"2014-11-02T16:11:29.087Z","type":"message"}
+{"nick":"lca","message":"I insert and iterate very often. but the iterations will be (most of the time) over the latest items inserted in the db. item size will be ~ .5 k","date":"2014-11-02T16:18:56.232Z","type":"message"}
+{"nick":"rescrv","message":"then you'll need to benchmark.  I suspect you'll do better with multiple DBs if you're inserting in sorted order, and your insert rate divided by write buffer size is less than the time between insertion and iteration of an item.","date":"2014-11-02T16:27:26.462Z","type":"message"}
+{"nick":"rescrv","message":"(that's insert rate across all DBs)","date":"2014-11-02T16:31:04.017Z","type":"message"}
+{"nick":"lca","message":"yeah, I will need to do some tests here.","date":"2014-11-02T16:36:35.554Z","type":"message"}
+{"nick":"lca","message":"rescrv, thank you very much for all that information","date":"2014-11-02T16:36:53.105Z","type":"message"}
+{"nick":"rescrv","message":"you'll probably do best if you're inserting in (roughly) sorted order, and set a big write buffer.  The default write buffer is too small.","date":"2014-11-02T16:38:17.990Z","type":"message"}
+{"nick":"lca","message":"I am indeed inserting in roughly sorted order","date":"2014-11-02T16:40:09.110Z","type":"message"}
+{"nick":"lca","message":"the wirte buffer hwlps with the number of open files?","date":"2014-11-02T16:40:37.521Z","type":"message"}
+{"nick":"lca","message":"what about cache?","date":"2014-11-02T16:40:50.996Z","type":"message"}
+{"nick":"rescrv","message":"the write buffer shouldn't impact number of open files in the limit.  What it will do is help to keep the data you're iterating over in memory so that you are traversing a linked list instead of reading from files on disk.","date":"2014-11-02T16:46:41.787Z","type":"message"}
+{"nick":"brianloveswords","date":"2014-11-02T16:48:53.615Z","type":"join"}
+{"nick":"lca","message":"very good information rescrv! thanks!","date":"2014-11-02T16:51:23.802Z","type":"message"}
+{"nick":"_pid_","date":"2014-11-02T16:55:55.124Z","type":"join"}
+{"nick":"_pid","reason":"Read error: Connection reset by peer","date":"2014-11-02T16:56:20.646Z","type":"quit"}
+{"nick":"jarib","reason":"*.net *.split","date":"2014-11-02T17:16:33.779Z","type":"quit"}
+{"nick":"jarib","date":"2014-11-02T17:19:40.653Z","type":"join"}
+{"nick":"stagas","date":"2014-11-02T17:30:22.477Z","type":"join"}
+{"nick":"insertcoffee","date":"2014-11-02T17:32:52.319Z","type":"join"}
+{"nick":"brianloveswords","reason":"Quit: Computer has gone to sleep.","date":"2014-11-02T17:34:37.300Z","type":"quit"}
+{"nick":"lca","reason":"Ping timeout: 255 seconds","date":"2014-11-02T17:45:21.094Z","type":"quit"}
+{"nick":"brianloveswords","date":"2014-11-02T17:48:16.070Z","type":"join"}
+{"nick":"brianloveswords","reason":"Quit: Computer has gone to sleep.","date":"2014-11-02T18:09:57.503Z","type":"quit"}
+{"nick":"lca","date":"2014-11-02T19:30:36.849Z","type":"join"}
+{"nick":"dguttman","date":"2014-11-02T19:50:00.220Z","type":"join"}
+{"nick":"lca","reason":"Ping timeout: 264 seconds","date":"2014-11-02T20:35:53.860Z","type":"quit"}
+{"nick":"aaronlidman","reason":"Remote host closed the connection","date":"2014-11-02T20:42:33.467Z","type":"quit"}
+{"nick":"insertcoffee","reason":"Ping timeout: 250 seconds","date":"2014-11-02T22:13:48.316Z","type":"quit"}
+{"nick":"aaronlidman","date":"2014-11-02T23:29:09.307Z","type":"join"}
