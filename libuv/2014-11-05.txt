@@ -1,0 +1,183 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-11-05T00:00:00.921Z","type":"quit"}
+{"nick":"ircretary","date":"2014-11-05T00:00:13.079Z","type":"join"}
+{"nick":"trevnorris","message":"wait... it can't be that simple...","date":"2014-11-05T00:00:39.825Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: looking at the class, it looks like has_async_listener_ is somehow reading the value from async_id_ and returning true.","date":"2014-11-05T00:02:39.722Z","type":"message"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-05T00:02:51.015Z","type":"quit"}
+{"nick":"trevnorris","message":"oy. i'm totally moving AsyncWrap() and MakeCallback to async-wrap.cc. don't know what I was thinking putting those in -inl.h.","date":"2014-11-05T00:07:48.242Z","type":"message"}
+{"nick":"toothrot","date":"2014-11-05T00:15:39.867Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-05T00:15:47.862Z","type":"quit"}
+{"nick":"tjfontaine","message":"you were smitten with the world of c++, fooled by some world where the compiler isn't smart enough to know when to inline things","date":"2014-11-05T00:18:00.227Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: is it normal not to be calling SetupAsyncListener?","date":"2014-11-05T00:19:31.669Z","type":"message"}
+{"nick":"avalanche123","date":"2014-11-05T00:19:51.107Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-05T00:19:51.288Z","type":"quit"}
+{"nick":"tjfontaine","message":"in the world where we're pulling out all the code that should be the expected scenario?","date":"2014-11-05T00:20:04.249Z","type":"message"}
+{"nick":"avalanche123","date":"2014-11-05T00:20:05.792Z","type":"join"}
+{"nick":"trevnorris","message":"jgi: yeah. it's only called if we're setting up the callbacks.","date":"2014-11-05T00:20:08.083Z","type":"message"}
+{"nick":"c4milo","date":"2014-11-05T00:20:27.300Z","type":"join"}
+{"nick":"tjfontaine","message":"you're seeing this failure even without someone enabling tracing?","date":"2014-11-05T00:20:59.736Z","type":"message"}
+{"nick":"jgi","message":"trevnorris, tjfontaine: but the call stack I get when it crashes is that for this call: env->async_listener_load_function()->Call(process, 1, &parent_val);, this is null because and env->async_listener_load_function() returns NULL","date":"2014-11-05T00:21:03.171Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: so... problem appears to be from incorrect casting. Environment::set_async_wrap_parent_class() is called from src/tcp_wrap.cc:436.","date":"2014-11-05T00:21:18.039Z","type":"message"}
+{"nick":"trevnorris","message":"and static_cast<AsyncWrap*>(void* parent) doesn't look correct.","date":"2014-11-05T00:21:50.063Z","type":"message"}
+{"nick":"tjfontaine","message":"jgi: right, because the code shouldn't be enabled so under default circumstances this call shouldn't be tried","date":"2014-11-05T00:22:32.977Z","type":"message"}
+{"nick":"jgi","message":"tjfontaine: ok, that makes sense","date":"2014-11-05T00:22:44.758Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: here's the output: https://gist.github.com/trevnorris/8cdf6ff8b8583681452b","date":"2014-11-05T00:23:36.731Z","type":"message"}
+{"nick":"tjfontaine","message":"off by one","date":"2014-11-05T00:24:12.295Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: it doesn't matter if SetupAsyncListener has run or not. It's just setting flags, and all the flags get default values when instantiated.","date":"2014-11-05T00:24:18.434Z","type":"message"}
+{"nick":"a_le","date":"2014-11-05T00:24:20.559Z","type":"join"}
+{"nick":"tjfontaine","message":"has_async_listener should always be false unless someone enabled it, correct?","date":"2014-11-05T00:24:42.364Z","type":"message"}
+{"nick":"ijroth","date":"2014-11-05T00:24:48.553Z","type":"join"}
+{"nick":"tjfontaine","message":"so the static cast that causes the off by one, tricks everything into believing it's enabled","date":"2014-11-05T00:24:56.662Z","type":"message"}
+{"nick":"trevnorris","message":"yes. and as you can see with \"p *(HandleWrap*) parent\" it is indeed false.","date":"2014-11-05T00:25:00.025Z","type":"message"}
+{"nick":"tjfontaine","message":"because 6 !== false","date":"2014-11-05T00:25:00.924Z","type":"message"}
+{"nick":"trevnorris","message":"so... how does the static_cast cause an off by one?","date":"2014-11-05T00:25:26.863Z","type":"message"}
+{"nick":"trevnorris","action":"googling now","date":"2014-11-05T00:25:29.219Z","type":"action"}
+{"nick":"c4milo","reason":"Ping timeout: 264 seconds","date":"2014-11-05T00:25:31.092Z","type":"quit"}
+{"nick":"tjfontaine","message":"this is the problem with the static and reinterpret casting in c++","date":"2014-11-05T00:25:45.785Z","type":"message"}
+{"nick":"tjfontaine","message":"in theory you shouldn't have to cast things if they inherit the right path","date":"2014-11-05T00:26:03.308Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. and even more confusing since it works fine with (u)int32_t but not in64_t.","date":"2014-11-05T00:27:12.510Z","type":"message"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-11-05T00:28:47.281Z","type":"quit"}
+{"nick":"tjfontaine","message":"well that makes sense if the offset is only 4 bytes","date":"2014-11-05T00:29:03.381Z","type":"message"}
+{"nick":"tjfontaine","message":"you could have just been getting lucky","date":"2014-11-05T00:29:10.703Z","type":"message"}
+{"nick":"tjfontaine","message":"or it could be one of these classes has the wrong data type","date":"2014-11-05T00:29:27.061Z","type":"message"}
+{"nick":"tjfontaine","message":"in short you should be able to \"up cast\" without needing to apply an operator","date":"2014-11-05T00:32:20.841Z","type":"message"}
+{"nick":"tjfontaine","message":"casting back down the chain would require an operator","date":"2014-11-05T00:32:33.669Z","type":"message"}
+{"nick":"tjfontaine","message":"keep in mind we have no RTTI so you can't do any dynamic casting","date":"2014-11-05T00:32:44.241Z","type":"message"}
+{"nick":"trevnorris","message":"\"up cast\" means to cast to a parent, correct?","date":"2014-11-05T00:33:12.464Z","type":"message"}
+{"nick":"tjfontaine","message":"yes","date":"2014-11-05T00:33:20.871Z","type":"message"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-05T00:33:30.258Z","type":"quit"}
+{"nick":"trevnorris","message":"ok. i'm casting from TCPWrap to AsyncWrap","date":"2014-11-05T00:33:39.104Z","type":"message"}
+{"nick":"tjfontaine","message":"kinda the reason OOP exists at all, is that if you have methods that work on base classes you shouldn't haven't to cast to make themw rok","date":"2014-11-05T00:33:51.738Z","type":"message"}
+{"nick":"tjfontaine","message":"*themw ork","date":"2014-11-05T00:33:54.759Z","type":"message"}
+{"nick":"trevnorris","message":"inheritance chain is TCPWrap -> HandleWrap -> AsyncWrap","date":"2014-11-05T00:33:56.301Z","type":"message"}
+{"nick":"tjfontaine","message":"them work","date":"2014-11-05T00:33:57.334Z","type":"message"}
+{"nick":"tjfontaine","message":"fwiw when you describe inheritance you normally go base -> descendant, so AsyncWrap -> HandleWrap -> TCPWrap","date":"2014-11-05T00:34:27.787Z","type":"message"}
+{"nick":"trevnorris","message":"ah, ok.","date":"2014-11-05T00:34:37.193Z","type":"message"}
+{"nick":"a_le","date":"2014-11-05T00:34:45.495Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-11-05T00:34:51.524Z","type":"join"}
+{"nick":"trevnorris","message":"reason for making it a void* is because the function is called from several locations, but all pass a child of AsyncWrap.","date":"2014-11-05T00:34:54.165Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: you can see from the gdb output is that casting to HandleWrap* produces the correct values, but casting to AsyncWrap* doesn't.","date":"2014-11-05T00:38:12.697Z","type":"message"}
+{"nick":"a_le_","date":"2014-11-05T00:38:59.139Z","type":"join"}
+{"nick":"wolfeidau","reason":"Remote host closed the connection","date":"2014-11-05T00:40:20.553Z","type":"quit"}
+{"nick":"a_le","reason":"Read error: Connection reset by peer","date":"2014-11-05T00:40:54.693Z","type":"quit"}
+{"nick":"chrisdickinson","message":"as a heads up: nodebugme has an http API now: https://github.com/nodebugme/site/blob/master/API.md","date":"2014-11-05T00:41:05.904Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: from gdb if I do \"p *((AsyncWrap*) (HandleWrap*) parent\" the correct values are printed.","date":"2014-11-05T00:41:43.394Z","type":"message"}
+{"nick":"trevnorris","message":"CURSE YOU C++","date":"2014-11-05T00:41:51.111Z","type":"message"}
+{"nick":"LOUDBOT","message":"TIL THE SWEAT DROP DOWN MY BALLS; TIL ALL THESE BITCHES CRAWL","date":"2014-11-05T00:41:51.433Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: well the compiler can pack these things in different ways, what you're seeing at the very least is that the layout of this TCPWrap instantiation has different members in different locations","date":"2014-11-05T00:42:04.711Z","type":"message"}
+{"nick":"trevnorris","message":"bugger.","date":"2014-11-05T00:42:15.579Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: so what's the safe way to do this? only thing I can think is create a template function for each use case.","date":"2014-11-05T00:42:37.158Z","type":"message"}
+{"nick":"chrisdickinson","message":"it's a little fragile, so you probably shouldn't slam it with requests, but you can get lists of triaged issues, etc (via `curl -sL https://nodebug.me/api/v1/issues`, for example)","date":"2014-11-05T00:42:44.735Z","type":"message"}
+{"nick":"trevnorris","message":"chrisdickinson: awesome job.","date":"2014-11-05T00:42:57.500Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: walking the inheritence tree is not for the faint of heart, I would have expected static_cast to do the right thing here, but in general it's no necessary to do so as people rely more on inheritence","date":"2014-11-05T00:42:57.777Z","type":"message"}
+{"nick":"chrisdickinson","message":"thanks!","date":"2014-11-05T00:43:08.309Z","type":"message"}
+{"nick":"tjfontaine","message":"chrisdickinson: nice, I can't wait to `git triage` :)","date":"2014-11-05T00:43:15.795Z","type":"message"}
+{"nick":"jgi","message":"tjfontaine, trevnorris: just to make sure I’m following what’s going on, you’re saying that the cause of this issue is that env->async_wrap_parent_class(); doesn’t return NULL when it should, because of casting issues?","date":"2014-11-05T00:46:53.787Z","type":"message"}
+{"nick":"jgi","message":"tjfontaine, trevnorris: or is it because parent->has_async_queue() returns true when it should return false?","date":"2014-11-05T00:47:29.969Z","type":"message"}
+{"nick":"tjfontaine","message":"it returns !false","date":"2014-11-05T00:47:39.717Z","type":"message"}
+{"nick":"tjfontaine","message":"it's actually returning the async_id because of a mis-cast","date":"2014-11-05T00:47:52.146Z","type":"message"}
+{"nick":"jgi","message":"ok","date":"2014-11-05T00:47:55.471Z","type":"message"}
+{"nick":"tjfontaine","message":"which is of course not 0","date":"2014-11-05T00:47:58.263Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: it's because Environment::set_async_wrap_parent_class() is doing the static_cast, which causes has_async_queue to return true","date":"2014-11-05T00:48:00.411Z","type":"message"}
+{"nick":"a_le_","date":"2014-11-05T00:49:29.966Z","type":"quit"}
+{"nick":"Wraithan","reason":"Ping timeout: 255 seconds","date":"2014-11-05T00:50:09.112Z","type":"quit"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-05T00:51:14.996Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-05T00:51:22.559Z","type":"join"}
+{"nick":"rmg","date":"2014-11-05T00:51:48.131Z","type":"join"}
+{"nick":"kazupon","date":"2014-11-05T01:02:24.672Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-05T01:02:51.990Z","type":"quit"}
+{"nick":"trevnorris","message":"freak. fixed it.","date":"2014-11-05T01:06:19.535Z","type":"message"}
+{"nick":"trevnorris","message":"just turned the stupid thing into a template function.","date":"2014-11-05T01:06:26.168Z","type":"message"}
+{"nick":"c4milo","date":"2014-11-05T01:08:53.140Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-05T01:16:52.719Z","type":"quit"}
+{"nick":"Wraithan","date":"2014-11-05T01:17:36.407Z","type":"join"}
+{"nick":"jgi","message":"trevnorris: just left a comment: https://github.com/trevnorris/node/commit/bddeabd6ef2b4f4f8bac0caba5f2d50b7a632696#commitcomment-8435087","date":"2014-11-05T01:24:38.240Z","type":"message"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-05T01:27:07.940Z","type":"quit"}
+{"nick":"qard","reason":"Quit: leaving","date":"2014-11-05T01:27:16.620Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-05T01:28:42.922Z","type":"quit"}
+{"nick":"Wraithan","reason":"Ping timeout: 272 seconds","date":"2014-11-05T01:31:03.855Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-05T01:32:06.423Z","type":"join"}
+{"nick":"kazupon","date":"2014-11-05T01:32:10.414Z","type":"join"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-11-05T01:33:00.381Z","type":"quit"}
+{"nick":"Wraithan","date":"2014-11-05T01:33:14.416Z","type":"join"}
+{"nick":"iarna","date":"2014-11-05T01:34:58.007Z","type":"join"}
+{"nick":"ijroth","reason":"Client Quit","date":"2014-11-05T01:36:17.021Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-11-05T01:39:57.935Z","type":"quit"}
+{"nick":"wolfeidau","date":"2014-11-05T01:41:25.632Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-05T01:43:03.269Z","type":"join"}
+{"nick":"wolfeidau","reason":"Read error: Connection reset by peer","date":"2014-11-05T01:46:40.191Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-05T02:01:50.741Z","type":"quit"}
+{"nick":"kriskowal","reason":"Quit: kriskowal","date":"2014-11-05T02:04:14.559Z","type":"quit"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-05T02:05:30.904Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-05T02:05:55.112Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-05T02:16:18.336Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-05T02:18:08.841Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-05T02:25:35.477Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-05T02:27:47.076Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 265 seconds","date":"2014-11-05T02:30:14.135Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-05T02:33:09.825Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-05T02:36:28.557Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-05T02:40:15.479Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-05T02:43:30.758Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-05T02:54:31.262Z","type":"quit"}
+{"nick":"rf","reason":"Ping timeout: 250 seconds","date":"2014-11-05T03:03:12.347Z","type":"quit"}
+{"nick":"Ralith","date":"2014-11-05T03:05:02.407Z","type":"join"}
+{"nick":"rf","date":"2014-11-05T03:07:02.400Z","type":"join"}
+{"nick":"mihaikio","date":"2014-11-05T03:17:02.751Z","type":"quit"}
+{"nick":"jreyno40","date":"2014-11-05T03:17:56.855Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-05T03:24:15.990Z","type":"quit"}
+{"nick":"jreyno40","reason":"Quit: jreyno40","date":"2014-11-05T03:44:56.689Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-05T03:46:28.278Z","type":"quit"}
+{"nick":"jreyno40","date":"2014-11-05T03:55:51.269Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 250 seconds","date":"2014-11-05T03:59:53.381Z","type":"quit"}
+{"nick":"petka_","reason":"Quit: Connection closed for inactivity","date":"2014-11-05T03:59:59.121Z","type":"quit"}
+{"nick":"jreyno40","reason":"Quit: jreyno40","date":"2014-11-05T04:03:35.872Z","type":"quit"}
+{"nick":"Left_Turn","reason":"Remote host closed the connection","date":"2014-11-05T04:10:55.575Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-05T04:14:36.315Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-05T04:19:50.952Z","type":"join"}
+{"nick":"c4milo","date":"2014-11-05T04:29:10.399Z","type":"join"}
+{"nick":"jreyno40_","date":"2014-11-05T04:32:17.547Z","type":"join"}
+{"nick":"c4milo","reason":"Ping timeout: 240 seconds","date":"2014-11-05T04:33:23.051Z","type":"quit"}
+{"nick":"wolfeidau","date":"2014-11-05T04:39:42.335Z","type":"join"}
+{"nick":"jreyno40_","reason":"Quit: jreyno40_","date":"2014-11-05T04:42:27.005Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-05T04:43:31.487Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-05T04:45:29.220Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-05T04:46:30.891Z","type":"quit"}
+{"nick":"jreyno40","date":"2014-11-05T04:47:41.732Z","type":"join"}
+{"nick":"jreyno40","reason":"Client Quit","date":"2014-11-05T04:51:37.234Z","type":"quit"}
+{"nick":"jreyno40","date":"2014-11-05T04:54:29.328Z","type":"join"}
+{"nick":"jreyno40","reason":"Client Quit","date":"2014-11-05T04:54:41.679Z","type":"quit"}
+{"nick":"Fishrock123","date":"2014-11-05T04:55:07.559Z","type":"join"}
+{"nick":"M28_","reason":"Read error: Connection reset by peer","date":"2014-11-05T04:58:20.742Z","type":"quit"}
+{"nick":"M28_","date":"2014-11-05T04:58:40.660Z","type":"join"}
+{"nick":"thlorenz","date":"2014-11-05T05:02:52.552Z","type":"join"}
+{"nick":"jreyno40","date":"2014-11-05T05:06:32.284Z","type":"join"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2014-11-05T05:29:19.192Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-05T05:42:46.895Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 256 seconds","date":"2014-11-05T05:43:20.570Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-11-05T06:07:28.506Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-05T06:17:45.520Z","type":"quit"}
+{"nick":"c4milo","date":"2014-11-05T06:18:00.858Z","type":"join"}
+{"nick":"rmg","date":"2014-11-05T06:20:01.562Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 245 seconds","date":"2014-11-05T06:20:39.673Z","type":"quit"}
+{"nick":"c4milo","reason":"Ping timeout: 255 seconds","date":"2014-11-05T06:23:04.523Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-05T06:44:16.134Z","type":"quit"}
+{"nick":"inolen","reason":"Read error: Connection reset by peer","date":"2014-11-05T06:45:33.231Z","type":"quit"}
+{"nick":"inolen","date":"2014-11-05T06:45:45.050Z","type":"join"}
+{"nick":"dshaw_","date":"2014-11-05T07:00:44.650Z","type":"join"}
+{"nick":"a_le","date":"2014-11-05T07:08:27.336Z","type":"join"}
+{"nick":"iarna","reason":"Read error: Connection reset by peer","date":"2014-11-05T07:14:17.002Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-05T07:14:47.555Z","type":"join"}
+{"nick":"stagas","date":"2014-11-05T07:18:50.228Z","type":"join"}
+{"nick":"bajtos","date":"2014-11-05T07:20:14.484Z","type":"join"}
+{"nick":"iarna","reason":"Read error: Connection reset by peer","date":"2014-11-05T07:22:13.653Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-05T07:24:55.557Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-05T07:33:06.908Z","type":"join"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-11-05T07:36:48.084Z","type":"quit"}
+{"nick":"avalanche123","reason":"Ping timeout: 258 seconds","date":"2014-11-05T07:37:31.843Z","type":"quit"}
+{"nick":"Ldxngx","date":"2014-11-05T07:45:06.268Z","type":"join"}
+{"nick":"Ldxngx","reason":"Client Quit","date":"2014-11-05T07:45:18.792Z","type":"quit"}
+{"nick":"Ldxngx","date":"2014-11-05T07:45:27.737Z","type":"join"}
+{"nick":"Ldxngx","reason":"Client Quit","date":"2014-11-05T07:45:27.918Z","type":"quit"}
+{"nick":"Ldxngx","date":"2014-11-05T07:45:35.540Z","type":"join"}
+{"nick":"Ldxngx","new_nick":"Ldxngx_","date":"2014-11-05T07:48:09.509Z","type":"nick"}
+{"nick":"jreyno40","reason":"Quit: jreyno40","date":"2014-11-05T07:55:34.242Z","type":"quit"}
