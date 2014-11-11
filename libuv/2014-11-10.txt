@@ -124,3 +124,193 @@
 {"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2014-11-10T15:50:00.043Z","type":"quit"}
 {"nick":"fmoreno","date":"2014-11-10T15:50:18.531Z","type":"join"}
 {"nick":"kazupon","date":"2014-11-10T15:50:27.646Z","type":"join"}
+{"nick":"creationix","message":"pbunny: define “pending”","date":"2014-11-10T16:00:32.690Z","type":"message"}
+{"nick":"creationix","message":"uv_walk gives you all the unclosed handles in a loop I believe","date":"2014-11-10T16:00:46.079Z","type":"message"}
+{"nick":"creationix","message":"but that includes things like already stopped (or never started) timers","date":"2014-11-10T16:01:27.231Z","type":"message"}
+{"nick":"bajtos","date":"2014-11-10T16:01:27.818Z","type":"join"}
+{"nick":"pbunny","message":"int res = uv_run(mEventLoop,UV_RUN_NOWAIT);","date":"2014-11-10T16:01:28.628Z","type":"message"}
+{"nick":"pbunny","message":"it seems res is 0 if there are no pending events","date":"2014-11-10T16:01:36.673Z","type":"message"}
+{"nick":"pbunny","message":"am i right?","date":"2014-11-10T16:01:39.496Z","type":"message"}
+{"nick":"creationix","message":"well, depends on what you mean by pending","date":"2014-11-10T16:01:48.465Z","type":"message"}
+{"nick":"pbunny","message":"e.g. timers in the future","date":"2014-11-10T16:01:55.253Z","type":"message"}
+{"nick":"creationix","message":"that will tell you if uv_run would block","date":"2014-11-10T16:01:58.085Z","type":"message"}
+{"nick":"pbunny","message":"file currently reading","date":"2014-11-10T16:01:58.680Z","type":"message"}
+{"nick":"pbunny","message":"etc","date":"2014-11-10T16:02:00.680Z","type":"message"}
+{"nick":"creationix","message":"right, I think that does what you want then","date":"2014-11-10T16:02:07.261Z","type":"message"}
+{"nick":"pbunny","message":"its for determining whether js sandbox may be destroyed","date":"2014-11-10T16:02:26.508Z","type":"message"}
+{"nick":"pbunny","message":"it should be destroyed as soon as there are no more timeouts or async operations","date":"2014-11-10T16:02:39.167Z","type":"message"}
+{"nick":"creationix","message":"I just put in a normal blocking uv_run and when it unblocks, I uv.walk(uv.close) and then uv.run() again ","date":"2014-11-10T16:03:01.455Z","type":"message"}
+{"nick":"creationix","message":"This is how I clean up between unit tests in luvit","date":"2014-11-10T16:03:13.723Z","type":"message"}
+{"nick":"creationix","message":"though I do record all handles that exist before the test starts and don’t close those on exit","date":"2014-11-10T16:03:35.369Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luvit/blob/luvi-up/tests/modules/tap.lua#L74-L79","date":"2014-11-10T16:04:14.642Z","type":"message"}
+{"nick":"a_le","date":"2014-11-10T16:06:37.607Z","type":"join"}
+{"nick":"fmoreno","reason":"\"Leaving\"","date":"2014-11-10T16:06:55.422Z","type":"part"}
+{"nick":"creationix","message":"pbunny: one thing to keep in mind is uv_run won’t block on handles that have been uv_unref()ed","date":"2014-11-10T16:07:16.054Z","type":"message"}
+{"nick":"creationix","message":"but they may still be active and emitting events","date":"2014-11-10T16:07:23.186Z","type":"message"}
+{"nick":"pbunny","message":"i can't use blocking uv_run","date":"2014-11-10T16:07:48.528Z","type":"message"}
+{"nick":"pbunny","message":"it interfers with my threading model","date":"2014-11-10T16:07:58.067Z","type":"message"}
+{"nick":"creationix","message":"that’s fine, the semantics are the same either way","date":"2014-11-10T16:08:31.107Z","type":"message"}
+{"nick":"creationix","message":"just wait till uv_run says it would unblock and then close any unclosed handles that were created during your sandbox and then wait for them to finish using uv_run again","date":"2014-11-10T16:09:17.354Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-10T16:09:40.284Z","type":"quit"}
+{"nick":"pbunny","message":"yes, i do that after stopping sandbox thread","date":"2014-11-10T16:09:49.468Z","type":"message"}
+{"nick":"pbunny","message":"however, uv_loop_delete(mEventLoop) throws assertion failure","date":"2014-11-10T16:10:08.803Z","type":"message"}
+{"nick":"pbunny","message":"and if i replace with uv_loop_close(mEventLoop) i get result -16","date":"2014-11-10T16:10:19.274Z","type":"message"}
+{"nick":"pbunny","message":"but i don't bother with that just now","date":"2014-11-10T16:10:25.798Z","type":"message"}
+{"nick":"creationix","message":"even after using uv_walk to uv_close everything left and waiting on uv_run again?","date":"2014-11-10T16:10:32.517Z","type":"message"}
+{"nick":"pbunny","message":"yes","date":"2014-11-10T16:10:36.380Z","type":"message"}
+{"nick":"creationix","message":"I wonder if your threads are messing with the loop","date":"2014-11-10T16:11:14.304Z","type":"message"}
+{"nick":"creationix","message":"you only ever access a uv_loop from single thread right?","date":"2014-11-10T16:11:41.224Z","type":"message"}
+{"nick":"pbunny","message":"i have per-thread uv loops","date":"2014-11-10T16:11:53.544Z","type":"message"}
+{"nick":"creationix","message":"that’s good","date":"2014-11-10T16:11:57.815Z","type":"message"}
+{"nick":"pbunny","message":"probably related to tty","date":"2014-11-10T16:12:05.740Z","type":"message"}
+{"nick":"pbunny","message":"you may search this channel's logs btw","date":"2014-11-10T16:12:22.388Z","type":"message"}
+{"nick":"pbunny","message":"i asked about this issue 1-2 days ago","date":"2014-11-10T16:12:27.294Z","type":"message"}
+{"nick":"creationix","message":"I guess as a quick test, you could uv_walk right before calling uv_loop_close and make sure the callback isn’t called.","date":"2014-11-10T16:12:43.784Z","type":"message"}
+{"nick":"creationix","message":"other than that, I’m not sure the issue.  I’ve used libuv a ton, but haven’t dug into the internals too much","date":"2014-11-10T16:13:06.254Z","type":"message"}
+{"nick":"pbunny","message":"creationix: https://dpaste.de/q4VH/raw","date":"2014-11-10T16:16:44.140Z","type":"message"}
+{"nick":"pbunny","message":"uv_close_loop returns -16","date":"2014-11-10T16:16:54.525Z","type":"message"}
+{"nick":"pbunny","message":"and uv_loop_delete fails with \"assertion failed: ret == 0\", and inside it calls the same uv_loop_close","date":"2014-11-10T16:17:25.347Z","type":"message"}
+{"nick":"pbunny","message":"which returns -16","date":"2014-11-10T16:17:27.684Z","type":"message"}
+{"nick":"creationix","message":"yep, you need to uv_run again after uv_walk","date":"2014-11-10T16:18:11.452Z","type":"message"}
+{"nick":"creationix","message":"and wait for it to actually finish without using stop to short-circuit it","date":"2014-11-10T16:18:25.238Z","type":"message"}
+{"nick":"pbunny","message":"see, it's the next line","date":"2014-11-10T16:18:28.019Z","type":"message"}
+{"nick":"pbunny","message":"so uv_stop is not needed?","date":"2014-11-10T16:18:51.544Z","type":"message"}
+{"nick":"creationix","message":"oh, right, the blocking uv_run","date":"2014-11-10T16:18:52.134Z","type":"message"}
+{"nick":"creationix","message":"I guess close if fast enough that won’t hurt your threading model","date":"2014-11-10T16:19:30.524Z","type":"message"}
+{"nick":"creationix","message":"pbunny: sorry, no idea what’s wrong","date":"2014-11-10T16:19:42.862Z","type":"message"}
+{"nick":"creationix","message":"like I said, I would uv_walk again with a new callback that fails just to ensure my sanity ","date":"2014-11-10T16:20:08.232Z","type":"message"}
+{"nick":"creationix","message":"but as far as I understand libuv, that shouldn’t be possible in this case","date":"2014-11-10T16:20:23.307Z","type":"message"}
+{"nick":"creationix","message":"indutny: am I understanding this correctly? ^","date":"2014-11-10T16:22:33.943Z","type":"message"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-11-10T16:24:44.570Z","type":"quit"}
+{"nick":"indutny","message":"щрфш","date":"2014-11-10T16:35:22.614Z","type":"message"}
+{"nick":"indutny","message":"ohai","date":"2014-11-10T16:35:24.026Z","type":"message"}
+{"nick":"jgi","date":"2014-11-10T16:43:02.621Z","type":"join"}
+{"nick":"bajtos","date":"2014-11-10T16:51:55.115Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 250 seconds","date":"2014-11-10T16:53:39.457Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-10T17:02:36.731Z","type":"quit"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-10T17:04:58.185Z","type":"quit"}
+{"nick":"FROGGS[mobile]","date":"2014-11-10T17:05:23.632Z","type":"join"}
+{"nick":"inolen","date":"2014-11-10T17:17:05.394Z","type":"join"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2014-11-10T17:18:58.110Z","type":"quit"}
+{"nick":"Fishrock123","date":"2014-11-10T17:21:05.132Z","type":"join"}
+{"nick":"kevinsimper","reason":"Remote host closed the connection","date":"2014-11-10T17:23:56.849Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-10T17:29:26.106Z","type":"quit"}
+{"nick":"Ralith","reason":"Ping timeout: 255 seconds","date":"2014-11-10T17:30:03.022Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2014-11-10T17:31:06.435Z","type":"quit"}
+{"nick":"kriskowal","date":"2014-11-10T17:40:51.070Z","type":"join"}
+{"nick":"Fishrock123","date":"2014-11-10T17:41:30.571Z","type":"join"}
+{"nick":"chris_99","date":"2014-11-10T17:43:54.941Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-10T17:50:25.916Z","type":"quit"}
+{"nick":"jgi","date":"2014-11-10T17:51:53.901Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-11-10T17:52:54.826Z","type":"join"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2014-11-10T17:56:24.322Z","type":"quit"}
+{"nick":"bradleymeck","date":"2014-11-10T17:57:33.102Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-10T18:03:35.872Z","type":"join"}
+{"nick":"Ralith","date":"2014-11-10T18:05:00.074Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-10T18:07:42.889Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-10T18:07:51.722Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-10T18:08:35.750Z","type":"join"}
+{"nick":"Fishrock123","date":"2014-11-10T18:20:09.209Z","type":"join"}
+{"nick":"lanceball","new_nick":"lance|afk","date":"2014-11-10T18:29:13.046Z","type":"nick"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2014-11-10T18:30:43.475Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-10T18:32:59.891Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-10T18:36:34.052Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-10T18:37:42.150Z","type":"join"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2014-11-10T18:38:09.203Z","type":"quit"}
+{"nick":"inolen","date":"2014-11-10T18:40:07.285Z","type":"join"}
+{"nick":"iarna","reason":"Read error: Connection reset by peer","date":"2014-11-10T18:41:06.323Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-10T18:41:35.620Z","type":"join"}
+{"nick":"inolen","reason":"Client Quit","date":"2014-11-10T18:41:39.037Z","type":"quit"}
+{"nick":"janjongboom","reason":"Ping timeout: 265 seconds","date":"2014-11-10T18:42:26.091Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-10T18:49:21.076Z","type":"join"}
+{"nick":"wolfeidau","reason":"Read error: Connection timed out","date":"2014-11-10T18:50:29.181Z","type":"quit"}
+{"nick":"wolfeidau","date":"2014-11-10T18:51:09.158Z","type":"join"}
+{"nick":"a_le","reason":"Read error: Connection reset by peer","date":"2014-11-10T18:51:47.917Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-10T18:52:08.229Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 258 seconds","date":"2014-11-10T19:04:59.782Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-10T19:05:31.940Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-11-10T19:08:58.911Z","type":"quit"}
+{"nick":"chris_99","reason":"Ping timeout: 255 seconds","date":"2014-11-10T19:14:00.086Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-10T19:18:42.219Z","type":"quit"}
+{"nick":"FROGGS[mobile]","reason":"Remote host closed the connection","date":"2014-11-10T19:19:27.419Z","type":"quit"}
+{"nick":"lance|afk","new_nick":"lanceball","date":"2014-11-10T19:21:49.060Z","type":"nick"}
+{"nick":"chris_99","date":"2014-11-10T19:27:17.321Z","type":"join"}
+{"nick":"janjongb_","date":"2014-11-10T19:28:53.650Z","type":"join"}
+{"nick":"Fishrock123","date":"2014-11-10T19:29:45.587Z","type":"join"}
+{"nick":"janjongboom","reason":"Ping timeout: 240 seconds","date":"2014-11-10T19:29:53.006Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-10T19:33:13.237Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-11-10T19:34:35.419Z","type":"join"}
+{"nick":"thlorenz","date":"2014-11-10T19:43:17.579Z","type":"join"}
+{"nick":"dshaw_","date":"2014-11-10T19:45:06.865Z","type":"join"}
+{"nick":"rendar","reason":"Ping timeout: 244 seconds","date":"2014-11-10T19:45:08.528Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-10T19:45:18.608Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-10T19:45:58.413Z","type":"join"}
+{"nick":"a_le","reason":"Read error: Connection reset by peer","date":"2014-11-10T19:48:37.751Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-10T19:48:55.551Z","type":"join"}
+{"nick":"Fishrock","date":"2014-11-10T19:49:25.010Z","type":"join"}
+{"nick":"rendar","date":"2014-11-10T19:51:56.075Z","type":"join"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-10T19:52:19.752Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Ping timeout: 244 seconds","date":"2014-11-10T19:52:53.483Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-10T19:52:54.035Z","type":"join"}
+{"nick":"AlexisMocha","message":"tjfontaine: do you happen to know why on Jenkins both ia32 and x64 windows builds run always on the same node?","date":"2014-11-10T19:59:58.192Z","type":"message"}
+{"nick":"a_le","reason":"Read error: Connection reset by peer","date":"2014-11-10T20:02:02.608Z","type":"quit"}
+{"nick":"inolen","date":"2014-11-10T20:02:04.572Z","type":"join"}
+{"nick":"a_le","date":"2014-11-10T20:02:23.569Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 256 seconds","date":"2014-11-10T20:04:44.575Z","type":"quit"}
+{"nick":"thlorenz_","date":"2014-11-10T20:04:48.532Z","type":"join"}
+{"nick":"lanceball","new_nick":"lance|afk","date":"2014-11-10T20:17:22.814Z","type":"nick"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-10T20:25:37.049Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-10T20:28:18.721Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-10T20:33:00.574Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-10T20:34:22.607Z","type":"join"}
+{"nick":"janjongb_","reason":"Ping timeout: 256 seconds","date":"2014-11-10T20:37:36.669Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Ping timeout: 244 seconds","date":"2014-11-10T20:45:17.070Z","type":"quit"}
+{"nick":"brson","date":"2014-11-10T21:01:14.453Z","type":"join"}
+{"nick":"c4milo","date":"2014-11-10T21:02:00.225Z","type":"join"}
+{"nick":"chris_99","reason":"Ping timeout: 256 seconds","date":"2014-11-10T21:05:56.658Z","type":"quit"}
+{"nick":"bhughes","reason":"Excess Flood","date":"2014-11-10T21:18:12.651Z","type":"quit"}
+{"nick":"bhughes","date":"2014-11-10T21:18:56.299Z","type":"join"}
+{"nick":"chris_99","date":"2014-11-10T21:22:00.176Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-10T21:25:40.230Z","type":"quit"}
+{"nick":"bhughes","reason":"Excess Flood","date":"2014-11-10T21:26:27.080Z","type":"quit"}
+{"nick":"bhughes","date":"2014-11-10T21:27:21.472Z","type":"join"}
+{"nick":"lance|afk","new_nick":"lanceball","date":"2014-11-10T21:34:31.602Z","type":"nick"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-10T21:55:00.241Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-10T21:55:58.591Z","type":"join"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2014-11-10T21:56:40.357Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-10T21:59:17.505Z","type":"quit"}
+{"nick":"iarna","reason":"Read error: Connection reset by peer","date":"2014-11-10T22:00:20.032Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-10T22:00:49.569Z","type":"join"}
+{"nick":"jgi","date":"2014-11-10T22:01:17.434Z","type":"join"}
+{"nick":"inolen","date":"2014-11-10T22:04:09.068Z","type":"join"}
+{"nick":"Fishrock","reason":"Remote host closed the connection","date":"2014-11-10T22:05:06.314Z","type":"quit"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 250 seconds","date":"2014-11-10T22:08:41.458Z","type":"quit"}
+{"nick":"thlorenz_","new_nick":"thlorenz","date":"2014-11-10T22:13:31.397Z","type":"nick"}
+{"nick":"seishun","reason":"Ping timeout: 264 seconds","date":"2014-11-10T22:21:29.876Z","type":"quit"}
+{"nick":"kriskowal","reason":"Quit: kriskowal","date":"2014-11-10T22:30:47.026Z","type":"quit"}
+{"nick":"kriskowal","date":"2014-11-10T22:32:39.599Z","type":"join"}
+{"nick":"c4milo","date":"2014-11-10T22:38:25.865Z","type":"join"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-10T22:47:42.620Z","type":"quit"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-10T22:50:18.373Z","type":"quit"}
+{"nick":"c4milo","date":"2014-11-10T22:56:40.420Z","type":"join"}
+{"nick":"jgi","message":"trevnorris: just created a PR to fix a minor issue in remove-al-js: https://github.com/trevnorris/node/pull/3","date":"2014-11-10T22:57:33.487Z","type":"message"}
+{"nick":"piscisaureus","date":"2014-11-10T22:59:26.580Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Yuri D'Elia\u000f \u00037v1.x\u000f * \u00020f25560\u0002 : unix: use cfmakeraw() for setting raw TTY mode - http://git.io/7gmayw","date":"2014-11-10T23:01:39.858Z","type":"message"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-10T23:05:58.828Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Alexis Campailla\u000f \u00037v1.x\u000f * \u00026591d00\u0002 : win: fix uv_thread_self() - http://git.io/J4AGwQ","date":"2014-11-10T23:06:14.076Z","type":"message"}
+{"nick":"kriskowal","reason":"Quit: kriskowal","date":"2014-11-10T23:08:07.608Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-10T23:10:03.996Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033Ben Noordhuis\u000f \u00037v1.x\u000f * \u0002cb51400\u0002 : build: remove dtrace probes (+1 more commits) - http://git.io/UvzL0Q","date":"2014-11-10T23:13:25.358Z","type":"message"}
+{"nick":"kriskowal","date":"2014-11-10T23:14:03.153Z","type":"join"}
+{"nick":"AlexisMocha","date":"2014-11-10T23:14:13.912Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 255 seconds","date":"2014-11-10T23:20:58.339Z","type":"quit"}
+{"nick":"rendar","date":"2014-11-10T23:31:54.935Z","type":"quit"}
+{"nick":"trevnorris","message":"jgi: awesome. nice catch. thanks.","date":"2014-11-10T23:32:06.050Z","type":"message"}
+{"nick":"avalanche123","date":"2014-11-10T23:33:22.170Z","type":"join"}
+{"nick":"jgi","message":"trevnorris: you’re welcome! I’m basically trying to understand how the async listener stuff works, and asking questions/raising issues along the way. I hope you don’t mind :)","date":"2014-11-10T23:46:49.677Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: please do. :)","date":"2014-11-10T23:47:13.495Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-10T23:52:03.293Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-10T23:52:38.561Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 264 seconds","date":"2014-11-10T23:57:25.536Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-10T23:58:23.857Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 245 seconds","date":"2014-11-10T23:59:24.710Z","type":"quit"}
