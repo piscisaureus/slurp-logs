@@ -1,0 +1,274 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-11-14T00:00:01.461Z","type":"quit"}
+{"nick":"ircretary","date":"2014-11-14T00:00:13.141Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T00:04:22.327Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T00:06:20.623Z","type":"join"}
+{"nick":"chrisdickinson","message":"summarized: https://github.com/joyent/node/pull/8666#issuecomment-62989820 cc trevnorris jgi -- please lemme know if I'm wildly off here.","date":"2014-11-14T00:06:36.143Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: great thanks!","date":"2014-11-14T00:06:47.785Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: Regarding “The behavior prior to V8's removal of the --abort-on-uncaught-exception flag was:”, the proposed patch does not remove the —abort-on-uncaught-exception flag","date":"2014-11-14T00:07:22.623Z","type":"message"}
+{"nick":"chrisdickinson","message":"yes -- i'll note that this patch re-introduces `--abort-on-uncaught-exception` flag","date":"2014-11-14T00:08:15.053Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: but was the code that supports this flag ever removed since it’s been added a long time ago?","date":"2014-11-14T00:08:59.854Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-14T00:09:05.704Z","type":"join"}
+{"nick":"chrisdickinson","message":"hm?","date":"2014-11-14T00:09:19.860Z","type":"message"}
+{"nick":"chrisdickinson","message":"the problem is that the flag belonged to v8, as I understood it","date":"2014-11-14T00:09:36.290Z","type":"message"}
+{"nick":"chrisdickinson","message":"and v8 removed the flag","date":"2014-11-14T00:09:51.568Z","type":"message"}
+{"nick":"chrisdickinson","message":"or, more specifically,","date":"2014-11-14T00:10:07.188Z","type":"message"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T00:10:19.119Z","type":"quit"}
+{"nick":"chrisdickinson","message":"that v8 used to use --abort-on-uncaught-exception to determine whether to OS::Abort() in Isolate::DoThrow, and that V8 dropped the flag and the check","date":"2014-11-14T00:11:36.326Z","type":"message"}
+{"nick":"chrisdickinson","message":"i appear to be wrong :)","date":"2014-11-14T00:11:40.411Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: yes, I don’t think that has been removed from v8","date":"2014-11-14T00:12:39.660Z","type":"message"}
+{"nick":"robertkowalski","reason":"Ping timeout: 255 seconds","date":"2014-11-14T00:12:48.126Z","type":"quit"}
+{"nick":"chrisdickinson","message":"jgi: the problem being fixed is that abort-on-uncaught was too eager, preventing the domain code from running?","date":"2014-11-14T00:13:21.564Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: exactly","date":"2014-11-14T00:13:30.333Z","type":"message"}
+{"nick":"chrisdickinson","message":"cool, thanks!","date":"2014-11-14T00:13:35.795Z","type":"message"}
+{"nick":"M28","reason":"Read error: Connection reset by peer","date":"2014-11-14T00:13:50.731Z","type":"quit"}
+{"nick":"M28","date":"2014-11-14T00:14:10.440Z","type":"join"}
+{"nick":"robertkowalski","date":"2014-11-14T00:14:39.325Z","type":"join"}
+{"nick":"jgi","message":"also, when you mention the behavior of each solution, I think it would probably be clearer to mention the behavior when —abort-on-uncaught-exception is passed, and when it’s not","date":"2014-11-14T00:14:48.625Z","type":"message"}
+{"nick":"jgi","message":"chrisdickinson: otherwise it ends up being very confusing","date":"2014-11-14T00:15:00.169Z","type":"message"}
+{"nick":"iarna","date":"2014-11-14T00:18:59.594Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T00:20:24.298Z","type":"quit"}
+{"nick":"trevnorris","message":"chrisdickinson, jgi: also, you don't want to check if --abort-on-uncaught-exception works in test/simple. for those of us who automatically save all core files, running a bunch of tests will create quite a few of those.","date":"2014-11-14T00:21:35.688Z","type":"message"}
+{"nick":"robertkowalski","date":"2014-11-14T00:21:36.459Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T00:23:23.339Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T00:23:41.280Z","type":"join"}
+{"nick":"jgi","message":"trevnorris: good point, thanks","date":"2014-11-14T00:23:49.332Z","type":"message"}
+{"nick":"trevnorris","message":":)","date":"2014-11-14T00:23:52.746Z","type":"message"}
+{"nick":"avalanche123","date":"2014-11-14T00:26:45.040Z","type":"join"}
+{"nick":"chris_99","reason":"Remote host closed the connection","date":"2014-11-14T00:28:13.350Z","type":"quit"}
+{"nick":"trevnorris","message":"chrisdickinson / jgi: Here's a very ugly patch showing what I mean: https://gist.github.com/trevnorris/be1dee9d3fb4bc467b1c","date":"2014-11-14T00:30:52.573Z","type":"message"}
+{"nick":"trevnorris","message":"can you try that out and tell me if it gives what you're expecting?","date":"2014-11-14T00:31:03.942Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: I think that this patch would still have the problem I mentioned earlier:","date":"2014-11-14T00:32:50.488Z","type":"message"}
+{"nick":"jgi","message":"“if I remember correctly, there’s also this call: https://github.com/joyent/node/blob/v0.10/lib/domain.js#L183 where, within a domain, if something is thrown, then passing —abort-on-uncaught-exception would always make node abort and dump core”","date":"2014-11-14T00:32:52.066Z","type":"message"}
+{"nick":"robertkowalski","reason":"Ping timeout: 258 seconds","date":"2014-11-14T00:33:40.777Z","type":"quit"}
+{"nick":"trevnorris","message":"jgi: sorry, there's so many issues here... so you're saying if the cb.apply() throws?","date":"2014-11-14T00:33:56.333Z","type":"message"}
+{"nick":"jgi","message":"yes","date":"2014-11-14T00:34:04.032Z","type":"message"}
+{"nick":"trevnorris","message":"wtf is cb() in that case?","date":"2014-11-14T00:34:17.024Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: the code run within the domain if I remember correctly","date":"2014-11-14T00:34:29.708Z","type":"message"}
+{"nick":"trevnorris","message":"oy, have an example on hand to show me?","date":"2014-11-14T00:34:42.806Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: just a sec, I’m going to apply your patch first and then run the test I’m talking about","date":"2014-11-14T00:35:34.740Z","type":"message"}
+{"nick":"Fishrock123","date":"2014-11-14T00:35:50.857Z","type":"join"}
+{"nick":"trevnorris","message":"thanks.","date":"2014-11-14T00:36:15.449Z","type":"message"}
+{"nick":"M28","reason":"Ping timeout: 250 seconds","date":"2014-11-14T00:36:21.484Z","type":"quit"}
+{"nick":"M28","date":"2014-11-14T00:36:31.870Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T00:38:16.483Z","type":"quit"}
+{"nick":"trevnorris","message":"wtf. I ran gdb --args ./node_g --abort-on-uncaught-exception script.js and the stupid thing exited normally...","date":"2014-11-14T00:38:24.257Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: https://gist.github.com/misterdjules/a89e3e844106fe0f273a","date":"2014-11-14T00:40:54.984Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: ping","date":"2014-11-14T00:41:29.042Z","type":"message"}
+{"nick":"tjfontaine","message":"pong","date":"2014-11-14T00:41:47.839Z","type":"message"}
+{"nick":"iarna","date":"2014-11-14T00:42:25.668Z","type":"join"}
+{"nick":"trevnorris","message":"tjfontaine: re AL patch. I've been cleaning up the commits, which are looking pretty good, and found there's a strange architectural issue that's preventing some of the things I wanted to do (e.g. asyncId())","date":"2014-11-14T00:43:05.806Z","type":"message"}
+{"nick":"tjfontaine","message":"for instance?","date":"2014-11-14T00:43:14.917Z","type":"message"}
+{"nick":"trevnorris","message":"and wanted to bounce some things against your head.","date":"2014-11-14T00:43:16.138Z","type":"message"}
+{"nick":"trevnorris","message":"so. we manually deconstruct the class attached to an object once the request is complete.","date":"2014-11-14T00:43:32.055Z","type":"message"}
+{"nick":"tjfontaine","message":"ok my head is nice and hard","date":"2014-11-14T00:43:35.795Z","type":"message"}
+{"nick":"trevnorris","message":"heh","date":"2014-11-14T00:43:38.956Z","type":"message"}
+{"nick":"tjfontaine","message":"it is in need of caffeine but that's a different problem","date":"2014-11-14T00:43:53.924Z","type":"message"}
+{"nick":"trevnorris","message":"and the asyncId() call was to C++ to return AsyncWrap::id()","date":"2014-11-14T00:43:58.636Z","type":"message"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-14T00:44:09.299Z","type":"quit"}
+{"nick":"trevnorris","message":"but since the class is no longer there, it returns gibberish.","date":"2014-11-14T00:44:19.653Z","type":"message"}
+{"nick":"jgi","date":"2014-11-14T00:44:40.404Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T00:44:40.894Z","type":"quit"}
+{"nick":"trevnorris","message":"one thing I wanted to throw in (because I figured it'd be very useful and the code was trivial) was to attach parent requests together for, say, fs.readFile().","date":"2014-11-14T00:45:03.319Z","type":"message"}
+{"nick":"tjfontaine","message":"you mean we explicitly call the destructor of an object, or we're calling delete?","date":"2014-11-14T00:45:14.805Z","type":"message"}
+{"nick":"trevnorris","message":"so from the callback you could do req.preq and get the preceding request (e.g. fs.open() needs to run before fs.read())","date":"2014-11-14T00:45:31.575Z","type":"message"}
+{"nick":"trevnorris","message":"we're calling delete on the class once the request is done.","date":"2014-11-14T00:45:43.198Z","type":"message"}
+{"nick":"tjfontaine","message":"ok","date":"2014-11-14T00:45:46.035Z","type":"message"}
+{"nick":"trevnorris","message":"instead of allowing GC to cleanup the class once the object has left scope.","date":"2014-11-14T00:45:55.668Z","type":"message"}
+{"nick":"tjfontaine","message":"nod","date":"2014-11-14T00:46:01.243Z","type":"message"}
+{"nick":"trevnorris","message":"we've skirted this by simply setting req._handle = null where applicable, but if we're going to be attaching actual useful information for debugging and the like then it leaves the API in a pickle.","date":"2014-11-14T00:46:48.777Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: thanks. I can fix that.","date":"2014-11-14T00:47:10.017Z","type":"message"}
+{"nick":"tjfontaine","message":"so can we go back a tick, and I want to make sure I'm on the right page here","date":"2014-11-14T00:47:32.933Z","type":"message"}
+{"nick":"robertkowalski","date":"2014-11-14T00:47:38.396Z","type":"join"}
+{"nick":"tjfontaine","message":"user does fs.readFile, and we want to associate the parent wrap (if there is on) with the cb that will fire ultimately saying we have all the data ","date":"2014-11-14T00:48:23.148Z","type":"message"}
+{"nick":"trevnorris","message":"sure thing","date":"2014-11-14T00:48:23.760Z","type":"message"}
+{"nick":"trevnorris","message":"the context of the callback is that in which the callback is run (e.g. if there's an error while opening the file then the open req is the context)","date":"2014-11-14T00:48:59.200Z","type":"message"}
+{"nick":"trevnorris","message":"if the completes successfully then it will be the close req (I think)","date":"2014-11-14T00:49:27.134Z","type":"message"}
+{"nick":"trevnorris","message":"either way, they can basically do a while (req.preq) { } and get info about the entire call chain of the request.","date":"2014-11-14T00:49:56.223Z","type":"message"}
+{"nick":"tjfontaine","message":"so today as it is, fs.readFile is not covered discretely by AL, only the composable pieces of open and read are, and the chain isn't useful for that","date":"2014-11-14T00:50:18.611Z","type":"message"}
+{"nick":"trevnorris","message":"yes, yes, you mean the chain isn't useful today? there isn't one right now.","date":"2014-11-14T00:51:02.562Z","type":"message"}
+{"nick":"tjfontaine","message":"ight, because it's not covered","date":"2014-11-14T00:51:19.414Z","type":"message"}
+{"nick":"tjfontaine","message":"is it covered by domains today?","date":"2014-11-14T00:51:28.365Z","type":"message"}
+{"nick":"tjfontaine","message":"doesnt' really seem like it","date":"2014-11-14T00:51:51.885Z","type":"message"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2014-11-14T00:52:01.898Z","type":"quit"}
+{"nick":"trevnorris","message":"no.","date":"2014-11-14T00:52:31.905Z","type":"message"}
+{"nick":"iarna","date":"2014-11-14T00:52:37.650Z","type":"join"}
+{"nick":"trevnorris","message":"right now the internals of fs are completely obscured to the users.","date":"2014-11-14T00:52:45.795Z","type":"message"}
+{"nick":"tjfontaine","message":"right, which is slightly the point of that api","date":"2014-11-14T00:52:56.276Z","type":"message"}
+{"nick":"tjfontaine","message":"it's a nice clear point to show taht we still need *way* more test coverage","date":"2014-11-14T00:53:08.707Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2014-11-14T00:53:40.434Z","type":"message"}
+{"nick":"tjfontaine","message":"ok so the reason I wanted to know that, is if it doesn't work today, I don't really want to delay the AL stuff to try and get this to work","date":"2014-11-14T00:53:41.212Z","type":"message"}
+{"nick":"tjfontaine","message":"because right now, I don't see an easy way to do what you're trying to do","date":"2014-11-14T00:53:56.786Z","type":"message"}
+{"nick":"tjfontaine","message":"a nice way to say, these are the composable pieces that represent this thing","date":"2014-11-14T00:54:12.146Z","type":"message"}
+{"nick":"tjfontaine","message":"mostly because there's not a \"handle\" here that we can abuse for that mechanism","date":"2014-11-14T00:54:22.881Z","type":"message"}
+{"nick":"trevnorris","message":"the crux is the fact we're delete'ing the C++ class before the JS object is cleaned up.","date":"2014-11-14T00:54:28.174Z","type":"message"}
+{"nick":"tjfontaine","message":"we could delay that","date":"2014-11-14T00:54:39.901Z","type":"message"}
+{"nick":"tjfontaine","message":"which delete are we talking about, can you link that one to me?","date":"2014-11-14T00:55:07.151Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: actually, everything does now have an actual request handle: https://github.com/trevnorris/node/commit/9739b78","date":"2014-11-14T00:55:39.270Z","type":"message"}
+{"nick":"trevnorris","message":"sure. sec.","date":"2014-11-14T00:55:54.636Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: here: https://github.com/joyent/node/blob/master/src/node_file.cc#L239","date":"2014-11-14T00:56:08.566Z","type":"message"}
+{"nick":"tjfontaine","message":"I mean that the readFile call itself doesn't have a resource associated with it","date":"2014-11-14T00:56:20.764Z","type":"message"}
+{"nick":"trevnorris","message":"no. it doesn't.","date":"2014-11-14T00:56:29.928Z","type":"message"}
+{"nick":"trevnorris","message":"but now that every request has a real handle I want to give those back to the user for debugging, etc.","date":"2014-11-14T00:57:02.820Z","type":"message"}
+{"nick":"trevnorris","message":"guess that can wait.","date":"2014-11-14T00:57:08.180Z","type":"message"}
+{"nick":"tjfontaine","message":"and because it doesn't transition itself through MakeCallback it also avoids some of these same benefits where we can consolidate logic for it","date":"2014-11-14T00:57:14.308Z","type":"message"}
+{"nick":"trevnorris","message":"elaborate please","date":"2014-11-14T00:57:47.764Z","type":"message"}
+{"nick":"tjfontaine","message":"for the way AW works, if readFile actually had a single HandleWrap or ReqWrap associated with the *whole* thing, you could just piggy back off of that","date":"2014-11-14T00:58:22.478Z","type":"message"}
+{"nick":"tjfontaine","message":"and if its finish transitioned through MakeCallback things would just work without interaction or changing the way AL works to make this useful","date":"2014-11-14T00:58:51.917Z","type":"message"}
+{"nick":"trevnorris","message":"true. I mean, it is possible to simply create an FSReqWrap() when the function runs as a pseudo req to contain the entirety of the request.","date":"2014-11-14T00:59:28.278Z","type":"message"}
+{"nick":"tjfontaine","message":"similar in the way that timers and nextticks need js help because they don't have underlying 1:1 AW mappings","date":"2014-11-14T00:59:28.945Z","type":"message"}
+{"nick":"trevnorris","message":"I did that early and it worked fine.","date":"2014-11-14T00:59:48.572Z","type":"message"}
+{"nick":"tjfontaine","message":"I mean, it would be nice if we didn't have to modify the js portion to make it work","date":"2014-11-14T01:00:06.546Z","type":"message"}
+{"nick":"tjfontaine","message":"so","date":"2014-11-14T01:00:19.002Z","type":"message"}
+{"nick":"tjfontaine","message":"I really think to do this composable piece, you really want/need a real resource to exist for the readFile","date":"2014-11-14T01:00:50.201Z","type":"message"}
+{"nick":"trevnorris","message":"okay.","date":"2014-11-14T01:02:19.232Z","type":"message"}
+{"nick":"trevnorris","message":"brb","date":"2014-11-14T01:02:21.564Z","type":"message"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T01:08:30.374Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-14T01:11:00.460Z","type":"quit"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T01:13:38.908Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T01:14:39.735Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T01:15:31.302Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T01:16:54.791Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T01:18:46.017Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T01:18:55.241Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-14T01:19:44.690Z","type":"join"}
+{"nick":"robertkowalski","date":"2014-11-14T01:19:59.904Z","type":"join"}
+{"nick":"stagas","reason":"Ping timeout: 265 seconds","date":"2014-11-14T01:21:13.089Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-14T01:21:44.137Z","type":"quit"}
+{"nick":"Wraithan","message":"rvagg, chrisdickinson: you both brought up the same point, and hayes is in this channel who did the actual fix","date":"2014-11-14T01:23:22.095Z","type":"message"}
+{"nick":"chrisdickinson","message":"o/","date":"2014-11-14T01:23:30.841Z","type":"message"}
+{"nick":"rvagg","message":"Yo","date":"2014-11-14T01:24:10.827Z","type":"message"}
+{"nick":"chrisdickinson","message":"seems odd that buffering in a closure would be faster than the writerequests","date":"2014-11-14T01:24:28.587Z","type":"message"}
+{"nick":"chrisdickinson","message":"i suspected the `.slice` in clearBuffer, but even with a ton of items, it's still fast","date":"2014-11-14T01:24:56.161Z","type":"message"}
+{"nick":"robertkowalski","reason":"Ping timeout: 265 seconds","date":"2014-11-14T01:25:05.223Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2014-11-14T01:25:35.155Z","type":"quit"}
+{"nick":"chrisdickinson","message":"and looking at the process + threads with `ps -p<pid> -M` it looked like the main thread was chewing on all of the CPU (admittedly I might be looking at the wrong thing, there)","date":"2014-11-14T01:25:56.071Z","type":"message"}
+{"nick":"Wraithan","message":"my understanding is that it causes a ton of queuing and async roundtrips to happen, which is the source of the slow down, but I'm not the one who researched it","date":"2014-11-14T01:27:34.153Z","type":"message"}
+{"nick":"chrisdickinson","message":"i hadn't quite gotten to the point of throwing dtrace at it, but that sounds feasible","date":"2014-11-14T01:28:18.348Z","type":"message"}
+{"nick":"avalanche123","date":"2014-11-14T01:28:26.667Z","type":"join"}
+{"nick":"Wraithan","message":"I guess hayes is about to head home but I'll let him explain his findings when he gets back online","date":"2014-11-14T01:29:47.047Z","type":"message"}
+{"nick":"Wraithan","message":"I just built the tools he used to profile the agent","date":"2014-11-14T01:29:56.602Z","type":"message"}
+{"nick":"hayes","message":"I'm still here, digging into stream code again","date":"2014-11-14T01:30:08.895Z","type":"message"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-14T01:30:19.808Z","type":"quit"}
+{"nick":"hayes","message":"some of my initial assumptions from yesterday were a bit off ","date":"2014-11-14T01:30:32.315Z","type":"message"}
+{"nick":"rvagg","message":"if that is true, and fs.createWriteStream() does some additional work that's causing the problem then perhaps just piping bunyan to a PassThrough so it could do the buffering as an intermediate -- also setting a larger highWaterMark on that might make a difference","date":"2014-11-14T01:30:43.859Z","type":"message"}
+{"nick":"rvagg","message":"not sure what additional work fs.createWriteStream() would be doing that's causing problems here though","date":"2014-11-14T01:31:02.468Z","type":"message"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T01:32:32.606Z","type":"quit"}
+{"nick":"chrisdickinson","message":"against v0.12 rss pingpongs between 113336320 and 310722560 bytes, so GC seems to be okay. I'm not seeing a lot of gc activity to speak of","date":"2014-11-14T01:33:34.881Z","type":"message"}
+{"nick":"chrisdickinson","message":"errr,","date":"2014-11-14T01:36:59.019Z","type":"message"}
+{"nick":"chrisdickinson","message":"at least i wasn't last time. this time i am.","date":"2014-11-14T01:37:07.101Z","type":"message"}
+{"nick":"kenperkins_","reason":"Quit: Computer has gone to sleep.","date":"2014-11-14T01:37:17.724Z","type":"quit"}
+{"nick":"kenperkins","date":"2014-11-14T01:38:22.586Z","type":"join"}
+{"nick":"hayes","message":"so what stuck out to me was that when you buffer in js you are just doing some simple string concatenation (which if I recall correctly is pretty fast, and doesn't actually do any coppies) and then you create a single writereq for a couple thousands logs statements. in the case where you buffer in fs writeStream, you are are looping over all the buffered chunks the first one you write, which will do an fs.write with an async callback and sets wri","date":"2014-11-14T01:38:30.294Z","type":"message"}
+{"nick":"hayes","message":"ting to true, you then return to the loop, break out of it, wait for the callback and start looping over the chunks again","date":"2014-11-14T01:38:30.552Z","type":"message"}
+{"nick":"hayes","message":"I might be misinterpreting, I have not actually stepped though in a debugger","date":"2014-11-14T01:38:48.187Z","type":"message"}
+{"nick":"chrisdickinson","message":"hayes: where's the string concatenation happening?","date":"2014-11-14T01:39:47.800Z","type":"message"}
+{"nick":"chrisdickinson","message":"ah","date":"2014-11-14T01:40:02.433Z","type":"message"}
+{"nick":"chrisdickinson","message":"sorry, misread","date":"2014-11-14T01:40:05.030Z","type":"message"}
+{"nick":"hayes","message":"oh, in my gist when I am just concatenating stuff outside","date":"2014-11-14T01:40:07.119Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-14T01:41:59.650Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-14T01:42:32.349Z","type":"join"}
+{"nick":"hayes","message":"still not sure how we get 100% cpu though, I would expect lower performance, but with the writes going through fs.write there should be some idle time ","date":"2014-11-14T01:42:33.155Z","type":"message"}
+{"nick":"chrisdickinson","message":"hayes: try it with --trace-gc","date":"2014-11-14T01:43:05.961Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Computer has gone to sleep.","date":"2014-11-14T01:43:29.548Z","type":"quit"}
+{"nick":"chrisdickinson","message":"its got to discard that buffer of writereqs every time it clearBuffers, I think","date":"2014-11-14T01:44:13.937Z","type":"message"}
+{"nick":"chrisdickinson","message":"so it's building up a *lot* of trash","date":"2014-11-14T01:44:21.467Z","type":"message"}
+{"nick":"inolen","date":"2014-11-14T01:44:50.554Z","type":"join"}
+{"nick":"chrisdickinson","message":"trying something out","date":"2014-11-14T01:45:15.800Z","type":"message"}
+{"nick":"chrisdickinson","message":"hm, nope.","date":"2014-11-14T01:45:59.103Z","type":"message"}
+{"nick":"thlorenz","reason":"Ping timeout: 265 seconds","date":"2014-11-14T01:47:19.104Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-14T01:50:11.303Z","type":"quit"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-11-14T01:51:21.730Z","type":"quit"}
+{"nick":"inolen","reason":"Quit: Leaving.","date":"2014-11-14T01:51:22.584Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-14T01:51:25.344Z","type":"join"}
+{"nick":"hayes","message":"h","date":"2014-11-14T01:53:19.356Z","type":"message"}
+{"nick":"hayes","message":"I'm heading home, might look at this a bit more later tonight ","date":"2014-11-14T01:53:45.943Z","type":"message"}
+{"nick":"abraxas_","date":"2014-11-14T02:02:45.560Z","type":"join"}
+{"nick":"stagas","date":"2014-11-14T02:04:44.847Z","type":"join"}
+{"nick":"robertkowalski","date":"2014-11-14T02:04:54.452Z","type":"join"}
+{"nick":"iarna","date":"2014-11-14T02:07:24.115Z","type":"join"}
+{"nick":"abraxas_","reason":"Ping timeout: 265 seconds","date":"2014-11-14T02:08:02.571Z","type":"quit"}
+{"nick":"abraxas_","date":"2014-11-14T02:10:05.729Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T02:11:46.308Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:11:59.278Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T02:18:42.325Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:27:24.969Z","type":"join"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-11-14T02:32:02.791Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T02:34:13.466Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-14T02:36:43.408Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:40:52.640Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 256 seconds","date":"2014-11-14T02:47:20.558Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 264 seconds","date":"2014-11-14T02:47:53.015Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:50:00.283Z","type":"join"}
+{"nick":"robertkowalski","reason":"Signing in (robertkowalski)","date":"2014-11-14T02:50:04.213Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:50:04.295Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T02:57:42.350Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T02:57:52.670Z","type":"join"}
+{"nick":"iarna_","date":"2014-11-14T03:00:49.963Z","type":"join"}
+{"nick":"iarna","reason":"Ping timeout: 255 seconds","date":"2014-11-14T03:02:00.026Z","type":"quit"}
+{"nick":"iarna_","reason":"Read error: Connection reset by peer","date":"2014-11-14T03:04:52.232Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T03:05:10.571Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:07:14.386Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-14T03:07:42.558Z","type":"join"}
+{"nick":"Ralith","date":"2014-11-14T03:12:50.380Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-14T03:13:13.120Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T03:14:17.311Z","type":"join"}
+{"nick":"thlorenz","date":"2014-11-14T03:15:44.649Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T03:20:05.055Z","type":"quit"}
+{"nick":"thlorenz","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:20:09.474Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-14T03:23:17.070Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-14T03:23:42.825Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:27:36.371Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T03:29:32.390Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-14T03:35:00.579Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:36:16.335Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T03:36:24.304Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:43:12.401Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T03:44:27.351Z","type":"join"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-11-14T03:45:51.338Z","type":"quit"}
+{"nick":"pquerna","reason":"Ping timeout: 265 seconds","date":"2014-11-14T03:47:11.130Z","type":"quit"}
+{"nick":"pquerna","date":"2014-11-14T03:47:40.451Z","type":"join"}
+{"nick":"octetcloud","reason":"Ping timeout: 250 seconds","date":"2014-11-14T03:51:47.423Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 255 seconds","date":"2014-11-14T03:55:28.314Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T03:56:08.360Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033haoxin\u000f \u00037v0.12\u000f * \u000200d7b13\u0002 : module: correct the order of the assertions - http://git.io/nFsD1A","date":"2014-11-14T04:00:53.539Z","type":"message"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T04:03:08.311Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:05:25.795Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 250 seconds","date":"2014-11-14T04:07:54.360Z","type":"quit"}
+{"nick":"Left_Turn","reason":"Remote host closed the connection","date":"2014-11-14T04:10:48.088Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 244 seconds","date":"2014-11-14T04:13:05.069Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:14:16.496Z","type":"join"}
+{"nick":"AvianFlu","date":"2014-11-14T04:14:27.608Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 265 seconds","date":"2014-11-14T04:20:28.648Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:20:56.268Z","type":"join"}
+{"nick":"kazupon","date":"2014-11-14T04:25:45.429Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T04:27:50.311Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:28:01.643Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-14T04:31:06.541Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 264 seconds","date":"2014-11-14T04:33:29.874Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:33:43.535Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 244 seconds","date":"2014-11-14T04:35:36.553Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 265 seconds","date":"2014-11-14T04:42:17.171Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:42:43.152Z","type":"join"}
+{"nick":"rmg","date":"2014-11-14T04:46:25.571Z","type":"join"}
+{"nick":"skebcio","reason":"Ping timeout: 240 seconds","date":"2014-11-14T04:51:37.308Z","type":"quit"}
+{"nick":"rmg","reason":"Ping timeout: 265 seconds","date":"2014-11-14T04:51:57.066Z","type":"quit"}
+{"nick":"robertkowalski","reason":"Ping timeout: 265 seconds","date":"2014-11-14T04:52:26.134Z","type":"quit"}
+{"nick":"robertkowalski","date":"2014-11-14T04:52:57.335Z","type":"join"}
+{"nick":"jreyno40","date":"2014-11-14T05:01:33.069Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 250 seconds","date":"2014-11-14T05:01:38.280Z","type":"quit"}
+{"nick":"jreyno40","date":"2014-11-14T05:05:10.821Z","type":"part"}
+{"nick":"robertkowalski","date":"2014-11-14T05:36:16.101Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 265 seconds","date":"2014-11-14T05:43:11.170Z","type":"quit"}
+{"nick":"AvianFlu","reason":"Ping timeout: 256 seconds","date":"2014-11-14T05:51:30.590Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-14T05:57:13.182Z","type":"join"}
+{"nick":"inolen","date":"2014-11-14T06:19:37.926Z","type":"join"}
+{"nick":"iarna","date":"2014-11-14T06:24:13.881Z","type":"join"}
+{"nick":"iarna","reason":"Ping timeout: 264 seconds","date":"2014-11-14T06:28:41.935Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-14T06:46:37.515Z","type":"quit"}
+{"nick":"bajtos","date":"2014-11-14T06:52:14.130Z","type":"join"}
+{"nick":"robertkowalski","date":"2014-11-14T06:54:45.073Z","type":"join"}
+{"nick":"kazupon","date":"2014-11-14T07:01:27.076Z","type":"join"}
+{"nick":"robertkowalski","reason":"Ping timeout: 244 seconds","date":"2014-11-14T07:01:31.071Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-14T07:22:54.873Z","type":"quit"}
+{"nick":"Ldxngx","date":"2014-11-14T07:47:34.072Z","type":"join"}
+{"nick":"rendar","date":"2014-11-14T07:57:00.301Z","type":"join"}
