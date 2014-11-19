@@ -1,0 +1,171 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2014-11-19T00:00:00.782Z","type":"quit"}
+{"nick":"ircretary","date":"2014-11-19T00:00:11.180Z","type":"join"}
+{"nick":"jgi","message":"trevnorris: changes updated","date":"2014-11-19T00:06:50.712Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: thanks :)","date":"2014-11-19T00:06:54.577Z","type":"message"}
+{"nick":"tjfontaine","message":"this child_process ipc code is pretty nasty","date":"2014-11-19T00:08:40.610Z","type":"message"}
+{"nick":"tjfontaine","message":"cjihrig: up next for you is a rewrite of that :)","date":"2014-11-19T00:09:11.153Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: this test is very pathological, every 100ms you're trying to send 10000 handles to the child, you know that that communciation channel is \"synchronous\" right?","date":"2014-11-19T00:10:10.307Z","type":"message"}
+{"nick":"tjfontaine","message":"a_le: ideally you would not, but generally init doesn't necessarily modify loop state","date":"2014-11-19T00:11:17.519Z","type":"message"}
+{"nick":"a_le","message":"tjfontaine: i am not sure i understand","date":"2014-11-19T00:17:03.329Z","type":"message"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-19T00:17:14.666Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 255 seconds","date":"2014-11-19T00:19:55.280Z","type":"quit"}
+{"nick":"jgi","date":"2014-11-19T00:19:56.960Z","type":"join"}
+{"nick":"a_le","message":"tjfontaine: is there a better/safer way i can do the same?","date":"2014-11-19T00:22:14.872Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Sam Roberts\u000f \u00037v0.10\u000f * \u00028032a21\u0002 : test: test all spawn parameter positions (+4 more commits) - http://git.io/MWUJZQ","date":"2014-11-19T00:23:48.094Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-19T00:25:30.754Z","type":"quit"}
+{"nick":"Fishrock123","date":"2014-11-19T00:26:34.104Z","type":"join"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-19T00:32:08.735Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: yeah. I did time it to make sure all the handles could make it through (at least on my box) :P","date":"2014-11-19T00:32:57.926Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: but yeah, the cp ipc code was ridiculous to trace through.","date":"2014-11-19T00:33:17.274Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: ok so, there are some problems here","date":"2014-11-19T00:36:58.026Z","type":"message"}
+{"nick":"tjfontaine","message":"1) the code is designed to be able to communicate backpressure -- it doesn't","date":"2014-11-19T00:37:17.186Z","type":"message"}
+{"nick":"tjfontaine","message":"2) communicating back pressure here is kinda weird but ok","date":"2014-11-19T00:37:39.169Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: i'm going to split the commit so there's one just containing the v8 changes. just in case it needs to be floated later.","date":"2014-11-19T00:37:48.204Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/joyent/node/blob/v0.12/lib/child_process.js#L492 is like, ooh look at me, I should be *telling* people when I'm filling up my queue","date":"2014-11-19T00:38:27.470Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/joyent/node/blob/v0.12/lib/child_process.js#L415","date":"2014-11-19T00:38:36.032Z","type":"message"}
+{"nick":"tjfontaine","message":"but we don't actually communicate that message out","date":"2014-11-19T00:38:41.563Z","type":"message"}
+{"nick":"tjfontaine","message":"then of course ...","date":"2014-11-19T00:38:54.731Z","type":"message"}
+{"nick":"tjfontaine","message":"https://github.com/joyent/node/blob/v0.12/lib/child_process.js#L473 and https://github.com/joyent/node/blob/v0.12/lib/child_process.js#L451","date":"2014-11-19T00:39:08.470Z","type":"message"}
+{"nick":"tjfontaine","message":"*also* don't communicate the back pressure","date":"2014-11-19T00:39:17.925Z","type":"message"}
+{"nick":"tjfontaine","message":"so no one can do anything useful here","date":"2014-11-19T00:39:27.620Z","type":"message"}
+{"nick":"tjfontaine","message":"as far as the memory is concerned around this, it looks like just a generic problem of 1) creating a lot of garbage objects, 2) storing them in huge arrays","date":"2014-11-19T00:40:07.607Z","type":"message"}
+{"nick":"tjfontaine","message":"the gc seems quite capable of keeping up","date":"2014-11-19T00:40:21.020Z","type":"message"}
+{"nick":"tjfontaine","message":"and if you do watch for packpressure everything stays around 35mb","date":"2014-11-19T00:40:36.124Z","type":"message"}
+{"nick":"tjfontaine","message":"I changed those code paths to return _handleQueue.length","date":"2014-11-19T00:41:04.234Z","type":"message"}
+{"nick":"tjfontaine","message":"and did:","date":"2014-11-19T00:41:15.714Z","type":"message"}
+{"nick":"tjfontaine","message":"    while(i < ITER) {","date":"2014-11-19T00:41:16.101Z","type":"message"}
+{"nick":"tjfontaine","message":"      ret = child.send('server', server);","date":"2014-11-19T00:41:16.104Z","type":"message"}
+{"nick":"tjfontaine","message":"      if (ret > 2)","date":"2014-11-19T00:41:16.104Z","type":"message"}
+{"nick":"tjfontaine","message":"        break;","date":"2014-11-19T00:41:16.682Z","type":"message"}
+{"nick":"tjfontaine","message":"which is what essentially the guidance is for backpressure in the comment","date":"2014-11-19T00:41:30.024Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. I was never able to actually crash a node process.","date":"2014-11-19T00:45:18.219Z","type":"message"}
+{"nick":"trevnorris","message":"thanks for looking into that.","date":"2014-11-19T00:45:21.321Z","type":"message"}
+{"nick":"tjfontaine","message":"there's a legitimate bug there though","date":"2014-11-19T00:45:30.755Z","type":"message"}
+{"nick":"tjfontaine","message":"ipc.send *must* communicate back pressure","date":"2014-11-19T00:45:42.123Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Trevor Norris\u000f \u00037v0.10\u000f * \u0002a1b2875\u0002 : lint: fix lint issues (+2 more commits) - http://git.io/aus3pQ","date":"2014-11-19T00:47:30.876Z","type":"message"}
+{"nick":"tjfontaine","message":"and then cluster should learn what that means","date":"2014-11-19T00:47:39.215Z","type":"message"}
+{"nick":"tjfontaine","message":"and libuv should not immediately accept connections","date":"2014-11-19T00:47:45.798Z","type":"message"}
+{"nick":"trevnorris","message":"heh, quite the chain there.","date":"2014-11-19T00:48:15.930Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: merged. thanks.","date":"2014-11-19T00:48:22.279Z","type":"message"}
+{"nick":"tjfontaine","message":"trevnorris: it's a bit odd that the author of the v8 change is now you","date":"2014-11-19T00:48:50.252Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-19T00:51:35.144Z","type":"join"}
+{"nick":"kriskowal","reason":"Quit: kriskowal","date":"2014-11-19T00:57:58.586Z","type":"quit"}
+{"nick":"kriskowal","date":"2014-11-19T01:01:23.281Z","type":"join"}
+{"nick":"tjfontaine","message":"ok filed those issues","date":"2014-11-19T01:02:25.259Z","type":"message"}
+{"nick":"kriskowal","reason":"Ping timeout: 255 seconds","date":"2014-11-19T01:05:49.281Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-19T01:06:35.613Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-19T01:09:18.037Z","type":"quit"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-19T01:15:40.947Z","type":"quit"}
+{"nick":"abraxas_","date":"2014-11-19T01:16:43.574Z","type":"join"}
+{"nick":"octetcloud","reason":"Ping timeout: 255 seconds","date":"2014-11-19T01:17:31.282Z","type":"quit"}
+{"nick":"abraxas_","reason":"Ping timeout: 250 seconds","date":"2014-11-19T01:21:20.304Z","type":"quit"}
+{"nick":"hayes","reason":"Ping timeout: 255 seconds","date":"2014-11-19T01:22:33.147Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-19T01:36:05.229Z","type":"join"}
+{"nick":"abraxas_","date":"2014-11-19T01:36:42.489Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-19T01:40:11.291Z","type":"quit"}
+{"nick":"jgi","date":"2014-11-19T01:40:45.847Z","type":"join"}
+{"nick":"brson","reason":"Quit: leaving","date":"2014-11-19T01:45:43.068Z","type":"quit"}
+{"nick":"dap_","reason":"Quit: Leaving.","date":"2014-11-19T01:48:17.678Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-19T02:01:14.091Z","type":"join"}
+{"nick":"thlorenz","reason":"Read error: Connection reset by peer","date":"2014-11-19T02:01:59.834Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-19T02:02:17.720Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-19T02:03:34.194Z","type":"quit"}
+{"nick":"thlorenz","reason":"Ping timeout: 245 seconds","date":"2014-11-19T02:06:57.677Z","type":"quit"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-19T02:09:38.821Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-19T02:11:10.827Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-19T02:11:14.709Z","type":"quit"}
+{"nick":"Ralith","reason":"Ping timeout: 255 seconds","date":"2014-11-19T02:24:07.283Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2014-11-19T02:51:16.511Z","type":"quit"}
+{"nick":"a_le","reason":"Read error: Connection reset by peer","date":"2014-11-19T03:12:05.977Z","type":"quit"}
+{"nick":"importantshock","reason":"Remote host closed the connection","date":"2014-11-19T03:19:22.982Z","type":"quit"}
+{"nick":"Ralith","date":"2014-11-19T03:23:11.662Z","type":"join"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 255 seconds","date":"2014-11-19T03:24:30.137Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-19T03:24:32.282Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-19T03:26:27.407Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-19T03:27:04.573Z","type":"join"}
+{"nick":"janjongboom","reason":"Read error: Connection reset by peer","date":"2014-11-19T03:37:33.136Z","type":"quit"}
+{"nick":"janjongb_","date":"2014-11-19T03:37:38.941Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-19T03:44:13.291Z","type":"join"}
+{"nick":"janjongb_","reason":"Read error: Connection reset by peer","date":"2014-11-19T03:44:32.818Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-19T03:49:47.496Z","type":"join"}
+{"nick":"thlorenz_","date":"2014-11-19T03:50:48.050Z","type":"join"}
+{"nick":"thlorenz","reason":"Read error: Connection reset by peer","date":"2014-11-19T03:50:48.313Z","type":"quit"}
+{"nick":"janjongb_","date":"2014-11-19T03:51:37.361Z","type":"join"}
+{"nick":"janjongboom","reason":"Read error: Connection reset by peer","date":"2014-11-19T03:51:40.981Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Sam Roberts\u000f \u00037v0.10\u000f * \u00023a08b7c\u0002 : doc: cover stdio option in child_process - http://git.io/rOc7Hw","date":"2014-11-19T03:52:37.022Z","type":"message"}
+{"nick":"iarna","date":"2014-11-19T03:57:37.128Z","type":"join"}
+{"nick":"Left_Turn","reason":"Remote host closed the connection","date":"2014-11-19T04:09:35.317Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-19T04:09:40.100Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-19T04:20:10.633Z","type":"join"}
+{"nick":"AvianFlu","reason":"Ping timeout: 240 seconds","date":"2014-11-19T04:22:53.042Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-19T04:25:17.777Z","type":"quit"}
+{"nick":"iarna_","date":"2014-11-19T04:29:08.918Z","type":"join"}
+{"nick":"iarna","reason":"Ping timeout: 255 seconds","date":"2014-11-19T04:31:06.255Z","type":"quit"}
+{"nick":"cjihrig","message":"tjfontaine: sorry, what am i supposed to be rewriting (fyi, will be mostly unavailable on IRC the rest of the week but feel free to email)","date":"2014-11-19T04:31:21.639Z","type":"message"}
+{"nick":"thlorenz_","reason":"Remote host closed the connection","date":"2014-11-19T04:34:24.302Z","type":"quit"}
+{"nick":"trevnorris","message":"tjfontaine: ah, wait. crap. I forgot to set the commit author when I split it.","date":"2014-11-19T04:38:43.512Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-11-19T04:42:06.925Z","type":"join"}
+{"nick":"inolen","date":"2014-11-19T05:04:24.265Z","type":"join"}
+{"nick":"inolen","reason":"Client Quit","date":"2014-11-19T05:04:30.834Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-19T05:12:16.881Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 265 seconds","date":"2014-11-19T05:16:45.548Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-19T05:17:12.285Z","type":"join"}
+{"nick":"iarna_","reason":"Read error: Connection reset by peer","date":"2014-11-19T05:17:29.888Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-19T05:36:24.629Z","type":"quit"}
+{"nick":"kazupon","date":"2014-11-19T05:36:53.892Z","type":"join"}
+{"nick":"iarna_","date":"2014-11-19T05:46:02.758Z","type":"join"}
+{"nick":"iarna","reason":"Ping timeout: 250 seconds","date":"2014-11-19T05:46:32.311Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-19T06:06:21.182Z","type":"join"}
+{"nick":"iarna","date":"2014-11-19T06:07:26.660Z","type":"join"}
+{"nick":"iarna_","reason":"Read error: Connection reset by peer","date":"2014-11-19T06:09:17.525Z","type":"quit"}
+{"nick":"yourname","date":"2014-11-19T06:10:52.059Z","type":"join"}
+{"nick":"yourname","reason":"Quit: leaving","date":"2014-11-19T06:21:33.105Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:21:51.363Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:22:01.642Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:23:58.988Z","type":"join"}
+{"nick":"janjongb_","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-19T06:27:00.024Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-19T06:30:57.436Z","type":"join"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-11-19T06:31:01.815Z","type":"quit"}
+{"nick":"qard_","reason":"Quit: leaving","date":"2014-11-19T06:32:12.846Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:32:29.058Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:33:05.055Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:34:44.573Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:34:48.600Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:35:07.202Z","type":"join"}
+{"nick":"janjongboom","reason":"Ping timeout: 240 seconds","date":"2014-11-19T06:35:17.439Z","type":"quit"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:35:44.202Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:36:24.486Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-19T06:36:35.030Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:36:57.426Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:37:16.236Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:37:36.525Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-19T06:39:57.331Z","type":"join"}
+{"nick":"qard_","date":"2014-11-19T06:40:02.606Z","type":"join"}
+{"nick":"qard_","reason":"Client Quit","date":"2014-11-19T06:41:03.718Z","type":"quit"}
+{"nick":"qard_","date":"2014-11-19T06:41:38.997Z","type":"join"}
+{"nick":"janjongboom","reason":"Read error: Connection reset by peer","date":"2014-11-19T06:43:09.461Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-19T06:43:30.584Z","type":"join"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-19T06:45:25.384Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-19T06:45:40.281Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-19T06:47:33.711Z","type":"quit"}
+{"nick":"qard_","reason":"Quit: leaving","date":"2014-11-19T06:51:16.078Z","type":"quit"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-19T06:52:39.641Z","type":"quit"}
+{"nick":"bengl","reason":"Ping timeout: 244 seconds","date":"2014-11-19T06:54:51.453Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-19T06:56:23.228Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-19T06:56:59.879Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-19T07:01:13.575Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 264 seconds","date":"2014-11-19T07:01:41.833Z","type":"quit"}
+{"nick":"bengl","date":"2014-11-19T07:07:16.352Z","type":"join"}
+{"nick":"iarna_","date":"2014-11-19T07:23:39.403Z","type":"join"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2014-11-19T07:24:30.951Z","type":"quit"}
+{"nick":"iarna","reason":"Read error: Connection reset by peer","date":"2014-11-19T07:24:45.268Z","type":"quit"}
+{"nick":"a_le","date":"2014-11-19T07:25:09.592Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2014-11-19T07:30:49.806Z","type":"quit"}
+{"nick":"rmg","date":"2014-11-19T07:31:32.531Z","type":"join"}
+{"nick":"kazupon","date":"2014-11-19T07:33:32.840Z","type":"join"}
+{"nick":"rmg","reason":"Ping timeout: 250 seconds","date":"2014-11-19T07:36:36.408Z","type":"quit"}
+{"nick":"iarna_","reason":"Read error: Connection reset by peer","date":"2014-11-19T07:38:51.064Z","type":"quit"}
+{"nick":"iarna","date":"2014-11-19T07:39:02.617Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-19T07:43:33.898Z","type":"join"}
+{"nick":"bajtos","date":"2014-11-19T07:47:26.362Z","type":"join"}
+{"nick":"rendar","date":"2014-11-19T07:57:52.445Z","type":"join"}
