@@ -1,0 +1,127 @@
+{"nick":"bnoordhuis","message":"trevnorris: short answer: that's crazy :-)","date":"2014-11-20T00:08:57.341Z","type":"message"}
+{"nick":"trevnorris","message":"awesome. almost have it done. ;)","date":"2014-11-20T00:09:10.827Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: you're using the void* as a void** to new'd memory?","date":"2014-11-20T00:09:43.272Z","type":"message"}
+{"nick":"bnoordhuis","message":"Domenic: can you define 'terminates the code'?","date":"2014-11-20T00:10:36.395Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: you have v8::Persistent<TypeName> PropertyName ## _;","date":"2014-11-20T00:11:00.257Z","type":"message"}
+{"nick":"trevnorris","message":"I'm adding void** PropertyName ## _void_ptr_; and nulling it out in the Environment constructor.","date":"2014-11-20T00:11:00.431Z","type":"message"}
+{"nick":"Domenic","message":"bnoordhuis: I guess I meant call TerminateExecution(), under the assumption that that would do what I want","date":"2014-11-20T00:11:02.894Z","type":"message"}
+{"nick":"bnoordhuis","message":"Domenic: right. yes, that's possible","date":"2014-11-20T00:11:30.631Z","type":"message"}
+{"nick":"Domenic","message":"bnoordhuis: OK cool, will try to get a PR rolling.","date":"2014-11-20T00:11:47.211Z","type":"message"}
+{"nick":"trevnorris","message":"my brain glitches a little when working with pointers to pointers, but I always figure it out. :P","date":"2014-11-20T00:12:46.210Z","type":"message"}
+{"nick":"bnoordhuis","message":"trevnorris: no offense but that sounds like a horrible hack","date":"2014-11-20T00:12:59.085Z","type":"message"}
+{"nick":"trevnorris","message":"bnoordhuis: well, V8 should give me a better API.","date":"2014-11-20T00:13:15.128Z","type":"message"}
+{"nick":"trevnorris","message":"I don't know any other way to replace the void* inside a v8::External.","date":"2014-11-20T00:13:43.091Z","type":"message"}
+{"nick":"bnoordhuis","message":"let's take a step back. why do you want to do that in the first place?","date":"2014-11-20T00:14:29.361Z","type":"message"}
+{"nick":"bnoordhuis","message":"is it to carry around a reference to the parent object of an asyncwrap instance?","date":"2014-11-20T00:14:54.753Z","type":"message"}
+{"nick":"trevnorris","message":"I want to be able to pass a pointer to a FunctionTemplate constructor.","date":"2014-11-20T00:15:06.248Z","type":"message"}
+{"nick":"bnoordhuis","message":"can't you pass an External to the constructor when you call NewInstance()?","date":"2014-11-20T00:15:59.368Z","type":"message"}
+{"nick":"bnoordhuis","message":"this is for pipe/tcp/udp/etc. handle constructors, right?","date":"2014-11-20T00:16:11.057Z","type":"message"}
+{"nick":"trevnorris","message":"I don't see passing it via the args as much an option because 1) in some cases it'll conflict w/ the JS calls 2) it sucks for performance.","date":"2014-11-20T00:16:14.621Z","type":"message"}
+{"nick":"trevnorris","message":"yeah","date":"2014-11-20T00:16:18.030Z","type":"message"}
+{"nick":"bnoordhuis","message":"how does it conflict with js calls?","date":"2014-11-20T00:17:10.407Z","type":"message"}
+{"nick":"ramitos","reason":"Ping timeout: 245 seconds","date":"2014-11-20T00:17:47.670Z","type":"quit"}
+{"nick":"bnoordhuis","message":"also, quick: what's a cheap and simple to implement 32 bits hash?","date":"2014-11-20T00:17:48.474Z","type":"message"}
+{"nick":"bnoordhuis","message":"i kind of default to a jenkins hash but is there something better?","date":"2014-11-20T00:18:17.811Z","type":"message"}
+{"nick":"trevnorris","message":"iirc, arguments may be passed from JS to the call","date":"2014-11-20T00:18:18.513Z","type":"message"}
+{"nick":"ramitos","date":"2014-11-20T00:19:01.210Z","type":"join"}
+{"nick":"bnoordhuis","message":"the active asyncwrap is set on the env object, isn't it?","date":"2014-11-20T00:19:23.277Z","type":"message"}
+{"nick":"trevnorris","message":"basically, args.Data() is the most full-proof way of getting the value to the constructor since it's not available via js","date":"2014-11-20T00:19:28.383Z","type":"message"}
+{"nick":"trevnorris","message":"yes, but that's not the same as the \"parent\" asyncwrap","date":"2014-11-20T00:19:40.445Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh, confusing","date":"2014-11-20T00:19:46.948Z","type":"message"}
+{"nick":"bnoordhuis","message":"what makes the parent asyncwrap the parent?","date":"2014-11-20T00:19:55.648Z","type":"message"}
+{"nick":"trevnorris","message":"e.g. an incoming tcp connections \"parent\" will be the server.","date":"2014-11-20T00:19:59.690Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah","date":"2014-11-20T00:20:03.247Z","type":"message"}
+{"nick":"bnoordhuis","message":"isn't the most obvious solution to just pass the server handle as an argument to the tcp constructor?","date":"2014-11-20T00:20:45.532Z","type":"message"}
+{"nick":"trevnorris","message":"yes, except the TCPWrap constructor is run inside the FunctionTemplate constructor. hence why i'm trying to figure out how to pass the pointer.","date":"2014-11-20T00:21:24.736Z","type":"message"}
+{"nick":"trevnorris","message":"e.g. https://github.com/joyent/node/blob/master/src/tcp_wrap.cc#L146-L155","date":"2014-11-20T00:22:03.215Z","type":"message"}
+{"nick":"trevnorris","message":"I have it setup so TCPWrap() accepts the parent asyncwrap as a third argument, but now i'm trying to figure out how to get that pointer in that call.","date":"2014-11-20T00:22:39.781Z","type":"message"}
+{"nick":"bnoordhuis","message":"argument in the FunctionCallbackInfo list?","date":"2014-11-20T00:23:26.925Z","type":"message"}
+{"nick":"bnoordhuis","message":"TCPWrap::New() is called from js land, right?","date":"2014-11-20T00:23:39.351Z","type":"message"}
+{"nick":"bnoordhuis","message":"does js land know what the associated server handle is?","date":"2014-11-20T00:23:59.686Z","type":"message"}
+{"nick":"trevnorris","message":"not in all cases.","date":"2014-11-20T00:24:07.551Z","type":"message"}
+{"nick":"trevnorris","message":"TCPWrap::New() isn't always called from JS.","date":"2014-11-20T00:24:25.346Z","type":"message"}
+{"nick":"bnoordhuis","message":"no, okay. you would also need to patch up the NewInstance() call sites","date":"2014-11-20T00:24:47.019Z","type":"message"}
+{"nick":"trevnorris","message":"same as UDPWrap::New() (which is run from UDPWrap::Instantiate() for that ipc thing we discussed)","date":"2014-11-20T00:24:50.843Z","type":"message"}
+{"nick":"bnoordhuis","message":"but that's pretty simple, right?","date":"2014-11-20T00:25:00.038Z","type":"message"}
+{"nick":"trevnorris","message":"how do you mean \"patch up\"?","date":"2014-11-20T00:25:21.915Z","type":"message"}
+{"nick":"bnoordhuis","message":"update them to pass the extra argument :-)","date":"2014-11-20T00:26:24.862Z","type":"message"}
+{"nick":"trevnorris","message":"sure, but then I'd need to External::New() for every instantiation.","date":"2014-11-20T00:27:19.182Z","type":"message"}
+{"nick":"trevnorris","message":"my hack was just to get around that.","date":"2014-11-20T00:28:19.529Z","type":"message"}
+{"nick":"bnoordhuis","message":"you're worried about the overhead of the External object allocation?","date":"2014-11-20T00:30:43.145Z","type":"message"}
+{"nick":"bnoordhuis","message":"i guess it could matter but then again, it could be inconsequential","date":"2014-11-20T00:30:59.499Z","type":"message"}
+{"nick":"trevnorris","message":"yeah. I timed it. adds about 80ns.","date":"2014-11-20T00:31:03.739Z","type":"message"}
+{"nick":"bnoordhuis","message":"ns or ms?","date":"2014-11-20T00:31:15.979Z","type":"message"}
+{"nick":"trevnorris","message":"ns","date":"2014-11-20T00:31:18.856Z","type":"message"}
+{"nick":"bnoordhuis","message":"that's pretty inconsequential. i'd be more worried about the extra gc pressure","date":"2014-11-20T00:31:43.579Z","type":"message"}
+{"nick":"trevnorris","message":"since the External is created within a HandleScope, should be cleaned up immediately after construction.","date":"2014-11-20T00:32:08.674Z","type":"message"}
+{"nick":"bnoordhuis","message":"though that's probably pretty inconsequential too. i believe an External is 16 bytes on x64","date":"2014-11-20T00:32:12.032Z","type":"message"}
+{"nick":"bnoordhuis","message":"oh yeah, there's that. that's not exactly how a HandleScope works but close enough","date":"2014-11-20T00:32:43.191Z","type":"message"}
+{"nick":"trevnorris","message":"yeah yeah. okay. i'll take the _simple_ way. ;-P","date":"2014-11-20T00:32:44.012Z","type":"message"}
+{"nick":"bnoordhuis","message":"if it turns to be a bottleneck, here is what you can do","date":"2014-11-20T00:33:01.700Z","type":"message"}
+{"nick":"bnoordhuis","message":"generate a unique integral id for each asyncwrap, store them in a tree or hash map, then pass the id to the constructor and look it up again in said constructor","date":"2014-11-20T00:33:41.832Z","type":"message"}
+{"nick":"bnoordhuis","message":"but yeah, i'd start out simple :)","date":"2014-11-20T00:33:50.763Z","type":"message"}
+{"nick":"trevnorris","message":"heh, yeah.","date":"2014-11-20T00:34:53.495Z","type":"message"}
+{"nick":"trevnorris","message":"it's just so much fun to raise the insanity level of my performance hacks. :P","date":"2014-11-20T00:35:12.635Z","type":"message"}
+{"nick":"trevnorris","message":"oy, okay. that was _a lot_ easier...","date":"2014-11-20T00:39:44.013Z","type":"message"}
+{"nick":"Fishrock123","message":"lol","date":"2014-11-20T00:40:05.786Z","type":"message"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T00:50:31.755Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-20T00:56:57.313Z","type":"join"}
+{"nick":"ijroth","reason":"Client Quit","date":"2014-11-20T00:58:54.453Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-20T00:59:59.235Z","type":"join"}
+{"nick":"srl295","message":"trevnorris: piscisaureus: i'll be back, if i don't answer here please reply on the PRs","date":"2014-11-20T01:03:59.820Z","type":"message"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T01:05:30.106Z","type":"quit"}
+{"nick":"themiddleman","reason":"Remote host closed the connection","date":"2014-11-20T01:06:41.651Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-20T01:08:17.324Z","type":"join"}
+{"nick":"ramitos","reason":"Ping timeout: 244 seconds","date":"2014-11-20T01:08:51.279Z","type":"quit"}
+{"nick":"ramitos","date":"2014-11-20T01:11:27.239Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T01:13:14.889Z","type":"quit"}
+{"nick":"ryan_stevens","date":"2014-11-20T01:13:37.799Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-20T01:19:57.620Z","type":"join"}
+{"nick":"abraxas__","date":"2014-11-20T01:31:30.507Z","type":"join"}
+{"nick":"abraxas__","reason":"Ping timeout: 250 seconds","date":"2014-11-20T01:36:02.237Z","type":"quit"}
+{"nick":"abraxas__","date":"2014-11-20T01:38:54.714Z","type":"join"}
+{"nick":"dshaw_","date":"2014-11-20T02:03:47.571Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T02:09:51.032Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 255 seconds","date":"2014-11-20T02:16:33.055Z","type":"quit"}
+{"nick":"octetcloud","reason":"Ping timeout: 272 seconds","date":"2014-11-20T02:31:03.798Z","type":"quit"}
+{"nick":"ryan_stevens","reason":"Quit: ryan_stevens","date":"2014-11-20T02:34:14.481Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-20T02:36:40.616Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-20T02:37:15.486Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 265 seconds","date":"2014-11-20T02:41:56.473Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-20T02:59:26.299Z","type":"join"}
+{"nick":"ryan_stevens","date":"2014-11-20T02:59:37.836Z","type":"join"}
+{"nick":"themiddleman","date":"2014-11-20T03:01:43.265Z","type":"join"}
+{"nick":"dshaw_","reason":"Ping timeout: 256 seconds","date":"2014-11-20T03:04:52.524Z","type":"quit"}
+{"nick":"joeybaker","new_nick":"zz_joeybaker","date":"2014-11-20T03:05:02.502Z","type":"nick"}
+{"nick":"ryan_stevens","reason":"Ping timeout: 264 seconds","date":"2014-11-20T03:09:29.853Z","type":"quit"}
+{"nick":"wolfeidau_","new_nick":"wolfeidau","date":"2014-11-20T03:12:24.886Z","type":"nick"}
+{"nick":"bnoordhuis","date":"2014-11-20T03:22:27.942Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 255 seconds","date":"2014-11-20T03:27:11.954Z","type":"quit"}
+{"nick":"zz_joeybaker","new_nick":"joeybaker","date":"2014-11-20T03:49:24.011Z","type":"nick"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2014-11-20T03:51:26.753Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-20T03:52:37.661Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-20T03:52:52.875Z","type":"join"}
+{"nick":"themiddleman","reason":"Remote host closed the connection","date":"2014-11-20T03:53:54.567Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2014-11-20T04:00:46.892Z","type":"quit"}
+{"nick":"piscisaureus","reason":"Ping timeout: 265 seconds","date":"2014-11-20T04:24:24.514Z","type":"quit"}
+{"nick":"bradleymeck","date":"2014-11-20T04:28:13.745Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-20T05:18:04.498Z","type":"join"}
+{"nick":"seishun","date":"2014-11-20T05:22:12.006Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T05:32:35.551Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-20T05:32:40.074Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-20T05:33:45.188Z","type":"join"}
+{"nick":"ijroth","reason":"Client Quit","date":"2014-11-20T05:34:03.384Z","type":"quit"}
+{"nick":"ijroth","date":"2014-11-20T06:14:20.689Z","type":"join"}
+{"nick":"dshaw_","date":"2014-11-20T06:18:29.753Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 255 seconds","date":"2014-11-20T06:32:36.038Z","type":"quit"}
+{"nick":"ijroth1","date":"2014-11-20T06:39:44.240Z","type":"join"}
+{"nick":"ijroth","reason":"Ping timeout: 258 seconds","date":"2014-11-20T06:42:46.802Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-20T06:51:25.214Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-20T06:52:01.510Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 255 seconds","date":"2014-11-20T06:56:22.524Z","type":"quit"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2014-11-20T07:15:48.334Z","type":"quit"}
+{"nick":"themiddleman","date":"2014-11-20T07:18:20.252Z","type":"join"}
+{"nick":"ijroth1","reason":"Quit: Leaving.","date":"2014-11-20T07:22:03.612Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-20T07:22:13.281Z","type":"join"}
+{"nick":"ijroth","date":"2014-11-20T07:29:15.912Z","type":"join"}
+{"nick":"ijroth","reason":"Quit: Leaving.","date":"2014-11-20T07:38:12.130Z","type":"quit"}
