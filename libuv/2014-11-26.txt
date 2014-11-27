@@ -144,3 +144,288 @@
 {"nick":"janjongboom","reason":"Ping timeout: 255 seconds","date":"2014-11-26T15:55:06.122Z","type":"quit"}
 {"nick":"janjongboom","date":"2014-11-26T15:56:08.312Z","type":"join"}
 {"nick":"rmg","reason":"Ping timeout: 264 seconds","date":"2014-11-26T15:58:05.937Z","type":"quit"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-11-26T16:00:18.904Z","type":"quit"}
+{"nick":"creationix","message":"saghul: since we’re doing RFCs for libuv now, has there been any discussion around adding memory mapping to the fs operations?  The lack of mem-mapping in node is one of the largest things making it hard for my git implementation to compete with Linus’ code.","date":"2014-11-26T16:03:54.618Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-26T16:03:56.113Z","type":"quit"}
+{"nick":"saghul","message":"creationix: there has been no such discussion","date":"2014-11-26T16:05:29.093Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-26T16:05:29.893Z","type":"join"}
+{"nick":"saghul","message":"creationix: I plan to work on some document explaining the RFC process tonight, will poke you when ready so you can propose your own!","date":"2014-11-26T16:06:07.985Z","type":"message"}
+{"nick":"creationix","message":"cool.  I don’t even fully understand mem-mapping since I’ve never used it personally, but it seems like something that could be super useful.","date":"2014-11-26T16:06:45.734Z","type":"message"}
+{"nick":"bradleymeck","message":"creationix: basically they load a file into ","date":"2014-11-26T16:07:13.814Z","type":"message"}
+{"nick":"bradleymeck","message":"ram as shared memory","date":"2014-11-26T16:07:19.196Z","type":"message"}
+{"nick":"bradleymeck","message":"file doesn't necessarily have to be on disk (for *nix) but it has a fd","date":"2014-11-26T16:07:43.748Z","type":"message"}
+{"nick":"creationix","message":"right, but multiple processes can access the same file to implement shared memory across processes I think","date":"2014-11-26T16:07:47.405Z","type":"message"}
+{"nick":"bradleymeck","message":"yes","date":"2014-11-26T16:07:56.385Z","type":"message"}
+{"nick":"bradleymeck","message":"but you will want to add locking structures","date":"2014-11-26T16:08:04.612Z","type":"message"}
+{"nick":"creationix","message":"I was looking at lmdm last night and saw how they used it to make their embedded database safe for multi-process systems","date":"2014-11-26T16:08:20.377Z","type":"message"}
+{"nick":"bradleymeck","message":"creationix: http://www.linuxjournal.com/content/lock-free-multi-producer-multi-consumer-queue-ring-buffer might give you some info, but you want a lockless ring for requests","date":"2014-11-26T16:09:05.660Z","type":"message"}
+{"nick":"bradleymeck","message":"requests generally being to lock a table","date":"2014-11-26T16:09:26.259Z","type":"message"}
+{"nick":"bradleymeck","message":"or something","date":"2014-11-26T16:09:30.150Z","type":"message"}
+{"nick":"creationix","message":"now my question is would exposing mutable shared ram to a scripting language make sense?","date":"2014-11-26T16:10:38.072Z","type":"message"}
+{"nick":"creationix","message":"I guess it would be something like a node buffer?","date":"2014-11-26T16:10:47.949Z","type":"message"}
+{"nick":"bradleymeck","message":"unlikely","date":"2014-11-26T16:10:50.339Z","type":"message"}
+{"nick":"bradleymeck","message":"a shared hash table sure","date":"2014-11-26T16:10:56.489Z","type":"message"}
+{"nick":"bradleymeck","message":"but if you can hold onto a piece of shared ram and mutate it :(","date":"2014-11-26T16:11:36.419Z","type":"message"}
+{"nick":"bradleymeck","message":"same problem as mutating fs buffer in node when they get reused","date":"2014-11-26T16:11:55.954Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-26T16:17:08.773Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-26T16:17:43.718Z","type":"join"}
+{"nick":"creationix","message":"bradleymeck: or for the non-shared case where I just want to do lots of random reads and writes to a file on disk.  Mem-mapping is often much faster than fs syscalls for certain workloads.","date":"2014-11-26T16:21:17.340Z","type":"message"}
+{"nick":"bradleymeck","message":"yes","date":"2014-11-26T16:21:34.527Z","type":"message"}
+{"nick":"bradleymeck","message":"but you need to sync to disk once you are done","date":"2014-11-26T16:21:45.555Z","type":"message"}
+{"nick":"creationix","message":"but I don’t know the exact semantics.  I assume reading a piece of the file that’s not in ram already would block my process right?","date":"2014-11-26T16:21:49.197Z","type":"message"}
+{"nick":"creationix","message":"so it could hurt the event-loop model","date":"2014-11-26T16:21:58.950Z","type":"message"}
+{"nick":"creationix","message":"though I guess we could have async versions of read and write that go through the thread pool","date":"2014-11-26T16:22:32.486Z","type":"message"}
+{"nick":"creationix","message":"read and sync","date":"2014-11-26T16:22:58.808Z","type":"message"}
+{"nick":"abraxas_","date":"2014-11-26T16:23:04.312Z","type":"join"}
+{"nick":"creationix","message":"write is probably non-blocking always","date":"2014-11-26T16:23:06.145Z","type":"message"}
+{"nick":"bradleymeck","message":"it is loaded into memory and can be swapped just like most things","date":"2014-11-26T16:23:29.063Z","type":"message"}
+{"nick":"bradleymeck","message":"you could mprotect to force it to stay in ram","date":"2014-11-26T16:23:42.224Z","type":"message"}
+{"nick":"abraxas_","reason":"Ping timeout: 264 seconds","date":"2014-11-26T16:28:05.945Z","type":"quit"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 256 seconds","date":"2014-11-26T16:31:46.670Z","type":"quit"}
+{"nick":"bradleymeck","message":"creationix: I guess the key thing is that you will need msync() setup as well as mmap() to flush your changes to the fs rather than just mutating it in ram","date":"2014-11-26T16:37:30.125Z","type":"message"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-26T16:38:10.414Z","type":"quit"}
+{"nick":"bradleymeck","message":"s/ram/memory/","date":"2014-11-26T16:38:20.124Z","type":"message"}
+{"nick":"creationix","message":"well, depends on the use case.  For writing a database I’d only want to sync to disk when users of my API want some form of assurance it’s actually written","date":"2014-11-26T16:39:02.140Z","type":"message"}
+{"nick":"bradleymeck","message":"yea mysync would need to be exposed somehow","date":"2014-11-26T16:39:56.783Z","type":"message"}
+{"nick":"creationix","message":"hmm, looks like the current node binding and ben’s original only exposed mmap https://github.com/geocar/mmap","date":"2014-11-26T16:41:09.639Z","type":"message"}
+{"nick":"janjongboom","reason":"Ping timeout: 250 seconds","date":"2014-11-26T16:41:30.377Z","type":"quit"}
+{"nick":"creationix","message":"and sync","date":"2014-11-26T16:41:44.640Z","type":"message"}
+{"nick":"janjongboom","date":"2014-11-26T16:42:45.272Z","type":"join"}
+{"nick":"bajtos","date":"2014-11-26T16:45:03.422Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T16:45:22.433Z","type":"quit"}
+{"nick":"seishun","date":"2014-11-26T16:54:18.771Z","type":"join"}
+{"nick":"octetcloud","date":"2014-11-26T16:55:45.090Z","type":"join"}
+{"nick":"rmg","date":"2014-11-26T16:59:54.661Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-26T17:15:43.604Z","type":"join"}
+{"nick":"SergeiRND","date":"2014-11-26T17:15:57.951Z","type":"join"}
+{"nick":"AvianFlu","date":"2014-11-26T17:22:27.293Z","type":"join"}
+{"nick":"pbunny","reason":"Ping timeout: 245 seconds","date":"2014-11-26T17:25:39.662Z","type":"quit"}
+{"nick":"lanceball","new_nick":"lance|afk","date":"2014-11-26T17:26:27.155Z","type":"nick"}
+{"nick":"AvianFlu","reason":"Quit: Leaving","date":"2014-11-26T17:27:24.142Z","type":"quit"}
+{"nick":"AvianFlu","date":"2014-11-26T17:28:19.608Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-26T17:29:02.235Z","type":"join"}
+{"nick":"chris_99","date":"2014-11-26T17:31:38.319Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 256 seconds","date":"2014-11-26T17:33:32.610Z","type":"quit"}
+{"nick":"SergeiRND","reason":"Quit: Leaving.","date":"2014-11-26T17:39:25.874Z","type":"quit"}
+{"nick":"AlexisMocha","date":"2014-11-26T17:46:22.897Z","type":"join"}
+{"nick":"jgi","date":"2014-11-26T17:47:24.210Z","type":"join"}
+{"nick":"indutny","message":"creationix: http://github.com/indutny/mmap.js","date":"2014-11-26T17:48:02.868Z","type":"message"}
+{"nick":"indutny","message":"I'm up to improving it if you want me to","date":"2014-11-26T17:48:27.456Z","type":"message"}
+{"nick":"indutny","message":"the good thing about it is that it is capable of allocating executable memory","date":"2014-11-26T17:48:49.712Z","type":"message"}
+{"nick":"creationix","message":"you write a jit that uses this right?","date":"2014-11-26T17:49:11.040Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T17:54:49.368Z","type":"quit"}
+{"nick":"janjongboom","reason":"Ping timeout: 250 seconds","date":"2014-11-26T17:56:28.363Z","type":"quit"}
+{"nick":"bradleymeck","date":"2014-11-26T17:57:36.619Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-26T17:57:37.032Z","type":"join"}
+{"nick":"indutny","message":"creationix: yep","date":"2014-11-26T18:01:59.377Z","type":"message"}
+{"nick":"creationix","message":"indutny: how portable is the assembly generated?  Is it just x64?","date":"2014-11-26T18:02:54.599Z","type":"message"}
+{"nick":"indutny","message":"just x64 for now","date":"2014-11-26T18:03:02.740Z","type":"message"}
+{"nick":"creationix","message":"have you looked at how dynasm works?  I think it’s usable independent of luajit","date":"2014-11-26T18:04:30.754Z","type":"message"}
+{"nick":"creationix","message":"I’m thinking about using it to write a jack interpreter that’s actually fast enough to usable","date":"2014-11-26T18:06:25.314Z","type":"message"}
+{"nick":"iarna","reason":"Remote host closed the connection","date":"2014-11-26T18:10:59.913Z","type":"quit"}
+{"nick":"abraxas_","date":"2014-11-26T18:11:50.485Z","type":"join"}
+{"nick":"abraxas_","reason":"Ping timeout: 264 seconds","date":"2014-11-26T18:16:54.153Z","type":"quit"}
+{"nick":"indutny","message":"creationix: not really","date":"2014-11-26T18:17:04.464Z","type":"message"}
+{"nick":"indutny","message":"creationix: guess it is quite cool, since luajit is using it","date":"2014-11-26T18:17:31.841Z","type":"message"}
+{"nick":"creationix","message":"though he did stop using it for the jit part in luajit 2.0 (he wanted more direct control)","date":"2014-11-26T18:18:31.820Z","type":"message"}
+{"nick":"creationix","message":"but it seems to work great for the assembly interpreter","date":"2014-11-26T18:18:39.944Z","type":"message"}
+{"nick":"kriskowal","date":"2014-11-26T18:24:16.935Z","type":"join"}
+{"nick":"janjongboom","reason":"Ping timeout: 264 seconds","date":"2014-11-26T18:26:30.151Z","type":"quit"}
+{"nick":"janjongboom","date":"2014-11-26T18:27:13.107Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-26T18:35:37.764Z","type":"quit"}
+{"nick":"dap_","date":"2014-11-26T18:40:22.069Z","type":"join"}
+{"nick":"octetcloud","reason":"Ping timeout: 244 seconds","date":"2014-11-26T18:44:06.095Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-26T18:49:12.757Z","type":"quit"}
+{"nick":"a_le","message":"pquerna: YT?","date":"2014-11-26T18:59:47.448Z","type":"message"}
+{"nick":"pquerna","message":"a_le: 50% here","date":"2014-11-26T19:01:47.307Z","type":"message"}
+{"nick":"a_le","message":":)","date":"2014-11-26T19:02:06.210Z","type":"message"}
+{"nick":"a_le","message":"what exactly is missing from Selene?","date":"2014-11-26T19:03:11.786Z","type":"message"}
+{"nick":"thlorenz","date":"2014-11-26T19:03:37.282Z","type":"join"}
+{"nick":"a_le","message":"and how different is it from botan, aside from the fact that it offers a C interface instead of a C++ one?","date":"2014-11-26T19:03:51.136Z","type":"message"}
+{"nick":"janjongboom","date":"2014-11-26T19:04:09.297Z","type":"join"}
+{"nick":"SergeiRND","date":"2014-11-26T19:04:17.876Z","type":"join"}
+{"nick":"a_le","message":"pquerna: ^","date":"2014-11-26T19:04:19.191Z","type":"message"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-26T19:05:40.840Z","type":"quit"}
+{"nick":"janjongboom","reason":"Client Quit","date":"2014-11-26T19:06:23.286Z","type":"quit"}
+{"nick":"SergeiRND","reason":"Quit: Leaving.","date":"2014-11-26T19:13:41.375Z","type":"quit"}
+{"nick":"octetcloud","date":"2014-11-26T19:17:45.307Z","type":"join"}
+{"nick":"inolen","date":"2014-11-26T19:19:14.356Z","type":"join"}
+{"nick":"am11","date":"2014-11-26T19:20:09.663Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2014-11-26T19:20:48.036Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-26T19:23:46.807Z","type":"join"}
+{"nick":"importantshock","date":"2014-11-26T19:24:28.897Z","type":"join"}
+{"nick":"rendar","reason":"Ping timeout: 250 seconds","date":"2014-11-26T19:25:18.314Z","type":"quit"}
+{"nick":"importantshock","reason":"Remote host closed the connection","date":"2014-11-26T19:31:22.932Z","type":"quit"}
+{"nick":"importantshock","date":"2014-11-26T19:31:31.739Z","type":"join"}
+{"nick":"rendar","date":"2014-11-26T19:32:10.174Z","type":"join"}
+{"nick":"importantshock","reason":"Remote host closed the connection","date":"2014-11-26T19:37:57.864Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-26T19:41:20.323Z","type":"join"}
+{"nick":"thlorenz_","date":"2014-11-26T19:42:05.281Z","type":"join"}
+{"nick":"petka_","date":"2014-11-26T19:42:17.324Z","type":"join"}
+{"nick":"thlorenz_","reason":"Ping timeout: 255 seconds","date":"2014-11-26T19:46:46.280Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T19:47:13.637Z","type":"quit"}
+{"nick":"chris_99","reason":"Ping timeout: 265 seconds","date":"2014-11-26T19:49:05.649Z","type":"quit"}
+{"nick":"petka_","reason":"Ping timeout: 258 seconds","date":"2014-11-26T19:51:14.332Z","type":"quit"}
+{"nick":"petka_","date":"2014-11-26T19:52:46.964Z","type":"join"}
+{"nick":"trevnorris","message":"saghul: ping","date":"2014-11-26T19:53:19.528Z","type":"message"}
+{"nick":"importantshock","date":"2014-11-26T19:55:17.554Z","type":"join"}
+{"nick":"trevnorris","message":"saghul: nm","date":"2014-11-26T19:58:39.172Z","type":"message"}
+{"nick":"abraxas_","date":"2014-11-26T20:00:36.997Z","type":"join"}
+{"nick":"piscisaureus","date":"2014-11-26T20:00:51.114Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2014-11-26T20:01:49.281Z","type":"quit"}
+{"nick":"chris_99","date":"2014-11-26T20:02:32.646Z","type":"join"}
+{"nick":"thlorenz_","date":"2014-11-26T20:02:49.646Z","type":"join"}
+{"nick":"importantshock","reason":"Remote host closed the connection","date":"2014-11-26T20:04:45.185Z","type":"quit"}
+{"nick":"importantshock","date":"2014-11-26T20:05:12.288Z","type":"join"}
+{"nick":"abraxas_","reason":"Ping timeout: 265 seconds","date":"2014-11-26T20:05:31.612Z","type":"quit"}
+{"nick":"bradleymeck","date":"2014-11-26T20:05:34.707Z","type":"join"}
+{"nick":"importantshock","reason":"Ping timeout: 240 seconds","date":"2014-11-26T20:09:17.088Z","type":"quit"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Saúl Ibarra Corretgé\u000f \u00037v0.12\u000f * \u00029d9ed61\u0002 : deps: update libuv to 1.0.0 - http://git.io/XQEnpA","date":"2014-11-26T20:09:27.592Z","type":"message"}
+{"nick":"importantshock","date":"2014-11-26T20:10:55.469Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Nathan Woltman\u000f \u00037v0.12\u000f * \u0002e0a0e91\u0002 : path: refactor normalizeArray() - http://git.io/Gy7oHQ","date":"2014-11-26T20:17:59.023Z","type":"message"}
+{"nick":"importantshock","reason":"Remote host closed the connection","date":"2014-11-26T20:20:38.360Z","type":"quit"}
+{"nick":"piscisaureus","message":"saghul: I think the fix you did for the \"valgrind child process issue\" warrants a 1.0.1 release","date":"2014-11-26T20:21:18.202Z","type":"message"}
+{"nick":"piscisaureus","message":"saghul: we don't want memory corruption to happen","date":"2014-11-26T20:21:25.583Z","type":"message"}
+{"nick":"importan_","date":"2014-11-26T20:23:26.072Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Trevor Norris\u000f \u00037v0.10\u000f * \u00020d05123\u0002 : timers: fix unref() memory leak - http://git.io/I6vlXg","date":"2014-11-26T20:33:47.632Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus: not 100% sure what you're talking about, but sounds like a +1 from me. I use valgrind w/ libuv a lot.","date":"2014-11-26T20:35:45.418Z","type":"message"}
+{"nick":"piscisaureus","message":"saghul: I made a release","date":"2014-11-26T20:38:17.925Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Vladimir Kurchatkin\u000f \u00037v0.12\u000f * \u0002bf3e0f4\u0002 : smalloc: don't allow to dispose typed arrays - http://git.io/wS7IuQ","date":"2014-11-26T20:40:42.855Z","type":"message"}
+{"nick":"piscisaureus","message":"trevnorris: the issue was caught with valgrind, was actually more serious than that","date":"2014-11-26T20:41:25.423Z","type":"message"}
+{"nick":"trevnorris","message":"ah, okay.","date":"2014-11-26T20:41:33.696Z","type":"message"}
+{"nick":"piscisaureus","message":"trevnorris: saghul had already fixed it, I just released 1.0.1","date":"2014-11-26T20:41:40.047Z","type":"message"}
+{"nick":"trevnorris","message":"piscisaureus: can you PR an upgrade to node?","date":"2014-11-26T20:41:58.867Z","type":"message"}
+{"nick":"saghul","message":"ahoi","date":"2014-11-26T20:42:51.278Z","type":"message"}
+{"nick":"saghul","message":"sorry, was afk","date":"2014-11-26T20:42:55.305Z","type":"message"}
+{"nick":"saghul","message":"thanks for making the release piscisaureus!","date":"2014-11-26T20:43:04.412Z","type":"message"}
+{"nick":"piscisaureus","message":"easy as always","date":"2014-11-26T20:43:14.877Z","type":"message"}
+{"nick":"piscisaureus","message":"saghul: btw, I noticed that the release tool no longer does \"Now working on xxx\"","date":"2014-11-26T20:43:27.106Z","type":"message"}
+{"nick":"piscisaureus","message":"saghul: you decided that's pointless?","date":"2014-11-26T20:43:34.762Z","type":"message"}
+{"nick":"saghul","message":"if you want I can make the node PR","date":"2014-11-26T20:43:35.373Z","type":"message"}
+{"nick":"piscisaureus","message":"saghul: if you want to I am the merrier","date":"2014-11-26T20:43:59.370Z","type":"message"}
+{"nick":"saghul","message":"piscisaureus: kidn of, now we don't know if the next release will be 1.0.2 or 1.1.0, depends","date":"2014-11-26T20:44:08.947Z","type":"message"}
+{"nick":"saghul","message":"piscisaureus: xD","date":"2014-11-26T20:44:20.897Z","type":"message"}
+{"nick":"saghul","message":"will do after this LEP thing I'm writing","date":"2014-11-26T20:44:32.895Z","type":"message"}
+{"nick":"trevnorris","message":"tjfontaine: hey, the PR is pretty much there. i'm screwing with a few tidbits, but they're in an additional commit that can be dropped.","date":"2014-11-26T20:52:44.693Z","type":"message"}
+{"nick":"MI6","message":"\u0002joyent/libuv:\u0002 \u00033piscisaureus\u000f created branch moved - http://git.io/H9DGaQ","date":"2014-11-26T20:53:44.382Z","type":"message"}
+{"nick":"piscisaureus","reason":"Ping timeout: 240 seconds","date":"2014-11-26T20:59:37.145Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-26T21:12:53.917Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 256 seconds","date":"2014-11-26T21:17:22.617Z","type":"quit"}
+{"nick":"AlexisMocha","reason":"Ping timeout: 272 seconds","date":"2014-11-26T21:22:45.959Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-26T21:29:37.064Z","type":"quit"}
+{"nick":"piscisaureus","date":"2014-11-26T21:39:33.406Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T21:41:59.336Z","type":"quit"}
+{"nick":"saghul","message":"trevnorris: here you go https://github.com/joyent/node/pull/8785","date":"2014-11-26T21:53:54.231Z","type":"message"}
+{"nick":"saghul","message":"i'm off, g'night everyone!","date":"2014-11-26T21:54:08.045Z","type":"message"}
+{"nick":"trevnorris","message":"saghul: awesome. thanks.","date":"2014-11-26T21:54:51.441Z","type":"message"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2014-11-26T22:00:58.666Z","type":"quit"}
+{"nick":"avalanche123","date":"2014-11-26T22:01:30.083Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 240 seconds","date":"2014-11-26T22:05:37.105Z","type":"quit"}
+{"nick":"jgi","date":"2014-11-26T22:05:50.594Z","type":"join"}
+{"nick":"inolen","reason":"Ping timeout: 258 seconds","date":"2014-11-26T22:14:13.355Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2014-11-26T22:15:29.025Z","type":"quit"}
+{"nick":"rendar","date":"2014-11-26T22:16:20.846Z","type":"quit"}
+{"nick":"txdv","reason":"Ping timeout: 256 seconds","date":"2014-11-26T22:19:08.607Z","type":"quit"}
+{"nick":"importan_","reason":"Remote host closed the connection","date":"2014-11-26T22:20:33.922Z","type":"quit"}
+{"nick":"importantshock","date":"2014-11-26T22:21:01.187Z","type":"join"}
+{"nick":"importantshock","reason":"Ping timeout: 272 seconds","date":"2014-11-26T22:26:05.923Z","type":"quit"}
+{"nick":"jgi","date":"2014-11-26T22:26:31.121Z","type":"join"}
+{"nick":"avalanche123","date":"2014-11-26T22:30:49.814Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-26T22:33:25.428Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 264 seconds","date":"2014-11-26T22:44:17.872Z","type":"quit"}
+{"nick":"txdv","date":"2014-11-26T22:47:21.277Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-26T22:51:02.305Z","type":"join"}
+{"nick":"c4milo","date":"2014-11-26T22:55:08.095Z","type":"join"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-26T22:55:11.050Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T22:57:26.721Z","type":"quit"}
+{"nick":"c4milo","date":"2014-11-26T23:06:43.037Z","type":"join"}
+{"nick":"bradleymeck","date":"2014-11-26T23:14:59.460Z","type":"join"}
+{"nick":"a_le","message":"i have an idle callback and that is causing my thread to grab 100% CPU","date":"2014-11-26T23:15:40.879Z","type":"message"}
+{"nick":"a_le","message":"should I rather implement it as a timer that repeats often?","date":"2014-11-26T23:16:03.306Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: a timer would probably be better. With an idle handle you'll use 100% cpu indeed.","date":"2014-11-26T23:17:28.913Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: sigh","date":"2014-11-26T23:17:39.620Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: what else did you expect?","date":"2014-11-26T23:18:04.241Z","type":"message"}
+{"nick":"a_le","message":"i expected some magic :D","date":"2014-11-26T23:18:33.979Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: we can't have nice things. It's the human condition.","date":"2014-11-26T23:18:59.884Z","type":"message"}
+{"nick":"a_le","message":"by magic i meant, run when we really are NOT busy at all, like after a few hundred ms of idleness","date":"2014-11-26T23:19:34.342Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2014-11-26T23:19:42.731Z","type":"quit"}
+{"nick":"a_le","message":"as in: each time we are idle, but not more than once every -say- 200ms","date":"2014-11-26T23:19:55.971Z","type":"message"}
+{"nick":"a_le","message":"not back to back","date":"2014-11-26T23:20:04.224Z","type":"message"}
+{"nick":"octetcloud","reason":"Ping timeout: 245 seconds","date":"2014-11-26T23:20:17.688Z","type":"quit"}
+{"nick":"piscisaureus","message":"a_le: no, the idle callback runs continuously.","date":"2014-11-26T23:20:31.544Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: if you want this, do this: create a 200ms interval timer that calls your callback","date":"2014-11-26T23:20:50.450Z","type":"message"}
+{"nick":"janjongboom","reason":"Ping timeout: 258 seconds","date":"2014-11-26T23:20:55.305Z","type":"quit"}
+{"nick":"piscisaureus","message":"a_le: have a uv_check handle and call uv_timer_reset(timer) in the callback","date":"2014-11-26T23:21:15.824Z","type":"message"}
+{"nick":"janjongboom","date":"2014-11-26T23:21:36.079Z","type":"join"}
+{"nick":"piscisaureus","message":"a_le: that ensures that your timer is called after 200ms of idle-ness","date":"2014-11-26T23:21:44.226Z","type":"message"}
+{"nick":"piscisaureus","message":"you should probably uv_unref both handles","date":"2014-11-26T23:22:49.936Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: uv_check callback is invoked after we return from blocking, right?","date":"2014-11-26T23:23:26.341Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: yes, but before timer are run","date":"2014-11-26T23:23:42.052Z","type":"message"}
+{"nick":"qard_","date":"2014-11-26T23:23:51.513Z","type":"join"}
+{"nick":"a_le","message":"1 sec, sorry","date":"2014-11-26T23:25:24.528Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: actually, so then the timer callback may not be run even if the loop was blocked for 200ms... hmm...","date":"2014-11-26T23:25:25.002Z","type":"message"}
+{"nick":"janjongboom","reason":"Ping timeout: 240 seconds","date":"2014-11-26T23:25:37.081Z","type":"quit"}
+{"nick":"piscisaureus","message":"a_le: right, it should probably be a prepare handle and not a check handle","date":"2014-11-26T23:25:59.367Z","type":"message"}
+{"nick":"octetcloud","date":"2014-11-26T23:26:09.954Z","type":"join"}
+{"nick":"janjongboom","date":"2014-11-26T23:28:27.586Z","type":"join"}
+{"nick":"a_le","message":"piscisaureus: I am only aware of uv_timer_\\(init\\|start\\|stop\\|again\\|set_repeat\\) and uv_close","date":"2014-11-26T23:29:19.968Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: ah, it's uv_timer_again()","date":"2014-11-26T23:30:06.770Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: sorry I misremembered the function name","date":"2014-11-26T23:30:17.802Z","type":"message"}
+{"nick":"octetcloud","reason":"Ping timeout: 264 seconds","date":"2014-11-26T23:32:53.882Z","type":"quit"}
+{"nick":"a_le","message":"so my prepare callback should be also the timer callback?","date":"2014-11-26T23:33:51.491Z","type":"message"}
+{"nick":"AlexisMocha","date":"2014-11-26T23:34:26.673Z","type":"join"}
+{"nick":"janjongboom","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2014-11-26T23:34:36.047Z","type":"quit"}
+{"nick":"abraxas_","date":"2014-11-26T23:38:28.686Z","type":"join"}
+{"nick":"piscisaureus","message":"al_le: no they have separate callbacks","date":"2014-11-26T23:38:40.521Z","type":"message"}
+{"nick":"piscisaureus","message":"al_le: the prepare callback just does uv_timer_again on the timer handle","date":"2014-11-26T23:39:01.499Z","type":"message"}
+{"nick":"piscisaureus","message":"al_le: the timer callback does the actual work that you wanted to do in the idle callback","date":"2014-11-26T23:39:18.473Z","type":"message"}
+{"nick":"abraxas_","reason":"Ping timeout: 264 seconds","date":"2014-11-26T23:43:18.315Z","type":"quit"}
+{"nick":"a_le","message":"piscisaureus: if there has been some other event, i want to run my idle business once","date":"2014-11-26T23:43:34.303Z","type":"message"}
+{"nick":"piscisaureus","message":"hmm","date":"2014-11-26T23:44:02.737Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: then probably you want to do nothing in the timer callback and run your idle business in the prepare callback too?","date":"2014-11-26T23:44:25.892Z","type":"message"}
+{"nick":"a_le","message":"and reschedule the timer each time the prepare happens?","date":"2014-11-26T23:45:00.252Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: yeah","date":"2014-11-26T23:45:27.088Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: why shouldn't i use a check again?","date":"2014-11-26T23:45:35.805Z","type":"message"}
+{"nick":"a_le","message":"actually I could probably just run my stuff in a check callback","date":"2014-11-26T23:46:05.600Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: well I guess it doesn't matter now any more. The reason was that otherwise the timer callback would never run, but that's not an issue any more because it's empty anyways.","date":"2014-11-26T23:46:25.412Z","type":"message"}
+{"nick":"a_le","message":"i want for example to be able to detect if some reference counting of mine has gone down to zero upon running any callback","date":"2014-11-26T23:46:28.846Z","type":"message"}
+{"nick":"piscisaureus","message":"al_le: so you now only need the timer so the loop never blocks for more than 200ms","date":"2014-11-26T23:46:45.520Z","type":"message"}
+{"nick":"a_le","message":"i am thinking that probably i don't care about waking up every 200ms","date":"2014-11-26T23:47:04.464Z","type":"message"}
+{"nick":"piscisaureus","message":"if you just want to wake up every loop iteration use a check or a prepare","date":"2014-11-26T23:47:38.624Z","type":"message"}
+{"nick":"piscisaureus","message":"it's not that hard","date":"2014-11-26T23:47:41.244Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: why don't i see the check callbacks here in the first code snippet? http://nikhilm.github.io/uvbook/eventloops.html","date":"2014-11-26T23:47:49.271Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: yeah that's an oversight. the book is incorrect","date":"2014-11-26T23:48:30.768Z","type":"message"}
+{"nick":"piscisaureus","message":"uv_check runs every iteration after blocking.","date":"2014-11-26T23:49:01.622Z","type":"message"}
+{"nick":"a_le","message":"actually it's identical to the real code","date":"2014-11-26T23:49:02.814Z","type":"message"}
+{"nick":"a_le","message":"maybe it's within uv__run_pending() ?","date":"2014-11-26T23:49:19.643Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: as in: the check callback is always queued at the end of the queue?","date":"2014-11-26T23:50:07.788Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: https://github.com/libuv/libuv/blob/master/src/unix/core.c#L324","date":"2014-11-26T23:50:27.968Z","type":"message"}
+{"nick":"a_le","message":"oh it's down below","date":"2014-11-26T23:50:41.502Z","type":"message"}
+{"nick":"piscisaureus","message":"prepare is always right before epoll(), kqueue() etc, check is always after","date":"2014-11-26T23:50:49.251Z","type":"message"}
+{"nick":"piscisaureus","message":"\"end of the queue\" is kinda unclear","date":"2014-11-26T23:50:55.208Z","type":"message"}
+{"nick":"a_le","message":"so the callbacks are always queued for the next loop to pick up","date":"2014-11-26T23:51:24.927Z","type":"message"}
+{"nick":"a_le","message":"and then the loop blocks after prepare","date":"2014-11-26T23:51:31.633Z","type":"message"}
+{"nick":"a_le","message":"and then it runs check","date":"2014-11-26T23:51:35.011Z","type":"message"}
+{"nick":"a_le","message":"and then it loops around and invokes all relevant callbacks?","date":"2014-11-26T23:51:44.374Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: there isn't really a callback queue and","date":"2014-11-26T23:52:17.849Z","type":"message"}
+{"nick":"piscisaureus","message":"all the check handles are just invoked exactly once after blocking ... that's all","date":"2014-11-26T23:52:33.984Z","type":"message"}
+{"nick":"a_le","message":"what is uv__run_pending doing?","date":"2014-11-26T23:52:43.482Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: that iterates over all the file descriptors that epoll/kqueue (or whatever gets called by uv__io_poll) returned","date":"2014-11-26T23:53:56.397Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: so callbacks do get called by it","date":"2014-11-26T23:54:07.045Z","type":"message"}
+{"nick":"a_le","message":"oh so the callbacks for sockets and disk I/O only get invoked at the next loop iteration?","date":"2014-11-26T23:54:28.328Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: what I am trying to say is that libuv doesn't so much \"schedule\" individual callbacks","date":"2014-11-26T23:54:33.907Z","type":"message"}
+{"nick":"a_le","message":"so, potentially after the check callbacks?","date":"2014-11-26T23:54:38.977Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: it just calls the callback at places","date":"2014-11-26T23:54:55.930Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: i guess more than asking questions i should explain what exactly i am worried about","date":"2014-11-26T23:55:11.558Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: yeah","date":"2014-11-26T23:55:12.481Z","type":"message"}
+{"nick":"inolen","date":"2014-11-26T23:55:19.119Z","type":"join"}
+{"nick":"a_le","message":"piscisaureus: my worry is... if i keep on checking every 200ms, it will work for sure. but i would like not to do so because it's not very clean. if i check in the check callback, and the callbacks haven't been invoked yet, then I will not be able to check again until the next event has happened.","date":"2014-11-26T23:56:14.480Z","type":"message"}
+{"nick":"piscisaureus","message":"a_le: true, so you use a prepare callback?","date":"2014-11-26T23:56:39.467Z","type":"message"}
+{"nick":"thlorenz_","reason":"Remote host closed the connection","date":"2014-11-26T23:57:10.971Z","type":"quit"}
+{"nick":"thlorenz","date":"2014-11-26T23:58:43.034Z","type":"join"}
+{"nick":"MI6","message":"\u0002joyent/node:\u0002 \u00033Saúl Ibarra Corretgé\u000f \u00037v0.12\u000f * \u00020308ad2\u0002 : crypto: cast uv_thread_t to unsigned long (+1 more commits) - http://git.io/O9ZVxw","date":"2014-11-26T23:58:43.128Z","type":"message"}
+{"nick":"a_le","message":"piscisaureus: it would run only once right?","date":"2014-11-26T23:58:45.101Z","type":"message"}
+{"nick":"c4milo","reason":"Remote host closed the connection","date":"2014-11-26T23:58:52.289Z","type":"quit"}
+{"nick":"a_le","message":"piscisaureus: yes that seems to make sense","date":"2014-11-26T23:59:00.022Z","type":"message"}
+{"nick":"a_le","message":"it would run just once and right after the last event","date":"2014-11-26T23:59:11.203Z","type":"message"}
+{"nick":"chris_99","reason":"Quit: Ex-Chat","date":"2014-11-26T23:59:17.914Z","type":"quit"}
