@@ -415,3 +415,687 @@
 {"nick":"iojs-gh","date":"2015-01-06T15:58:30.463Z","type":"part"}
 {"nick":"bnoordhuis","message":"indutny: https://github.com/iojs/io.js/pull/220 <- can you lgtm that?","date":"2015-01-06T15:58:46.917Z","type":"message"}
 {"nick":"nodweber","reason":"Remote host closed the connection","date":"2015-01-06T15:59:22.316Z","type":"quit"}
+{"nick":"thlorenz_","date":"2015-01-06T16:00:46.161Z","type":"join"}
+{"nick":"thlorenz_","reason":"Remote host closed the connection","date":"2015-01-06T16:01:45.428Z","type":"quit"}
+{"nick":"indutny","message":"I can","date":"2015-01-06T16:02:17.820Z","type":"message"}
+{"nick":"mius","reason":"Remote host closed the connection","date":"2015-01-06T16:02:18.025Z","type":"quit"}
+{"nick":"thlorenz","reason":"Ping timeout: 264 seconds","date":"2015-01-06T16:03:44.538Z","type":"quit"}
+{"nick":"nodweber","date":"2015-01-06T16:06:27.696Z","type":"join"}
+{"nick":"bnoordhuis","message":"indutny: and you will?","date":"2015-01-06T16:06:31.675Z","type":"message"}
+{"nick":"indutny","message":"already did :)","date":"2015-01-06T16:06:58.790Z","type":"message"}
+{"nick":"mius","date":"2015-01-06T16:07:22.591Z","type":"join"}
+{"nick":"luite","date":"2015-01-06T16:07:42.198Z","type":"join"}
+{"nick":"luite","message":"would it be possible to add a customized cpu profiler sampler that records some global state with each sample as an npm module, or would i have to patch node.js/io.js itself?","date":"2015-01-06T16:10:27.375Z","type":"message"}
+{"nick":"bnoordhuis","message":"indutny: nice, thanks","date":"2015-01-06T16:10:31.658Z","type":"message"}
+{"nick":"bnoordhuis","message":"luite: define 'global state'?","date":"2015-01-06T16:10:44.054Z","type":"message"}
+{"nick":"nodweber","reason":"Ping timeout: 244 seconds","date":"2015-01-06T16:11:15.877Z","type":"quit"}
+{"nick":"luite","message":"bnoordhuis: the sampler would have to record the value of a global (js) variable and walk an array (also a global var), record a list of values of a certain kind","date":"2015-01-06T16:13:00.362Z","type":"message"}
+{"nick":"iojs-gh","date":"2015-01-06T16:13:04.893Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-01-06T16:13:05.058Z","type":"part"}
+{"nick":"indutny","message":"no problem :)","date":"2015-01-06T16:13:22.048Z","type":"message"}
+{"nick":"bnoordhuis","message":"luite: ah no, that's not going to work. the sampler runs inside a signal handler, there isn't much you can do safely from a signal handler","date":"2015-01-06T16:14:47.354Z","type":"message"}
+{"nick":"luite","message":"bnoordhuis: hm, why can't it work? it already does things like recording the call stack doesn't it?","date":"2015-01-06T16:16:54.388Z","type":"message"}
+{"nick":"Hondevice","date":"2015-01-06T16:17:39.087Z","type":"join"}
+{"nick":"kenperki_","reason":"Quit: Apparently I've still forgotten to change my automatic sleep message Zzzz....","date":"2015-01-06T16:18:56.259Z","type":"quit"}
+{"nick":"bnoordhuis","message":"luite: yeah, but that doesn't require interacting with the vm; it just follows frame pointers from %rbp","date":"2015-01-06T16:19:17.136Z","type":"message"}
+{"nick":"luite","message":"i could preallocate memory, discard the sample if it runs out if that's the problem. there is no concurrent gc, right?","date":"2015-01-06T16:19:43.093Z","type":"message"}
+{"nick":"bnoordhuis","message":"luite: a signal handler can run at any time, including times when the vm is in an inconsistent state, i.e. halfway through a gc","date":"2015-01-06T16:19:45.210Z","type":"message"}
+{"nick":"kenperkins","date":"2015-01-06T16:19:51.859Z","type":"join"}
+{"nick":"bnoordhuis","message":"luite: and yes, v8 does support concurrent sweeping :)","date":"2015-01-06T16:20:04.765Z","type":"message"}
+{"nick":"luite","message":"bnoordhuis: sweeping is not the problem, evacuating would be :)","date":"2015-01-06T16:20:56.004Z","type":"message"}
+{"nick":"ErikCorry__","action":"hears the word \"GC\"","date":"2015-01-06T16:21:28.410Z","type":"action"}
+{"nick":"bnoordhuis","message":"luite: ErikCorry__ can tell you all about it :)","date":"2015-01-06T16:21:55.112Z","type":"message"}
+{"nick":"ErikCorry__","message":"Evacuation is not concurrent with JS execution.  But it's going to be concurrent with signals.","date":"2015-01-06T16:22:04.488Z","type":"message"}
+{"nick":"luite","message":"ah looks like i've come to the right channel","date":"2015-01-06T16:22:09.835Z","type":"message"}
+{"nick":"ErikCorry__","message":"You can create an external typed array and put the data there, for the signal handler to read.","date":"2015-01-06T16:22:31.102Z","type":"message"}
+{"nick":"ErikCorry__","message":"A buffer.","date":"2015-01-06T16:23:19.288Z","type":"message"}
+{"nick":"ErikCorry__","message":"I don't actually know  how you normally create those in node.js.  My knowledge is in thin horizontal slices.","date":"2015-01-06T16:24:00.944Z","type":"message"}
+{"nick":"luite","message":"fortunately i only need this info in the samples when the sample is taken while JS is running","date":"2015-01-06T16:24:10.407Z","type":"message"}
+{"nick":"luite","message":"ErikCorry__: ok, that'd solve half my problem","date":"2015-01-06T16:24:31.642Z","type":"message"}
+{"nick":"ErikCorry__","message":"You can't really tell when JS is running.  The GC will put micropauses in where it moves things around.  Your program is not told.","date":"2015-01-06T16:25:06.812Z","type":"message"}
+{"nick":"luite","message":"hm how does the profiler know how much time is spent in GC? does it do its own accounting?","date":"2015-01-06T16:26:01.524Z","type":"message"}
+{"nick":"bnoordhuis","message":"i think the state changes are recorded in the v8.log file","date":"2015-01-06T16:26:36.908Z","type":"message"}
+{"nick":"bnoordhuis","message":"i.e. any simples between 'entering gc' and 'leaving gc' are accounted to gc time","date":"2015-01-06T16:27:00.522Z","type":"message"}
+{"nick":"bnoordhuis","message":"*samples...","date":"2015-01-06T16:27:04.822Z","type":"message"}
+{"nick":"luite","message":"then it must be possible to know that when the sample is taken... hopefully without too much v8 patching","date":"2015-01-06T16:27:34.355Z","type":"message"}
+{"nick":"ErikCorry__","message":"Seriously, V8 is single threaded.  You can't even look at things on the heap while V8 is running.  It will burn your eyes.","date":"2015-01-06T16:28:10.749Z","type":"message"}
+{"nick":"ErikCorry__","message":"But the buffers are backed by memory that is off the V8 heap, and you can look at that I think.","date":"2015-01-06T16:28:32.957Z","type":"message"}
+{"nick":"luite","message":"ErikCorry__: i mean let v8 update some global value when it'd normally write the gc change entry to the log, something that can be inspected from the signal handler","date":"2015-01-06T16:29:53.407Z","type":"message"}
+{"nick":"ErikCorry__","message":"You'd have to patch V8 to do that.  That means getting it past these guys: http://vignette1.wikia.nocookie.net/lotr/images/8/85/LOTRO_-_Argonath.jpg/revision/latest?cb=20130612154833","date":"2015-01-06T16:32:01.030Z","type":"message"}
+{"nick":"bnoordhuis","message":"har har :)","date":"2015-01-06T16:33:20.345Z","type":"message"}
+{"nick":"bnoordhuis","message":"actually, i thought v8 already did that (maintaining a per-thread state flag)","date":"2015-01-06T16:33:50.278Z","type":"message"}
+{"nick":"bnoordhuis","message":"state = isolate->current_vm_state(); from TickSample::Init() in src/sampler.cc","date":"2015-01-06T16:34:20.121Z","type":"message"}
+{"nick":"bnoordhuis","message":"ah, and two lines below: if (state == GC) return;","date":"2015-01-06T16:36:02.639Z","type":"message"}
+{"nick":"ErikCorry__","message":"Well I don't know what luite wants to put in the global value, but presumably it's something V8 doesn't already do","date":"2015-01-06T16:37:29.743Z","type":"message"}
+{"nick":"luite","message":"since everything is tail call optimized, normal call stacks aren't directly available.","date":"2015-01-06T16:38:06.643Z","type":"message"}
+{"nick":"luite","message":"oops","date":"2015-01-06T16:38:09.758Z","type":"message"}
+{"nick":"luite","message":"anyway, my application is that i have a Haskell->JS compiler that has lightweight threads and CPS transforms the program to do threading and tail call optimization. I want to reconstruct stacks when taking samples.","date":"2015-01-06T16:38:16.663Z","type":"message"}
+{"nick":"luite","message":"there are two different kinds of stacks. one is cost centre stacks, that are only available when the program has been compiled with profiling. transition is explicit, and i can easily generate a unique number for each unique cost centre stack, write that to an external buffer. so that's the easy part","date":"2015-01-06T16:38:31.942Z","type":"message"}
+{"nick":"luite","message":"the disadantage of cost centre stacks is that they only work when profiling, which severly affects performance. the normal lightweight thread stacks are in a global JS array (h$stack), where the stack can be reconstructed by walking h$stack from 0..h$sp (h$sp is a global number, small int). i'm trying to figure out how much of that i can reasonably reconstruct from a sampler. doesn't have to be 100% accurate, but it shouldn't cause stability problems","date":"2015-01-06T16:38:37.807Z","type":"message"}
+{"nick":"bnoordhuis","message":"hrm, that sounds like a hard problem","date":"2015-01-06T16:41:59.440Z","type":"message"}
+{"nick":"bnoordhuis","message":"upstream v8 has an api that lets you take samples explicitly","date":"2015-01-06T16:42:13.231Z","type":"message"}
+{"nick":"bnoordhuis","message":"you'd still need to insert safepoints where you take a sample though; i don't know if that helps much","date":"2015-01-06T16:42:54.330Z","type":"message"}
+{"nick":"sehrope","reason":"Remote host closed the connection","date":"2015-01-06T16:44:11.816Z","type":"quit"}
+{"nick":"ErikCorry__","message":"In the case where you have compiled with profiling you have to empty the \"cost center stack\" and fill it with new data when you switch threads?","date":"2015-01-06T16:44:50.621Z","type":"message"}
+{"nick":"ErikCorry__","message":"The profiler won't see frames that were eliminated by TCRE, but I guess that's OK.","date":"2015-01-06T16:45:25.053Z","type":"message"}
+{"nick":"ErikCorry__","message":"TCRE = tail call recursion elimination","date":"2015-01-06T16:46:09.964Z","type":"message"}
+{"nick":"ErikCorry__","message":"not the right abbreviation, sotty","date":"2015-01-06T16:46:22.492Z","type":"message"}
+{"nick":"ErikCorry__","message":"sorry","date":"2015-01-06T16:46:24.049Z","type":"message"}
+{"nick":"kenperkins","reason":"Quit: Apparently I've still forgotten to change my automatic sleep message Zzzz....","date":"2015-01-06T16:47:37.007Z","type":"quit"}
+{"nick":"luite","message":"ErikCorry__: a single number is enough to refer to a stack, they're allocated on demand and hash consed. it's a pretty heavy weight mechanism, ported from the native runtime (written in C)","date":"2015-01-06T16:48:32.182Z","type":"message"}
+{"nick":"luite","message":"a cost centre stack","date":"2015-01-06T16:48:38.124Z","type":"message"}
+{"nick":"crueber","date":"2015-01-06T16:50:16.573Z","type":"join"}
+{"nick":"i0rn","date":"2015-01-06T16:50:50.016Z","type":"join"}
+{"nick":"nodweber","date":"2015-01-06T16:51:31.363Z","type":"join"}
+{"nick":"luite","message":"ErikCorry__: these stacks exist precisely because of pervasive tail call optimization. they let the programmer instrument their code with cost centre annotations (or tell the compiler to insert them) and get a reasonable idea what's happening. recursive calls are not a problem since cost centre stacks aren't meant to be seen as call stacks, there is a stack merging operation that computes a new cost centre stack when code with some cost centre stack calls into other","date":"2015-01-06T16:53:53.322Z","type":"message"}
+{"nick":"sehrope","date":"2015-01-06T16:54:00.579Z","type":"join"}
+{"nick":"rmg","date":"2015-01-06T16:58:15.919Z","type":"join"}
+{"nick":"ErikCorry__","message":"I don't know how to do what you want.  Are you willing to require your own patches to node or V8?","date":"2015-01-06T16:58:37.555Z","type":"message"}
+{"nick":"luite","message":"if necessary. it's something that's only needed for development and it should eventually be part of performance tracking in CI for the compiler (running the benchmark suite)","date":"2015-01-06T17:01:05.925Z","type":"message"}
+{"nick":"luite","message":"npm would be nice for users though :)","date":"2015-01-06T17:01:54.076Z","type":"message"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-01-06T17:02:24.844Z","type":"quit"}
+{"nick":"octetcloud","date":"2015-01-06T17:02:57.572Z","type":"join"}
+{"nick":"luite","message":"bundling a custom node.js with the compiler wouldn't be that horrible (it's already going to do this with llvm)","date":"2015-01-06T17:04:44.907Z","type":"message"}
+{"nick":"luite","message":"and at least it'd make sure that they'd avoid the horrible performance of 0.10 ;)","date":"2015-01-06T17:05:35.345Z","type":"message"}
+{"nick":"alexandergugel","date":"2015-01-06T17:09:05.174Z","type":"join"}
+{"nick":"luite","message":"i probably need to use the v8 weak refs api too for other, but related things, hopefully that's easier as an npm module","date":"2015-01-06T17:13:07.373Z","type":"message"}
+{"nick":"Iskarlar","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T17:14:27.978Z","type":"quit"}
+{"nick":"nodweber","reason":"Remote host closed the connection","date":"2015-01-06T17:17:08.226Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-01-06T17:21:02.823Z","type":"quit"}
+{"nick":"saghul","date":"2015-01-06T17:22:59.896Z","type":"join"}
+{"nick":"nodweber","date":"2015-01-06T17:24:48.397Z","type":"join"}
+{"nick":"am11","message":"guys, is there a way in nan to block non-nan thread, execute v8 functions, get callback from javascript and resume the non-nan thread?","date":"2015-01-06T17:25:00.586Z","type":"message"}
+{"nick":"am11","message":"The closest i have found is this example: https://github.com/rvagg/nan/blob/master/examples/async_pi_estimate/async.cc","date":"2015-01-06T17:25:14.980Z","type":"message"}
+{"nick":"rossk","date":"2015-01-06T17:26:14.281Z","type":"join"}
+{"nick":"am11","message":"but the Execute function explicitly states that we can't execute v8 related code there. this is what i need to do.. call v8 and get the callback while blocking the outside non-v8 thread.","date":"2015-01-06T17:26:44.194Z","type":"message"}
+{"nick":"Hondevice","reason":"Quit: ZZZzzz…","date":"2015-01-06T17:26:56.422Z","type":"quit"}
+{"nick":"sadasdasd","date":"2015-01-06T17:27:10.578Z","type":"join"}
+{"nick":"sadasdasd","reason":"Client Quit","date":"2015-01-06T17:27:52.757Z","type":"quit"}
+{"nick":"am11","message":"at present i am using uv_cond_wait and uv_cond_signal to pause and resume the non-v8 thread. I am looking for a pure-nan solution. :)","date":"2015-01-06T17:30:29.454Z","type":"message"}
+{"nick":"KLUTCH-","new_nick":"zz_KLUTCH-","date":"2015-01-06T17:34:28.978Z","type":"nick"}
+{"nick":"jaw187","reason":"Remote host closed the connection","date":"2015-01-06T17:35:30.478Z","type":"quit"}
+{"nick":"m00nthug","reason":"Ping timeout: 256 seconds","date":"2015-01-06T17:37:03.904Z","type":"quit"}
+{"nick":"bnoordhuis","message":"am11: nan doesn't have anything like that","date":"2015-01-06T17:37:16.036Z","type":"message"}
+{"nick":"eh_eff","date":"2015-01-06T17:37:58.037Z","type":"join"}
+{"nick":"jaw187","date":"2015-01-06T17:40:24.151Z","type":"join"}
+{"nick":"bajtos","reason":"Quit: bajtos","date":"2015-01-06T17:41:13.822Z","type":"quit"}
+{"nick":"jaxer","date":"2015-01-06T17:42:45.580Z","type":"join"}
+{"nick":"saghul","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T17:44:51.923Z","type":"quit"}
+{"nick":"bradleymeck","date":"2015-01-06T17:44:58.521Z","type":"join"}
+{"nick":"jedireza","date":"2015-01-06T17:46:29.250Z","type":"join"}
+{"nick":"jedireza","reason":"Client Quit","date":"2015-01-06T17:49:02.233Z","type":"quit"}
+{"nick":"jedireza","date":"2015-01-06T17:49:20.596Z","type":"join"}
+{"nick":"am11","message":"bnoordhuis: ah i was trying to avoid mutexes.. :)","date":"2015-01-06T17:49:53.816Z","type":"message"}
+{"nick":"bmac","date":"2015-01-06T17:52:47.946Z","type":"join"}
+{"nick":"lance|afk","new_nick":"lanceball","date":"2015-01-06T17:59:43.332Z","type":"nick"}
+{"nick":"olivie___","date":"2015-01-06T18:00:49.895Z","type":"join"}
+{"nick":"xbuzz_","date":"2015-01-06T18:02:55.541Z","type":"join"}
+{"nick":"xbuzz","reason":"Read error: Connection reset by peer","date":"2015-01-06T18:02:59.456Z","type":"quit"}
+{"nick":"octetcloud","message":"bnoordhuis: I'm trying to get `r=Promise.defer()`, but with r having a field count of 1 (so it can be wrapped by ReqWrap)","date":"2015-01-06T18:06:32.287Z","type":"message"}
+{"nick":"therebelrobot","reason":"Ping timeout: 256 seconds","date":"2015-01-06T18:07:07.639Z","type":"quit"}
+{"nick":"octetcloud","message":"bnoordhuis: is that possible? can only objects created from a template function with an internal field count > 0, like `new fs.FSReqWrap` have fields?","date":"2015-01-06T18:07:39.613Z","type":"message"}
+{"nick":"bnoordhuis","message":"octetcloud: um, i don't think so. you could perhaps do something like `r = new ObjectWithFieldCount(1); r.__proto__ = Promise.defer();`","date":"2015-01-06T18:09:16.149Z","type":"message"}
+{"nick":"bnoordhuis","message":"(which is absolutely ghastly, of course)","date":"2015-01-06T18:09:30.156Z","type":"message"}
+{"nick":"kenperkins","date":"2015-01-06T18:10:42.957Z","type":"join"}
+{"nick":"octetcloud","message":"bnoordhuis: thats kindof what I'm doing now: `r = new fs.FSReqWrap(); d=Promise.defer();r.promise=d.promise;r.resolve=d.resolve;r.reject=d.reject`... if `r.__proto__ = d` was faster, I'd live with ghastly","date":"2015-01-06T18:12:33.880Z","type":"message"}
+{"nick":"bnoordhuis","message":"octetcloud: i don't know if it's faster. .__proto__ is a getter/setter (i.e. slow) and its presence used to make v8 bailout unconditionally although i think that's no longer the case","date":"2015-01-06T18:15:13.019Z","type":"message"}
+{"nick":"bnoordhuis","message":"octetcloud: --trace_opt --trace_deopt will tell you","date":"2015-01-06T18:15:36.628Z","type":"message"}
+{"nick":"octetcloud","message":"bnoordhuis: ok. is there another path I should look down? Are there any other ways to create wrapable (field count>0) objects other than using a template function as fs.FSReqWrap does?","date":"2015-01-06T18:17:27.215Z","type":"message"}
+{"nick":"bnoordhuis","message":"octetcloud: not really. you could stuff it in a v8::External and save that on the promise somewhere","date":"2015-01-06T18:18:07.888Z","type":"message"}
+{"nick":"bnoordhuis","message":"octetcloud: but i don't know if that will be faster; it's another object that you're creating","date":"2015-01-06T18:18:24.957Z","type":"message"}
+{"nick":"xbuzz_","reason":"Quit: Be back later ...","date":"2015-01-06T18:21:53.668Z","type":"quit"}
+{"nick":"csurap","date":"2015-01-06T18:22:23.175Z","type":"join"}
+{"nick":"therebelrobot","date":"2015-01-06T18:26:02.114Z","type":"join"}
+{"nick":"jmar777","date":"2015-01-06T18:29:13.463Z","type":"join"}
+{"nick":"nodweber","reason":"Read error: Connection reset by peer","date":"2015-01-06T18:29:47.925Z","type":"quit"}
+{"nick":"nodweber","date":"2015-01-06T18:30:19.807Z","type":"join"}
+{"nick":"Fishrock123","reason":"Ping timeout: 244 seconds","date":"2015-01-06T18:33:16.280Z","type":"quit"}
+{"nick":"nodweber","reason":"Ping timeout: 245 seconds","date":"2015-01-06T18:34:27.640Z","type":"quit"}
+{"nick":"xbuzz_","date":"2015-01-06T18:34:44.220Z","type":"join"}
+{"nick":"Fishrock123","date":"2015-01-06T18:34:53.967Z","type":"join"}
+{"nick":"dshaw_","date":"2015-01-06T18:34:54.130Z","type":"join"}
+{"nick":"TheAceOfHearts","date":"2015-01-06T18:34:54.295Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 264 seconds","date":"2015-01-06T18:36:50.173Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T18:40:57.665Z","type":"join"}
+{"nick":"ericelliott","reason":"Quit: http://www.kiwiirc.com/ - A hand crafted IRC client","date":"2015-01-06T18:41:37.153Z","type":"quit"}
+{"nick":"girishr","date":"2015-01-06T18:41:50.223Z","type":"join"}
+{"nick":"jaxer","reason":"Quit: Page closed","date":"2015-01-06T18:48:55.190Z","type":"quit"}
+{"nick":"sehrope","reason":"Remote host closed the connection","date":"2015-01-06T18:53:36.141Z","type":"quit"}
+{"nick":"jedireza","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T18:53:42.856Z","type":"quit"}
+{"nick":"kborchers","reason":"Ping timeout: 265 seconds","date":"2015-01-06T18:56:07.147Z","type":"quit"}
+{"nick":"sehrope","date":"2015-01-06T18:56:10.681Z","type":"join"}
+{"nick":"jedireza","date":"2015-01-06T18:57:09.895Z","type":"join"}
+{"nick":"kborchers","date":"2015-01-06T18:58:59.265Z","type":"join"}
+{"nick":"jmar777_","date":"2015-01-06T19:04:47.598Z","type":"join"}
+{"nick":"jmar777","reason":"Read error: Connection reset by peer","date":"2015-01-06T19:06:17.981Z","type":"quit"}
+{"nick":"bmac","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T19:07:39.057Z","type":"quit"}
+{"nick":"Domenic","message":"octetcloud: FYI Promise.defer is nonstandard -_-","date":"2015-01-06T19:09:24.316Z","type":"message"}
+{"nick":"octetcloud","message":"Domenic: doesn't matter, this is v8-only code (lib/fs.js). though I will rewrite it to explore whether v8's version is slower than a pure-js implementation of it","date":"2015-01-06T19:10:55.791Z","type":"message"}
+{"nick":"Domenic","message":"octetcloud: yes but we are planning to remove it from v8 soon","date":"2015-01-06T19:11:12.676Z","type":"message"}
+{"nick":"Domenic","message":"since it is nonstandard","date":"2015-01-06T19:11:21.788Z","type":"message"}
+{"nick":"dlmanning","message":"Domenic : We all hold you personally responsible for anything nonstandard that makes it into v8","date":"2015-01-06T19:11:49.631Z","type":"message"}
+{"nick":"Domenic","message":"i know :(","date":"2015-01-06T19:11:56.040Z","type":"message"}
+{"nick":"dlmanning","message":":)","date":"2015-01-06T19:12:02.804Z","type":"message"}
+{"nick":"octetcloud","message":"Domenic: ah, I see, thanks for the heads up","date":"2015-01-06T19:12:27.084Z","type":"message"}
+{"nick":"jmar777_","reason":"Remote host closed the connection","date":"2015-01-06T19:13:44.534Z","type":"quit"}
+{"nick":"octetcloud","message":"Domenic: when return a v8::Promise::Resolver::New() and return to js, it appears to have no properties, am I misusing it?","date":"2015-01-06T19:14:13.125Z","type":"message"}
+{"nick":"jmar777","date":"2015-01-06T19:14:18.807Z","type":"join"}
+{"nick":"Domenic","message":"octetcloud: not sure, can take a look later","date":"2015-01-06T19:14:28.219Z","type":"message"}
+{"nick":"thealphanerd","date":"2015-01-06T19:15:48.155Z","type":"join"}
+{"nick":"octetcloud","message":"Domenic: np, I'm just curious, I'm not trying to do that (anymore, because I need something resolver-like that has a field count)","date":"2015-01-06T19:16:21.701Z","type":"message"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2015-01-06T19:17:12.106Z","type":"quit"}
+{"nick":"jmar777","date":"2015-01-06T19:17:18.583Z","type":"join"}
+{"nick":"nodweber","date":"2015-01-06T19:17:50.487Z","type":"join"}
+{"nick":"nodweber","reason":"Remote host closed the connection","date":"2015-01-06T19:20:30.131Z","type":"quit"}
+{"nick":"robotmayo","reason":"Quit: http://www.kiwiirc.com/ - A hand crafted IRC client","date":"2015-01-06T19:21:06.014Z","type":"quit"}
+{"nick":"robotmayo","date":"2015-01-06T19:22:10.135Z","type":"join"}
+{"nick":"Iskarlar","date":"2015-01-06T19:25:21.620Z","type":"join"}
+{"nick":"saikat","date":"2015-01-06T19:28:15.515Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2015-01-06T19:30:24.016Z","type":"quit"}
+{"nick":"xbuzz_","reason":"Quit: Be back later ...","date":"2015-01-06T19:41:32.795Z","type":"quit"}
+{"nick":"Iskarlar","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T19:41:35.426Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2015-01-06T19:42:42.820Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 264 seconds","date":"2015-01-06T19:47:27.768Z","type":"quit"}
+{"nick":"Iskarlar","date":"2015-01-06T19:47:52.360Z","type":"join"}
+{"nick":"saikat","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T19:48:53.355Z","type":"quit"}
+{"nick":"jedireza","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T19:50:17.257Z","type":"quit"}
+{"nick":"TheAceOfHearts","reason":"Quit: Leaving.","date":"2015-01-06T19:54:22.765Z","type":"quit"}
+{"nick":"nuizzy","date":"2015-01-06T20:01:59.297Z","type":"join"}
+{"nick":"jaw187","reason":"Remote host closed the connection","date":"2015-01-06T20:05:12.987Z","type":"quit"}
+{"nick":"jvrousseau","reason":"Ping timeout: 264 seconds","date":"2015-01-06T20:05:27.916Z","type":"quit"}
+{"nick":"felipefdl","date":"2015-01-06T20:07:16.272Z","type":"join"}
+{"nick":"jmar777_","date":"2015-01-06T20:07:22.294Z","type":"join"}
+{"nick":"jmar777","reason":"Ping timeout: 245 seconds","date":"2015-01-06T20:08:35.748Z","type":"quit"}
+{"nick":"felipefdl","reason":"Client Quit","date":"2015-01-06T20:09:04.164Z","type":"quit"}
+{"nick":"jaw187","date":"2015-01-06T20:10:23.080Z","type":"join"}
+{"nick":"TheAceOfHearts","date":"2015-01-06T20:11:43.238Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-01-06T20:15:32.665Z","type":"join"}
+{"nick":"robotmayo","reason":"Quit: http://www.kiwiirc.com/ - A hand crafted IRC client","date":"2015-01-06T20:17:02.798Z","type":"quit"}
+{"nick":"phpnode","date":"2015-01-06T20:17:37.256Z","type":"join"}
+{"nick":"kenperkins","reason":"Quit: Apparently I've still forgotten to change my automatic sleep message Zzzz....","date":"2015-01-06T20:17:37.867Z","type":"quit"}
+{"nick":"sehrope","reason":"Remote host closed the connection","date":"2015-01-06T20:18:44.880Z","type":"quit"}
+{"nick":"akoenig","reason":"Quit: ChatZilla 0.9.91.1 [Firefox 34.0.5/20141201171754]","date":"2015-01-06T20:19:11.491Z","type":"quit"}
+{"nick":"Zren","reason":"Ping timeout: 240 seconds","date":"2015-01-06T20:19:22.898Z","type":"quit"}
+{"nick":"olivie___","reason":"Remote host closed the connection","date":"2015-01-06T20:20:54.406Z","type":"quit"}
+{"nick":"olivie___","date":"2015-01-06T20:21:30.445Z","type":"join"}
+{"nick":"olivie___","reason":"Ping timeout: 255 seconds","date":"2015-01-06T20:25:55.451Z","type":"quit"}
+{"nick":"kenperkins","date":"2015-01-06T20:30:32.323Z","type":"join"}
+{"nick":"Hondevice","date":"2015-01-06T20:31:26.962Z","type":"join"}
+{"nick":"danecando","reason":"Quit: Computer has gone to sleep.","date":"2015-01-06T20:37:13.309Z","type":"quit"}
+{"nick":"saikat","date":"2015-01-06T20:38:08.691Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-01-06T20:38:20.669Z","type":"quit"}
+{"nick":"Iskarlar","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T20:40:34.001Z","type":"quit"}
+{"nick":"ericelliott","date":"2015-01-06T20:41:42.693Z","type":"join"}
+{"nick":"olivie___","date":"2015-01-06T20:41:45.557Z","type":"join"}
+{"nick":"ubaltaci","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-01-06T20:42:37.429Z","type":"quit"}
+{"nick":"caiifr","date":"2015-01-06T20:42:38.813Z","type":"join"}
+{"nick":"caiifr","reason":"Client Quit","date":"2015-01-06T20:42:45.562Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T20:43:05.322Z","type":"join"}
+{"nick":"ericelliott","reason":"Client Quit","date":"2015-01-06T20:43:08.064Z","type":"quit"}
+{"nick":"SoCalNodeJS","date":"2015-01-06T20:44:50.575Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-01-06T20:45:05.096Z","type":"join"}
+{"nick":"jedireza","date":"2015-01-06T20:47:02.518Z","type":"join"}
+{"nick":"sehrope","date":"2015-01-06T20:53:18.928Z","type":"join"}
+{"nick":"SoCalNodeJS","reason":"Quit: Page closed","date":"2015-01-06T20:54:37.549Z","type":"quit"}
+{"nick":"showaz","date":"2015-01-06T21:02:42.102Z","type":"join"}
+{"nick":"showaz","reason":"Client Quit","date":"2015-01-06T21:03:05.056Z","type":"quit"}
+{"nick":"nodweber","date":"2015-01-06T21:03:06.085Z","type":"join"}
+{"nick":"robotmayo","date":"2015-01-06T21:03:43.242Z","type":"join"}
+{"nick":"danecando","date":"2015-01-06T21:07:46.452Z","type":"join"}
+{"nick":"nodweber","reason":"Ping timeout: 255 seconds","date":"2015-01-06T21:07:46.657Z","type":"quit"}
+{"nick":"kenperkins","reason":"Quit: Apparently I've still forgotten to change my automatic sleep message Zzzz....","date":"2015-01-06T21:09:11.140Z","type":"quit"}
+{"nick":"jmar777","date":"2015-01-06T21:09:17.643Z","type":"join"}
+{"nick":"jmar777_","reason":"Read error: Connection reset by peer","date":"2015-01-06T21:09:23.915Z","type":"quit"}
+{"nick":"RLa","reason":"Quit: Leaving","date":"2015-01-06T21:09:36.228Z","type":"quit"}
+{"nick":"mikolalysenko_","date":"2015-01-06T21:15:28.734Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-01-06T21:19:12.454Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-01-06T21:19:12.657Z","type":"part"}
+{"nick":"danecando","reason":"Quit: Computer has gone to sleep.","date":"2015-01-06T21:23:30.714Z","type":"quit"}
+{"nick":"Iskarlar","date":"2015-01-06T21:28:39.161Z","type":"join"}
+{"nick":"BasedGeek","message":"Hello all!","date":"2015-01-06T21:30:39.672Z","type":"message"}
+{"nick":"BasedGeek","message":"I'm reading through the history, and there is a new piece of terminology I'm not familiar with. Can someone explain to me from a high level what a \"Promise\" is?","date":"2015-01-06T21:31:09.814Z","type":"message"}
+{"nick":"Iskarlar","reason":"Client Quit","date":"2015-01-06T21:31:17.240Z","type":"quit"}
+{"nick":"BasedGeek","message":"^ in the context of NodeJS","date":"2015-01-06T21:31:19.116Z","type":"message"}
+{"nick":"bnoordhuis","date":"2015-01-06T21:32:47.313Z","type":"join"}
+{"nick":"jmar777","reason":"Remote host closed the connection","date":"2015-01-06T21:33:11.835Z","type":"quit"}
+{"nick":"ljharb","message":"BasedGeek: it's part of javascript itself, nothing to do with node","date":"2015-01-06T21:34:04.222Z","type":"message"}
+{"nick":"ljharb","message":"BasedGeek: read https://gist.github.com/3889970","date":"2015-01-06T21:34:14.757Z","type":"message"}
+{"nick":"kenperkins","date":"2015-01-06T21:35:52.088Z","type":"join"}
+{"nick":"BasedGeek","message":"Thanks ljharb","date":"2015-01-06T21:38:30.325Z","type":"message"}
+{"nick":"dshaw_","reason":"Quit: Leaving.","date":"2015-01-06T21:38:40.038Z","type":"quit"}
+{"nick":"ljharb","message":"np","date":"2015-01-06T21:38:54.025Z","type":"message"}
+{"nick":"BasedGeek","message":"Ah OK that makes some sense. I'm still relatively new to this, so I am going to have to try this out both ways in practice to truly get my head around it. I see the author also mentioned an article where he describes Promises at length, so I'll be reading that next to gain a greater perspective","date":"2015-01-06T21:44:58.360Z","type":"message"}
+{"nick":"Iskarlar","date":"2015-01-06T21:47:20.980Z","type":"join"}
+{"nick":"Iskarlar","reason":"Client Quit","date":"2015-01-06T21:48:43.981Z","type":"quit"}
+{"nick":"enaqx","reason":"Ping timeout: 264 seconds","date":"2015-01-06T21:49:15.968Z","type":"quit"}
+{"nick":"ericelliott","date":"2015-01-06T21:50:05.110Z","type":"join"}
+{"nick":"Iskarlar","date":"2015-01-06T21:52:08.436Z","type":"join"}
+{"nick":"Iskarlar","reason":"Client Quit","date":"2015-01-06T21:54:15.272Z","type":"quit"}
+{"nick":"eh_eff","reason":"Ping timeout: 264 seconds","date":"2015-01-06T21:54:50.290Z","type":"quit"}
+{"nick":"Hondevice","reason":"Ping timeout: 264 seconds","date":"2015-01-06T21:57:03.893Z","type":"quit"}
+{"nick":"octetcloud","message":"BasedGeek: http://www.mattgreer.org/articles/promises-in-wicked-detail/","date":"2015-01-06T21:57:22.071Z","type":"message"}
+{"nick":"BasedGeek","message":"Thanks! Added to queue","date":"2015-01-06T21:57:57.988Z","type":"message"}
+{"nick":"Hondevice","date":"2015-01-06T21:58:07.574Z","type":"join"}
+{"nick":"Iskarlar","date":"2015-01-06T21:59:13.352Z","type":"join"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2015-01-06T21:59:47.474Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2015-01-06T22:00:00.065Z","type":"quit"}
+{"nick":"am11","date":"2015-01-06T22:01:12.983Z","type":"quit"}
+{"nick":"Iskarlar","reason":"Client Quit","date":"2015-01-06T22:01:23.891Z","type":"quit"}
+{"nick":"nuizzy","reason":"Quit: Leaving","date":"2015-01-06T22:03:38.236Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T22:06:39.471Z","type":"join"}
+{"nick":"sehrope","reason":"Remote host closed the connection","date":"2015-01-06T22:09:22.142Z","type":"quit"}
+{"nick":"sehrope","date":"2015-01-06T22:09:41.912Z","type":"join"}
+{"nick":"thlorenz_","date":"2015-01-06T22:10:18.349Z","type":"join"}
+{"nick":"thlorenz","reason":"Read error: Connection reset by peer","date":"2015-01-06T22:10:30.733Z","type":"quit"}
+{"nick":"thlorenz_","reason":"Remote host closed the connection","date":"2015-01-06T22:10:45.437Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T22:10:53.748Z","type":"join"}
+{"nick":"sehrope","reason":"Remote host closed the connection","date":"2015-01-06T22:13:32.002Z","type":"quit"}
+{"nick":"showaz","date":"2015-01-06T22:17:41.318Z","type":"join"}
+{"nick":"eh_eff","date":"2015-01-06T22:18:12.343Z","type":"join"}
+{"nick":"karissa","reason":"Excess Flood","date":"2015-01-06T22:21:49.701Z","type":"quit"}
+{"nick":"karissa","date":"2015-01-06T22:22:08.208Z","type":"join"}
+{"nick":"akoenig","date":"2015-01-06T22:22:35.694Z","type":"join"}
+{"nick":"Iskarlar","date":"2015-01-06T22:28:06.942Z","type":"join"}
+{"nick":"Fishrock123","date":"2015-01-06T22:29:35.261Z","type":"join"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2015-01-06T22:29:55.552Z","type":"quit"}
+{"nick":"skeuomorf","reason":"Read error: Connection reset by peer","date":"2015-01-06T22:32:04.189Z","type":"quit"}
+{"nick":"skeuomorf","date":"2015-01-06T22:32:48.449Z","type":"join"}
+{"nick":"octetcloud","reason":"Ping timeout: 244 seconds","date":"2015-01-06T22:35:04.357Z","type":"quit"}
+{"nick":"JamesMGreene","reason":"Ping timeout: 264 seconds","date":"2015-01-06T22:37:15.802Z","type":"quit"}
+{"nick":"saikat","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-01-06T22:41:24.138Z","type":"quit"}
+{"nick":"dshaw_","date":"2015-01-06T22:45:10.285Z","type":"join"}
+{"nick":"akoenig","reason":"Remote host closed the connection","date":"2015-01-06T22:46:43.725Z","type":"quit"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2015-01-06T22:47:54.264Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T22:48:35.061Z","type":"join"}
+{"nick":"Grayfox_","date":"2015-01-06T22:53:07.578Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 240 seconds","date":"2015-01-06T22:53:22.896Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 245 seconds","date":"2015-01-06T22:55:14.596Z","type":"quit"}
+{"nick":"therebelrobot","reason":"Read error: Connection reset by peer","date":"2015-01-06T22:56:34.646Z","type":"quit"}
+{"nick":"ericelliott","reason":"Quit: http://www.kiwiirc.com/ - A hand crafted IRC client","date":"2015-01-06T22:57:47.705Z","type":"quit"}
+{"nick":"Grayfox_","reason":"Ping timeout: 246 seconds","date":"2015-01-06T23:04:10.592Z","type":"quit"}
+{"nick":"thlorenz","date":"2015-01-06T23:11:05.710Z","type":"join"}
+{"nick":"TheAceOfHearts1","date":"2015-01-06T23:13:41.536Z","type":"join"}
+{"nick":"thlorenz","reason":"Ping timeout: 255 seconds","date":"2015-01-06T23:15:34.415Z","type":"quit"}
+{"nick":"TheAceOfHearts","reason":"Ping timeout: 244 seconds","date":"2015-01-06T23:15:53.191Z","type":"quit"}
+{"nick":"othiym23","message":"hello, io.js chums!","date":"2015-01-06T23:16:30.133Z","type":"message"}
+{"nick":"othiym23","message":"what's the best way to build Node on Windows?","date":"2015-01-06T23:16:44.166Z","type":"message"}
+{"nick":"i0rn","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-01-06T23:17:01.847Z","type":"quit"}
+{"nick":"othiym23","message":"I'm doing it using vcbuild.bad right now, but it's spitting out a lot of warningns and I'm wondering if I should be using clang under mingw or something","date":"2015-01-06T23:17:15.894Z","type":"message"}
+{"nick":"thlorenz","date":"2015-01-06T23:18:46.800Z","type":"join"}
+{"nick":"kenperkins","reason":"Quit: Apparently I've still forgotten to change my automatic sleep message Zzzz....","date":"2015-01-06T23:19:23.268Z","type":"quit"}
+{"nick":"crueber","reason":"Quit: Leaving.","date":"2015-01-06T23:19:53.705Z","type":"quit"}
+{"nick":"robotmayo","reason":"*.net *.split","date":"2015-01-06T23:20:56.072Z","type":"quit"}
+{"nick":"timbur`","reason":"*.net *.split","date":"2015-01-06T23:20:56.588Z","type":"quit"}
+{"nick":"Shayanjm","reason":"*.net *.split","date":"2015-01-06T23:20:58.060Z","type":"quit"}
+{"nick":"gkatsev","reason":"*.net *.split","date":"2015-01-06T23:20:58.060Z","type":"quit"}
+{"nick":"othiym23","reason":"*.net *.split","date":"2015-01-06T23:20:58.224Z","type":"quit"}
+{"nick":"benatkin_","reason":"*.net *.split","date":"2015-01-06T23:20:58.225Z","type":"quit"}
+{"nick":"chiper","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"McKay","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"ollie","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"phildini","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"jordonias","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"AKPWD","reason":"*.net *.split","date":"2015-01-06T23:21:00.188Z","type":"quit"}
+{"nick":"danielfilho","reason":"*.net *.split","date":"2015-01-06T23:21:01.165Z","type":"quit"}
+{"nick":"qbit","reason":"*.net *.split","date":"2015-01-06T23:21:02.157Z","type":"quit"}
+{"nick":"litenull","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"z0mt3c","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"gildean","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"jory","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"luite","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"mawe","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"guybrush","reason":"*.net *.split","date":"2015-01-06T23:21:12.096Z","type":"quit"}
+{"nick":"zz_KLUTCH-","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"FunnyLookinHat","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"savardc","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"raoul","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"eh_eff","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"bradleymeck","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"rmg","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"ekmartin","reason":"*.net *.split","date":"2015-01-06T23:21:12.097Z","type":"quit"}
+{"nick":"jas-","reason":"*.net *.split","date":"2015-01-06T23:21:12.260Z","type":"quit"}
+{"nick":"dshaw_","reason":"*.net *.split","date":"2015-01-06T23:21:13.472Z","type":"quit"}
+{"nick":"rossk","reason":"*.net *.split","date":"2015-01-06T23:21:15.332Z","type":"quit"}
+{"nick":"ghostbar","reason":"*.net *.split","date":"2015-01-06T23:21:16.372Z","type":"quit"}
+{"nick":"ImBcmDth","reason":"*.net *.split","date":"2015-01-06T23:21:17.476Z","type":"quit"}
+{"nick":"mscdex","reason":"*.net *.split","date":"2015-01-06T23:21:18.106Z","type":"quit"}
+{"nick":"ajpiano","reason":"*.net *.split","date":"2015-01-06T23:21:18.107Z","type":"quit"}
+{"nick":"Defiler","reason":"*.net *.split","date":"2015-01-06T23:21:23.068Z","type":"quit"}
+{"nick":"cjihrig","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"blakehall","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"DaveMethvin","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"s5fs","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"lanceball","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"fixl","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"TheAceOfHearts1","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"Iskarlar","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"Hondevice","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"jedireza","reason":"*.net *.split","date":"2015-01-06T23:21:23.069Z","type":"quit"}
+{"nick":"phpnode","reason":"*.net *.split","date":"2015-01-06T23:21:23.070Z","type":"quit"}
+{"nick":"jrd0","reason":"*.net *.split","date":"2015-01-06T23:21:23.070Z","type":"quit"}
+{"nick":"julianduque","reason":"*.net *.split","date":"2015-01-06T23:21:24.985Z","type":"quit"}
+{"nick":"myndzi","reason":"*.net *.split","date":"2015-01-06T23:21:25.380Z","type":"quit"}
+{"nick":"ska-fan","reason":"*.net *.split","date":"2015-01-06T23:21:25.547Z","type":"quit"}
+{"nick":"Wraithan","reason":"*.net *.split","date":"2015-01-06T23:21:26.200Z","type":"quit"}
+{"nick":"spion","reason":"*.net *.split","date":"2015-01-06T23:21:26.861Z","type":"quit"}
+{"nick":"mmalecki","reason":"*.net *.split","date":"2015-01-06T23:21:27.554Z","type":"quit"}
+{"nick":"konobi","reason":"*.net *.split","date":"2015-01-06T23:21:29.574Z","type":"quit"}
+{"nick":"boaz","reason":"*.net *.split","date":"2015-01-06T23:21:29.876Z","type":"quit"}
+{"nick":"chapel","reason":"*.net *.split","date":"2015-01-06T23:21:30.168Z","type":"quit"}
+{"nick":"karissa","reason":"*.net *.split","date":"2015-01-06T23:21:31.134Z","type":"quit"}
+{"nick":"thealphanerd","reason":"*.net *.split","date":"2015-01-06T23:21:31.840Z","type":"quit"}
+{"nick":"csurap","reason":"*.net *.split","date":"2015-01-06T23:21:32.268Z","type":"quit"}
+{"nick":"jden","reason":"*.net *.split","date":"2015-01-06T23:21:33.867Z","type":"quit"}
+{"nick":"bonuspunkt","reason":"*.net *.split","date":"2015-01-06T23:21:34.667Z","type":"quit"}
+{"nick":"calvinmetcalf","reason":"*.net *.split","date":"2015-01-06T23:21:35.160Z","type":"quit"}
+{"nick":"eugeneware_","reason":"*.net *.split","date":"2015-01-06T23:21:35.393Z","type":"quit"}
+{"nick":"groundwater___","reason":"*.net *.split","date":"2015-01-06T23:21:35.393Z","type":"quit"}
+{"nick":"cspent","reason":"*.net *.split","date":"2015-01-06T23:21:37.361Z","type":"quit"}
+{"nick":"brunops","reason":"*.net *.split","date":"2015-01-06T23:21:38.074Z","type":"quit"}
+{"nick":"fourq","reason":"*.net *.split","date":"2015-01-06T23:21:38.668Z","type":"quit"}
+{"nick":"phood","reason":"*.net *.split","date":"2015-01-06T23:21:38.669Z","type":"quit"}
+{"nick":"tellnes","reason":"*.net *.split","date":"2015-01-06T23:21:39.370Z","type":"quit"}
+{"nick":"aseidl","reason":"*.net *.split","date":"2015-01-06T23:21:39.584Z","type":"quit"}
+{"nick":"beaujingles","reason":"*.net *.split","date":"2015-01-06T23:21:39.585Z","type":"quit"}
+{"nick":"mathiasbynens","reason":"*.net *.split","date":"2015-01-06T23:21:39.801Z","type":"quit"}
+{"nick":"sballesteros","reason":"*.net *.split","date":"2015-01-06T23:21:40.154Z","type":"quit"}
+{"nick":"morficus","reason":"*.net *.split","date":"2015-01-06T23:21:40.974Z","type":"quit"}
+{"nick":"snooc","reason":"*.net *.split","date":"2015-01-06T23:21:41.191Z","type":"quit"}
+{"nick":"bret","reason":"*.net *.split","date":"2015-01-06T23:21:41.191Z","type":"quit"}
+{"nick":"Sorella","reason":"*.net *.split","date":"2015-01-06T23:21:41.681Z","type":"quit"}
+{"nick":"jjrh","reason":"*.net *.split","date":"2015-01-06T23:21:42.296Z","type":"quit"}
+{"nick":"mius","reason":"*.net *.split","date":"2015-01-06T23:21:44.464Z","type":"quit"}
+{"nick":"cfreak","reason":"*.net *.split","date":"2015-01-06T23:21:44.930Z","type":"quit"}
+{"nick":"eeeeeta","reason":"*.net *.split","date":"2015-01-06T23:21:45.147Z","type":"quit"}
+{"nick":"Sven_vB","reason":"*.net *.split","date":"2015-01-06T23:21:45.312Z","type":"quit"}
+{"nick":"lennon","reason":"*.net *.split","date":"2015-01-06T23:21:47.272Z","type":"quit"}
+{"nick":"olivie___","reason":"*.net *.split","date":"2015-01-06T23:21:47.272Z","type":"quit"}
+{"nick":"leptonix","reason":"*.net *.split","date":"2015-01-06T23:21:49.266Z","type":"quit"}
+{"nick":"nekinie","reason":"*.net *.split","date":"2015-01-06T23:21:49.469Z","type":"quit"}
+{"nick":"yhsiang","reason":"*.net *.split","date":"2015-01-06T23:21:51.098Z","type":"quit"}
+{"nick":"timoxley","reason":"*.net *.split","date":"2015-01-06T23:21:51.501Z","type":"quit"}
+{"nick":"girishr","reason":"*.net *.split","date":"2015-01-06T23:21:52.264Z","type":"quit"}
+{"nick":"matuzak","reason":"*.net *.split","date":"2015-01-06T23:21:52.459Z","type":"quit"}
+{"nick":"showaz","reason":"*.net *.split","date":"2015-01-06T23:21:52.825Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"*.net *.split","date":"2015-01-06T23:21:53.049Z","type":"quit"}
+{"nick":"StoneCypher","reason":"*.net *.split","date":"2015-01-06T23:21:53.751Z","type":"quit"}
+{"nick":"hswolff","reason":"*.net *.split","date":"2015-01-06T23:21:54.069Z","type":"quit"}
+{"nick":"stagas","reason":"*.net *.split","date":"2015-01-06T23:21:54.297Z","type":"quit"}
+{"nick":"hayes","reason":"*.net *.split","date":"2015-01-06T23:21:54.297Z","type":"quit"}
+{"nick":"Nicolab","reason":"*.net *.split","date":"2015-01-06T23:21:54.586Z","type":"quit"}
+{"nick":"sinclair","reason":"*.net *.split","date":"2015-01-06T23:21:54.587Z","type":"quit"}
+{"nick":"clarle","reason":"*.net *.split","date":"2015-01-06T23:21:54.863Z","type":"quit"}
+{"nick":"mikolalysenko_","reason":"*.net *.split","date":"2015-01-06T23:21:55.204Z","type":"quit"}
+{"nick":"ogd","reason":"*.net *.split","date":"2015-01-06T23:21:55.204Z","type":"quit"}
+{"nick":"trevnorris","reason":"*.net *.split","date":"2015-01-06T23:21:55.481Z","type":"quit"}
+{"nick":"michaelrhodes","reason":"*.net *.split","date":"2015-01-06T23:21:55.666Z","type":"quit"}
+{"nick":"paul_irish","reason":"*.net *.split","date":"2015-01-06T23:21:56.254Z","type":"quit"}
+{"nick":"nekinie_","reason":"*.net *.split","date":"2015-01-06T23:21:56.459Z","type":"quit"}
+{"nick":"bjarneo","reason":"*.net *.split","date":"2015-01-06T23:21:56.627Z","type":"quit"}
+{"nick":"kernal","reason":"*.net *.split","date":"2015-01-06T23:21:57.272Z","type":"quit"}
+{"nick":"Exadyne","reason":"*.net *.split","date":"2015-01-06T23:21:58.569Z","type":"quit"}
+{"nick":"alexandergugel","reason":"*.net *.split","date":"2015-01-06T23:22:00.489Z","type":"quit"}
+{"nick":"jaw187","reason":"*.net *.split","date":"2015-01-06T23:22:00.489Z","type":"quit"}
+{"nick":"jadne","reason":"*.net *.split","date":"2015-01-06T23:22:02.094Z","type":"quit"}
+{"nick":"Sam-T","reason":"*.net *.split","date":"2015-01-06T23:22:02.567Z","type":"quit"}
+{"nick":"owenb____","reason":"*.net *.split","date":"2015-01-06T23:22:03.863Z","type":"quit"}
+{"nick":"jirwin","reason":"*.net *.split","date":"2015-01-06T23:22:03.863Z","type":"quit"}
+{"nick":"dubban_","reason":"*.net *.split","date":"2015-01-06T23:22:04.033Z","type":"quit"}
+{"nick":"hackygolucky__","reason":"*.net *.split","date":"2015-01-06T23:22:04.369Z","type":"quit"}
+{"nick":"Domenic","reason":"*.net *.split","date":"2015-01-06T23:22:04.694Z","type":"quit"}
+{"nick":"ljharb","reason":"*.net *.split","date":"2015-01-06T23:22:05.065Z","type":"quit"}
+{"nick":"rvagg","reason":"*.net *.split","date":"2015-01-06T23:22:05.260Z","type":"quit"}
+{"nick":"prettymuchbryce","reason":"*.net *.split","date":"2015-01-06T23:22:05.260Z","type":"quit"}
+{"nick":"hughsk_","reason":"*.net *.split","date":"2015-01-06T23:22:05.424Z","type":"quit"}
+{"nick":"kitcambridge","reason":"*.net *.split","date":"2015-01-06T23:22:05.589Z","type":"quit"}
+{"nick":"finnp","reason":"*.net *.split","date":"2015-01-06T23:22:05.761Z","type":"quit"}
+{"nick":"iShortBus","reason":"*.net *.split","date":"2015-01-06T23:22:06.083Z","type":"quit"}
+{"nick":"jtw","reason":"*.net *.split","date":"2015-01-06T23:22:06.282Z","type":"quit"}
+{"nick":"feross","reason":"*.net *.split","date":"2015-01-06T23:22:06.283Z","type":"quit"}
+{"nick":"lholmquist","reason":"*.net *.split","date":"2015-01-06T23:22:06.637Z","type":"quit"}
+{"nick":"dlmanning","reason":"*.net *.split","date":"2015-01-06T23:22:06.859Z","type":"quit"}
+{"nick":"jameskyb1rz","reason":"*.net *.split","date":"2015-01-06T23:22:07.483Z","type":"quit"}
+{"nick":"ahdinosa1r","reason":"*.net *.split","date":"2015-01-06T23:22:08.457Z","type":"quit"}
+{"nick":"s1w","reason":"*.net *.split","date":"2015-01-06T23:22:08.957Z","type":"quit"}
+{"nick":"Draggor","reason":"*.net *.split","date":"2015-01-06T23:22:09.156Z","type":"quit"}
+{"nick":"bodeezl","reason":"*.net *.split","date":"2015-01-06T23:22:10.567Z","type":"quit"}
+{"nick":"slasaus","reason":"*.net *.split","date":"2015-01-06T23:22:11.657Z","type":"quit"}
+{"nick":"Killswitch","reason":"*.net *.split","date":"2015-01-06T23:22:11.960Z","type":"quit"}
+{"nick":"hipsterslapfight","reason":"*.net *.split","date":"2015-01-06T23:22:12.751Z","type":"quit"}
+{"nick":"lukebennett","reason":"*.net *.split","date":"2015-01-06T23:22:12.751Z","type":"quit"}
+{"nick":"sindresorhus","reason":"*.net *.split","date":"2015-01-06T23:22:12.949Z","type":"quit"}
+{"nick":"wgolden","reason":"*.net *.split","date":"2015-01-06T23:22:13.113Z","type":"quit"}
+{"nick":"BasedGeek","reason":"*.net *.split","date":"2015-01-06T23:22:13.114Z","type":"quit"}
+{"nick":"aledbf","reason":"*.net *.split","date":"2015-01-06T23:22:14.374Z","type":"quit"}
+{"nick":"ErikCorry__","reason":"*.net *.split","date":"2015-01-06T23:22:14.554Z","type":"quit"}
+{"nick":"sandfox","reason":"*.net *.split","date":"2015-01-06T23:22:14.554Z","type":"quit"}
+{"nick":"Imdsm","reason":"*.net *.split","date":"2015-01-06T23:22:14.719Z","type":"quit"}
+{"nick":"ehd","reason":"*.net *.split","date":"2015-01-06T23:22:14.719Z","type":"quit"}
+{"nick":"bhughes","reason":"*.net *.split","date":"2015-01-06T23:22:15.110Z","type":"quit"}
+{"nick":"Aria","reason":"*.net *.split","date":"2015-01-06T23:22:15.294Z","type":"quit"}
+{"nick":"muricula","reason":"*.net *.split","date":"2015-01-06T23:22:15.459Z","type":"quit"}
+{"nick":"tkellen","reason":"*.net *.split","date":"2015-01-06T23:22:16.509Z","type":"quit"}
+{"nick":"juliangruber","reason":"*.net *.split","date":"2015-01-06T23:22:17.870Z","type":"quit"}
+{"nick":"nexxy","reason":"*.net *.split","date":"2015-01-06T23:22:18.086Z","type":"quit"}
+{"nick":"Amec","reason":"*.net *.split","date":"2015-01-06T23:22:19.358Z","type":"quit"}
+{"nick":"bcjordan","reason":"*.net *.split","date":"2015-01-06T23:22:20.358Z","type":"quit"}
+{"nick":"terinjokes","reason":"*.net *.split","date":"2015-01-06T23:22:20.944Z","type":"quit"}
+{"nick":"srl295","reason":"*.net *.split","date":"2015-01-06T23:22:21.111Z","type":"quit"}
+{"nick":"Gazby","reason":"*.net *.split","date":"2015-01-06T23:22:22.373Z","type":"quit"}
+{"nick":"thlorenz","reason":"*.net *.split","date":"2015-01-06T23:22:24.102Z","type":"quit"}
+{"nick":"skeuomorf","reason":"*.net *.split","date":"2015-01-06T23:22:24.308Z","type":"quit"}
+{"nick":"renekooi","reason":"*.net *.split","date":"2015-01-06T23:22:25.271Z","type":"quit"}
+{"nick":"tjahan","reason":"*.net *.split","date":"2015-01-06T23:22:25.462Z","type":"quit"}
+{"nick":"mikaelb_","reason":"*.net *.split","date":"2015-01-06T23:22:26.323Z","type":"quit"}
+{"nick":"stephank","reason":"*.net *.split","date":"2015-01-06T23:22:26.738Z","type":"quit"}
+{"nick":"jesusabdullah","reason":"*.net *.split","date":"2015-01-06T23:22:28.993Z","type":"quit"}
+{"nick":"paulfryzel","reason":"*.net *.split","date":"2015-01-06T23:22:29.172Z","type":"quit"}
+{"nick":"xMopxShell","reason":"*.net *.split","date":"2015-01-06T23:22:29.861Z","type":"quit"}
+{"nick":"r04r","reason":"*.net *.split","date":"2015-01-06T23:22:30.264Z","type":"quit"}
+{"nick":"ahizzle_","reason":"*.net *.split","date":"2015-01-06T23:22:31.669Z","type":"quit"}
+{"nick":"djelic","reason":"*.net *.split","date":"2015-01-06T23:22:31.669Z","type":"quit"}
+{"nick":"Jamy","reason":"*.net *.split","date":"2015-01-06T23:22:32.455Z","type":"quit"}
+{"nick":"ralphholzmann","reason":"*.net *.split","date":"2015-01-06T23:22:33.152Z","type":"quit"}
+{"nick":"brycebaril","reason":"*.net *.split","date":"2015-01-06T23:22:33.760Z","type":"quit"}
+{"nick":"indutny","reason":"*.net *.split","date":"2015-01-06T23:22:33.950Z","type":"quit"}
+{"nick":"early","reason":"*.net *.split","date":"2015-01-06T23:22:34.115Z","type":"quit"}
+{"nick":"ivan","reason":"*.net *.split","date":"2015-01-06T23:22:34.115Z","type":"quit"}
+{"nick":"phildini","date":"2015-01-06T23:23:01.615Z","type":"join"}
+{"nick":"AKPWD","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"danielfilho","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"othiym23","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"Shayanjm","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"ollie","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"jordonias","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"gkatsev","date":"2015-01-06T23:23:01.623Z","type":"join"}
+{"nick":"jory","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"litenull","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"Guest21648","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"gildean","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"McKay","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"benatkin","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"luite","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"thlorenz","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"TheAceOfHearts1","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"dshaw_","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"skeuomorf","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"Iskarlar","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"karissa","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"eh_eff","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"showaz","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"Hondevice","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"bnoordhuis","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"mikolalysenko_","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"jedireza","date":"2015-01-06T23:23:01.624Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"olivie___","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"phpnode","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"jaw187","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"thealphanerd","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"girishr","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"csurap","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"bradleymeck","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"rossk","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"rmg","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"mius","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"StoneCypher","date":"2015-01-06T23:23:01.625Z","type":"join"}
+{"nick":"renekooi","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"fixl","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"tjahan","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"FunnyLookinHat","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"mmalecki","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"ekmartin","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"hswolff","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"jas-","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"stagas","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"raoul","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"hayes","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"zz_KLUTCH-","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"Nicolab","date":"2015-01-06T23:23:01.626Z","type":"join"}
+{"nick":"jadne","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"sinclair","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"Sam-T","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"jden","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"owenb____","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"jirwin","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"dubban_","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"hackygolucky__","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"mikaelb_","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"clarle","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"Domenic","date":"2015-01-06T23:23:01.628Z","type":"join"}
+{"nick":"ljharb","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"rvagg","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"prettymuchbryce","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"hughsk_","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"bonuspunkt","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"kitcambridge","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"finnp","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"iShortBus","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"jtw","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"feross","date":"2015-01-06T23:23:01.629Z","type":"join"}
+{"nick":"ogd","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"savardc","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"calvinmetcalf","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"eugeneware_","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"groundwater___","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"jrd0","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"eeeeeta","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"lholmquist","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"mathiasbynens","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"trevnorris","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"dlmanning","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"stephank","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"slasaus","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"michaelrhodes","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"bhughes","date":"2015-01-06T23:23:01.635Z","type":"join"}
+{"nick":"ghostbar","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"cspent","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"jameskyb1rz","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"brunops","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"paul_irish","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"leptonix","date":"2015-01-06T23:23:01.636Z","type":"join"}
+{"nick":"fourq","date":"2015-01-06T23:23:01.789Z","type":"join"}
+{"nick":"nekinie_","date":"2015-01-06T23:23:01.789Z","type":"join"}
+{"nick":"nekinie","date":"2015-01-06T23:23:01.789Z","type":"join"}
+{"nick":"phood","date":"2015-01-06T23:23:01.790Z","type":"join"}
+{"nick":"bjarneo","date":"2015-01-06T23:23:01.790Z","type":"join"}
+{"nick":"ahdinosa1r","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"Killswitch","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"ImBcmDth","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"Sven_vB","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"mscdex","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"tellnes","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"aseidl","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"beaujingles","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"julianduque","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"hipsterslapfight","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"cfreak","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"lukebennett","date":"2015-01-06T23:23:01.791Z","type":"join"}
+{"nick":"wgolden","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"sindresorhus","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"BasedGeek","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"sballesteros","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"s1w","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"Draggor","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"ajpiano","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"aledbf","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"ErikCorry__","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"sandfox","date":"2015-01-06T23:23:01.792Z","type":"join"}
+{"nick":"morficus","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"snooc","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"bret","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"Imdsm","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"ehd","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"myndzi","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"Aria","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"muricula","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"Sorella","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"Defiler","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"ska-fan","date":"2015-01-06T23:23:01.793Z","type":"join"}
+{"nick":"kernal","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"jesusabdullah","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"cjihrig","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"xMopxShell","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"paulfryzel","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"jjrh","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"yhsiang","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"Wraithan","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"tkellen","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"blakehall","date":"2015-01-06T23:23:01.794Z","type":"join"}
+{"nick":"DaveMethvin","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"s5fs","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"timoxley","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"lanceball","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"bodeezl","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"chapel","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"konobi","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"boaz","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"spion","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"juliangruber","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"Amec","date":"2015-01-06T23:23:01.795Z","type":"join"}
+{"nick":"r04r","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"nexxy","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"ahizzle_","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"djelic","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"matuzak","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"Gazby","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"Exadyne","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"lennon","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"bcjordan","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"terinjokes","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"srl295","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"ralphholzmann","date":"2015-01-06T23:23:01.796Z","type":"join"}
+{"nick":"Jamy","date":"2015-01-06T23:23:01.797Z","type":"join"}
+{"nick":"ivan","date":"2015-01-06T23:23:01.797Z","type":"join"}
+{"nick":"early","date":"2015-01-06T23:23:01.797Z","type":"join"}
+{"nick":"brycebaril","date":"2015-01-06T23:23:01.797Z","type":"join"}
+{"nick":"indutny","date":"2015-01-06T23:23:01.797Z","type":"join"}
+{"nick":"AKPWD","reason":"Max SendQ exceeded","date":"2015-01-06T23:24:24.194Z","type":"quit"}
+{"nick":"AKPWD","date":"2015-01-06T23:24:24.737Z","type":"join"}
+{"nick":"18VABU4Z9","date":"2015-01-06T23:24:27.458Z","type":"join"}
+{"nick":"18VABU4Z9","new_nick":"chiper","date":"2015-01-06T23:24:54.869Z","type":"nick"}
+{"nick":"thlorenz","reason":"Remote host closed the connection","date":"2015-01-06T23:26:05.994Z","type":"quit"}
+{"nick":"danecando","date":"2015-01-06T23:26:25.113Z","type":"join"}
+{"nick":"mius","reason":"Ping timeout: 250 seconds","date":"2015-01-06T23:26:57.735Z","type":"quit"}
+{"nick":"cfreak","reason":"Ping timeout: 250 seconds","date":"2015-01-06T23:26:57.901Z","type":"quit"}
+{"nick":"eeeeeta","reason":"Ping timeout: 250 seconds","date":"2015-01-06T23:27:24.205Z","type":"quit"}
+{"nick":"kriswill","date":"2015-01-06T23:28:10.898Z","type":"join"}
+{"nick":"fixl","reason":"Remote host closed the connection","date":"2015-01-06T23:29:02.782Z","type":"quit"}
+{"nick":"FunnyLookinHat","reason":"Remote host closed the connection","date":"2015-01-06T23:29:04.290Z","type":"quit"}
+{"nick":"cloudbender","date":"2015-01-06T23:31:14.864Z","type":"join"}
+{"nick":"stagas_","date":"2015-01-06T23:32:37.428Z","type":"join"}
+{"nick":"showaz","reason":"Read error: Connection reset by peer","date":"2015-01-06T23:33:54.305Z","type":"quit"}
+{"nick":"bnoordhuis","message":"othiym23: vcbuild.bat is still the right way","date":"2015-01-06T23:33:54.470Z","type":"message"}
+{"nick":"stagas","reason":"Read error: Connection reset by peer","date":"2015-01-06T23:33:54.470Z","type":"quit"}
+{"nick":"kernal","reason":"Ping timeout: 256 seconds","date":"2015-01-06T23:33:54.964Z","type":"quit"}
+{"nick":"stagas_","new_nick":"stagas","date":"2015-01-06T23:34:03.488Z","type":"nick"}
+{"nick":"kernal","date":"2015-01-06T23:34:46.084Z","type":"join"}
+{"nick":"Guest21648","new_nick":"qbit","date":"2015-01-06T23:36:11.533Z","type":"nick"}
+{"nick":"othiym23","message":"bnoordhuis: thanks","date":"2015-01-06T23:36:50.451Z","type":"message"}
+{"nick":"tjahan","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-01-06T23:47:15.952Z","type":"quit"}
+{"nick":"Iskarlar","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-01-06T23:52:14.079Z","type":"quit"}
+{"nick":"eh_eff","reason":"Read error: Connection reset by peer","date":"2015-01-06T23:52:25.997Z","type":"quit"}
+{"nick":"eh_eff","date":"2015-01-06T23:52:55.294Z","type":"join"}
+{"nick":"mawe","date":"2015-01-06T23:55:21.922Z","type":"join"}
+{"nick":"z0mt3c","date":"2015-01-06T23:55:26.030Z","type":"join"}
+{"nick":"guybrush","date":"2015-01-06T23:55:50.159Z","type":"join"}
