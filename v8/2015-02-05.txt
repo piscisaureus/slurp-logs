@@ -1,0 +1,79 @@
+{"nick":"petka__","message":"does it say the deoptimization reason","date":"2015-02-05T00:01:07.316Z","type":"message"}
+{"nick":"ashnur","message":"sure,   ;;; deoptimize at <0:15> check-maps: wrong map","date":"2015-02-05T00:02:06.105Z","type":"message"}
+{"nick":"petka__","message":"yeah I am having the same problem","date":"2015-02-05T00:02:42.236Z","type":"message"}
+{"nick":"petka__","message":"only I have a very stable and static object","date":"2015-02-05T00:02:55.176Z","type":"message"}
+{"nick":"petka__","message":"that never should change its map","date":"2015-02-05T00:03:04.313Z","type":"message"}
+{"nick":"petka__","message":"but it does","date":"2015-02-05T00:03:05.730Z","type":"message"}
+{"nick":"ashnur","message":"well, it might be that it just can not see it :D","date":"2015-02-05T00:03:20.390Z","type":"message"}
+{"nick":"ashnur","message":"for example, i was silly enough that i did things like var max = Math.max","date":"2015-02-05T00:03:43.031Z","type":"message"}
+{"nick":"ashnur","message":"and that also prevented optimizations becase it said it might have side effects","date":"2015-02-05T00:04:06.678Z","type":"message"}
+{"nick":"petka__","message":"yeah","date":"2015-02-05T00:04:30.241Z","type":"message"}
+{"nick":"petka__","message":"there is no optimization for free variables ","date":"2015-02-05T00:04:50.906Z","type":"message"}
+{"nick":"ashnur","message":"free variables?","date":"2015-02-05T00:05:19.801Z","type":"message"}
+{"nick":"ashnur","message":"i am not familiar with the terminology","date":"2015-02-05T00:05:25.616Z","type":"message"}
+{"nick":"petka__","message":"non-local variables ","date":"2015-02-05T00:05:39.202Z","type":"message"}
+{"nick":"petka__","message":"except global","date":"2015-02-05T00:05:45.153Z","type":"message"}
+{"nick":"petka__","message":"so like when you create a closure","date":"2015-02-05T00:05:52.450Z","type":"message"}
+{"nick":"petka__","message":"to close over some variables to reference them later","date":"2015-02-05T00:05:59.355Z","type":"message"}
+{"nick":"petka__","message":"they are free variables","date":"2015-02-05T00:06:01.895Z","type":"message"}
+{"nick":"petka__","message":"so use Math.max directly","date":"2015-02-05T00:06:35.903Z","type":"message"}
+{"nick":"ashnur","message":"i see","date":"2015-02-05T00:07:09.961Z","type":"message"}
+{"nick":"ashnur","message":"so using variables from different scopes (which are not the local scope) prevents optimizations","date":"2015-02-05T00:07:29.610Z","type":"message"}
+{"nick":"ashnur","message":"local & global","date":"2015-02-05T00:07:41.316Z","type":"message"}
+{"nick":"petka__","message":"well not per say","date":"2015-02-05T00:07:44.701Z","type":"message"}
+{"nick":"petka__","message":"it just has to assume that anyone can change what max is at any time","date":"2015-02-05T00:08:13.219Z","type":"message"}
+{"nick":"petka__","message":"even if you could already see at parsing stage that it couldn't be changed","date":"2015-02-05T00:08:33.649Z","type":"message"}
+{"nick":"petka__","message":"did you try with const max = Math.max","date":"2015-02-05T00:09:00.159Z","type":"message"}
+{"nick":"ashnur","message":"no","date":"2015-02-05T00:09:15.097Z","type":"message"}
+{"nick":"ashnur","message":"i can't use const","date":"2015-02-05T00:09:21.805Z","type":"message"}
+{"nick":"petka__","message":"oh","date":"2015-02-05T00:09:26.377Z","type":"message"}
+{"nick":"ashnur","message":"i mean, sure I could, but then it will not work in certain browsers","date":"2015-02-05T00:09:50.118Z","type":"message"}
+{"nick":"ashnur","message":"and before i switched to iojs, i think it wasn't working in node either","date":"2015-02-05T00:10:21.479Z","type":"message"}
+{"nick":"ashnur","message":"but that might be completely wrong, i haven't checked","date":"2015-02-05T00:10:30.091Z","type":"message"}
+{"nick":"petka__","message":"yea don't use const in older than io.js","date":"2015-02-05T00:10:39.201Z","type":"message"}
+{"nick":"ashnur","message":"another thing is, that i am writing a large typedarray(in fact, 2), and it seems that some of these writes are also giving these check-maps: wrong-map deopts","date":"2015-02-05T00:14:49.259Z","type":"message"}
+{"nick":"ashnur","message":"but i have to look more closer","date":"2015-02-05T00:14:59.265Z","type":"message"}
+{"nick":"ashnur","message":"i don't even know C, so this is a bit challenging :D","date":"2015-02-05T00:15:10.106Z","type":"message"}
+{"nick":"petka__","message":"are you adding properties to the typed arrays","date":"2015-02-05T00:15:18.292Z","type":"message"}
+{"nick":"tunz","date":"2015-02-05T00:16:23.675Z","type":"join"}
+{"nick":"ashnur","message":"no","date":"2015-02-05T00:17:15.093Z","type":"message"}
+{"nick":"petka__","message":"I also recall something about GC removing typed array map if there are no typed arrays remaining","date":"2015-02-05T00:17:31.841Z","type":"message"}
+{"nick":"petka__","message":"so after that when you create new typed array it will have new map","date":"2015-02-05T00:17:42.641Z","type":"message"}
+{"nick":"petka__","message":"and all the methods that expect old map will deoptimize","date":"2015-02-05T00:17:55.178Z","type":"message"}
+{"nick":"ashnur","message":"what i am afraid of is that it's my dynamic memory allocation which is screwing with me","date":"2015-02-05T00:18:56.937Z","type":"message"}
+{"nick":"ashnur","message":"i have it initialized for some size, but if I need more while running i create a new typed array, twice as large, and copy all data. it doesn't happen too often, but it might be that it prevents some optimizations","date":"2015-02-05T00:20:22.970Z","type":"message"}
+{"nick":"ashnur","message":"even though it's the same type","date":"2015-02-05T00:20:37.465Z","type":"message"}
+{"nick":"ashnur","message":"well, i will try to remove some of it and see if it helps","date":"2015-02-05T00:21:43.985Z","type":"message"}
+{"nick":"ashnur","message":"petka__: thanks for the help ","date":"2015-02-05T00:24:47.183Z","type":"message"}
+{"nick":"octetcloud","reason":"Ping timeout: 252 seconds","date":"2015-02-05T00:40:40.885Z","type":"quit"}
+{"nick":"bobmcw_","date":"2015-02-05T00:59:46.449Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 250 seconds","date":"2015-02-05T01:02:03.424Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 264 seconds","date":"2015-02-05T01:18:44.749Z","type":"quit"}
+{"nick":"muelli_","date":"2015-02-05T01:28:01.381Z","type":"join"}
+{"nick":"Muelli","reason":"Ping timeout: 245 seconds","date":"2015-02-05T01:31:13.319Z","type":"quit"}
+{"nick":"juanjosanchez","reason":"Read error: Connection reset by peer","date":"2015-02-05T02:00:23.600Z","type":"quit"}
+{"nick":"juanjosanchez","date":"2015-02-05T02:01:06.378Z","type":"join"}
+{"nick":"tunz_","date":"2015-02-05T02:18:56.600Z","type":"join"}
+{"nick":"tunz","reason":"Ping timeout: 272 seconds","date":"2015-02-05T02:22:27.715Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2015-02-05T02:24:23.951Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2015-02-05T02:28:52.951Z","type":"quit"}
+{"nick":"muelli_","reason":"Ping timeout: 256 seconds","date":"2015-02-05T03:07:03.288Z","type":"quit"}
+{"nick":"juanjosanchez","reason":"Ping timeout: 252 seconds","date":"2015-02-05T03:18:11.301Z","type":"quit"}
+{"nick":"caitp-","date":"2015-02-05T04:04:02.886Z","type":"join"}
+{"nick":"chrisdickinson_","new_nick":"chrisdickinson","date":"2015-02-05T04:13:15.438Z","type":"nick"}
+{"nick":"trungl-bot`","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"Check\" on http://build.chromium.org/p/client.v8/builders/V8%20Linux%20-%20isolates/builds/2104 \"V8 Linux - isolates\" from dbc026eecf89b475671b88a11415a88df8487a71: v8-autoroll@chromium.org)","date":"2015-02-05T04:30:21.329Z","type":"message"}
+{"nick":"juanjosanchez","date":"2015-02-05T05:03:41.406Z","type":"join"}
+{"nick":"trungl-bot`","message":"\u00033\u0002Tree opened\u000f by buildbot@chromium.org: Tree is open (Automatic: Ia manuia)","date":"2015-02-05T05:04:32.887Z","type":"message"}
+{"nick":"juanjosanchez","reason":"Ping timeout: 264 seconds","date":"2015-02-05T05:08:49.363Z","type":"quit"}
+{"nick":"jmar777_","reason":"Remote host closed the connection","date":"2015-02-05T06:01:03.383Z","type":"quit"}
+{"nick":"juanjosanchez","date":"2015-02-05T06:04:28.497Z","type":"join"}
+{"nick":"juanjosanchez","reason":"Ping timeout: 240 seconds","date":"2015-02-05T06:09:22.929Z","type":"quit"}
+{"nick":"chrisdickinson","reason":"Excess Flood","date":"2015-02-05T06:44:57.864Z","type":"quit"}
+{"nick":"chrisdickinson","date":"2015-02-05T06:47:52.606Z","type":"join"}
+{"nick":"chrisdickinson","reason":"Ping timeout: 252 seconds","date":"2015-02-05T07:08:05.369Z","type":"quit"}
+{"nick":"chrisdickinson","date":"2015-02-05T07:11:25.266Z","type":"join"}
+{"nick":"xiinotulp","date":"2015-02-05T07:42:39.389Z","type":"join"}
+{"nick":"plutoniix","reason":"Ping timeout: 245 seconds","date":"2015-02-05T07:46:04.583Z","type":"quit"}
+{"nick":"xiinotulp","new_nick":"plutoniix","date":"2015-02-05T07:53:11.429Z","type":"nick"}
+{"nick":"juanjosanchez","date":"2015-02-05T07:53:14.787Z","type":"join"}
+{"nick":"juanjosanchez","reason":"Ping timeout: 255 seconds","date":"2015-02-05T07:58:01.461Z","type":"quit"}
