@@ -1,0 +1,238 @@
+{"nick":"ircretary","date":"2015-04-01T00:00:13.573Z","type":"join"}
+{"nick":"othiym23","message":"secrettriangle: unless you install the package as a dependency of itself (which people do, for various reasons), you can't access bits within the package the same within and from outside it","date":"2015-04-01T00:00:29.047Z","type":"message"}
+{"nick":"ljharb","message":"secrettriangle: require('lib/package') means \"look inside the lib module, for package.js\" - that'd be really confusing imo","date":"2015-04-01T00:00:56.754Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: but what you can do is require('./lib/server.js') from within the package, and require('module/lib/server.js') from the application using the package","date":"2015-04-01T00:01:08.172Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: like ljharb said, if you're requiring locally, the path has to start with `.` or `/`, or else it treats the first element of the require path as the package name","date":"2015-04-01T00:02:03.394Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: I need the other way around; e.g. app/lib/server from the package","date":"2015-04-01T00:02:59.420Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: so if you really need that, you will have to have the package depending on itself, which probably won't do what you want, because the plugin and the host application will end up with different sets of state because they'll be using different module objects","date":"2015-04-01T00:03:52.891Z","type":"message"}
+{"nick":"ljharb","message":"secrettriangle: why would you want a package to require part of the containing app?","date":"2015-04-01T00:03:56.130Z","type":"message"}
+{"nick":"ljharb","message":"secrettriangle: the idea generally is that the app reaches down into modules, but modules are self-contained (including their own dependencies)","date":"2015-04-01T00:04:13.916Z","type":"message"}
+{"nick":"secrettriangle","message":"ljharb: plugin","date":"2015-04-01T00:04:14.833Z","type":"message"}
+{"nick":"ljharb","message":"eesh","date":"2015-04-01T00:04:19.946Z","type":"message"}
+{"nick":"secrettriangle","message":"Open to suggestions :)","date":"2015-04-01T00:04:27.273Z","type":"message"}
+{"nick":"secrettriangle","message":"https://github.com/slap-editor/slap-clipboard-plugin/blob/master/index.js","date":"2015-04-01T00:04:33.872Z","type":"message"}
+{"nick":"secrettriangle","message":"As you can see I'm requiring slap/lib/*","date":"2015-04-01T00:04:50.418Z","type":"message"}
+{"nick":"ljharb","message":"either a) don't write a plugin system, cause there be dragons, or b) use dependency injection - so the module exports a function that takes \"server\" as an argument, for example.","date":"2015-04-01T00:04:51.911Z","type":"message"}
+{"nick":"secrettriangle","message":"Only reason that works is because it assumes slap is installed globally","date":"2015-04-01T00:04:59.004Z","type":"message"}
+{"nick":"othiym23","message":"yeah, dependency injection is definitely the way to go here","date":"2015-04-01T00:05:13.507Z","type":"message"}
+{"nick":"othiym23","message":"that's what `architect` does, and is part of why I recommended it to you yesterday, secrettriangle","date":"2015-04-01T00:05:24.873Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: yeah, saw that","date":"2015-04-01T00:05:34.608Z","type":"message"}
+{"nick":"secrettriangle","message":"I am trying to hack around with NODE_PATH from within the plugin-hosting app","date":"2015-04-01T00:06:21.204Z","type":"message"}
+{"nick":"secrettriangle","message":"I want to avoid dependency injection as it is quite unnatural compared to just requiring as if it was a part of the app","date":"2015-04-01T00:06:45.425Z","type":"message"}
+{"nick":"ljharb","message":"it's not a part of the app - requiring it as if it was is what's unnatural to me.","date":"2015-04-01T00:06:58.659Z","type":"message"}
+{"nick":"rmg","date":"2015-04-01T00:07:59.469Z","type":"join"}
+{"nick":"secrettriangle","message":"ljharb: pretend you're a plugin author","date":"2015-04-01T00:08:44.378Z","type":"message"}
+{"nick":"secrettriangle","message":"How would you write a plugin system in such a way that the plugin system is as easy to use and unintrusive as possible?","date":"2015-04-01T00:09:22.527Z","type":"message"}
+{"nick":"ljharb","message":"am i allowed to answer \"the only way to win is not to play\"?","date":"2015-04-01T00:10:11.187Z","type":"message"}
+{"nick":"secrettriangle","message":"ljharb: not a very good attitude if I might say :)","date":"2015-04-01T00:10:50.659Z","type":"message"}
+{"nick":"secrettriangle","message":"So, as it stands now, plugins are functions into which I pass in one argument -- the app instance","date":"2015-04-01T00:11:56.328Z","type":"message"}
+{"nick":"secrettriangle","message":"I am thinking of creating appInstance.require()","date":"2015-04-01T00:12:04.776Z","type":"message"}
+{"nick":"secrettriangle","message":"Which is only slightly better than assuming the app is installed globally","date":"2015-04-01T00:12:43.453Z","type":"message"}
+{"nick":"ljharb","message":"secrettriangle: can i ask why you think you want a plugin system? like, what goal are you trying to reach?","date":"2015-04-01T00:13:09.120Z","type":"message"}
+{"nick":"secrettriangle","message":"ljharb: modularity... what text editor *doesn't* have a plugin system?","date":"2015-04-01T00:13:28.449Z","type":"message"}
+{"nick":"secrettriangle","message":"Even *nano* has a plugin system","date":"2015-04-01T00:13:46.958Z","type":"message"}
+{"nick":"ljharb","message":"secrettriangle: right but are you just doing it to be like everybody else? or is there specific functionality you hope to ad","date":"2015-04-01T00:14:08.485Z","type":"message"}
+{"nick":"ljharb","message":"*add","date":"2015-04-01T00:14:09.602Z","type":"message"}
+{"nick":"secrettriangle","message":"ljharb: lol","date":"2015-04-01T00:14:20.810Z","type":"message"}
+{"nick":"secrettriangle","message":"You're smart, I shouldn't have to explain this :P","date":"2015-04-01T00:14:37.672Z","type":"message"}
+{"nick":"ljharb","message":"i'm really asking genuine questions here, you may in fact want a plugin system. i'm just curious if that's actually the case.","date":"2015-04-01T00:14:44.597Z","type":"message"}
+{"nick":"secrettriangle","message":"People have been submitting PRs for so many things that I have to turn down most of them","date":"2015-04-01T00:15:06.208Z","type":"message"}
+{"nick":"ljharb","message":"ah","date":"2015-04-01T00:15:10.905Z","type":"message"}
+{"nick":"secrettriangle","message":"But I know that some of these pieces of functionality may be useful to others","date":"2015-04-01T00:15:22.432Z","type":"message"}
+{"nick":"secrettriangle","message":"Thus, modularity in the form of plugins","date":"2015-04-01T00:15:34.498Z","type":"message"}
+{"nick":"ljharb","message":"at any rate, using dependency injection is a really common way for plugins to interact with a main app without having weird coupling issues.","date":"2015-04-01T00:15:36.211Z","type":"message"}
+{"nick":"secrettriangle","message":"Surely though, there's a way to allow require() from a require'd module as if it was part of the main module?","date":"2015-04-01T00:16:40.895Z","type":"message"}
+{"nick":"secrettriangle","message":"I mean, dependency injection is probably the least hacky way to go about it, but it's most certainly not the most user-friendly","date":"2015-04-01T00:17:47.011Z","type":"message"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2015-04-01T00:18:54.798Z","type":"quit"}
+{"nick":"dguttman","date":"2015-04-01T00:20:55.025Z","type":"join"}
+{"nick":"dguttman","reason":"Client Quit","date":"2015-04-01T00:20:55.197Z","type":"quit"}
+{"nick":"octetcloud","reason":"Ping timeout: 256 seconds","date":"2015-04-01T00:21:45.262Z","type":"quit"}
+{"nick":"othiym23","message":"secrettriangle: architect was written as part of working on Cloud9","date":"2015-04-01T00:23:25.688Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: so it was literally written to bootstrap a plugin system for a text editor ;)","date":"2015-04-01T00:23:39.538Z","type":"message"}
+{"nick":"othiym23","message":"it seems like a pain in the ass to build all the boilerplate you need to get it set up, but in my experience, using it feels very natural","date":"2015-04-01T00:24:26.914Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: you've used it?","date":"2015-04-01T00:24:45.685Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: yes, I used it to set up auto-bootstrapping services for the integration tests for Node for New Relic","date":"2015-04-01T00:25:16.776Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: you got something I can look at?","date":"2015-04-01T00:25:37.390Z","type":"message"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T00:26:02.159Z","type":"quit"}
+{"nick":"othiym23","message":"secrettriangle: maybe, if the New Relic devs haven't ripped it out yet","date":"2015-04-01T00:26:05.978Z","type":"message"}
+{"nick":"othiym23","message":"hold on","date":"2015-04-01T00:26:06.761Z","type":"message"}
+{"nick":"alexandergugel","date":"2015-04-01T00:26:31.419Z","type":"join"}
+{"nick":"ljharb","message":"secrettriangle: i think it's quite user-friendly. it's saying \"here, plugin, take this app and extend it\" instead of the plugin having to say \"where's the app? i want to extend it!\"","date":"2015-04-01T00:28:11.442Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: here's a plugin: https://github.com/newrelic/node-newrelic/blob/9332d3a78fe9936ce2a1a547cc34be3e0577ea3b/test/integration/benchmarkr/services/mongodb/index.js","date":"2015-04-01T00:29:08.664Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: and here's its wiring: https://github.com/newrelic/node-newrelic/blob/9332d3a78fe9936ce2a1a547cc34be3e0577ea3b/test/lib/architecture/mongodb-bootstrapped.js","date":"2015-04-01T00:29:43.565Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: you're not using imports anywhere :/","date":"2015-04-01T00:30:31.317Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: and here's a higher level chun of wiring joining a bunch of plugins (which are 'services') here: https://github.com/newrelic/node-newrelic/blob/9332d3a78fe9936ce2a1a547cc34be3e0577ea3b/test/integration/benchmarkr/services.js","date":"2015-04-01T00:30:39.384Z","type":"message"}
+{"nick":"secrettriangle","message":"I looked at architect's examples but I don't 'get' tjem","date":"2015-04-01T00:30:52.666Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: that's what the wiring does","date":"2015-04-01T00:30:52.910Z","type":"message"}
+{"nick":"secrettriangle","message":"*them","date":"2015-04-01T00:30:55.100Z","type":"message"}
+{"nick":"ibash","reason":"Quit: ibash","date":"2015-04-01T00:31:08.157Z","type":"quit"}
+{"nick":"othiym23","message":"secrettriangle: here's where architect gets invoked: https://github.com/newrelic/node-newrelic/blob/9332d3a78fe9936ce2a1a547cc34be3e0577ea3b/test/integration/benchmarkr/bootstrap.js","date":"2015-04-01T00:31:28.854Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: you just gotta do it a couple times, and then it makes sense -- it's code as configuration, which means that you have a fair amount of flexibility in how you put the pieces together","date":"2015-04-01T00:32:04.596Z","type":"message"}
+{"nick":"othiym23","message":"but it takes a little more work to get your head around how it all works at first","date":"2015-04-01T00:32:14.699Z","type":"message"}
+{"nick":"rossk","date":"2015-04-01T00:35:52.184Z","type":"quit"}
+{"nick":"eh_eff","reason":"Ping timeout: 252 seconds","date":"2015-04-01T00:37:35.397Z","type":"quit"}
+{"nick":"pluma","reason":"Ping timeout: 272 seconds","date":"2015-04-01T00:37:56.216Z","type":"quit"}
+{"nick":"danecando","date":"2015-04-01T00:39:43.458Z","type":"join"}
+{"nick":"KushS","date":"2015-04-01T00:40:06.823Z","type":"join"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2015-04-01T00:42:31.716Z","type":"quit"}
+{"nick":"qard","reason":"Quit: leaving","date":"2015-04-01T00:45:52.621Z","type":"quit"}
+{"nick":"greves","reason":"Ping timeout: 264 seconds","date":"2015-04-01T00:46:01.389Z","type":"quit"}
+{"nick":"JoshGlzBrk","date":"2015-04-01T00:49:38.203Z","type":"join"}
+{"nick":"JoshGlzBrk","reason":"Client Quit","date":"2015-04-01T00:50:11.542Z","type":"quit"}
+{"nick":"mcqueenorama","reason":"Remote host closed the connection","date":"2015-04-01T01:02:37.569Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T01:04:50.399Z","type":"quit"}
+{"nick":"bcoe","reason":"Remote host closed the connection","date":"2015-04-01T01:06:48.098Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T01:07:08.527Z","type":"join"}
+{"nick":"arkanciscan","reason":"Ping timeout: 245 seconds","date":"2015-04-01T01:09:49.592Z","type":"quit"}
+{"nick":"pebble`","reason":"Ping timeout: 256 seconds","date":"2015-04-01T01:12:36.270Z","type":"quit"}
+{"nick":"pebble`","date":"2015-04-01T01:13:40.901Z","type":"join"}
+{"nick":"eh_eff","date":"2015-04-01T01:21:24.879Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T01:26:43.808Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T01:29:03.716Z","type":"join"}
+{"nick":"secrettriangle","message":"othiym23: what do you think about this? since each plugin's module.exports = function (app) {}, I'm going to expose app.requirePath so plugins can do require(path.join(app.requirePath, 'lib/server'))","date":"2015-04-01T01:32:37.701Z","type":"message"}
+{"nick":"eh_eff","reason":"Ping timeout: 250 seconds","date":"2015-04-01T01:33:43.360Z","type":"quit"}
+{"nick":"secrettriangle","message":"I don't like it personally but it is obvious as hell","date":"2015-04-01T01:35:48.496Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: remind me why you're not just passing the server into the plugin?","date":"2015-04-01T01:35:52.662Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: I am","date":"2015-04-01T01:36:01.540Z","type":"message"}
+{"nick":"secrettriangle","message":"But it's just the server, it has components","date":"2015-04-01T01:36:11.349Z","type":"message"}
+{"nick":"othiym23","message":"then why does the plugin need to require anything?","date":"2015-04-01T01:36:34.363Z","type":"message"}
+{"nick":"secrettriangle","message":"It has to require server components, like model","date":"2015-04-01T01:36:57.302Z","type":"message"}
+{"nick":"secrettriangle","message":"Let's be specific","date":"2015-04-01T01:37:08.040Z","type":"message"}
+{"nick":"secrettriangle","message":"The app's a text editor; the plugin gets an instance of the app","date":"2015-04-01T01:37:27.469Z","type":"message"}
+{"nick":"othiym23","message":"and why doesn't the app pass those in as well?","date":"2015-04-01T01:37:36.219Z","type":"message"}
+{"nick":"secrettriangle","message":"But the plugin has to e.g. manipulate the actual text buffer, or the header, or a form","date":"2015-04-01T01:38:00.235Z","type":"message"}
+{"nick":"othiym23","message":"the plugin should just be calling API endpoints passed to it","date":"2015-04-01T01:38:19.134Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: 1) there's like 20 things 2) it only makes sense to require() them","date":"2015-04-01T01:38:24.253Z","type":"message"}
+{"nick":"secrettriangle","message":"It's not an HTTP server :P","date":"2015-04-01T01:38:38.066Z","type":"message"}
+{"nick":"secrettriangle","message":"It's a CLI app, with components","date":"2015-04-01T01:38:43.640Z","type":"message"}
+{"nick":"othiym23","message":"explain 2 to me, because I don't see it","date":"2015-04-01T01:38:50.113Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: it should be as close as possible to actually programming the editor, from a plugin developer's perspective","date":"2015-04-01T01:39:30.729Z","type":"message"}
+{"nick":"othiym23","message":"why?","date":"2015-04-01T01:39:40.739Z","type":"message"}
+{"nick":"othiym23","message":"it's a plugin","date":"2015-04-01T01:39:47.741Z","type":"message"}
+{"nick":"othiym23","message":"it lives in the editor","date":"2015-04-01T01:39:55.358Z","type":"message"}
+{"nick":"othiym23","message":"the editor defines its vocabulary of available actions","date":"2015-04-01T01:40:20.744Z","type":"message"}
+{"nick":"secrettriangle","message":"That means plugins are second-class; I don't want that","date":"2015-04-01T01:40:44.417Z","type":"message"}
+{"nick":"secrettriangle","message":"Really the only problem I couldn't figure out how to solve was how to require parts of editor from within a plugin, but I think I have a good solution","date":"2015-04-01T01:40:59.596Z","type":"message"}
+{"nick":"othiym23","message":"and to me it seems simplest to have those enumerated as API calls and then inject an API object into the plugin","date":"2015-04-01T01:41:05.415Z","type":"message"}
+{"nick":"secrettriangle","message":"Which is to store slap's FS path from within the instance passed into the plugin","date":"2015-04-01T01:41:19.378Z","type":"message"}
+{"nick":"secrettriangle","message":"(for use with path.join)","date":"2015-04-01T01:41:23.416Z","type":"message"}
+{"nick":"secrettriangle","message":"Either that or e.g. slapInstance.require('lib/server')","date":"2015-04-01T01:41:44.755Z","type":"message"}
+{"nick":"secrettriangle","message":"(which is uglier IMO)","date":"2015-04-01T01:41:48.481Z","type":"message"}
+{"nick":"secrettriangle","message":"Actually I don't know","date":"2015-04-01T01:42:02.258Z","type":"message"}
+{"nick":"secrettriangle","message":"I also tried messing around with NODE_PATH via process.env","date":"2015-04-01T01:42:22.195Z","type":"message"}
+{"nick":"secrettriangle","message":"But that didn't seem to work for some reason","date":"2015-04-01T01:42:30.870Z","type":"message"}
+{"nick":"secrettriangle","message":"If I could get NODE_PATH to work I think I'd be very happy with the solution","date":"2015-04-01T01:43:15.287Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: if I enumerate an API object so to speak, that would be eschewing npm entirely","date":"2015-04-01T01:44:04.558Z","type":"message"}
+{"nick":"secrettriangle","message":"And I think npm is absolutely the right tool for this","date":"2015-04-01T01:44:12.727Z","type":"message"}
+{"nick":"secrettriangle","message":"I don't want to maintain an API object every time I create a new component","date":"2015-04-01T01:45:20.754Z","type":"message"}
+{"nick":"secrettriangle","message":"ljharb: what do you think?","date":"2015-04-01T01:45:36.047Z","type":"message"}
+{"nick":"othiym23","message":"I think the use of npm and the plugin architecture are largely orthogonal, and I'm curious why you think the one obviates the usefulness of the other","date":"2015-04-01T01:49:16.135Z","type":"message"}
+{"nick":"othiym23","message":"I think searching NODE_PATH for plugins is going to make things brittle","date":"2015-04-01T01:50:09.438Z","type":"message"}
+{"nick":"othiym23","message":"which is probably my experience managing CLASSPATH showing","date":"2015-04-01T01:50:31.602Z","type":"message"}
+{"nick":"KushS","reason":"Remote host closed the connection","date":"2015-04-01T01:54:06.406Z","type":"quit"}
+{"nick":"secrettriangle","message":"othiym23: well I want the plugin author to feel like he's writing a part of slap, rather than slap sandboxing his plugin","date":"2015-04-01T01:54:41.662Z","type":"message"}
+{"nick":"secrettriangle","message":"If that dichotomy makes sense","date":"2015-04-01T01:54:57.224Z","type":"message"}
+{"nick":"secrettriangle","message":"I really like the NODE_PATH approach, why do you object?","date":"2015-04-01T01:55:13.565Z","type":"message"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T01:55:53.798Z","type":"quit"}
+{"nick":"secrettriangle","message":"I think it wraps everything up with a neat little bow; plugins will then essentially be a part of slap","date":"2015-04-01T01:55:57.650Z","type":"message"}
+{"nick":"othiym23","message":"because you're dumping a bunch of packages that are only useful for one program into a set of paths shared by many programs","date":"2015-04-01T01:56:14.953Z","type":"message"}
+{"nick":"alexandergugel","date":"2015-04-01T01:56:17.475Z","type":"join"}
+{"nick":"secrettriangle","message":"othiym23: not globally, just in the context of slap","date":"2015-04-01T01:56:28.920Z","type":"message"}
+{"nick":"othiym23","message":"and I think we've finally found the disconnect in this discussion, because I want my plugins to be separated / isolated from their hosts","date":"2015-04-01T01:56:56.619Z","type":"message"}
+{"nick":"othiym23","message":"for architectural reasons, if for no other reason","date":"2015-04-01T01:57:19.373Z","type":"message"}
+{"nick":"secrettriangle","message":"I understand that for something like a game which has a clear core","date":"2015-04-01T01:57:59.655Z","type":"message"}
+{"nick":"othiym23","message":"secrettriangle: if it works for you, go for it","date":"2015-04-01T01:58:00.817Z","type":"message"}
+{"nick":"secrettriangle","message":"An editor must be infinitely hackable","date":"2015-04-01T01:58:29.573Z","type":"message"}
+{"nick":"othiym23","message":"well, look at Sublime, vim, emacs, and TextMate","date":"2015-04-01T01:58:29.745Z","type":"message"}
+{"nick":"othiym23","message":"emacs is the case where it's most obscured because Elise has grown so much, but even there, extensions are consuming APIs rather than just being treated as part of the editor code","date":"2015-04-01T01:59:35.612Z","type":"message"}
+{"nick":"othiym23","message":"I don't agree, I prefer my editor be at least a little constrained","date":"2015-04-01T02:00:09.552Z","type":"message"}
+{"nick":"othiym23","message":"but again, it's fine","date":"2015-04-01T02:00:20.829Z","type":"message"}
+{"nick":"othiym23","message":"none of this really has anything to do with npm, though","date":"2015-04-01T02:00:39.341Z","type":"message"}
+{"nick":"othiym23","message":"NODE_MODULES and the module loader aren't part of npm","date":"2015-04-01T02:01:01.149Z","type":"message"}
+{"nick":"mcqueenorama","date":"2015-04-01T02:02:23.257Z","type":"join"}
+{"nick":"ibash","date":"2015-04-01T02:07:40.385Z","type":"join"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2015-04-01T02:14:32.865Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T02:17:21.279Z","type":"quit"}
+{"nick":"prbc","date":"2015-04-01T02:18:37.339Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-04-01T02:21:43.519Z","type":"join"}
+{"nick":"secrettriangle","message":"OK, got it","date":"2015-04-01T02:21:51.414Z","type":"message"}
+{"nick":"secrettriangle","message":"othiym23: can I continue discussing here? nobody else is talking","date":"2015-04-01T02:22:37.627Z","type":"message"}
+{"nick":"prbc","reason":"Ping timeout: 244 seconds","date":"2015-04-01T02:23:02.297Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Read error: No route to host","date":"2015-04-01T02:23:25.147Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T02:23:37.423Z","type":"join"}
+{"nick":"williamcotton","reason":"Ping timeout: 265 seconds","date":"2015-04-01T02:36:13.412Z","type":"quit"}
+{"nick":"eh_eff","date":"2015-04-01T02:41:32.890Z","type":"join"}
+{"nick":"ibash","reason":"Quit: ibash","date":"2015-04-01T02:42:13.011Z","type":"quit"}
+{"nick":"flipperWhip","date":"2015-04-01T02:47:35.598Z","type":"join"}
+{"nick":"othiym23","message":"secrettriangle: sure thing, I just wanted to be clear we're talking about our opinions and not, like, npm policy or anything","date":"2015-04-01T02:48:44.186Z","type":"message"}
+{"nick":"flipperWhip","reason":"Max SendQ exceeded","date":"2015-04-01T02:49:17.347Z","type":"quit"}
+{"nick":"flipperWhip","date":"2015-04-01T02:49:49.863Z","type":"join"}
+{"nick":"eh_eff","reason":"Ping timeout: 248 seconds","date":"2015-04-01T03:01:41.230Z","type":"quit"}
+{"nick":"rprieto","reason":"Remote host closed the connection","date":"2015-04-01T03:04:27.544Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T03:07:10.617Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T03:07:43.045Z","type":"join"}
+{"nick":"alexandergugel","reason":"Read error: No route to host","date":"2015-04-01T03:09:57.617Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T03:10:09.524Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T03:10:09.524Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T03:10:45.607Z","type":"join"}
+{"nick":"alexandergugel","reason":"Read error: Connection reset by peer","date":"2015-04-01T03:11:05.138Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T03:11:38.673Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T03:15:58.668Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T03:16:13.330Z","type":"join"}
+{"nick":"mcqueenorama","reason":"Read error: Connection reset by peer","date":"2015-04-01T03:40:20.058Z","type":"quit"}
+{"nick":"mcqueenorama","date":"2015-04-01T03:40:55.514Z","type":"join"}
+{"nick":"flipperWhip","reason":"Quit: bye","date":"2015-04-01T03:54:50.442Z","type":"quit"}
+{"nick":"williamcotton","date":"2015-04-01T03:59:38.541Z","type":"join"}
+{"nick":"knownasilya","reason":"Quit: Connection closed for inactivity","date":"2015-04-01T04:01:37.269Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T04:02:22.157Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T04:05:28.471Z","type":"join"}
+{"nick":"mich-cook","reason":"Ping timeout: 250 seconds","date":"2015-04-01T04:06:56.444Z","type":"quit"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2015-04-01T04:08:01.149Z","type":"quit"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T04:08:31.725Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T04:11:36.556Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T04:15:25.017Z","type":"quit"}
+{"nick":"jlembeck","date":"2015-04-01T04:16:31.645Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-04-01T04:43:50.475Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T04:43:56.055Z","type":"quit"}
+{"nick":"rmg","date":"2015-04-01T05:08:37.793Z","type":"join"}
+{"nick":"rmg","reason":"Ping timeout: 252 seconds","date":"2015-04-01T05:13:41.317Z","type":"quit"}
+{"nick":"bcoe","date":"2015-04-01T05:20:26.050Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-04-01T05:22:32.384Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T05:23:33.633Z","type":"quit"}
+{"nick":"thealphanerd","date":"2015-04-01T05:24:35.266Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-04-01T05:25:10.407Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T05:26:05.276Z","type":"quit"}
+{"nick":"mdel","reason":"Quit: Connection closed for inactivity","date":"2015-04-01T05:31:50.191Z","type":"quit"}
+{"nick":"lpin","date":"2015-04-01T05:32:50.717Z","type":"join"}
+{"nick":"williamcotton","reason":"Read error: Connection reset by peer","date":"2015-04-01T05:44:56.619Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T05:46:04.464Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T05:46:05.833Z","type":"quit"}
+{"nick":"David_Hernandez","date":"2015-04-01T05:51:23.377Z","type":"join"}
+{"nick":"mcqueenorama","reason":"Remote host closed the connection","date":"2015-04-01T05:51:49.929Z","type":"quit"}
+{"nick":"mcqueenorama","date":"2015-04-01T05:52:26.349Z","type":"join"}
+{"nick":"gsd","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-04-01T05:55:08.386Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T05:58:01.000Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T05:59:08.236Z","type":"quit"}
+{"nick":"rprieto","date":"2015-04-01T06:05:20.258Z","type":"join"}
+{"nick":"mcqueeno_","date":"2015-04-01T06:05:43.394Z","type":"join"}
+{"nick":"mcqueenorama","reason":"Read error: Connection reset by peer","date":"2015-04-01T06:06:07.554Z","type":"quit"}
+{"nick":"rprieto","reason":"Ping timeout: 256 seconds","date":"2015-04-01T06:09:41.264Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T06:14:33.405Z","type":"join"}
+{"nick":"williamcotton","date":"2015-04-01T06:14:56.898Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T06:15:37.882Z","type":"quit"}
+{"nick":"mcqueeno_","reason":"Remote host closed the connection","date":"2015-04-01T06:16:46.263Z","type":"quit"}
+{"nick":"mcqueenorama","date":"2015-04-01T06:17:19.265Z","type":"join"}
+{"nick":"williamcotton","reason":"Ping timeout: 252 seconds","date":"2015-04-01T06:21:18.860Z","type":"quit"}
+{"nick":"thealphanerd","reason":"Quit: thealphanerd","date":"2015-04-01T06:44:32.126Z","type":"quit"}
+{"nick":"bcoe","reason":"Remote host closed the connection","date":"2015-04-01T06:48:07.959Z","type":"quit"}
+{"nick":"intellix","date":"2015-04-01T06:50:26.838Z","type":"join"}
+{"nick":"alexandergugel","date":"2015-04-01T06:51:18.630Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T06:52:58.402Z","type":"quit"}
+{"nick":"lewellyn","reason":"Ping timeout: 246 seconds","date":"2015-04-01T06:53:20.881Z","type":"quit"}
+{"nick":"alexandergugel","date":"2015-04-01T06:56:05.039Z","type":"join"}
+{"nick":"thealphanerd","date":"2015-04-01T07:04:35.324Z","type":"join"}
+{"nick":"AvianFlu","reason":"Remote host closed the connection","date":"2015-04-01T07:06:02.399Z","type":"quit"}
+{"nick":"lewellyn","date":"2015-04-01T07:10:18.203Z","type":"join"}
+{"nick":"Hounddog","date":"2015-04-01T07:40:15.240Z","type":"join"}
+{"nick":"bobmcw","date":"2015-04-01T07:54:17.575Z","type":"join"}
+{"nick":"alexandergugel","reason":"Remote host closed the connection","date":"2015-04-01T07:59:04.027Z","type":"quit"}
