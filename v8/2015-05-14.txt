@@ -56,3 +56,97 @@
 {"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-05-14T15:34:43.837Z","type":"quit"}
 {"nick":"caitp-","date":"2015-05-14T15:55:32.297Z","type":"join"}
 {"nick":"bradleymeck","date":"2015-05-14T15:59:10.530Z","type":"join"}
+{"nick":"edwin_liu","date":"2015-05-14T16:05:13.757Z","type":"join"}
+{"nick":"edwin_liu","reason":"Ping timeout: 240 seconds","date":"2015-05-14T16:11:45.737Z","type":"quit"}
+{"nick":"edwin_liu","date":"2015-05-14T16:18:40.322Z","type":"join"}
+{"nick":"edwin_liu_","date":"2015-05-14T16:21:16.530Z","type":"join"}
+{"nick":"edwin_liu","reason":"Ping timeout: 244 seconds","date":"2015-05-14T16:23:03.266Z","type":"quit"}
+{"nick":"edwin_liu_","reason":"Remote host closed the connection","date":"2015-05-14T16:28:25.778Z","type":"quit"}
+{"nick":"srl295_","new_nick":"srl295","date":"2015-05-14T16:29:39.499Z","type":"nick"}
+{"nick":"ncthom91","date":"2015-05-14T16:30:44.424Z","type":"join"}
+{"nick":"ncthom91","message":"hi all. I'm working on a project in which I run separate v8 isolates in separate threads for parallel execution of unrelated scripts. These threads need to communicate back to the main thread, and I could naively do that by passing references to v8 objects created for each isolate, but that's a bad idea right? What's the right way to share a string, for example? Get the underlying char array and memcpy it to a new region of memory,","date":"2015-05-14T16:34:20.504Z","type":"message"}
+{"nick":"ncthom91","message":" and build a new v8 instance from that new region?","date":"2015-05-14T16:34:20.708Z","type":"message"}
+{"nick":"bradleymeck","message":"ncthom91: objects cannot be shared w/ isolates, have a C++ fn exposed to JS that can queue strings to be passed to other isolates","date":"2015-05-14T16:36:19.899Z","type":"message"}
+{"nick":"bradleymeck","message":"the strings will need to be converted to char* yes, you can look at JSON.stringify and String::UTF8Value , you can turn a string into an external string though, but then you need to have some management if you mutate it","date":"2015-05-14T16:37:39.664Z","type":"message"}
+{"nick":"ncthom91","message":"bradleymeck i mean, for example, evaluating a script in a new v8 isolate in a given thread produces a v8 object - let's say a string. And I want that string to be communicated back to the main thread running it's own v8 isolate. So if I try to share it directly, I assume I'm goign to run into GC issues?","date":"2015-05-14T16:43:46.293Z","type":"message"}
+{"nick":"ncthom91","message":"where the earlier isolate cleans up the memory while the second isolate expects teh reference to still be around?","date":"2015-05-14T16:44:00.336Z","type":"message"}
+{"nick":"bradleymeck","message":"ncthom91: I would be surprised if it did not segfault","date":"2015-05-14T16:44:11.687Z","type":"message"}
+{"nick":"ncthom91","message":"so I was thinking the safe way would be convert to char*, memcpy, create a new v8 string instance from the new region of memory","date":"2015-05-14T16:44:28.058Z","type":"message"}
+{"nick":"bradleymeck","message":"sounds fine","date":"2015-05-14T16:44:44.236Z","type":"message"}
+{"nick":"ncthom91","message":"cool. Do I necessarily need the memcpy?","date":"2015-05-14T16:45:17.406Z","type":"message"}
+{"nick":"bradleymeck","message":"for very very large strings you might want to look at External Strings","date":"2015-05-14T16:45:33.101Z","type":"message"}
+{"nick":"bradleymeck","message":"ncthom91: yes unless you use External Strings","date":"2015-05-14T16:45:43.994Z","type":"message"}
+{"nick":"esas","date":"2015-05-14T16:45:45.815Z","type":"join"}
+{"nick":"bradleymeck","message":"it is going to be a bumpy ride","date":"2015-05-14T16:46:17.449Z","type":"message"}
+{"nick":"ncthom91","message":"bradleymeck interesting, I'm unfamiliar with external strings. What exactly are they? Or can you point me to a good resource to learn about it?","date":"2015-05-14T16:46:27.585Z","type":"message"}
+{"nick":"ncthom91","message":"(is this a C++ thing or a v8 thign?)","date":"2015-05-14T16:46:33.924Z","type":"message"}
+{"nick":"bradleymeck","message":"they are v8 thing. basically things not managed by the v8 heap, but point to a piece of memory","date":"2015-05-14T16:46:59.265Z","type":"message"}
+{"nick":"bradleymeck","message":"reading v8.h will give you too much info, lets see if google has a good tut","date":"2015-05-14T16:47:15.185Z","type":"message"}
+{"nick":"ncthom91","message":"that sounds like a perf win for any decently sized string","date":"2015-05-14T16:47:37.448Z","type":"message"}
+{"nick":"caitp-","message":"it sounds like it, but...","date":"2015-05-14T16:48:33.813Z","type":"message"}
+{"nick":"bradleymeck","message":"if you externalize a string you get a heap walk T_T","date":"2015-05-14T16:49:24.743Z","type":"message"}
+{"nick":"ncthom91","message":"you mean iterate the whole heap?","date":"2015-05-14T16:50:49.718Z","type":"message"}
+{"nick":"ncthom91","message":"hm yikes this sounds like something I *don't* want to happen frequently lol","date":"2015-05-14T16:51:45.268Z","type":"message"}
+{"nick":"bradleymeck","message":"it needs to be a biiig string","date":"2015-05-14T16:52:05.464Z","type":"message"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2009081014]","date":"2015-05-14T16:52:07.640Z","type":"quit"}
+{"nick":"ncthom91","message":"my strings will mostly be < 2mb probably","date":"2015-05-14T16:52:21.020Z","type":"message"}
+{"nick":"ncthom91","message":"how big is \"biiiig\" ?","date":"2015-05-14T16:52:30.786Z","type":"message"}
+{"nick":"bradleymeck","message":"id say 20mb? but it varies for your size of heap, caitp would know more","date":"2015-05-14T16:53:10.509Z","type":"message"}
+{"nick":"ncthom91","message":"ah I don't think I need to worry about strings taht big","date":"2015-05-14T16:53:26.279Z","type":"message"}
+{"nick":"ncthom91","message":"bradleymeck so I suppose I'll probably just use hte char*, memcpy idea. And just to be clear: if I don't explicitly memcpy, as in, instantiate a new v8 object in the other isolate pointing to the same underlying char*, what exactly is the risk?","date":"2015-05-14T16:55:58.284Z","type":"message"}
+{"nick":"ncthom91","message":"that the first isolate will GC the underlying char* while the other expects it to still be there?","date":"2015-05-14T16:56:10.920Z","type":"message"}
+{"nick":"ncthom91","message":"(does each isolate have its own GC?)","date":"2015-05-14T16:56:26.667Z","type":"message"}
+{"nick":"bradleymeck","message":"ncthom91: lets start with, if it is not External you shouldn't be able to get a direct pointer to the memory it is representing","date":"2015-05-14T16:56:52.495Z","type":"message"}
+{"nick":"bradleymeck","message":"yes each isolate has independent GC","date":"2015-05-14T16:57:09.479Z","type":"message"}
+{"nick":"Bob_Gneu","reason":"Ping timeout: 255 seconds","date":"2015-05-14T17:07:28.576Z","type":"quit"}
+{"nick":"enaqx_","date":"2015-05-14T17:08:39.986Z","type":"join"}
+{"nick":"enaqx","reason":"Ping timeout: 244 seconds","date":"2015-05-14T17:11:37.246Z","type":"quit"}
+{"nick":"ysaberi","date":"2015-05-14T17:36:29.726Z","type":"join"}
+{"nick":"caitp-","reason":"Ping timeout: 256 seconds","date":"2015-05-14T18:37:21.339Z","type":"quit"}
+{"nick":"caitp-","date":"2015-05-14T18:39:35.600Z","type":"join"}
+{"nick":"caitp-","reason":"Ping timeout: 255 seconds","date":"2015-05-14T18:54:07.451Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"Check\" on http://build.chromium.org/p/client.v8/builders/V8%20Win32%20-%20nosnap%20-%20shared/builds/6796 \"V8 Win32 - nosnap - shared\" from d090469cdd736240f7172696e1f30096695536fc: paul.lind@imgtec.com)","date":"2015-05-14T18:58:18.707Z","type":"message"}
+{"nick":"caitp-","date":"2015-05-14T19:33:55.604Z","type":"join"}
+{"nick":"C-Man","reason":"Quit: Connection reset by beer","date":"2015-05-14T19:50:35.550Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-05-14T20:16:50.597Z","type":"quit"}
+{"nick":"ncthom91","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2015-05-14T20:30:12.265Z","type":"quit"}
+{"nick":"bradleymeck","date":"2015-05-14T20:31:56.429Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-05-14T20:41:45.906Z","type":"quit"}
+{"nick":"bradleymeck","date":"2015-05-14T20:47:07.913Z","type":"join"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by machenbach@chromium.org: Tree is open (flake)","date":"2015-05-14T20:56:07.519Z","type":"message"}
+{"nick":"wingo","reason":"Ping timeout: 258 seconds","date":"2015-05-14T20:59:42.949Z","type":"quit"}
+{"nick":"bradleymeck","message":"one day Proxy will land and interceptors might be able to intercept Object.defineProperty / freeze /etc.","date":"2015-05-14T21:03:00.306Z","type":"message"}
+{"nick":"caitp","message":"you think Proxy will land?","date":"2015-05-14T21:16:16.912Z","type":"message"}
+{"nick":"caitp","message":"i wouldn't expect that in this quarter or the next :p","date":"2015-05-14T21:16:23.915Z","type":"message"}
+{"nick":"caitp","message":"but maybe..","date":"2015-05-14T21:16:25.988Z","type":"message"}
+{"nick":"bradleymeck","message":"in all honesty I just want the hooks for interceptors","date":"2015-05-14T21:16:36.609Z","type":"message"}
+{"nick":"bradleymeck","message":"idc about JS level proxies","date":"2015-05-14T21:16:42.134Z","type":"message"}
+{"nick":"caitp","message":"i'd be surprised if interceptors aren'tavailable to embedders already, because I'm not sure why else we have them","date":"2015-05-14T21:18:20.014Z","type":"message"}
+{"nick":"bradleymeck","message":"caitp: they are but they don't catch a bunch of things","date":"2015-05-14T21:18:44.725Z","type":"message"}
+{"nick":"bradleymeck","message":"defineProperty is not caught, nor seal preventExtentions","date":"2015-05-14T21:19:05.605Z","type":"message"}
+{"nick":"caitp","message":"what I'm hoping we're going to do, is create a dynamic dispatch mechanism similar to what spidermonkey has, which has something similar to vtables allocated for different internal class types","date":"2015-05-14T21:19:59.571Z","type":"message"}
+{"nick":"caitp","message":"and make it really easy for embedders to deal with, that way","date":"2015-05-14T21:20:36.528Z","type":"message"}
+{"nick":"bradleymeck","message":"would be nice-ish, but vtables are kinda painful","date":"2015-05-14T21:20:52.459Z","type":"message"}
+{"nick":"caitp","message":"wouldn't be a C++-level vtable per se","date":"2015-05-14T21:21:15.458Z","type":"message"}
+{"nick":"caitp","message":"https://github.com/mozilla/gecko-dev/blob/0d950f5c81a0ad6899972aaf85e73e4e56359043/js/public/Class.h#L530 something similarto that","date":"2015-05-14T21:22:02.315Z","type":"message"}
+{"nick":"bradleymeck","message":"i would love that, esp if it could be changed after allocation","date":"2015-05-14T21:22:41.735Z","type":"message"}
+{"nick":"caitp","message":"so you'd have like Value::defineProperty(...) which internally does getClass()->getOps()->defineProperty(...)","date":"2015-05-14T21:22:56.014Z","type":"message"}
+{"nick":"bradleymeck","message":"i assume this would just be for proxies/interceptors?","date":"2015-05-14T21:23:02.736Z","type":"message"}
+{"nick":"bradleymeck","message":"seems like if it was for all objs it would need to add a ton of inlining/ic logic for the ops","date":"2015-05-14T21:23:52.674Z","type":"message"}
+{"nick":"caitp","message":"the big goal of it is just to simplify things, so that instead of every caller having to decide whether to use SetElement() or SetElementWithAccessor() or SetProperty() or SetPropertyWithAccessor() or SetPropertyWithHnadler() or whatever else","date":"2015-05-14T21:24:14.056Z","type":"message"}
+{"nick":"caitp","message":"so, i'm hoping we can do that, but it might be hard to sell","date":"2015-05-14T21:24:48.455Z","type":"message"}
+{"nick":"caitp","message":"at the end of the day though, it should be really easy to make dynamic dispatch work without being super expensive","date":"2015-05-14T21:25:50.503Z","type":"message"}
+{"nick":"bradleymeck","action":"nods","date":"2015-05-14T21:26:46.707Z","type":"action"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2015-05-14T21:29:27.052Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Ping timeout: 252 seconds","date":"2015-05-14T21:31:28.877Z","type":"quit"}
+{"nick":"ncthom91","date":"2015-05-14T21:46:00.127Z","type":"join"}
+{"nick":"bobmcw","date":"2015-05-14T22:08:41.431Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 250 seconds","date":"2015-05-14T22:13:21.397Z","type":"quit"}
+{"nick":"ysaberi","reason":"Quit: ysaberi","date":"2015-05-14T22:15:34.106Z","type":"quit"}
+{"nick":"RT|Chatzilla","date":"2015-05-14T22:36:31.708Z","type":"join"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"bot_update\" on http://build.chromium.org/p/client.v8/builders/V8%20Linux%20-%20presubmit/builds/1051 \"V8 Linux - presubmit\" from 3a18b9b71bac2f64db3dcbef6e2a503262036c1c: caitpotter88@gmail.com)","date":"2015-05-14T23:27:15.251Z","type":"message"}
+{"nick":"ncthom91","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2015-05-14T23:32:51.677Z","type":"quit"}
+{"nick":"ncthom91","date":"2015-05-14T23:41:30.122Z","type":"join"}
+{"nick":"ncthom91","reason":"Client Quit","date":"2015-05-14T23:42:05.355Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-05-14T23:42:53.026Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-05-14T23:51:18.010Z","type":"quit"}
