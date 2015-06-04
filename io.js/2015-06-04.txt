@@ -1,0 +1,196 @@
+{"nick":"Arnavion","message":"It won't until I do   p.then(...)","date":"2015-06-04T00:00:06.901Z","type":"message"}
+{"nick":"UniOn","date":"2015-06-04T00:00:34.783Z","type":"join"}
+{"nick":"Arnavion","message":"Firefox and bluebird do it correctly, io.js and Chrome don't","date":"2015-06-04T00:00:39.365Z","type":"message"}
+{"nick":"ljharb","message":"es6-shim's promises do that too","date":"2015-06-04T00:00:41.922Z","type":"message"}
+{"nick":"ljharb","message":"link to the spec on that part?","date":"2015-06-04T00:00:57.818Z","type":"message"}
+{"nick":"Arnavion","message":"https://people.mozilla.org/~jorendorff/es6-draft.html#sec-promise-resolve-functions   Step 8","date":"2015-06-04T00:01:15.534Z","type":"message"}
+{"nick":"mikeal_","reason":"Quit: Connection closed for inactivity","date":"2015-06-04T00:01:36.076Z","type":"quit"}
+{"nick":"ljharb","message":"https://people.mozilla.org/~jorendorff/es6-draft.html#sec-performpromisethen","date":"2015-06-04T00:01:42.765Z","type":"message"}
+{"nick":"ljharb","message":"it enqueues a PromiseReaction","date":"2015-06-04T00:01:50.905Z","type":"message"}
+{"nick":"ljharb","message":"let's see","date":"2015-06-04T00:02:01.805Z","type":"message"}
+{"nick":"Arnavion","message":"then is not relevant to the bug","date":"2015-06-04T00:02:10.413Z","type":"message"}
+{"nick":"Arnavion","message":"Read my example again","date":"2015-06-04T00:02:23.590Z","type":"message"}
+{"nick":"ljharb","message":"oh right, sorry","date":"2015-06-04T00:02:32.535Z","type":"message"}
+{"nick":"ljharb","message":"reading along with you","date":"2015-06-04T00:02:37.608Z","type":"message"}
+{"nick":"Arnavion","message":"(Equivalently 2.3.3 in https://promisesaplus.com/#point-45 )","date":"2015-06-04T00:03:13.743Z","type":"message"}
+{"nick":"ljharb","message":"ok so it gets the \"then\" function, then it enqueues it","date":"2015-06-04T00:03:16.224Z","type":"message"}
+{"nick":"Arnavion","message":"Basically when you call resolve(), it's supposed to immediately check what you gave it - whether it's a thenable or not","date":"2015-06-04T00:03:40.485Z","type":"message"}
+{"nick":"ljharb","message":"check, yes, but call?","date":"2015-06-04T00:03:47.714Z","type":"message"}
+{"nick":"Arnavion","message":"Check","date":"2015-06-04T00:03:54.890Z","type":"message"}
+{"nick":"Arnavion","message":"And then call","date":"2015-06-04T00:04:01.264Z","type":"message"}
+{"nick":"ljharb","message":"the \"getting then\" won't happen til the function is invoked","date":"2015-06-04T00:04:03.539Z","type":"message"}
+{"nick":"ljharb","message":"hm","date":"2015-06-04T00:04:06.627Z","type":"message"}
+{"nick":"Arnavion","message":"because it has to register to be resolved when that thenable is resolved","date":"2015-06-04T00:04:12.331Z","type":"message"}
+{"nick":"ljharb","message":"yeah, seems like you're right","date":"2015-06-04T00:04:17.679Z","type":"message"}
+{"nick":"ljharb","message":"Arnavion: you may want to post this test case to esdiscuss, along with the results of what various things do","date":"2015-06-04T00:04:27.589Z","type":"message"}
+{"nick":"ljharb","message":"if you get a confirmation then i'll fix es6-shim, and a test262 test for it should be created","date":"2015-06-04T00:04:43.768Z","type":"message"}
+{"nick":"ljharb","message":"(if it doesn't already exist)","date":"2015-06-04T00:04:47.353Z","type":"message"}
+{"nick":"nuizzy","reason":"Quit: nuizzy","date":"2015-06-04T00:05:28.380Z","type":"quit"}
+{"nick":"jrthib","reason":"Quit: jrthib","date":"2015-06-04T00:06:20.857Z","type":"quit"}
+{"nick":"Arnavion","message":"You can do   resolve(Object.defineProperty({}, \"then\", { get: function() { console.log(\"Getting then...\"); throw new Error(\"\"); } }));   which *should* fail by just checking it's a thenable","date":"2015-06-04T00:07:13.237Z","type":"message"}
+{"nick":"Arnavion","message":"but doesn't","date":"2015-06-04T00:07:15.978Z","type":"message"}
+{"nick":"Arnavion","message":"I'm guessing V8 just ignores the object entirely until you register a reaction","date":"2015-06-04T00:07:42.233Z","type":"message"}
+{"nick":"ljharb","message":"sounds like two checks","date":"2015-06-04T00:07:44.045Z","type":"message"}
+{"nick":"ljharb","message":"yeah, v8 is often guilty of perf optimizations that violate the spec","date":"2015-06-04T00:07:54.221Z","type":"message"}
+{"nick":"Arnavion","message":"And in fact, if you register reactions, then the \"Getting then...\" gets printed for each one, which is also wrong","date":"2015-06-04T00:08:02.212Z","type":"message"}
+{"nick":"ljharb","message":"right","date":"2015-06-04T00:08:06.483Z","type":"message"}
+{"nick":"ljharb","message":"3 checks :-)","date":"2015-06-04T00:08:10.915Z","type":"message"}
+{"nick":"ljharb","message":"good catch.","date":"2015-06-04T00:08:13.767Z","type":"message"}
+{"nick":"Arnavion","message":"Heh","date":"2015-06-04T00:08:16.299Z","type":"message"}
+{"nick":"Arnavion","message":"That is much more serious actually","date":"2015-06-04T00:08:34.672Z","type":"message"}
+{"nick":"Arnavion","message":"Suddenly your code ends up running more than once just because more than one piece of code is interested in its results","date":"2015-06-04T00:08:58.082Z","type":"message"}
+{"nick":"ljharb","message":"i'm adding those checks now, but i'd really appreciate the esdiscuss email to verify","date":"2015-06-04T00:09:43.408Z","type":"message"}
+{"nick":"ljharb","message":"but i'm more and more convinced you're interpreting it correctly","date":"2015-06-04T00:09:59.462Z","type":"message"}
+{"nick":"Fishrock123","date":"2015-06-04T00:11:12.077Z","type":"join"}
+{"nick":"bmac","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-06-04T00:13:09.662Z","type":"quit"}
+{"nick":"TheAceOfHearts","date":"2015-06-04T00:14:29.733Z","type":"join"}
+{"nick":"ricardolima","new_nick":"riclima","date":"2015-06-04T00:15:25.891Z","type":"nick"}
+{"nick":"Fishrock123","reason":"Ping timeout: 265 seconds","date":"2015-06-04T00:16:36.142Z","type":"quit"}
+{"nick":"spronk","date":"2015-06-04T00:16:41.986Z","type":"join"}
+{"nick":"ChALkeR","message":"Arnavion: Does that break native/thirdparty Promise implementation mixing?","date":"2015-06-04T00:18:27.244Z","type":"message"}
+{"nick":"Arnavion","message":"By one definition, no, because as I said it checks whether it's a thenable or not as soon as you register a reaction with p.then(...)","date":"2015-06-04T00:19:12.379Z","type":"message"}
+{"nick":"ChALkeR","message":"Ah, just the time of execution is wrong.","date":"2015-06-04T00:19:51.118Z","type":"message"}
+{"nick":"Arnavion","message":"Yes","date":"2015-06-04T00:19:54.701Z","type":"message"}
+{"nick":"ljharb","message":"it definitely shouldn't be observable more than once, and by spec, it seems like it should be observable synchronously.","date":"2015-06-04T00:19:55.451Z","type":"message"}
+{"nick":"Arnavion","message":"But that ends up causing the thenable to run multiple times","date":"2015-06-04T00:20:01.148Z","type":"message"}
+{"nick":"Arnavion","message":"which is a very bad thing","date":"2015-06-04T00:20:05.046Z","type":"message"}
+{"nick":"ChALkeR","message":"When?","date":"2015-06-04T00:20:22.956Z","type":"message"}
+{"nick":"ChALkeR","message":"If two thens?","date":"2015-06-04T00:20:26.914Z","type":"message"}
+{"nick":"Arnavion","message":"If you take the code I gave first, and do   p.then(console.log.bind(console)); p.then(console.log.bind(console));   you'll see \"Getting then...\" printed twice","date":"2015-06-04T00:20:53.503Z","type":"message"}
+{"nick":"ChALkeR","message":"Ow.","date":"2015-06-04T00:21:01.094Z","type":"message"}
+{"nick":"Arnavion","message":"And actually after the code I gave first, p's internal state is set to \"resolved\"","date":"2015-06-04T00:21:30.411Z","type":"message"}
+{"nick":"ChALkeR","message":"That's very painful.","date":"2015-06-04T00:21:34.831Z","type":"message"}
+{"nick":"ChALkeR","message":"Does it behave that way with mixing native/thirdparty promises?","date":"2015-06-04T00:21:59.909Z","type":"message"}
+{"nick":"enoex","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-06-04T00:22:01.020Z","type":"quit"}
+{"nick":"Arnavion","message":"although the internal state is internal so it's not a big deal, but it does lend insight into why this bug is happening","date":"2015-06-04T00:22:06.054Z","type":"message"}
+{"nick":"Arnavion","message":"Well there's only one promise involved here","date":"2015-06-04T00:22:12.596Z","type":"message"}
+{"nick":"Arnavion","message":"Oh, you mean a third-party promise for the thenable?","date":"2015-06-04T00:22:41.115Z","type":"message"}
+{"nick":"ChALkeR","message":"Yes.","date":"2015-06-04T00:22:47.091Z","type":"message"}
+{"nick":"Arnavion","message":"Probably. They're thenables too as far as native Promise is concerned","date":"2015-06-04T00:23:04.796Z","type":"message"}
+{"nick":"Arnavion","message":"I guess I could insert some console.logs in bluebird's source to see when its then is accessed","date":"2015-06-04T00:23:35.148Z","type":"message"}
+{"nick":"riclima","reason":"Quit: Konversation terminated!","date":"2015-06-04T00:25:56.306Z","type":"quit"}
+{"nick":"yoshuawuyts","reason":"Ping timeout: 265 seconds","date":"2015-06-04T00:26:20.442Z","type":"quit"}
+{"nick":"ljharb","message":"Arnavion: firefox seems to fail these tests too","date":"2015-06-04T00:26:43.317Z","type":"message"}
+{"nick":"Arnavion","message":"No it doesn't","date":"2015-06-04T00:26:55.849Z","type":"message"}
+{"nick":"ljharb","message":"hm","date":"2015-06-04T00:26:58.531Z","type":"message"}
+{"nick":"ljharb","message":"Arnavion: check https://github.com/ljharb/es6-shim/commit/95f21e23872cee0d359d55159c6cc53166acc105 for me?","date":"2015-06-04T00:27:02.029Z","type":"message"}
+{"nick":"ljharb","message":"maybe my tests are wrong","date":"2015-06-04T00:27:19.513Z","type":"message"}
+{"nick":"riclima","date":"2015-06-04T00:27:24.673Z","type":"join"}
+{"nick":"Arnavion","message":"resolve(...) wouldn't throw","date":"2015-06-04T00:27:27.628Z","type":"message"}
+{"nick":"ljharb","message":"ohh right, ok","date":"2015-06-04T00:27:32.549Z","type":"message"}
+{"nick":"ljharb","message":"fixinfg","date":"2015-06-04T00:27:34.065Z","type":"message"}
+{"nick":"Arnavion","message":"You should have the thenable body set some variable","date":"2015-06-04T00:27:59.993Z","type":"message"}
+{"nick":"ljharb","message":"got it","date":"2015-06-04T00:28:06.572Z","type":"message"}
+{"nick":"Arnavion","message":"and assert that variable is set after the call to resolve","date":"2015-06-04T00:28:08.104Z","type":"message"}
+{"nick":"ljharb","message":"side effects, yay","date":"2015-06-04T00:28:08.515Z","type":"message"}
+{"nick":"Arnavion","message":"and that the call to then() doesn't set it again, etc","date":"2015-06-04T00:28:18.291Z","type":"message"}
+{"nick":"Arnavion","message":"The call to p.then(), I mean","date":"2015-06-04T00:28:30.454Z","type":"message"}
+{"nick":"ChALkeR","message":"https://paste.kde.org/padxuawme","date":"2015-06-04T00:29:54.146Z","type":"message"}
+{"nick":"ChALkeR","message":"Is this the same?","date":"2015-06-04T00:30:34.120Z","type":"message"}
+{"nick":"bnb","date":"2015-06-04T00:30:38.223Z","type":"join"}
+{"nick":"Arnavion","message":"Yes, you can see it prints \"Getting then...\" twice","date":"2015-06-04T00:31:40.418Z","type":"message"}
+{"nick":"Arnavion","message":"It should print it only once, and synchronously as soon as accept() is called rather than when p.then(...) is called","date":"2015-06-04T00:32:22.644Z","type":"message"}
+{"nick":"ljharb","message":"Arnavion: ok now it seems firefox passes 1, fails another. iojs fails both.","date":"2015-06-04T00:32:31.162Z","type":"message"}
+{"nick":"Arnavion","message":"Show me your test","date":"2015-06-04T00:32:50.512Z","type":"message"}
+{"nick":"ljharb","message":"https://github.com/ljharb/es6-shim/commit/47ad32c699bfc15a4d33dc2cf3cebb951450ca67","date":"2015-06-04T00:32:59.457Z","type":"message"}
+{"nick":"Arnavion","message":"Let me try running them","date":"2015-06-04T00:34:34.176Z","type":"message"}
+{"nick":"Arnavion","message":"Both look correct","date":"2015-06-04T00:34:40.497Z","type":"message"}
+{"nick":"ChALkeR","message":"Hm.","date":"2015-06-04T00:34:42.463Z","type":"message"}
+{"nick":"JamesMGreene","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-06-04T00:34:45.788Z","type":"quit"}
+{"nick":"ljharb","message":"ok cool, thanks","date":"2015-06-04T00:34:48.051Z","type":"message"}
+{"nick":"ljharb","message":"Arnavion: https://github.com/paulmillr/es6-shim/issues/344 is the issue i'm lumping that into, fwiw","date":"2015-06-04T00:34:59.146Z","type":"message"}
+{"nick":"ChALkeR","message":"Arnavion: https://paste.kde.org/pzhexnjpv","date":"2015-06-04T00:35:14.917Z","type":"message"}
+{"nick":"pluma","reason":"Remote host closed the connection","date":"2015-06-04T00:35:41.223Z","type":"quit"}
+{"nick":"Arnavion","message":"ljharb: Works for me","date":"2015-06-04T00:37:05.886Z","type":"message"}
+{"nick":"Arnavion","message":"I'm using Nightly though, maybe it was fixed there or something","date":"2015-06-04T00:37:18.167Z","type":"message"}
+{"nick":"ljharb","message":"i checked in nightly","date":"2015-06-04T00:37:23.784Z","type":"message"}
+{"nick":"ljharb","message":"(for ff)","date":"2015-06-04T00:37:27.318Z","type":"message"}
+{"nick":"Arnavion","message":"So you're saying the second one failed for you?","date":"2015-06-04T00:37:38.368Z","type":"message"}
+{"nick":"ljharb","message":"no, the first. the second passed.","date":"2015-06-04T00:38:01.622Z","type":"message"}
+{"nick":"Arnavion","message":"Oh okay","date":"2015-06-04T00:38:07.851Z","type":"message"}
+{"nick":"Arnavion","message":"Let me check that one too then","date":"2015-06-04T00:38:11.199Z","type":"message"}
+{"nick":"ljharb","message":"i'd infer that ff nightly is getting \".then\" sync, but not calling it sync","date":"2015-06-04T00:38:15.656Z","type":"message"}
+{"nick":"ChALkeR","message":"Arnavion: This one prints double two: https://paste.kde.org/pj8tp4jew","date":"2015-06-04T00:38:19.742Z","type":"message"}
+{"nick":"expr","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-06-04T00:38:26.047Z","type":"quit"}
+{"nick":"eh_eff","reason":"Ping timeout: 244 seconds","date":"2015-06-04T00:39:05.314Z","type":"quit"}
+{"nick":"Arnavion","message":"The first one also works for me in Nightly","date":"2015-06-04T00:40:30.003Z","type":"message"}
+{"nick":"Arnavion","message":"How exactly is it failing for you?","date":"2015-06-04T00:40:36.635Z","type":"message"}
+{"nick":"ChALkeR","message":"Replacing that with p.then(function(){}).then(function(){}); prints a single \"getting then\"","date":"2015-06-04T00:40:51.091Z","type":"message"}
+{"nick":"Arnavion","message":"ChALkeR: You're talking about V8 yes?","date":"2015-06-04T00:40:58.058Z","type":"message"}
+{"nick":"ChALkeR","message":"Yes.","date":"2015-06-04T00:41:03.129Z","type":"message"}
+{"nick":"Arnavion","message":"Yes of course. I already explained why","date":"2015-06-04T00:41:09.774Z","type":"message"}
+{"nick":"bnb","reason":"Quit: bnb","date":"2015-06-04T00:41:19.015Z","type":"quit"}
+{"nick":"ChALkeR","message":"p.then(function(){}); p.then(function(){}); prints it two times","date":"2015-06-04T00:41:22.734Z","type":"message"}
+{"nick":"Arnavion","message":"Correct","date":"2015-06-04T00:41:27.292Z","type":"message"}
+{"nick":"ljharb","message":"Arnavion: \"expected 0 to equal 1\"","date":"2015-06-04T00:41:32.143Z","type":"message"}
+{"nick":"ChALkeR","message":"Arnavion: Did you open my last link?","date":"2015-06-04T00:41:35.494Z","type":"message"}
+{"nick":"Arnavion","message":"ljharb: Oh","date":"2015-06-04T00:41:57.758Z","type":"message"}
+{"nick":"Arnavion","message":"then is *gotten* synchronously","date":"2015-06-04T00:42:03.540Z","type":"message"}
+{"nick":"Arnavion","message":"It doesn't have to be invoked synchronously","date":"2015-06-04T00:42:10.773Z","type":"message"}
+{"nick":"ljharb","message":"aha, ok","date":"2015-06-04T00:42:13.811Z","type":"message"}
+{"nick":"ljharb","message":"i'll fix the test","date":"2015-06-04T00:42:15.632Z","type":"message"}
+{"nick":"Arnavion","message":"Let me confirm in the spec","date":"2015-06-04T00:42:27.569Z","type":"message"}
+{"nick":"Arnavion","message":"Yes","date":"2015-06-04T00:42:44.135Z","type":"message"}
+{"nick":"Arnavion","message":">Perform EnqueueJob (\"PromiseJobs\", PromiseResolveThenableJob, «‍promise, resolution, thenAction»)","date":"2015-06-04T00:42:46.796Z","type":"message"}
+{"nick":"Arnavion","message":"It is invoked asynchronously","date":"2015-06-04T00:42:57.080Z","type":"message"}
+{"nick":"Arnavion","message":"ChALkeR: Yes I did","date":"2015-06-04T00:43:10.399Z","type":"message"}
+{"nick":"d10n-work","reason":"Quit: Connection closed for inactivity","date":"2015-06-04T00:43:11.152Z","type":"quit"}
+{"nick":"A205B064","reason":"Ping timeout: 240 seconds","date":"2015-06-04T00:43:21.743Z","type":"quit"}
+{"nick":"Arnavion","message":"If you do p.then().then(), you're only invoking p.then() once, so it'll only print once","date":"2015-06-04T00:43:24.536Z","type":"message"}
+{"nick":"ljharb","message":"hm, getting the same failure","date":"2015-06-04T00:44:07.008Z","type":"message"}
+{"nick":"Arnavion","message":"How did you delay checking count? With setTimeout?","date":"2015-06-04T00:44:24.056Z","type":"message"}
+{"nick":"ljharb","message":"ah, i didn't, good call.","date":"2015-06-04T00:44:36.280Z","type":"message"}
+{"nick":"ChALkeR","message":"Arnavion: Yes.","date":"2015-06-04T00:44:59.618Z","type":"message"}
+{"nick":"ChALkeR","message":"Makes sense.","date":"2015-06-04T00:45:10.993Z","type":"message"}
+{"nick":"ljharb","message":"yup, that fixed it, thanks","date":"2015-06-04T00:45:18.884Z","type":"message"}
+{"nick":"ljharb","message":"https://github.com/ljharb/es6-shim/commit/327d6e8a67637a729e68ed9dffcc26b5e850b2d8 now","date":"2015-06-04T00:46:07.258Z","type":"message"}
+{"nick":"Arnavion","message":"Do you want to add   assert.equal(count, 1);   inside the two reactions in the second test too?","date":"2015-06-04T00:47:19.355Z","type":"message"}
+{"nick":"Arnavion","message":"After asserting the err is a RangeError","date":"2015-06-04T00:47:26.572Z","type":"message"}
+{"nick":"ljharb","message":"might as well","date":"2015-06-04T00:47:44.669Z","type":"message"}
+{"nick":"Arnavion","message":"(Also how does your test know that it's async?)","date":"2015-06-04T00:47:53.740Z","type":"message"}
+{"nick":"nhhagen","date":"2015-06-04T00:49:13.114Z","type":"join"}
+{"nick":"Arnavion","message":"Here's the V8 bug   https://code.google.com/p/v8/issues/detail?id=4162","date":"2015-06-04T00:50:02.148Z","type":"message"}
+{"nick":"ljharb","message":"it doesn't, but that test isn't testing async-ness.","date":"2015-06-04T00:51:14.943Z","type":"message"}
+{"nick":"ljharb","message":"there's other tests for that.","date":"2015-06-04T00:51:18.346Z","type":"message"}
+{"nick":"Arnavion","message":"I mean, how does your test harness know not to mark the tests as passed until the catch handlers have run?","date":"2015-06-04T00:51:41.581Z","type":"message"}
+{"nick":"ljharb","message":"ah, usually there's a \"done\" but this doesn't have it yet","date":"2015-06-04T00:52:08.535Z","type":"message"}
+{"nick":"Arnavion","message":"Right, so you'd need that","date":"2015-06-04T00:52:14.789Z","type":"message"}
+{"nick":"ljharb","message":"updating :-)","date":"2015-06-04T00:52:23.932Z","type":"message"}
+{"nick":"Arnavion","message":"And in fact, if the assert fires, you need to call that done() too, I'm guessing","date":"2015-06-04T00:52:34.869Z","type":"message"}
+{"nick":"ljharb","message":"i think an error fails the test anywhere","date":"2015-06-04T00:53:00.119Z","type":"message"}
+{"nick":"Arnavion","message":"How would it know which test to fail?","date":"2015-06-04T00:53:10.882Z","type":"message"}
+{"nick":"Arnavion","message":"Ah, I guess it only runs one at a time","date":"2015-06-04T00:53:14.856Z","type":"message"}
+{"nick":"ljharb","message":"yeah","date":"2015-06-04T00:53:22.680Z","type":"message"}
+{"nick":"Arnavion","message":"So it hooks window.onerror or something?","date":"2015-06-04T00:53:34.843Z","type":"message"}
+{"nick":"ljharb","message":"i'm guessing?","date":"2015-06-04T00:53:40.978Z","type":"message"}
+{"nick":"Arnavion","message":"k","date":"2015-06-04T00:53:43.473Z","type":"message"}
+{"nick":"nhhagen","reason":"Ping timeout: 252 seconds","date":"2015-06-04T00:54:26.879Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-06-04T00:55:37.084Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-04T00:56:41.118Z","type":"quit"}
+{"nick":"drmabuse","date":"2015-06-04T00:58:09.808Z","type":"join"}
+{"nick":"Arnavion","message":"I don't see any tests for the resolve in Promise's constructor in test262","date":"2015-06-04T01:01:18.170Z","type":"message"}
+{"nick":"Arnavion","message":"There *are* tests for Promise.resolve, but that is supposed to have different behavior anyway (it doesn't need to handle thenables)","date":"2015-06-04T01:01:35.175Z","type":"message"}
+{"nick":"ajacksified","reason":"Remote host closed the connection","date":"2015-06-04T01:01:52.683Z","type":"quit"}
+{"nick":"kylemathews","date":"2015-06-04T01:01:54.345Z","type":"join"}
+{"nick":"drmabuse","reason":"Ping timeout: 264 seconds","date":"2015-06-04T01:03:12.762Z","type":"quit"}
+{"nick":"freeall","reason":"Remote host closed the connection","date":"2015-06-04T01:03:44.355Z","type":"quit"}
+{"nick":"kylemath_","reason":"Ping timeout: 244 seconds","date":"2015-06-04T01:03:53.254Z","type":"quit"}
+{"nick":"mich-cook","reason":"Quit: Leaving.","date":"2015-06-04T01:05:01.358Z","type":"quit"}
+{"nick":"ajacksified","date":"2015-06-04T01:05:11.263Z","type":"join"}
+{"nick":"freeall","date":"2015-06-04T01:05:13.522Z","type":"join"}
+{"nick":"kylemath_","date":"2015-06-04T01:05:21.374Z","type":"join"}
+{"nick":"ajacksified","reason":"Remote host closed the connection","date":"2015-06-04T01:05:54.876Z","type":"quit"}
+{"nick":"kylemathews","reason":"Ping timeout: 250 seconds","date":"2015-06-04T01:06:27.336Z","type":"quit"}
+{"nick":"mich-cook","date":"2015-06-04T01:06:33.370Z","type":"join"}
+{"nick":"sicelf1","date":"2015-06-04T01:07:58.916Z","type":"join"}
+{"nick":"sicelf1","message":"Great","date":"2015-06-04T01:08:00.043Z","type":"message"}
+{"nick":"dynmeth","date":"2015-06-04T01:08:09.510Z","type":"quit"}
+{"nick":"zz_robotmayo","new_nick":"robotmayo","date":"2015-06-04T01:08:18.628Z","type":"nick"}
+{"nick":"kylemathews","date":"2015-06-04T01:10:18.272Z","type":"join"}
+{"nick":"ckross01","reason":"Quit: Connection closed for inactivity","date":"2015-06-04T01:11:33.887Z","type":"quit"}
+{"nick":"kylemath_","reason":"Ping timeout: 244 seconds","date":"2015-06-04T01:11:38.327Z","type":"quit"}
+{"nick":"Fishrock123","date":"2015-06-04T01:12:11.952Z","type":"join"}
+{"nick":"freeall","reason":"Remote host closed the connection","date":"2015-06-04T01:13:22.131Z","type":"quit"}
+{"nick":"enoex","date":"2015-06-04T01:13:24.318Z","type":"join"}
+{"nick":"dynmeth","date":"2015-06-04T01:13:43.407Z","type":"join"}
+{"nick":"freeall","date":"2015-06-04T01:15:26.106Z","type":"join"}
