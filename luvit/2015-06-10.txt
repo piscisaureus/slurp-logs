@@ -59,3 +59,278 @@
 {"nick":"sousoux","message":"hold on. I was looking at the luvit 0.83 version when I thought I was wrong","date":"2015-06-10T15:57:10.841Z","type":"message"}
 {"nick":"sousoux","message":"I will be able to reproduce but better I can fix","date":"2015-06-10T15:57:38.726Z","type":"message"}
 {"nick":"sousoux","message":"It is pretty clear - ServerResponse:writeHead only looks at headers passed to it","date":"2015-06-10T15:58:22.792Z","type":"message"}
+{"nick":"sousoux","message":"It is not however clear even from the nodejs docs what the effect of calling setHeader several times on the same header is. I guess that would reset the header. And then if you pass headers in writeHead should that overwrite those or be added.","date":"2015-06-10T16:01:11.682Z","type":"message"}
+{"nick":"KennethWilke","reason":"Remote host closed the connection","date":"2015-06-10T16:06:09.093Z","type":"quit"}
+{"nick":"sousoux","message":"no keep alive logic either","date":"2015-06-10T16:06:35.060Z","type":"message"}
+{"nick":"sousoux","message":"ok. I get it. I was not aware of the implicit headers behaviour in nodejs and luvit behaved differently before","date":"2015-06-10T16:10:33.657Z","type":"message"}
+{"nick":"ldub","reason":"Ping timeout: 252 seconds","date":"2015-06-10T16:18:57.102Z","type":"quit"}
+{"nick":"sousoux","message":"one other thing. at present doing a package search with lit when a lit proxy is connected (has an up) systematically causes the meta data on the up server to be searched. Logical since you can't know if a package has not been synced. However if I do know would it be interesting for you to have an option that allows you to indicate that you do not want uplink package data to be searched?","date":"2015-06-10T16:20:37.760Z","type":"message"}
+{"nick":"sousoux","message":"If not I'll just put it in my own version","date":"2015-06-10T16:20:58.442Z","type":"message"}
+{"nick":"sousoux","message":"Makes searches via a proxy rather slow","date":"2015-06-10T16:21:28.100Z","type":"message"}
+{"nick":"creationix","message":"sousoux: cool, you're running a local lit server.  I thought I was the only one who did that","date":"2015-06-10T16:23:05.011Z","type":"message"}
+{"nick":"creationix","message":"and yes, I've noticed that having an active upstream makes search really slow","date":"2015-06-10T16:23:14.944Z","type":"message"}
+{"nick":"creationix","message":"as a workaround, you can `lit down` before search, but I can see how that's not always an option","date":"2015-06-10T16:23:35.684Z","type":"message"}
+{"nick":"creationix","message":"what's your use case?  I'll fix it for you","date":"2015-06-10T16:23:45.631Z","type":"message"}
+{"nick":"creationix","message":"The problem is that db.match will always include the upstream if there is one when searching for a match.","date":"2015-06-10T16:25:18.756Z","type":"message"}
+{"nick":"creationix","message":"This is the desired behavior for the lit client since you almost never want to search only your local cache","date":"2015-06-10T16:25:37.362Z","type":"message"}
+{"nick":"creationix","message":"It's less clear for a lit proxy","date":"2015-06-10T16:25:50.894Z","type":"message"}
+{"nick":"creationix","message":"Also searching in a proxy doesn't even include all search results from the upstream last I checked.  It's slower, but doesn't actually benefit from it.","date":"2015-06-10T16:26:40.546Z","type":"message"}
+{"nick":"creationix","message":"Ideally we'd have local search and search including upstream right?","date":"2015-06-10T16:27:04.273Z","type":"message"}
+{"nick":"a_le","reason":"Remote host closed the connection","date":"2015-06-10T16:33:59.927Z","type":"quit"}
+{"nick":"a_le","date":"2015-06-10T16:40:56.273Z","type":"join"}
+{"nick":"sousoux","message":"yes we now have a lit server running","date":"2015-06-10T16:42:18.700Z","type":"message"}
+{"nick":"sousoux","message":"my use cse is that I have certain packages that I want to stay on our server since they are very specific to the application but they may have dependencies that need to be downloaded from yours","date":"2015-06-10T16:43:26.171Z","type":"message"}
+{"nick":"sousoux","message":"at present I'm using a tag to 'categorize' the packages","date":"2015-06-10T16:44:07.077Z","type":"message"}
+{"nick":"creationix","message":"rphillips: currently lit is MIT licensed to me.  Does it need to match luvit's license?","date":"2015-06-10T16:45:27.124Z","type":"message"}
+{"nick":"sousoux","message":"that is not really ideal. I had the idea of having a piece of meta data that indicates that the package should stay at that server but that still doesn't solve the search problem.","date":"2015-06-10T16:45:27.819Z","type":"message"}
+{"nick":"rphillips","message":"creationix: hmm. i sorta think so... it's all in the same org","date":"2015-06-10T16:46:10.674Z","type":"message"}
+{"nick":"sousoux","message":"only thing I could think of is custom url for local queries or a header (yuck)","date":"2015-06-10T16:46:19.813Z","type":"message"}
+{"nick":"creationix","message":"sousoux: there is the \"private\" field in packages.  Maybe instead of being a boolean that prevents publishing, it could be an url to the upstream you're allowed to publish to?","date":"2015-06-10T16:46:41.439Z","type":"message"}
+{"nick":"sousoux","message":"yes. that would work","date":"2015-06-10T16:47:02.598Z","type":"message"}
+{"nick":"creationix","message":"If someone publishes to a proxy, should it forward non-private packages to it's upstream?","date":"2015-06-10T16:47:30.434Z","type":"message"}
+{"nick":"creationix","message":"right now, you have to manually change your upstream to wss://lit.luvit.io if you want to publish there","date":"2015-06-10T16:47:48.107Z","type":"message"}
+{"nick":"sousoux","message":"well I would obviously prefer not in my case","date":"2015-06-10T16:48:01.530Z","type":"message"}
+{"nick":"creationix","message":"right, for your private code, you want it local, but what if you also maintain some open source modules?","date":"2015-06-10T16:48:27.045Z","type":"message"}
+{"nick":"sousoux","message":"I think it is fine if sync is only down and publish is explicit","date":"2015-06-10T16:48:37.912Z","type":"message"}
+{"nick":"sousoux","message":"then at least you can predict the outcome.","date":"2015-06-10T16:49:00.572Z","type":"message"}
+{"nick":"creationix","message":"I wonder if you could configure an upstream as being private safe?","date":"2015-06-10T16:49:09.184Z","type":"message"}
+{"nick":"creationix","message":"or have two upstreams?  One for cache and private publishing and one for public stuff","date":"2015-06-10T16:49:29.169Z","type":"message"}
+{"nick":"ldub","date":"2015-06-10T16:52:36.228Z","type":"join"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2015-06-10T16:55:25.006Z","type":"quit"}
+{"nick":"creationix","message":"rphillips: ok, switched lit itself to apache2 licensed to \"The Luvit Authors\"","date":"2015-06-10T16:55:35.205Z","type":"message"}
+{"nick":"rphillips","message":"cool","date":"2015-06-10T16:55:44.140Z","type":"message"}
+{"nick":"creationix","message":"the creationix/* dependencies are still MIT under me though.  I think it's fine for lit to use third-party dependencies","date":"2015-06-10T16:56:00.826Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/lit/commit/1e3aa463aa93b2a6b46de086ad262cef952d3fb3","date":"2015-06-10T16:57:12.378Z","type":"message"}
+{"nick":"rphillips","message":"that seems fine","date":"2015-06-10T16:57:30.163Z","type":"message"}
+{"nick":"sousoux","message":"creationix: I can see why in pure proxy mode you would want to have some packages sync upwards","date":"2015-06-10T17:01:36.405Z","type":"message"}
+{"nick":"sousoux","message":"just needs to be very clear what you ask for","date":"2015-06-10T17:02:05.388Z","type":"message"}
+{"nick":"sousoux","message":"one other nice feature for the proxy would be that it can accept meta data that upstream does not necessarily. i.e. you can set custom metadata items in config file","date":"2015-06-10T17:03:11.759Z","type":"message"}
+{"nick":"sousoux","message":"metadata keys I mean","date":"2015-06-10T17:03:27.181Z","type":"message"}
+{"nick":"creationix","message":"custom metadata, interesting","date":"2015-06-10T17:18:35.619Z","type":"message"}
+{"nick":"creationix","message":"currently, the list is hard-coded in the lit client itself","date":"2015-06-10T17:18:44.295Z","type":"message"}
+{"nick":"DarkGod","reason":"Ping timeout: 265 seconds","date":"2015-06-10T17:24:14.264Z","type":"quit"}
+{"nick":"rje","message":"rphillips, what can i do to help with the stdio patch integration? (ps. didn't you take yesterday off)","date":"2015-06-10T17:25:47.475Z","type":"message"}
+{"nick":"rphillips","message":"rje: i did","date":"2015-06-10T17:26:00.096Z","type":"message"}
+{"nick":"rphillips","message":"rje: if you could help me integrate that into the agent it would help","date":"2015-06-10T17:26:11.734Z","type":"message"}
+{"nick":"rphillips","message":"rje: we may need to do a luvit release to get that patch in","date":"2015-06-10T17:26:36.220Z","type":"message"}
+{"nick":"rje","message":"are you seeing the same issue on linux with php (was it php)?","date":"2015-06-10T17:26:50.679Z","type":"message"}
+{"nick":"sousoux","message":"creationix: I know","date":"2015-06-10T17:29:06.324Z","type":"message"}
+{"nick":"creationix","message":"sousoux: technically you could just patch your local lit client to allow custom metadata and the lit servers would accept it","date":"2015-06-10T17:30:22.587Z","type":"message"}
+{"nick":"creationix","message":"the only thing they verify is the signature matches the owner","date":"2015-06-10T17:30:30.668Z","type":"message"}
+{"nick":"sousoux","message":"the server doesn't validate?","date":"2015-06-10T17:30:40.069Z","type":"message"}
+{"nick":"sousoux","message":"I kind of assumed that it did","date":"2015-06-10T17:30:48.036Z","type":"message"}
+{"nick":"creationix","message":"nope, and the search code is care to not assume much","date":"2015-06-10T17:31:53.250Z","type":"message"}
+{"nick":"creationix","message":"*careful","date":"2015-06-10T17:31:57.029Z","type":"message"}
+{"nick":"rphillips","message":"rje: it was a certain version of ruby","date":"2015-06-10T17:32:02.987Z","type":"message"}
+{"nick":"rphillips","message":"i haven't tested that yet","date":"2015-06-10T17:32:10.779Z","type":"message"}
+{"nick":"rje","message":"gotcha","date":"2015-06-10T17:32:19.082Z","type":"message"}
+{"nick":"creationix","message":"sousoux: so I think multiple upstreams with per-upstream config options will enable the stuff you want","date":"2015-06-10T17:33:53.938Z","type":"message"}
+{"nick":"creationix","message":"you could add custom fields per upstreams, you could allow private packages to some.","date":"2015-06-10T17:34:38.767Z","type":"message"}
+{"nick":"creationix","message":"you could have different default upstreams for publishing public, publishing private, and downloading","date":"2015-06-10T17:35:06.772Z","type":"message"}
+{"nick":"creationix","message":"downloading should probably always be the local proxy if there is one so save bandwidth","date":"2015-06-10T17:35:29.464Z","type":"message"}
+{"nick":"creationix","message":"and maybe restrict search to certain upstreams?","date":"2015-06-10T17:36:04.398Z","type":"message"}
+{"nick":"creationix","message":"or to keep it simple, just have an optional secondary upstream","date":"2015-06-10T17:37:44.198Z","type":"message"}
+{"nick":"creationix","message":"and always use the public upstream for public","date":"2015-06-10T17:37:54.713Z","type":"message"}
+{"nick":"sousoux","message":"just a search that is only local would solve my issue. and the current behaviour of not syncing upstream","date":"2015-06-10T17:38:57.011Z","type":"message"}
+{"nick":"rphillips","message":"rje: i'll bump luvit","date":"2015-06-10T17:39:13.677Z","type":"message"}
+{"nick":"creationix","message":"I think for now search should always be local","date":"2015-06-10T17:39:27.835Z","type":"message"}
+{"nick":"creationix","message":"the fact that is checks remote when matching versions is just a side effect of sharing code with the lit client","date":"2015-06-10T17:39:49.913Z","type":"message"}
+{"nick":"sousoux","message":"or some way of marking a package not to sync upstream if you want to enable that","date":"2015-06-10T17:40:00.047Z","type":"message"}
+{"nick":"creationix","message":"sousoux: currently, it will simply refuse to publish anything with `private = true`","date":"2015-06-10T17:40:47.853Z","type":"message"}
+{"nick":"creationix","message":"but when I add a secondary private/local upstream, it will publish there instead of failing.","date":"2015-06-10T17:41:03.256Z","type":"message"}
+{"nick":"sousoux","message":"the getMeta forces a sync to the upstream I seem to remember (if rdb has 'hooked')","date":"2015-06-10T17:41:04.964Z","type":"message"}
+{"nick":"creationix","message":"db.match is the slow one if I recall","date":"2015-06-10T17:41:32.931Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:42:27.763Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2184 (master - 6d71e13 : Ryan Phillips): The build passed.","date":"2015-06-10T17:42:28.698Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/1d92f20d2a49...6d71e1318c89","date":"2015-06-10T17:42:28.804Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256081","date":"2015-06-10T17:42:28.871Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:42:28.921Z","type":"part"}
+{"nick":"creationix","message":"sousoux: https://github.com/luvit/lit/issues/86","date":"2015-06-10T17:43:23.837Z","type":"message"}
+{"nick":"creationix","message":"sousoux: so to confirm, you would rather have local-only search in your proxy than have slow results?","date":"2015-06-10T17:44:22.674Z","type":"message"}
+{"nick":"creationix","message":"it will show anything you have cached, but won't show remote updates unless you run `lit sync` on the proxy","date":"2015-06-10T17:44:48.982Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:45:17.283Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2189 (fixes/child_process_errors - c2ba994 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:45:18.283Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/child_process_errors","date":"2015-06-10T17:45:18.332Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256325","date":"2015-06-10T17:45:18.333Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:45:18.333Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:45:39.387Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2187 (fixes/stdin_highwater_mark - 9ba7956 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:45:40.378Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/stdin_highwater_mark","date":"2015-06-10T17:45:40.428Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256321","date":"2015-06-10T17:45:40.428Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:45:40.428Z","type":"part"}
+{"nick":"rphillips","message":"i pushed all my local branches... :/","date":"2015-06-10T17:45:50.904Z","type":"message"}
+{"nick":"rphillips","message":"i thought --all pushed the tags as well","date":"2015-06-10T17:46:02.435Z","type":"message"}
+{"nick":"rphillips","message":"it doesn't","date":"2015-06-10T17:46:11.672Z","type":"message"}
+{"nick":"creationix","message":"rphillips: nope, git is weird about that one","date":"2015-06-10T17:47:01.870Z","type":"message"}
+{"nick":"creationix","message":"sousoux: https://github.com/luvit/lit/issues/87","date":"2015-06-10T17:47:06.208Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:07.783Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2191 (feat/add_lbuffer - 88705af : Ryan Phillips): The build has errored.","date":"2015-06-10T17:47:08.751Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/feat/add_lbuffer","date":"2015-06-10T17:47:08.828Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256329","date":"2015-06-10T17:47:08.878Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:08.879Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:30.375Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2194 (http_post_error - 0c84c7e : Rob Emanuele): The build has errored.","date":"2015-06-10T17:47:31.380Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/0c84c7e32114","date":"2015-06-10T17:47:31.430Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256335","date":"2015-06-10T17:47:31.430Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:31.430Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:55.358Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2190 (fixes/pause_stdin - cfc674d : Ryan Phillips): The build has errored.","date":"2015-06-10T17:47:56.339Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/pause_stdin","date":"2015-06-10T17:47:56.390Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256327","date":"2015-06-10T17:47:56.390Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:47:56.391Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:03.437Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2196 (fixes/net_destroy_and_process_once - b4c3f7c : Ryan Phillips): The build has errored.","date":"2015-06-10T17:49:04.455Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/net_destroy_and_process_once","date":"2015-06-10T17:49:04.505Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256339","date":"2015-06-10T17:49:04.505Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:04.505Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:28.139Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2195 (fixes/flush_http - e3e535f : Ryan Phillips): The build has errored.","date":"2015-06-10T17:49:29.173Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/flush_http","date":"2015-06-10T17:49:29.223Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256337","date":"2015-06-10T17:49:29.223Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:29.223Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:48.110Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2186 (fixes/double_callback2 - d8b8711 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:49:49.183Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/double_callback2","date":"2015-06-10T17:49:49.233Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256319","date":"2015-06-10T17:49:49.233Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:49:49.234Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:33.132Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2197 (fixes/release_buffers_set_mode - ba5eb55 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:50:34.221Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/release_buffers_set_mode","date":"2015-06-10T17:50:34.271Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256341","date":"2015-06-10T17:50:34.271Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:34.271Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:46.424Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2199 (tls-read-fix - 325cf71 : Tim Caswell): The build has errored.","date":"2015-06-10T17:50:47.417Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/325cf718f87c","date":"2015-06-10T17:50:47.467Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256345","date":"2015-06-10T17:50:47.467Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:47.467Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:56.400Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2201 (2.1.15 - 6d71e13 : Ryan Phillips): The build passed.","date":"2015-06-10T17:50:57.470Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/2.1.15","date":"2015-06-10T17:50:57.519Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256358","date":"2015-06-10T17:50:57.520Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:50:57.520Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:51:06.444Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2198 (feat/add_poll_libcurl_example - d9db111 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:51:07.477Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/feat/add_poll_libcurl_example","date":"2015-06-10T17:51:07.565Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256343","date":"2015-06-10T17:51:07.566Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:51:07.566Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:53:12.107Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2188 (fixes/add_thawte_premium_server_ca - 8499709 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:53:13.059Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/add_thawte_premium_server_ca","date":"2015-06-10T17:53:13.110Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256323","date":"2015-06-10T17:53:13.111Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:53:13.111Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:55:16.283Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2203 (fixes/windows - de5a898 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:55:17.283Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/bcdc3456d539^...de5a898bbaec","date":"2015-06-10T17:55:17.332Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256363","date":"2015-06-10T17:55:17.333Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:55:17.333Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-10T17:56:26.380Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2202 (fixes/fix_kill_close - 7367235 : Ryan Phillips): The build has errored.","date":"2015-06-10T17:56:27.374Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/fixes/fix_kill_close","date":"2015-06-10T17:56:27.423Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66256361","date":"2015-06-10T17:56:27.423Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-10T17:56:27.423Z","type":"part"}
+{"nick":"rphillips","message":"rje: i think we should a function in virgo-base that does the spawn","date":"2015-06-10T18:06:33.025Z","type":"message"}
+{"nick":"rphillips","message":"write a function*","date":"2015-06-10T18:06:37.813Z","type":"message"}
+{"nick":"rphillips","message":"with stdin set to nil","date":"2015-06-10T18:06:50.614Z","type":"message"}
+{"nick":"rje","message":"are all the children that spawn'd ok with having their stdin closed?","date":"2015-06-10T18:12:16.933Z","type":"message"}
+{"nick":"creationix","message":"what if stdin is a pipe?","date":"2015-06-10T18:12:58.041Z","type":"message"}
+{"nick":"creationix","message":"or is that the case causing trouble","date":"2015-06-10T18:13:04.744Z","type":"message"}
+{"nick":"rje","message":"in the powershell 2.0 case (Windows 2008 server), stdin has to be explicitly closed before powershell can exiot","date":"2015-06-10T18:13:53.227Z","type":"message"}
+{"nick":"rje","message":"(long discussion with bert on that maybe a year + .5 ago","date":"2015-06-10T18:14:21.126Z","type":"message"}
+{"nick":"creationix","message":"we might need some option to close stdin in some sub-processes, but not others if some can’t handle stdin being closed","date":"2015-06-10T18:15:37.132Z","type":"message"}
+{"nick":"creationix","message":"I guess the question is what happens if stdin in closed and the child tries to read from stdin.  Will their half also be closed and cause an error","date":"2015-06-10T18:16:33.105Z","type":"message"}
+{"nick":"rphillips","message":"the child should get an eof read reading from stdin","date":"2015-06-10T18:17:57.656Z","type":"message"}
+{"nick":"rphillips","message":"from*","date":"2015-06-10T18:18:01.435Z","type":"message"}
+{"nick":"creationix","message":"that sounds pretty safe","date":"2015-06-10T18:20:25.971Z","type":"message"}
+{"nick":"creationix","message":"maybe try just closing stdin as soon as we’re done writing to it and testing to see if anything breaks","date":"2015-06-10T18:20:44.827Z","type":"message"}
+{"nick":"DarkGod","date":"2015-06-10T18:20:45.728Z","type":"join"}
+{"nick":"sousoux","message":"creationix: I would rather choose /search = upstream /searchlocal = local","date":"2015-06-10T18:28:56.788Z","type":"message"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2015-06-10T18:29:20.292Z","type":"quit"}
+{"nick":"creationix","message":"sousoux: a large part of the issue is it assumes the data is local.  Once I make the search algorithm remote aware, it should be a lot faster","date":"2015-06-10T18:30:00.959Z","type":"message"}
+{"nick":"sousoux","message":"I'm making calls from a web front end and making the end user wait for 8 secs (at present with a very local lit server) is too long","date":"2015-06-10T18:30:18.019Z","type":"message"}
+{"nick":"creationix","message":"yep, it shouldn’t be any slower than making the request against the public server","date":"2015-06-10T18:30:55.483Z","type":"message"}
+{"nick":"creationix","message":"plus a tiny delay for local results","date":"2015-06-10T18:31:09.867Z","type":"message"}
+{"nick":"sousoux","message":"that is absolutely the goal","date":"2015-06-10T18:31:16.156Z","type":"message"}
+{"nick":"sousoux","message":"our server is currently in belgium but we have a lot of customers in the US so I may need to locate another one there","date":"2015-06-10T18:32:06.472Z","type":"message"}
+{"nick":"sousoux","message":"to cut down the time","date":"2015-06-10T18:32:26.193Z","type":"message"}
+{"nick":"creationix","message":"right, I just need to call out to upstream’s search command, search local-only, and then merge the results","date":"2015-06-10T18:38:33.877Z","type":"message"}
+{"nick":"creationix","message":"that should be much faster","date":"2015-06-10T18:38:37.188Z","type":"message"}
+{"nick":"creationix","message":"just one round-trip across the ocean","date":"2015-06-10T18:38:44.584Z","type":"message"}
+{"nick":"creationix","message":"sousoux: and my upstream is in USA (Texas) hmm","date":"2015-06-10T18:43:37.680Z","type":"message"}
+{"nick":"creationix","message":"maybe the search results could just include the server’s upstream as a url and let the client connect direct to the upstream, search there and then merge results?","date":"2015-06-10T18:44:27.150Z","type":"message"}
+{"nick":"creationix","message":"that way people in the US can query directly against my US server instead of waiting on your server to proxy the results","date":"2015-06-10T18:44:57.776Z","type":"message"}
+{"nick":"sousoux","message":"creationix: yup. that is why I was thinking of a search to local only. I only need that because I know those packages can only be on our server.","date":"2015-06-10T18:45:13.673Z","type":"message"}
+{"nick":"sousoux","message":"the search REST api","date":"2015-06-10T18:46:02.958Z","type":"message"}
+{"nick":"sousoux","message":"After when our back end decides it wants to install something it goes off and does it and notifies the web front end async when it has finished. It is less of a problem.","date":"2015-06-10T18:46:52.973Z","type":"message"}
+{"nick":"creationix","message":"right, also with this two-step process, the local UI can return results in two stages or skip the second stage alltogether","date":"2015-06-10T18:47:02.195Z","type":"message"}
+{"nick":"creationix","message":"sousoux: you wrote your own search UI right?","date":"2015-06-10T18:47:58.423Z","type":"message"}
+{"nick":"sousoux","message":"We don't need the second stage. If a package requires something from upstream that only happens once the user has said that they want to install.","date":"2015-06-10T18:47:58.783Z","type":"message"}
+{"nick":"sousoux","message":"The front end search UI is in our web page yes","date":"2015-06-10T18:48:21.242Z","type":"message"}
+{"nick":"creationix","message":"thanks, just trying to understand the use case","date":"2015-06-10T18:48:31.600Z","type":"message"}
+{"nick":"creationix","message":"so yes, making search local-only is the main thing you need","date":"2015-06-10T18:48:45.579Z","type":"message"}
+{"nick":"sousoux","message":"I think I mentioned it before but it is basically nodered rewritten as a very focussed M2M agent","date":"2015-06-10T18:49:02.842Z","type":"message"}
+{"nick":"sousoux","message":"what we are pulling from lit is dynamically installed nodes","date":"2015-06-10T18:49:22.582Z","type":"message"}
+{"nick":"sousoux","message":"they may have dependencies on other packages but the node itself is a very specific package that is loaded in a special way","date":"2015-06-10T18:49:58.566Z","type":"message"}
+{"nick":"creationix","message":"very cool","date":"2015-06-10T18:50:05.698Z","type":"message"}
+{"nick":"sousoux","message":"it works very nicely","date":"2015-06-10T18:51:12.183Z","type":"message"}
+{"nick":"sousoux","message":"The other thing I'm storing on lit is a library of different flows.","date":"2015-06-10T18:51:32.327Z","type":"message"}
+{"nick":"sousoux","message":"the UI throws up a list of packages with descriptions, versions, etc. That is what the query is retrieving.","date":"2015-06-10T18:52:20.253Z","type":"message"}
+{"nick":"sousoux","message":"at present there is no paging etc because we are just launching this functionality but I hope I'm going to have to think about that in the future :)","date":"2015-06-10T18:53:00.789Z","type":"message"}
+{"nick":"creationix","message":"yep, I plan on adding paging to the search API once we get more data.  For now it’s very simple","date":"2015-06-10T18:53:35.256Z","type":"message"}
+{"nick":"sousoux","message":"It's fine for now. There won't be more than 20 items when we launch.","date":"2015-06-10T18:54:06.412Z","type":"message"}
+{"nick":"creationix","message":"so your search page is something like this? http://flows.nodered.org/","date":"2015-06-10T18:55:00.672Z","type":"message"}
+{"nick":"sousoux","message":"once the user selects a package I notify our back end over a permanent ws message bus that we maintain that the package is selected then the back end installs and notifies the front end over the message  bus and hey presto the node appears in the users node list","date":"2015-06-10T18:56:00.922Z","type":"message"}
+{"nick":"sousoux","message":"the flows bit is like that but integrated into the editor","date":"2015-06-10T18:56:44.587Z","type":"message"}
+{"nick":"sousoux","message":"so when you select a flow you can instantly drop it on your editor page","date":"2015-06-10T18:57:20.313Z","type":"message"}
+{"nick":"sousoux","message":"that is obviously more time critical than the node story","date":"2015-06-10T18:57:52.676Z","type":"message"}
+{"nick":"sousoux","message":"II will be testing more on our live server tomorrow. at present I have a problem with our reverse proxy rewriting the URLs in the json and not including the port number","date":"2015-06-10T18:59:01.989Z","type":"message"}
+{"nick":"sousoux","message":":(","date":"2015-06-10T18:59:12.527Z","type":"message"}
+{"nick":"sousoux","message":"I could recreate the urls but would prefer not to","date":"2015-06-10T18:59:39.131Z","type":"message"}
+{"nick":"sousoux","message":"lit is working fine","date":"2015-06-10T18:59:55.622Z","type":"message"}
+{"nick":"sousoux","message":"It all ends up on a dedicated M2M gateway called CloudGate - www.option.com","date":"2015-06-10T19:01:32.056Z","type":"message"}
+{"nick":"creationix","message":"sousoux: you’re in Europe right?  How much later will you be working tonight?","date":"2015-06-10T19:05:51.947Z","type":"message"}
+{"nick":"sousoux","message":"intermittently I've been cooking supper for 4 kids putting them to bed etc. Soon I'm going to expire!","date":"2015-06-10T19:11:55.656Z","type":"message"}
+{"nick":"KennethWilke","date":"2015-06-10T19:14:12.779Z","type":"join"}
+{"nick":"creationix","message":"sousoux: https://github.com/luvit/lit/commit/906e1041fca562fc3566cb0dda07a1d0453b4462","date":"2015-06-10T19:15:39.915Z","type":"message"}
+{"nick":"creationix","message":"this is in the refactor branch.  It’s pretty stable now, but I’m still testing before merging into master","date":"2015-06-10T19:16:04.604Z","type":"message"}
+{"nick":"creationix","message":"I hope for a lit release today","date":"2015-06-10T19:16:16.599Z","type":"message"}
+{"nick":"creationix","message":"or just make this one-line change in your server to make search faster https://github.com/luvit/lit/commit/906e1041fca562fc3566cb0dda07a1d0453b4462#diff-885fcaf845148fd7e8f89b722209437cR136","date":"2015-06-10T19:16:43.993Z","type":"message"}
+{"nick":"creationix","message":"that will use db.offlineMatch if there is an upstream","date":"2015-06-10T19:17:14.706Z","type":"message"}
+{"nick":"sousoux","message":"creatonix: ok. got you. that forces match to be offline all the time. fine for now.","date":"2015-06-10T19:17:15.929Z","type":"message"}
+{"nick":"creationix","message":"I think it’s a good permament fix.  For remote results, we just need to make a remote search call and then merge the results","date":"2015-06-10T19:17:56.371Z","type":"message"}
+{"nick":"sousoux","message":"I'll pull that onto the live server tomorrow","date":"2015-06-10T19:18:10.628Z","type":"message"}
+{"nick":"creationix","message":"but I’m thinking this is better done in the client which is why I included the upstream url so the client can decide to search there directly","date":"2015-06-10T19:18:21.243Z","type":"message"}
+{"nick":"sousoux","message":"I think that is fine","date":"2015-06-10T19:18:43.866Z","type":"message"}
+{"nick":"sousoux","message":"I only use the rest api's for the front end. all the install stuff is over the lit web socket apart from flows which are just one file pulled directly into the front end and will never need to come from upstream.","date":"2015-06-10T19:20:04.024Z","type":"message"}
+{"nick":"sousoux","message":"creationix: thank you very much for the help and for luvi/t","date":"2015-06-10T19:22:26.913Z","type":"message"}
+{"nick":"creationix","message":"sousoux: glad it’s working for you","date":"2015-06-10T19:28:45.272Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-10T19:42:23.131Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2015-06-10T20:42:04.511Z","type":"quit"}
+{"nick":"creationix","message":"rphillips: rje: check out this neat diagram a luvi user made https://github.com/luvit/lit/issues/85#issuecomment-110902862","date":"2015-06-10T20:56:32.599Z","type":"message"}
+{"nick":"a_le","date":"2015-06-10T20:57:09.245Z","type":"quit"}
+{"nick":"rphillips","message":"now that... is slick","date":"2015-06-10T20:57:42.484Z","type":"message"}
+{"nick":"KennethWilke","reason":"Remote host closed the connection","date":"2015-06-10T20:58:28.594Z","type":"quit"}
+{"nick":"rje","message":"rphillips, creationix: i asked alex to make some inquiries into what flavors still exhibit the TOE bug.  he's doing that ASAP","date":"2015-06-10T21:02:17.762Z","type":"message"}
+{"nick":"rphillips","message":"cool","date":"2015-06-10T21:02:32.267Z","type":"message"}
+{"nick":"rphillips","message":"that will help","date":"2015-06-10T21:02:36.233Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-10T21:29:58.691Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2015-06-10T21:30:21.654Z","type":"quit"}
+{"nick":"kazupon","date":"2015-06-10T21:30:44.593Z","type":"join"}
+{"nick":"kazupon","reason":"Read error: Connection reset by peer","date":"2015-06-10T21:31:57.449Z","type":"quit"}
+{"nick":"kazupon","date":"2015-06-10T21:32:23.198Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 265 seconds","date":"2015-06-10T21:37:30.161Z","type":"quit"}
+{"nick":"ldub_","date":"2015-06-10T21:38:32.341Z","type":"join"}
+{"nick":"ldub_","reason":"Client Quit","date":"2015-06-10T21:39:01.208Z","type":"quit"}
+{"nick":"ldub","reason":"Ping timeout: 256 seconds","date":"2015-06-10T21:40:22.316Z","type":"quit"}
+{"nick":"bjorn","reason":"Read error: Connection reset by peer","date":"2015-06-10T22:04:58.241Z","type":"quit"}
+{"nick":"kazupon","date":"2015-06-10T22:21:40.473Z","type":"join"}
+{"nick":"SouL_|_","date":"2015-06-10T22:23:53.326Z","type":"join"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2015-06-10T22:31:58.175Z","type":"quit"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-06-10T22:59:17.033Z","type":"quit"}
+{"nick":"creationix","message":"rphillips: this should solve the submodule problem with bootstrapping lit https://github.com/luvit/lit/commit/6a192d94edebc4fdeb5e2777a4122b02efc5a2c1","date":"2015-06-10T23:16:03.795Z","type":"message"}
+{"nick":"creationix","message":"we can just download zips from luvit.io","date":"2015-06-10T23:16:10.231Z","type":"message"}
+{"nick":"creationix","message":"(since github doesn't support submodules in it's zip service)","date":"2015-06-10T23:16:21.812Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-10T23:32:40.290Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 255 seconds","date":"2015-06-10T23:37:37.281Z","type":"quit"}
+{"nick":"dan336","date":"2015-06-10T23:38:43.245Z","type":"join"}
+{"nick":"creationix","message":"hmm, something is wrong with the zip writer or the zip reader","date":"2015-06-10T23:49:29.063Z","type":"message"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-06-10T23:59:29.071Z","type":"quit"}
