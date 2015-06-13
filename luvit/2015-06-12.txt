@@ -91,3 +91,435 @@
 {"nick":"rphillips","message":"probably not printing it out","date":"2015-06-12T15:58:12.395Z","type":"message"}
 {"nick":"creationix","message":"the end event never happens on the tls stream","date":"2015-06-12T15:59:45.763Z","type":"message"}
 {"nick":"creationix","message":"hmm","date":"2015-06-12T15:59:48.552Z","type":"message"}
+{"nick":"creationix","message":"rphillips: oh, you're right, there is no print in the outer data handler","date":"2015-06-12T16:00:26.867Z","type":"message"}
+{"nick":"creationix","message":"so the stream just stops at some random point and the process exits with code 0","date":"2015-06-12T16:00:49.207Z","type":"message"}
+{"nick":"rphillips","message":"interesting thing is that it just exits","date":"2015-06-12T16:00:56.022Z","type":"message"}
+{"nick":"rphillips","message":"right","date":"2015-06-12T16:00:58.373Z","type":"message"}
+{"nick":"rphillips","message":"i'm going to try and find a non-tls file to download","date":"2015-06-12T16:01:27.089Z","type":"message"}
+{"nick":"rphillips","message":"http://releases.ubuntu.com/14.04.2/ubuntu-14.04.2-server-amd64.iso","date":"2015-06-12T16:02:40.932Z","type":"message"}
+{"nick":"creationix","message":"I'm logging some data here https://gist.github.com/creationix/d9f7e17b5a525ac6abf3","date":"2015-06-12T16:03:19.683Z","type":"message"}
+{"nick":"creationix","message":"cipherText is the length of the raw data on the tcp socket","date":"2015-06-12T16:03:37.467Z","type":"message"}
+{"nick":"creationix","message":"chunk is the cleartext chunk size (and buffer is the buffer size in the decoder)  Since this has a content-length, there is never leftover bytes","date":"2015-06-12T16:04:15.614Z","type":"message"}
+{"nick":"creationix","message":"also the header come in on it's own chunk every time","date":"2015-06-12T16:04:27.534Z","type":"message"}
+{"nick":"creationix","message":"*comes","date":"2015-06-12T16:04:31.082Z","type":"message"}
+{"nick":"creationix","message":"I'll bet the tls stream protects the data frames from getting split apart","date":"2015-06-12T16:04:49.294Z","type":"message"}
+{"nick":"creationix","message":"extra is the buffer bytes left over after parsing and event is the parser output","date":"2015-06-12T16:05:14.832Z","type":"message"}
+{"nick":"rphillips","message":"non-tls file seems to work","date":"2015-06-12T16:05:52.668Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2015-06-12T16:08:07.491Z","type":"message"}
+{"nick":"creationix","message":"I'm now 95% sure the issue is somewhere in tls","date":"2015-06-12T16:08:20.326Z","type":"message"}
+{"nick":"creationix","message":";)","date":"2015-06-12T16:08:22.504Z","type":"message"}
+{"nick":"KennethWilke","reason":"Remote host closed the connection","date":"2015-06-12T16:10:01.889Z","type":"quit"}
+{"nick":"rphillips","message":"hmm. self.ssl:read()","date":"2015-06-12T16:13:37.163Z","type":"message"}
+{"nick":"rphillips","message":"sometimes returns a bool","date":"2015-06-12T16:13:40.956Z","type":"message"}
+{"nick":"rphillips","message":"and an err of 'want_read'","date":"2015-06-12T16:15:39.848Z","type":"message"}
+{"nick":"creationix","message":"sounds likely","date":"2015-06-12T16:16:44.219Z","type":"message"}
+{"nick":"creationix","message":"so most the want reads are followed by cipherText data events","date":"2015-06-12T16:22:56.091Z","type":"message"}
+{"nick":"creationix","message":"but it does end on a want_read without any data","date":"2015-06-12T16:23:07.427Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/blob/master/deps/tls/common.lua#L235","date":"2015-06-12T16:23:42.680Z","type":"message"}
+{"nick":"rphillips","message":"i think this is part of the problem","date":"2015-06-12T16:23:47.383Z","type":"message"}
+{"nick":"rphillips","message":"we tweak coro-tls to be a while loop","date":"2015-06-12T16:24:04.295Z","type":"message"}
+{"nick":"rphillips","message":"not to mention, it's calling the outer callback too many times","date":"2015-06-12T16:24:17.291Z","type":"message"}
+{"nick":"rphillips","message":"tweaked*","date":"2015-06-12T16:24:27.743Z","type":"message"}
+{"nick":"creationix","message":"you mean in TLSSocket:_write ?","date":"2015-06-12T16:26:37.438Z","type":"message"}
+{"nick":"creationix","message":"changing to a while loop doesn't seem to help","date":"2015-06-12T16:26:41.398Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-12T16:29:24.285Z","type":"join"}
+{"nick":"necrophcodr","date":"2015-06-12T16:31:52.436Z","type":"join"}
+{"nick":"creationix","message":"plus it would cause double callbacks if it did actually loop","date":"2015-06-12T16:35:48.771Z","type":"message"}
+{"nick":"creationix","message":"coro-tls doesn't have that issue since the while loop blocks on writes and there is no callback","date":"2015-06-12T16:36:07.398Z","type":"message"}
+{"nick":"rphillips","message":"creationix: got it","date":"2015-06-12T16:39:50.324Z","type":"message"}
+{"nick":"rphillips","message":"the stream gets paused, and the handshake read handler gets put back","date":"2015-06-12T16:40:10.866Z","type":"message"}
+{"nick":"rphillips","message":"got a patch","date":"2015-06-12T16:40:12.955Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/pull/745","date":"2015-06-12T16:41:08.976Z","type":"message"}
+{"nick":"rphillips","message":"hmm. test is hanging... probably a bit overzeleous","date":"2015-06-12T16:45:45.775Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T16:52:04.777Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2213 (fixes/fix_resume_tls - 5d349af : Ryan Phillips): The build has errored.","date":"2015-06-12T16:52:05.747Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/5d349aff16e4","date":"2015-06-12T16:52:05.814Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66569643","date":"2015-06-12T16:52:05.864Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T16:52:05.864Z","type":"part"}
+{"nick":"creationix","message":"I think the if is fine vs the while","date":"2015-06-12T16:53:51.287Z","type":"message"}
+{"nick":"creationix","message":"I'm not sure why I made a while in coro-tls","date":"2015-06-12T16:54:09.318Z","type":"message"}
+{"nick":"creationix","message":"if you want to make sure, you can check pending in the callback","date":"2015-06-12T16:54:30.539Z","type":"message"}
+{"nick":"creationix","message":"(in the write callback)","date":"2015-06-12T16:54:40.559Z","type":"message"}
+{"nick":"rphillips","message":"creationix: we do the while here in lit, right? https://github.com/luvit/lit/blob/master/deps/coro-tls.lua#L63","date":"2015-06-12T16:55:34.718Z","type":"message"}
+{"nick":"creationix","message":"right, the same behavior in callback code is to check pending in the write callback and make a recursive call","date":"2015-06-12T16:56:13.740Z","type":"message"}
+{"nick":"creationix","message":"but I'm not convinced the loop ever happens more than once","date":"2015-06-12T16:56:23.241Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T16:56:54.282Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2215 (fixes/fix_resume_tls - 8ad06d1 : Ryan Phillips): The build was canceled.","date":"2015-06-12T16:56:55.282Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/5d349aff16e4...8ad06d1c2c66","date":"2015-06-12T16:56:55.332Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66570578","date":"2015-06-12T16:56:55.332Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T16:56:55.332Z","type":"part"}
+{"nick":"creationix","action":"needs to move to the office to have working vidyo, brb","date":"2015-06-12T16:57:01.644Z","type":"action"}
+{"nick":"rje","message":"rphillips, nice find on the tls bug, that's screwing up the upgrade download?","date":"2015-06-12T16:58:01.563Z","type":"message"}
+{"nick":"rphillips","message":"yep","date":"2015-06-12T16:58:22.233Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T17:08:08.282Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2215 (fixes/fix_resume_tls - 8ad06d1 : Ryan Phillips): The build has errored.","date":"2015-06-12T17:08:09.282Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/5d349aff16e4...8ad06d1c2c66","date":"2015-06-12T17:08:09.332Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66570578","date":"2015-06-12T17:08:09.332Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T17:08:09.332Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-12T17:40:48.037Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2217 (fixes/fix_resume_tls - 05d3b64 : Ryan Phillips): The build has errored.","date":"2015-06-12T17:40:49.011Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/8ad06d1c2c66...05d3b6491121","date":"2015-06-12T17:40:49.060Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66576434","date":"2015-06-12T17:40:49.061Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T17:40:49.061Z","type":"part"}
+{"nick":"sousoux","date":"2015-06-12T17:54:51.672Z","type":"join"}
+{"nick":"sousoux","message":"creationix: I noticed that the lit core api has changed a bit. Am I correct in thinking that installList takes a path to a folder and installs a dependency into it along with its dependencies into deps under that folder?","date":"2015-06-12T17:56:51.487Z","type":"message"}
+{"nick":"creationix","message":"right (path, list) will install list (and list’s deps) into path/deps","date":"2015-06-12T17:57:42.366Z","type":"message"}
+{"nick":"sousoux","message":"I was doing the install manually and then using processDeps before","date":"2015-06-12T17:57:44.208Z","type":"message"}
+{"nick":"sousoux","message":"how do I install into path?","date":"2015-06-12T17:58:37.755Z","type":"message"}
+{"nick":"sousoux","message":"do you mean that list is installeed in path or in path/deps","date":"2015-06-12T17:59:09.023Z","type":"message"}
+{"nick":"sousoux","message":"?","date":"2015-06-12T17:59:12.026Z","type":"message"}
+{"nick":"creationix","message":"just a single package, not worrying about it’s deps","date":"2015-06-12T17:59:14.858Z","type":"message"}
+{"nick":"sousoux","message":"I don't mind doing it in two steps","date":"2015-06-12T17:59:39.824Z","type":"message"}
+{"nick":"sousoux","message":"Install single package into path and then its deps into deps","date":"2015-06-12T18:00:00.112Z","type":"message"}
+{"nick":"sousoux","message":"That's more or less what I do now","date":"2015-06-12T18:00:13.366Z","type":"message"}
+{"nick":"sousoux","message":"basically I need to get the node and its deps","date":"2015-06-12T18:00:41.607Z","type":"message"}
+{"nick":"creationix","message":"did you see the new zip endpoing in the api?","date":"2015-06-12T18:01:09.412Z","type":"message"}
+{"nick":"creationix","message":"*endpoint","date":"2015-06-12T18:01:12.984Z","type":"message"}
+{"nick":"creationix","message":"exporting a single package to fs is simple https://github.com/luvit/lit/blob/master/libs/install-deps.lua#L74","date":"2015-06-12T18:01:28.527Z","type":"message"}
+{"nick":"sousoux","message":"ok. that was what I was doing before. and then I use the normal install to install its deps","date":"2015-06-12T18:02:26.295Z","type":"message"}
+{"nick":"creationix","message":"basically with the new system, you build the entire tree in the db, and then export it somewhere","date":"2015-06-12T18:02:29.249Z","type":"message"}
+{"nick":"creationix","message":"sounds like you want to export it to the fs","date":"2015-06-12T18:02:33.666Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/lit/blob/master/libs/api.lua#L191-L199","date":"2015-06-12T18:02:34.458Z","type":"message"}
+{"nick":"creationix","message":"this example will give you a package with it’s deps embedded","date":"2015-06-12T18:02:57.336Z","type":"message"}
+{"nick":"creationix","message":"get hash, calculate deps, install deps, export to fs","date":"2015-06-12T18:03:27.583Z","type":"message"}
+{"nick":"sousoux","message":"ok got you","date":"2015-06-12T18:03:45.794Z","type":"message"}
+{"nick":"creationix","message":"querydb will accept either a tag hash or tree hash and give you the tree hash","date":"2015-06-12T18:04:03.922Z","type":"message"}
+{"nick":"creationix","message":"the db.read(…) gives you the tag hash","date":"2015-06-12T18:04:27.914Z","type":"message"}
+{"nick":"sousoux","message":"is installDeps still available via core? -- local installDeps = require('install-deps').toDb","date":"2015-06-12T18:06:55.954Z","type":"message"}
+{"nick":"creationix","message":"right, they aren’t all exposed in core","date":"2015-06-12T18:07:32.537Z","type":"message"}
+{"nick":"creationix","message":"but you can get at them via require(‘lit/libs/install-deps’)","date":"2015-06-12T18:07:48.615Z","type":"message"}
+{"nick":"creationix","message":"I can expose these in core if you want","date":"2015-06-12T18:08:13.326Z","type":"message"}
+{"nick":"sousoux","message":"ok. I tried an absolute require before and had trouble. I will try again","date":"2015-06-12T18:08:22.513Z","type":"message"}
+{"nick":"creationix","message":"I don’t call it absolute, (that’s something different like /home/user/code/myapp/deps/lit/…)","date":"2015-06-12T18:10:48.486Z","type":"message"}
+{"nick":"creationix","message":"but yeah, reaching into a package should work.","date":"2015-06-12T18:11:10.336Z","type":"message"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2015-06-12T18:13:46.915Z","type":"quit"}
+{"nick":"rphillips","message":"hmm. this is weird","date":"2015-06-12T18:14:21.227Z","type":"message"}
+{"nick":"rphillips","message":"that small change made some of the tls tests not work","date":"2015-06-12T18:14:36.706Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:23:33.098Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2219 (fixes/fix_resume_tls - af1af43 : Ryan Phillips): The build failed.","date":"2015-06-12T18:23:34.077Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/05d3b6491121...af1af4365bfe","date":"2015-06-12T18:23:34.151Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66583883","date":"2015-06-12T18:23:34.218Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:23:34.267Z","type":"part"}
+{"nick":"creationix","message":"actually, this is weird, the tsp socket under the tls code stops getting data","date":"2015-06-12T18:25:10.981Z","type":"message"}
+{"nick":"creationix","message":"so while it only happens with this tls connection, I'm not sure how tls could be at fault","date":"2015-06-12T18:25:29.779Z","type":"message"}
+{"nick":"fdagostino","date":"2015-06-12T18:26:46.719Z","type":"join"}
+{"nick":"fdagostino","message":"Hi there","date":"2015-06-12T18:27:19.099Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: welcome","date":"2015-06-12T18:27:50.363Z","type":"message"}
+{"nick":"fdagostino","message":"Thanks Tim","date":"2015-06-12T18:28:00.771Z","type":"message"}
+{"nick":"creationix","message":"sousoux: did the deep require work for you?","date":"2015-06-12T18:28:04.779Z","type":"message"}
+{"nick":"fdagostino","message":"I'm trying to compile Luvit in order to run it on an embbeded device","date":"2015-06-12T18:28:43.658Z","type":"message"}
+{"nick":"fdagostino","message":"but I need some guidance","date":"2015-06-12T18:29:04.217Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: what kind of device?","date":"2015-06-12T18:29:10.908Z","type":"message"}
+{"nick":"fdagostino","message":"It's an EFT-POS, runs on top of an ARMv61","date":"2015-06-12T18:29:29.846Z","type":"message"}
+{"nick":"fdagostino","message":"it has a Linux, but I don't have console access","date":"2015-06-12T18:29:45.149Z","type":"message"}
+{"nick":"creationix","message":"oh, I remember, you posted to the mailing list","date":"2015-06-12T18:30:03.925Z","type":"message"}
+{"nick":"fdagostino","message":"right!","date":"2015-06-12T18:30:09.741Z","type":"message"}
+{"nick":"creationix","message":"how can you have a linux without console access?","date":"2015-06-12T18:30:13.112Z","type":"message"}
+{"nick":"fdagostino","message":"because the vendor don't allow you to access","date":"2015-06-12T18:30:27.655Z","type":"message"}
+{"nick":"fdagostino","message":"they have like an app manager that runs on top of the embedded linux","date":"2015-06-12T18:30:56.990Z","type":"message"}
+{"nick":"creationix","message":"I see, the only way to run code is to compile using their cross-compiler and write to sdcard or something?","date":"2015-06-12T18:30:59.731Z","type":"message"}
+{"nick":"fdagostino","message":"they provide an SDK with a toolchain for windows, using cygwin","date":"2015-06-12T18:31:29.656Z","type":"message"}
+{"nick":"creationix","message":"tricky","date":"2015-06-12T18:31:37.092Z","type":"message"}
+{"nick":"fdagostino","message":"the compiler is arm-brcm-linux-gnueabi-","date":"2015-06-12T18:31:43.606Z","type":"message"}
+{"nick":"fdagostino","message":"It is possible to have Luvit as a runtime through a shared library (.so)","date":"2015-06-12T18:32:11.578Z","type":"message"}
+{"nick":"fdagostino","message":"?","date":"2015-06-12T18:32:14.416Z","type":"message"}
+{"nick":"creationix","message":"that depends on what you mean by \"luvit\"","date":"2015-06-12T18:32:26.046Z","type":"message"}
+{"nick":"creationix","message":"the normal way the luvit binary is packaged is luvi + a zip file containing lua","date":"2015-06-12T18:32:44.753Z","type":"message"}
+{"nick":"fdagostino","message":"ok","date":"2015-06-12T18:32:54.841Z","type":"message"}
+{"nick":"creationix","message":"I don't think that trick would work with a .so","date":"2015-06-12T18:32:55.625Z","type":"message"}
+{"nick":"fdagostino","message":"but as I understood","date":"2015-06-12T18:33:08.230Z","type":"message"}
+{"nick":"fdagostino","message":"luvi is like a console tool","date":"2015-06-12T18:33:12.818Z","type":"message"}
+{"nick":"fdagostino","message":"right?","date":"2015-06-12T18:33:19.081Z","type":"message"}
+{"nick":"creationix","message":"luvi is the base runtime with zip asset bundling logic and some botostrap code","date":"2015-06-12T18:33:35.796Z","type":"message"}
+{"nick":"fdagostino","message":"ok, but luvi uses LuaJIT as runtime, right?","date":"2015-06-12T18:34:08.816Z","type":"message"}
+{"nick":"creationix","message":"we recently added a diagram to the docs to show the relationships https://luvit.io/docs.html","date":"2015-06-12T18:34:13.877Z","type":"message"}
+{"nick":"fdagostino","message":"LuaJIT can be compiled as a .so","date":"2015-06-12T18:34:45.108Z","type":"message"}
+{"nick":"creationix","message":"Simply having luajit + luv as a .so would give you a nice low-level version of luvit","date":"2015-06-12T18:34:54.042Z","type":"message"}
+{"nick":"fdagostino","message":"ok, sounds good","date":"2015-06-12T18:35:23.720Z","type":"message"}
+{"nick":"creationix","message":"I actually enjoy this level of abstraction and based most my code upon it mostly with some coroutine and require sugar I added","date":"2015-06-12T18:35:49.205Z","type":"message"}
+{"nick":"creationix","message":"the luvit metapackage is for people wanting a clone of the node.js APIs","date":"2015-06-12T18:36:01.571Z","type":"message"}
+{"nick":"creationix","message":"luv is pretty straightforward to build","date":"2015-06-12T18:36:25.203Z","type":"message"}
+{"nick":"creationix","message":"will cmake work with your cross-compiler?","date":"2015-06-12T18:36:52.108Z","type":"message"}
+{"nick":"creationix","message":"the luv bindings are just a single C file that #include's the other C files https://github.com/luvit/luv/blob/master/CMakeLists.txt#L43","date":"2015-06-12T18:37:50.465Z","type":"message"}
+{"nick":"creationix","message":"it just needs libuv and luajit headers to compile","date":"2015-06-12T18:38:06.226Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:38:31.418Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2221 (fixes/tls_reads - 24625bd : Ryan Phillips): The build passed.","date":"2015-06-12T18:38:32.423Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/24625bd8ef2f","date":"2015-06-12T18:38:32.472Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66585941","date":"2015-06-12T18:38:32.472Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:38:32.472Z","type":"part"}
+{"nick":"fdagostino","message":"I think I won't have problems compiling luajit and luv","date":"2015-06-12T18:38:33.165Z","type":"message"}
+{"nick":"creationix","message":"so if you go that route, things are a *lot* simpler","date":"2015-06-12T18:39:22.293Z","type":"message"}
+{"nick":"creationix","message":"and luv itself is mostly documented","date":"2015-06-12T18:39:27.485Z","type":"message"}
+{"nick":"fdagostino","message":"once I have that cross-compiled as a .so","date":"2015-06-12T18:39:31.724Z","type":"message"}
+{"nick":"rphillips","message":"creationix: rje: simplified the patch to just https://github.com/luvit/luvit/pull/746","date":"2015-06-12T18:39:32.456Z","type":"message"}
+{"nick":"creationix","message":"plus it almost mirrors the libuv docs at http://docs.libuv.org/en/v1.x/","date":"2015-06-12T18:39:48.330Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: sounds like you good to go then.  Once you have luajit + luv, I can help you cherry-pick parts of the luvit metapackage you want to use.","date":"2015-06-12T18:40:45.902Z","type":"message"}
+{"nick":"creationix","message":"rphillips: did that really fix it?","date":"2015-06-12T18:41:03.651Z","type":"message"}
+{"nick":"fdagostino","message":"that is similar to implementing duktape and dukluv, right?","date":"2015-06-12T18:41:04.224Z","type":"message"}
+{"nick":"rphillips","message":"creationix: yep","date":"2015-06-12T18:41:11.810Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: yeah, luajit + luv is a *lot* like duktape + dukluv","date":"2015-06-12T18:41:31.456Z","type":"message"}
+{"nick":"fdagostino","message":"creationnix, thanks! I'll comeback when I've that running on my device","date":"2015-06-12T18:41:51.293Z","type":"message"}
+{"nick":"creationix","message":"btw, why use as a .so?","date":"2015-06-12T18:42:01.793Z","type":"message"}
+{"nick":"fdagostino","message":"one last doubt","date":"2015-06-12T18:42:03.160Z","type":"message"}
+{"nick":"fdagostino","message":"I need them as a .so or .a","date":"2015-06-12T18:42:19.838Z","type":"message"}
+{"nick":"creationix","message":"so main app is C, but you want to script some parts in lua?","date":"2015-06-12T18:42:30.419Z","type":"message"}
+{"nick":"fdagostino","message":"because is the way I can download to the device","date":"2015-06-12T18:42:34.229Z","type":"message"}
+{"nick":"fdagostino","message":"yes, the entrypoint for apps is in C or C++","date":"2015-06-12T18:43:02.240Z","type":"message"}
+{"nick":"creationix","message":"makes sense","date":"2015-06-12T18:43:16.971Z","type":"message"}
+{"nick":"grep_away","reason":"Ping timeout: 244 seconds","date":"2015-06-12T18:44:12.130Z","type":"quit"}
+{"nick":"fdagostino","message":"but let me check something in vendors doc","date":"2015-06-12T18:44:28.707Z","type":"message"}
+{"nick":"creationix","message":"rphillips: sure enough, that fixes it nicely.  Good work.","date":"2015-06-12T18:45:22.522Z","type":"message"}
+{"nick":"grep_away","date":"2015-06-12T18:46:56.599Z","type":"join"}
+{"nick":"rphillips","message":"thanks","date":"2015-06-12T18:47:06.526Z","type":"message"}
+{"nick":"creationix","message":"I guess it was calling handshake at the wrong time breaking stuff","date":"2015-06-12T18:47:16.130Z","type":"message"}
+{"nick":"rphillips","message":"yeah, the stream:pipe would pause the stream, then resume it with the handshake read handler","date":"2015-06-12T18:47:36.290Z","type":"message"}
+{"nick":"creationix","message":"well, I had figured it had something to do with resume","date":"2015-06-12T18:49:25.875Z","type":"message"}
+{"nick":"creationix","message":"rphillips: btw, do we need a luvi release with the openssl patch?","date":"2015-06-12T18:49:47.693Z","type":"message"}
+{"nick":"rphillips","message":"we do","date":"2015-06-12T18:50:12.946Z","type":"message"}
+{"nick":"creationix","message":"I don't know of anyone using luvit for tls server in production, but it can't hurt","date":"2015-06-12T18:50:17.459Z","type":"message"}
+{"nick":"creationix","message":"I use nginx as terminator in my luvit apps","date":"2015-06-12T18:50:25.241Z","type":"message"}
+{"nick":"creationix","message":"ok, I'll do a luvi release, then a lit release, then a luvit release?","date":"2015-06-12T18:51:40.071Z","type":"message"}
+{"nick":"fdagostino","message":"@creationix, let me know when I can ask you a question","date":"2015-06-12T18:53:20.947Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: sure, what's up","date":"2015-06-12T18:53:27.784Z","type":"message"}
+{"nick":"creationix","message":"rphillips: I think lua-openssl is pointing to a commit that doesn't exist anymore, I'll update to master","date":"2015-06-12T18:54:23.521Z","type":"message"}
+{"nick":"fdagostino","message":"creationix: I've checked the vendors SDK. In the end when you compile a project you obtain an Linux app executable","date":"2015-06-12T18:55:11.881Z","type":"message"}
+{"nick":"rphillips","message":"rje: still can't get the version from the msi on download","date":"2015-06-12T18:55:41.444Z","type":"message"}
+{"nick":"fdagostino","message":"with Luvit, is it possible to obtain an app bundled as standalone linux app?","date":"2015-06-12T18:55:58.004Z","type":"message"}
+{"nick":"fdagostino","message":"because if I can get that, I don't need to embedded the runtime as a .so","date":"2015-06-12T18:56:31.277Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: not sure what you mean","date":"2015-06-12T18:56:31.520Z","type":"message"}
+{"nick":"creationix","message":"you could make the normal luajit app with luv embedded","date":"2015-06-12T18:56:43.478Z","type":"message"}
+{"nick":"creationix","message":"but then your main entry-point is the luajit cli interface","date":"2015-06-12T18:56:54.637Z","type":"message"}
+{"nick":"fdagostino","message":"mmmm","date":"2015-06-12T18:57:05.115Z","type":"message"}
+{"nick":"creationix","message":"if they allow script files, that would work","date":"2015-06-12T18:57:10.867Z","type":"message"}
+{"nick":"rphillips","message":"creationix: could you +1 #746?","date":"2015-06-12T18:57:14.820Z","type":"message"}
+{"nick":"creationix","message":"start with #!/path/to/luvjit   some lua code","date":"2015-06-12T18:57:32.798Z","type":"message"}
+{"nick":"creationix","message":"rphillips: done","date":"2015-06-12T18:57:55.631Z","type":"message"}
+{"nick":"rphillips","message":"thanks!","date":"2015-06-12T18:58:06.765Z","type":"message"}
+{"nick":"creationix","message":"rphillips: you can review coro-all-the-things when you want.  I'm finished for now with it","date":"2015-06-12T18:58:30.924Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:59:08.277Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2223 (master - 32a661f : Ryan Phillips): The build passed.","date":"2015-06-12T18:59:09.308Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/6d71e1318c89...32a661f5f53c","date":"2015-06-12T18:59:09.357Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66588601","date":"2015-06-12T18:59:09.358Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T18:59:09.358Z","type":"part"}
+{"nick":"creationix","message":"rphillips: thanks.  Basically the goal is to allow a coroutine thread instead of a callback in all luvit APIs where the callback is a one-off event","date":"2015-06-12T19:00:23.170Z","type":"message"}
+{"nick":"creationix","message":"and it will just suspend the current coroutine and return the result","date":"2015-06-12T19:00:32.956Z","type":"message"}
+{"nick":"creationix","message":"I'm just adding it as I need it","date":"2015-06-12T19:00:41.628Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T19:01:59.318Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2224 (master - 9693566 : Tim Caswell): The build passed.","date":"2015-06-12T19:02:00.469Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/32a661f5f53c...969356674d79","date":"2015-06-12T19:02:00.519Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvit/builds/66589021","date":"2015-06-12T19:02:00.519Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T19:02:00.519Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-12T19:02:07.054Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#555 (master - 3fa6b67 : Tim Caswell): The build passed.","date":"2015-06-12T19:02:08.055Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/9d026ae98cd0...3fa6b672c6f0","date":"2015-06-12T19:02:08.105Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvi/builds/66588150","date":"2015-06-12T19:02:08.105Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T19:02:08.105Z","type":"part"}
+{"nick":"fdagostino","message":"I can download an linux app and companion files (lua scripts)","date":"2015-06-12T19:04:52.222Z","type":"message"}
+{"nick":"fdagostino","message":"but I can't execute a command with parameters","date":"2015-06-12T19:07:20.256Z","type":"message"}
+{"nick":"fdagostino","message":"for example, how do you execute the http-server.lua example?","date":"2015-06-12T19:09:06.189Z","type":"message"}
+{"nick":"fdagostino","message":"something like luvi http-server.lua? or luvit http-server.lua?","date":"2015-06-12T19:09:30.229Z","type":"message"}
+{"nick":"necrophcodr","message":"those are luvit examples i believe, not luvi examples","date":"2015-06-12T19:10:49.694Z","type":"message"}
+{"nick":"necrophcodr","message":"usually though a luvi app consists of a directory with a main.lua file. you then execute `luvi directory` to run the directory as an application.","date":"2015-06-12T19:11:43.162Z","type":"message"}
+{"nick":"fdagostino","message":"yes they are luvit examples","date":"2015-06-12T19:11:43.212Z","type":"message"}
+{"nick":"fdagostino","message":"ok thanks necrophcodr","date":"2015-06-12T19:12:14.896Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: you can read the help too by running `luvi --help`","date":"2015-06-12T19:12:38.941Z","type":"message"}
+{"nick":"fdagostino","message":"as i see in readme.md, you can do something like this:","date":"2015-06-12T19:13:00.603Z","type":"message"}
+{"nick":"fdagostino","message":"# Build the binary when done luvi myapp -o mybinary # Run the new self-contained binary ./mybinary","date":"2015-06-12T19:13:24.923Z","type":"message"}
+{"nick":"necrophcodr","message":"that is true","date":"2015-06-12T19:13:35.998Z","type":"message"}
+{"nick":"fdagostino","message":"so in that case","date":"2015-06-12T19:13:42.729Z","type":"message"}
+{"nick":"fdagostino","message":"mybinary is a self-contained linux app?","date":"2015-06-12T19:13:52.780Z","type":"message"}
+{"nick":"necrophcodr","message":"you then want to do `luvi directory -o bin`","date":"2015-06-12T19:13:52.987Z","type":"message"}
+{"nick":"necrophcodr","message":"then you can simply execute `./bin` to run the single binary application","date":"2015-06-12T19:14:06.239Z","type":"message"}
+{"nick":"necrophcodr","message":"it is indeed","date":"2015-06-12T19:14:13.331Z","type":"message"}
+{"nick":"boxofrox","reason":"Ping timeout: 250 seconds","date":"2015-06-12T19:16:27.455Z","type":"quit"}
+{"nick":"kazupon","reason":"Remote host closed the connection","date":"2015-06-12T19:17:07.275Z","type":"quit"}
+{"nick":"fdagostino","message":"ok, thanks! I need \"mybinary\" to be ARMv61 compatible","date":"2015-06-12T19:17:15.902Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: then do the same thing on a ARMv6l platform","date":"2015-06-12T19:17:29.111Z","type":"message"}
+{"nick":"necrophcodr","message":"alternatively, you might want to look into proot (proot.me)","date":"2015-06-12T19:17:50.199Z","type":"message"}
+{"nick":"fdagostino","message":"ok, is not possible to cross-compile in Windows targeting ARMv61?","date":"2015-06-12T19:17:51.933Z","type":"message"}
+{"nick":"necrophcodr","message":"luvi doesn't cross compile no","date":"2015-06-12T19:18:02.366Z","type":"message"}
+{"nick":"DarkGod","reason":"Ping timeout: 245 seconds","date":"2015-06-12T19:18:59.701Z","type":"quit"}
+{"nick":"travis-ci","date":"2015-06-12T19:19:05.281Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#557 (v2.1.1 - 677ed00 : Tim Caswell): The build passed.","date":"2015-06-12T19:19:06.281Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/v2.1.1","date":"2015-06-12T19:19:06.331Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : http://travis-ci.org/luvit/luvi/builds/66590592","date":"2015-06-12T19:19:06.331Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-12T19:19:06.331Z","type":"part"}
+{"nick":"fdagostino","message":"ok,thanks, now I'm getting it","date":"2015-06-12T19:19:13.755Z","type":"message"}
+{"nick":"rje","message":"rphillips, what's going on with that?","date":"2015-06-12T19:29:03.000Z","type":"message"}
+{"nick":"rje","message":"rphillips, is the msi valid?","date":"2015-06-12T19:29:18.494Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: did you decide to try to use luvi instead of just luajit + luv?","date":"2015-06-12T19:29:51.304Z","type":"message"}
+{"nick":"fdagostino","message":"I'm thinking the best way to implement this","date":"2015-06-12T19:30:10.224Z","type":"message"}
+{"nick":"creationix","message":"either compile in luajit + libuv + luv into your C app and use it as a library or compile luajit + libuv + luv using luvjit's main and run lua scripts with it","date":"2015-06-12T19:30:51.703Z","type":"message"}
+{"nick":"creationix","message":"luvi is if you want to mess with zip assets and more of the luvit ecosystem","date":"2015-06-12T19:31:06.598Z","type":"message"}
+{"nick":"fdagostino","message":"one question about luajit","date":"2015-06-12T19:32:16.359Z","type":"message"}
+{"nick":"rphillips","message":"rje: *sigh* i don't think it's still downloading the entire package","date":"2015-06-12T19:32:26.769Z","type":"message"}
+{"nick":"creationix","message":"rphillips: I got a done event when I tried","date":"2015-06-12T19:32:49.996Z","type":"message"}
+{"nick":"rphillips","message":"same here","date":"2015-06-12T19:32:57.640Z","type":"message"}
+{"nick":"creationix","message":"when you tried wget, did it have the whole thing?","date":"2015-06-12T19:33:15.583Z","type":"message"}
+{"nick":"fdagostino","message":"can luajit compile lua scripts into bytecode?","date":"2015-06-12T19:33:27.684Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: yep, and embed in C code","date":"2015-06-12T19:33:36.136Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: yes","date":"2015-06-12T19:33:44.636Z","type":"message"}
+{"nick":"creationix","message":"that's how luvi embeds a little lua glue in it's bootstrap logic","date":"2015-06-12T19:33:48.398Z","type":"message"}
+{"nick":"rphillips","message":"creationix: yep","date":"2015-06-12T19:34:07.047Z","type":"message"}
+{"nick":"rphillips","message":"worked on the unicies","date":"2015-06-12T19:34:12.042Z","type":"message"}
+{"nick":"creationix","message":"you can output the lua bytecode as C or H files (basically a big char array)","date":"2015-06-12T19:34:16.983Z","type":"message"}
+{"nick":"fdagostino","message":"or a raw format i've seen","date":"2015-06-12T19:34:33.741Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: right, there are several output formats","date":"2015-06-12T19:34:54.220Z","type":"message"}
+{"nick":"creationix","message":"lit will actually compile all lua source to raw bytecode when forming the embedded zip for bundles zip apps","date":"2015-06-12T19:35:10.889Z","type":"message"}
+{"nick":"creationix","message":"helps with memory usage since comments get stripped out this way","date":"2015-06-12T19:35:27.199Z","type":"message"}
+{"nick":"necrophcodr","message":"i dont recall, but is the raw bytecode actually portable, or is it based on things like endianness and shit?","date":"2015-06-12T19:35:51.861Z","type":"message"}
+{"nick":"necrophcodr","message":"i dont even know something something bits and bytes whatever","date":"2015-06-12T19:36:06.633Z","type":"message"}
+{"nick":"creationix","message":"I believe it's mostly portable","date":"2015-06-12T19:36:08.219Z","type":"message"}
+{"nick":"fdagostino","message":"so if i get a .so with luajit+libuv+luv binary compatible with my device and compile a program using luvit using luajit under windows","date":"2015-06-12T19:36:19.235Z","type":"message"}
+{"nick":"fdagostino","message":"then i can load the file in C?","date":"2015-06-12T19:36:37.157Z","type":"message"}
+{"nick":"rphillips","message":"so the test file I pasted is missing one chunk on the write","date":"2015-06-12T19:36:46.295Z","type":"message"}
+{"nick":"rphillips","message":"on windows","date":"2015-06-12T19:36:51.516Z","type":"message"}
+{"nick":"creationix","message":"necrophcodr: ok, luajit is portable unlike lua","date":"2015-06-12T19:37:04.536Z","type":"message"}
+{"nick":"creationix","message":"as long as you don't try to compile in one version of luajit and load in another","date":"2015-06-12T19:37:17.133Z","type":"message"}
+{"nick":"necrophcodr","message":"ah, so there can be version mismatch. makes perfect sense though. cool, thanks!","date":"2015-06-12T19:37:40.239Z","type":"message"}
+{"nick":"creationix","message":"rphillips: with a done event printed right?","date":"2015-06-12T19:38:22.431Z","type":"message"}
+{"nick":"rphillips","message":"https://www.evernote.com/l/AAldlQHrb5hEXKenqsUKu1rh1oozfcNKuIY","date":"2015-06-12T19:39:49.740Z","type":"message"}
+{"nick":"rphillips","message":"the content-length and the write length are about one chunk off","date":"2015-06-12T19:40:06.700Z","type":"message"}
+{"nick":"rphillips","message":"doesn't happen everytime :(","date":"2015-06-12T19:40:15.368Z","type":"message"}
+{"nick":"fdagostino","message":"but this raw bytecode is platform-independent? similar to .NET IL?","date":"2015-06-12T19:40:21.735Z","type":"message"}
+{"nick":"creationix","message":"rphillips: interesting","date":"2015-06-12T19:40:33.225Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: correct, in luajit it's platform-independent","date":"2015-06-12T19:40:47.423Z","type":"message"}
+{"nick":"creationix","message":"vanilla lua is not, endiness can bite you","date":"2015-06-12T19:40:56.195Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: sure, but the issue is that certain libraries used may not be.","date":"2015-06-12T19:40:59.430Z","type":"message"}
+{"nick":"necrophcodr","message":"like ffi-libraries, such as some .so library or whatever","date":"2015-06-12T19:41:30.413Z","type":"message"}
+{"nick":"fdagostino","message":"necrophcodr, libraries used where?","date":"2015-06-12T19:41:32.673Z","type":"message"}
+{"nick":"creationix","action":"is reminded he needs to finish his luajit bytecode interpreter in browser JS","date":"2015-06-12T19:41:43.776Z","type":"action"}
+{"nick":"necrophcodr","message":"creationix: as in luajit.min.js run lua shit on luajit?","date":"2015-06-12T19:42:04.707Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: libraries used by third parties for instance. if you're just writing lua scripts, you probably won't have to worry too much","date":"2015-06-12T19:42:47.113Z","type":"message"}
+{"nick":"fdagostino","message":"ok, perfect!","date":"2015-06-12T19:42:59.878Z","type":"message"}
+{"nick":"boxofrox","date":"2015-06-12T19:43:16.736Z","type":"join"}
+{"nick":"creationix","message":"necrophcodr: no, to run luajit bytecode in a browser","date":"2015-06-12T19:43:54.245Z","type":"message"}
+{"nick":"necrophcodr","message":"oh right bytecode","date":"2015-06-12T19:44:08.886Z","type":"message"}
+{"nick":"creationix","message":"I write VMs for fun, and it's not a bad bytecode","date":"2015-06-12T19:44:19.318Z","type":"message"}
+{"nick":"necrophcodr","message":"oooh i see, so you write luajit code, compile it with luajit, and run it in the browser","date":"2015-06-12T19:44:35.755Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2015-06-12T19:44:46.876Z","type":"message"}
+{"nick":"necrophcodr","message":"that is some hella cool shit. i should probably look into writing a vm some day.","date":"2015-06-12T19:45:04.760Z","type":"message"}
+{"nick":"fdagostino","message":"so, to confirm, with this approach I can write and compile lua scripts in Windows to raw bytecode and execute it on an ARM device (if cross-compile works)","date":"2015-06-12T19:45:48.768Z","type":"message"}
+{"nick":"necrophcodr","message":"fdagostino: if you do `luvi directory -o app` then you need to do it from an ARM device though","date":"2015-06-12T19:46:19.184Z","type":"message"}
+{"nick":"fdagostino","message":"no luvi involved","date":"2015-06-12T19:46:33.012Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: right, or just send the lua to the arm device and have luajit compile it on the fly","date":"2015-06-12T19:46:41.180Z","type":"message"}
+{"nick":"necrophcodr","message":"then no problem as far as i see","date":"2015-06-12T19:46:41.477Z","type":"message"}
+{"nick":"fdagostino","message":"just luajit compile","date":"2015-06-12T19:46:48.348Z","type":"message"}
+{"nick":"creationix","message":"you can even compile to bytecode from a lua script via the string.dump() extension in luajit","date":"2015-06-12T19:47:40.462Z","type":"message"}
+{"nick":"creationix","message":"that's how lit's build tool does it","date":"2015-06-12T19:47:49.280Z","type":"message"}
+{"nick":"creationix","message":"http://luajit.org/extensions.html","date":"2015-06-12T19:48:08.526Z","type":"message"}
+{"nick":"fdagostino","message":"and as I see luvit source code is all lua scripts","date":"2015-06-12T19:48:29.192Z","type":"message"}
+{"nick":"fdagostino","message":"perfect, thanks creationix!","date":"2015-06-12T19:48:58.648Z","type":"message"}
+{"nick":"creationix","message":"luvit does depend on some code implemented in luvi that you won't have using luajit + luv","date":"2015-06-12T19:49:23.826Z","type":"message"}
+{"nick":"creationix","message":"but they can easily be ported","date":"2015-06-12T19:49:29.906Z","type":"message"}
+{"nick":"fdagostino","message":"no problem with that if I count with your help :P","date":"2015-06-12T19:50:21.404Z","type":"message"}
+{"nick":"creationix","message":":)","date":"2015-06-12T19:50:31.018Z","type":"message"}
+{"nick":"creationix","message":"rphillips: my last Raspberry PI A+ just died","date":"2015-06-12T19:52:17.406Z","type":"message"}
+{"nick":"creationix","message":"the armv6 build of luvi is becoming harder and harder to support","date":"2015-06-12T19:52:33.623Z","type":"message"}
+{"nick":"fdagostino","reason":"Quit: Page closed","date":"2015-06-12T19:52:38.342Z","type":"quit"}
+{"nick":"creationix","message":"I can order a new B+ on amazon, but they pad the price a bit","date":"2015-06-12T19:52:54.217Z","type":"message"}
+{"nick":"fdagostino","date":"2015-06-12T19:52:59.056Z","type":"join"}
+{"nick":"creationix","message":"I should have picked one up while I was in Dallas, Microcenter had them for $25","date":"2015-06-12T19:53:06.883Z","type":"message"}
+{"nick":"fdagostino","message":"well guys, thank you for your help!","date":"2015-06-12T19:53:44.434Z","type":"message"}
+{"nick":"fdagostino","message":"I'll try to get the .so and let you know progress","date":"2015-06-12T19:54:02.443Z","type":"message"}
+{"nick":"jetl","reason":"*.net *.split","date":"2015-06-12T20:07:31.881Z","type":"quit"}
+{"nick":"jetl","date":"2015-06-12T20:07:55.271Z","type":"join"}
+{"nick":"creationix","message":"rphillips: I can see it too.  It sometimes is missing 4096 bytes","date":"2015-06-12T20:13:34.809Z","type":"message"}
+{"nick":"rphillips","message":"croeationix: OS X?","date":"2015-06-12T20:15:07.547Z","type":"message"}
+{"nick":"rphillips","message":"creationix: ^","date":"2015-06-12T20:15:24.150Z","type":"message"}
+{"nick":"creationix","message":"no, linux","date":"2015-06-12T20:15:32.793Z","type":"message"}
+{"nick":"rphillips","message":"k","date":"2015-06-12T20:16:00.472Z","type":"message"}
+{"nick":"rphillips","message":"strange. I see a read event after the done event sometimes","date":"2015-06-12T20:18:24.573Z","type":"message"}
+{"nick":"creationix","message":"interesting","date":"2015-06-12T20:21:07.855Z","type":"message"}
+{"nick":"creationix","message":"rphillips: in the case where data is missing, we get an end event at the top level before the underlying tcp stream has emitted end","date":"2015-06-12T20:23:22.382Z","type":"message"}
+{"nick":"creationix","message":"something is triggerring end early","date":"2015-06-12T20:23:39.067Z","type":"message"}
+{"nick":"creationix","message":"actually nevermind, the tcp level end is always after the end event","date":"2015-06-12T20:24:14.648Z","type":"message"}
+{"nick":"DarkGod","date":"2015-06-12T20:36:11.661Z","type":"join"}
+{"nick":"fdagostino","message":"guys, I'm trying to cross-compile luajit, but at step BUILDVM lj_vm.o it throws \"Error: no PE object support for this target\"","date":"2015-06-12T20:39:43.747Z","type":"message"}
+{"nick":"fdagostino","message":"any idea?","date":"2015-06-12T20:39:50.114Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: you did read the cross-compile docs right?","date":"2015-06-12T20:47:47.992Z","type":"message"}
+{"nick":"creationix","message":"other than that, you can ask on the luajit mailing list.  (but make sure to read the docs first or Mike will get on to you)","date":"2015-06-12T20:48:04.620Z","type":"message"}
+{"nick":"creationix","message":"http://luajit.org/install.html","date":"2015-06-12T20:48:25.638Z","type":"message"}
+{"nick":"creationix","message":"fdagostino: hmm, your platform might be unsupported.  Luajit is implemented in assembly","date":"2015-06-12T20:52:36.489Z","type":"message"}
+{"nick":"creationix","message":"even the interpreter is assembly.  I'm not sure it has a fallback in C","date":"2015-06-12T20:52:49.027Z","type":"message"}
+{"nick":"creationix","message":"at a minimum you'd need to disable jit","date":"2015-06-12T20:53:08.108Z","type":"message"}
+{"nick":"fdagostino","message":"creationix, yes we are following that instructions","date":"2015-06-12T21:00:27.207Z","type":"message"}
+{"nick":"fdagostino","message":"thanks, I'll ask in their list","date":"2015-06-12T21:00:37.247Z","type":"message"}
+{"nick":"creationix","message":"if it is unsupported, you can always use stock lua with luv","date":"2015-06-12T21:00:51.495Z","type":"message"}
+{"nick":"fdagostino","message":"sorry, what is stock lua?","date":"2015-06-12T21:01:12.535Z","type":"message"}
+{"nick":"creationix","message":"the normal lua project from brazil","date":"2015-06-12T21:02:29.809Z","type":"message"}
+{"nick":"creationix","message":"http://www.lua.org/","date":"2015-06-12T21:02:40.901Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-12T21:02:50.769Z","type":"join"}
+{"nick":"creationix","message":"it's even easier to build,  but you don't get the nice parts of luajit","date":"2015-06-12T21:03:17.386Z","type":"message"}
+{"nick":"creationix","message":"I'm pretty sure lua bytecode isn't portable http://lua-users.org/lists/lua-l/2014-10/msg00185.html","date":"2015-06-12T21:04:40.982Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 250 seconds","date":"2015-06-12T21:07:49.447Z","type":"quit"}
+{"nick":"fdagostino","message":"thanks creationix","date":"2015-06-12T21:11:06.019Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2015-06-12T21:18:04.100Z","type":"message"}
+{"nick":"creationix","message":"rphillips: I did see the TCP end once before the high-level end","date":"2015-06-12T21:23:29.764Z","type":"message"}
+{"nick":"creationix","message":"(it was an error case that time)","date":"2015-06-12T21:23:32.980Z","type":"message"}
+{"nick":"creationix","message":"this server has tls compression doesn't it?  The ciphertext sizes are much smaller than the plaintext chunks","date":"2015-06-12T21:27:06.977Z","type":"message"}
+{"nick":"rphillips","message":"it's out AEPs... not sure if it has compression","date":"2015-06-12T21:27:41.573Z","type":"message"}
+{"nick":"rphillips","message":"our*","date":"2015-06-12T21:27:44.581Z","type":"message"}
+{"nick":"rphillips","message":"simon just recently changed them to not use stud anymore","date":"2015-06-12T21:27:58.291Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/creationix/53f57a75b0bdc60e0e71","date":"2015-06-12T21:29:01.510Z","type":"message"}
+{"nick":"creationix","message":"it looks like we're missing a plainText event at the end sometimes","date":"2015-06-12T21:29:29.861Z","type":"message"}
+{"nick":"rphillips","message":"i am thinking the cleartext buffer may need a flush","date":"2015-06-12T21:30:02.781Z","type":"message"}
+{"nick":"creationix","message":"what do we need other than reading from it in a loop?","date":"2015-06-12T21:31:41.831Z","type":"message"}
+{"nick":"creationix","message":"comparing the end for success and fail cases: https://gist.github.com/creationix/53f57a75b0bdc60e0e71","date":"2015-06-12T21:33:53.511Z","type":"message"}
+{"nick":"creationix","message":"I just learned the second arg is 0 when the tls stream is done","date":"2015-06-12T21:34:11.793Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2015-06-12T21:36:04.453Z","type":"message"}
+{"nick":"creationix","message":"flushing self.inp doesn't seem to do anything","date":"2015-06-12T21:39:11.638Z","type":"message"}
+{"nick":"rphillips","message":"we get a cipher text payload, then right after that the nil for a close","date":"2015-06-12T21:39:51.510Z","type":"message"}
+{"nick":"rphillips","message":"https://www.evernote.com/l/AAlNpBxKX7VBjoc7cNWecjMo0vSmLB-d7ow","date":"2015-06-12T21:40:29.086Z","type":"message"}
+{"nick":"creationix","message":"I wonder if my http-codec is at fault this time","date":"2015-06-12T21:42:45.635Z","type":"message"}
+{"nick":"creationix","message":"the tls patterns look identical in both cases, except the size if off sometimes","date":"2015-06-12T21:43:06.664Z","type":"message"}
+{"nick":"rphillips","message":"maybe an off by one in the http-codec?","date":"2015-06-12T21:44:07.355Z","type":"message"}
+{"nick":"rphillips","message":"decodeChunked might be culprit","date":"2015-06-12T21:44:17.780Z","type":"message"}
+{"nick":"rphillips","message":"or decodeCounted","date":"2015-06-12T21:44:25.806Z","type":"message"}
+{"nick":"creationix","message":"one thing I've noticed is the high-level end happens right after the last plainText chunk and sometimes after the last plaintext end.  I wonder if there is a nextTick in there somewhere","date":"2015-06-12T21:47:09.184Z","type":"message"}
+{"nick":"creationix","message":"also I can't reproduce the error anymore","date":"2015-06-12T21:47:35.972Z","type":"message"}
+{"nick":"rphillips","message":":/","date":"2015-06-12T21:48:05.346Z","type":"message"}
+{"nick":"rphillips","message":"i always get 20480 bytes","date":"2015-06-12T21:48:11.674Z","type":"message"}
+{"nick":"creationix","message":"oh nevermind, I can, my reporting was just broken","date":"2015-06-12T21:48:12.057Z","type":"message"}
+{"nick":"creationix","message":"ok, so I improved my logging.  The data is always all there, but often the end event happens when there is still a chunk or two left","date":"2015-06-12T21:51:08.947Z","type":"message"}
+{"nick":"creationix","message":"so end is just happening early","date":"2015-06-12T21:51:52.662Z","type":"message"}
+{"nick":"creationix","message":"and I can confirm the counter is hitting exactly zero too soon","date":"2015-06-12T21:53:11.065Z","type":"message"}
+{"nick":"creationix","message":"which explains the end event","date":"2015-06-12T21:53:19.881Z","type":"message"}
+{"nick":"creationix","message":"it can't be off-by-one because when there are exactly 4096 or 5256  bytes left, there is a chunk of exactly that size","date":"2015-06-12T21:56:23.912Z","type":"message"}
+{"nick":"rphillips","message":"yeah","date":"2015-06-12T21:56:32.764Z","type":"message"}
+{"nick":"creationix","message":"but then there are another one or two after that to make it match the size in the header","date":"2015-06-12T21:56:38.338Z","type":"message"}
+{"nick":"kazupon","date":"2015-06-12T22:03:49.868Z","type":"join"}
+{"nick":"rphillips","message":"hmm. this is a doozy","date":"2015-06-12T22:05:04.969Z","type":"message"}
+{"nick":"rphillips","message":"i think i'm going to debug with a large text file next","date":"2015-06-12T22:05:29.242Z","type":"message"}
+{"nick":"kazupon","reason":"Ping timeout: 240 seconds","date":"2015-06-12T22:08:57.823Z","type":"quit"}
+{"nick":"creationix","message":"rphillips: ok, I'm pretty sure it's a race condition around data events being deferred with nextTick or something","date":"2015-06-12T22:09:54.176Z","type":"message"}
+{"nick":"creationix","message":"everything checks out at the tcp, tls, codec and codec consumer","date":"2015-06-12T22:10:12.332Z","type":"message"}
+{"nick":"creationix","message":"but the actual events dont't fire till later","date":"2015-06-12T22:10:19.424Z","type":"message"}
+{"nick":"rphillips","message":"maybe in the stream code","date":"2015-06-12T22:11:05.799Z","type":"message"}
+{"nick":"rphillips","message":"stream_readable uses nextTick","date":"2015-06-12T22:11:11.350Z","type":"message"}
+{"nick":"creationix","message":"compare the call to https://github.com/luvit/luvit/blob/master/deps/http.lua#L370 with when the data event happens","date":"2015-06-12T22:11:16.234Z","type":"message"}
+{"nick":"creationix","message":"yep, that's it for sure.  The http layer enqueues the last two data events, then the end event happens and then the two data events","date":"2015-06-12T22:12:26.457Z","type":"message"}
+{"nick":"creationix","message":"res:_end() is sync, but res:push(data) is deferred","date":"2015-06-12T22:13:49.479Z","type":"message"}
+{"nick":"creationix","message":"maybe _end is the wrong call?","date":"2015-06-12T22:14:16.446Z","type":"message"}
+{"nick":"rphillips","message":":push() might be it","date":"2015-06-12T22:15:04.451Z","type":"message"}
+{"nick":"rphillips","message":"where is the _end?","date":"2015-06-12T22:15:19.459Z","type":"message"}
+{"nick":"creationix","message":"rphillips: https://github.com/luvit/luvit/blob/master/deps/http.lua#L305","date":"2015-06-12T22:18:19.655Z","type":"message"}
+{"nick":"creationix","message":"I don't think an empty push is it, but it's worth trying","date":"2015-06-12T22:18:32.078Z","type":"message"}
+{"nick":"creationix","message":"actually, that does fix it","date":"2015-06-12T22:19:05.376Z","type":"message"}
+{"nick":"rphillips","message":"fully?","date":"2015-06-12T22:20:34.919Z","type":"message"}
+{"nick":"rphillips","message":"i think i'm still missing data","date":"2015-06-12T22:20:39.575Z","type":"message"}
+{"nick":"creationix","message":"this? https://gist.github.com/creationix/3fdc0dfba211debe6609","date":"2015-06-12T22:21:49.293Z","type":"message"}
+{"nick":"creationix","message":"I can run it 20 times on linux and it's good every time","date":"2015-06-12T22:22:29.791Z","type":"message"}
+{"nick":"creationix","message":"I got to go, good luck","date":"2015-06-12T22:23:49.477Z","type":"message"}
+{"nick":"necrophcodr","message":"i think i've fallen for luvit/luvit/deps/core.lua","date":"2015-06-12T22:24:38.774Z","type":"message"}
+{"nick":"necrophcodr","message":"that shit is simple and so amazing","date":"2015-06-12T22:24:43.803Z","type":"message"}
+{"nick":"necrophcodr","message":"i also like object functions that return self if they dont return anything else. that is some neat shit.","date":"2015-06-12T22:25:56.374Z","type":"message"}
+{"nick":"rphillips","message":"I'll try that out","date":"2015-06-12T22:59:05.154Z","type":"message"}
+{"nick":"rphillips","message":"Thanks","date":"2015-06-12T22:59:07.327Z","type":"message"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-06-12T23:00:23.999Z","type":"quit"}
+{"nick":"kazupon","date":"2015-06-12T23:05:19.286Z","type":"join"}
+{"nick":"kazupon","reason":"Ping timeout: 255 seconds","date":"2015-06-12T23:10:37.283Z","type":"quit"}
+{"nick":"fdagostino","message":"someone has this issue building luajit:","date":"2015-06-12T23:32:48.696Z","type":"message"}
+{"nick":"fdagostino","message":"    CC        lj_ir.o","date":"2015-06-12T23:33:00.459Z","type":"message"}
+{"nick":"fdagostino","message":"    lj_ir.c:53: error: 'exp2' undeclared here (not in a function)","date":"2015-06-12T23:33:00.796Z","type":"message"}
+{"nick":"fdagostino","message":"    lj_ir.c:53: error: 'log2' undeclared here (not in a function)","date":"2015-06-12T23:33:00.846Z","type":"message"}
