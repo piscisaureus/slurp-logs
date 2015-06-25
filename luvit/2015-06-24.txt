@@ -103,3 +103,214 @@
 {"nick":"creationix","message":"of that if you just want to read all the output","date":"2015-06-24T15:58:58.100Z","type":"message"}
 {"nick":"cptG","message":"ah yes, that's enough for now but the wrap-approach I'll keep in the back of my head for later","date":"2015-06-24T15:59:38.351Z","type":"message"}
 {"nick":"cptG","message":"thanks a lot!","date":"2015-06-24T15:59:40.351Z","type":"message"}
+{"nick":"creationix","message":"I could write a quick coro-spawn library that returns stdout, stderr, and stdin as read/write functions","date":"2015-06-24T16:00:06.539Z","type":"message"}
+{"nick":"cptG","message":"creationix: I've opened an issue in weblit about it - should I close it or do you want to reply for documentation's sake?","date":"2015-06-24T16:00:27.620Z","type":"message"}
+{"nick":"creationix","message":"but the exec helper is much simpler if you just want to buffer output","date":"2015-06-24T16:00:29.583Z","type":"message"}
+{"nick":"cptG","message":"creationix: such a library sounds useful","date":"2015-06-24T16:00:46.985Z","type":"message"}
+{"nick":"creationix","message":"yep, I'm just making coro-* libraries as I need them.  Basically mirroring most the libraries in the luvit metapackage","date":"2015-06-24T16:01:14.034Z","type":"message"}
+{"nick":"creationix","message":"cptG: what's your use case?  Do you want to stream the stdio of the child or just buffer and get the whole result?","date":"2015-06-24T16:01:52.584Z","type":"message"}
+{"nick":"cptG","message":"I think it'd be nice to document this \"limitation\" for users like me that naively assume callbacks are fine in any place. Or maybe somehow catch the error in luvit/luv and report it more verbosely?","date":"2015-06-24T16:02:14.666Z","type":"message"}
+{"nick":"cptG","message":"creationix: straming would be nice, it's a long-running build process","date":"2015-06-24T16:02:24.145Z","type":"message"}
+{"nick":"cptG","message":"creationix: which, now that I'm writing it, sounds like the wrap-approach would be best for me I guess","date":"2015-06-24T16:02:45.396Z","type":"message"}
+{"nick":"creationix","message":"so the only tricky part is what to do with the exit event","date":"2015-06-24T16:03:06.490Z","type":"message"}
+{"nick":"creationix","message":"it's a one-time thing, so normally I'd do a blocking coroutine API, but if you're also streaming stdio, you don't want to block on exit","date":"2015-06-24T16:04:01.563Z","type":"message"}
+{"nick":"creationix","message":"I guess we just need an easy way to split coroutines into two parallel tasks","date":"2015-06-24T16:04:17.986Z","type":"message"}
+{"nick":"cptG","message":"creationix: hum. I could wrap the invokation of \"make\" and print a magic string to stderr on exit if it's not solvable in the server code, it's a hack but it would probably work in 99.99% of my cases ;)","date":"2015-06-24T16:04:50.424Z","type":"message"}
+{"nick":"gavellaneda","message":"thanks rphillips, the nextTick seems to work (I'm testing with luvit 0.10.0... we are in the process of migrating to latest luvit.. but... the process seems slow)","date":"2015-06-24T16:04:52.636Z","type":"message"}
+{"nick":"creationix","message":"callbacks are concurrent by default, but coro style is all serial","date":"2015-06-24T16:04:54.948Z","type":"message"}
+{"nick":"rphillips","message":"serial-looking*","date":"2015-06-24T16:05:41.866Z","type":"message"}
+{"nick":"creationix","message":"well yeah, it's all non-blocking at the process level, but it's blocking at the program logic level","date":"2015-06-24T16:06:01.559Z","type":"message"}
+{"nick":"creationix","message":"callback code has helper libraries (like async) that help do things in serial, maybe we should make a library for coroutines to help doing things in parallel","date":"2015-06-24T16:06:36.268Z","type":"message"}
+{"nick":"creationix","message":"much like spawning a few goroutines","date":"2015-06-24T16:06:58.032Z","type":"message"}
+{"nick":"rphillips","message":"+1. I was thinking the same thing","date":"2015-06-24T16:07:00.171Z","type":"message"}
+{"nick":"cptG","message":"which is nice, I much prefer it to callbacks. Looks cleaner.","date":"2015-06-24T16:07:07.048Z","type":"message"}
+{"nick":"creationix","message":"same here.  The language I'm designing has this I/O model baked in","date":"2015-06-24T16:07:30.567Z","type":"message"}
+{"nick":"creationix","message":"with keywords for splitting into two parallel tasks (each with blocking calls)","date":"2015-06-24T16:07:45.719Z","type":"message"}
+{"nick":"creationix","message":"but we can get pretty close with a little library in lua","date":"2015-06-24T16:07:58.863Z","type":"message"}
+{"nick":"creationix","message":"cptG: ok, I'll make coro-spawn with read/write style stdio and a blocking function to wait for exit","date":"2015-06-24T16:09:59.739Z","type":"message"}
+{"nick":"cptG","message":"sounds interesting","date":"2015-06-24T16:10:06.938Z","type":"message"}
+{"nick":"cptG","message":"creationix: nice, looking forward to it :)","date":"2015-06-24T16:10:28.033Z","type":"message"}
+{"nick":"creationix","message":"hmm, actually, in all cases you'd use the blocking exit in a parallel green-thread","date":"2015-06-24T16:10:40.556Z","type":"message"}
+{"nick":"creationix","message":"either way, the read/write style stdio will be nice","date":"2015-06-24T16:11:02.412Z","type":"message"}
+{"nick":"gavellaneda","message":"+1 guys you are always talking about very interesting stuff, would like to work on that ideas","date":"2015-06-24T16:12:08.918Z","type":"message"}
+{"nick":"creationix","message":"I should write a blog post about the coro style some day on luvit.io","date":"2015-06-24T16:14:01.998Z","type":"message"}
+{"nick":"gavellaneda","message":"creationix, would be great","date":"2015-06-24T16:15:09.459Z","type":"message"}
+{"nick":"torpor","reason":"Quit: Leaving.","date":"2015-06-24T16:29:49.026Z","type":"quit"}
+{"nick":"gavellaneda","message":"rphillips, the nextTick reduced the number of buffers that were not flushed but if you have various process running in parallel, the problem still occurs.","date":"2015-06-24T16:30:43.874Z","type":"message"}
+{"nick":"rphillips","message":"yeah... i'll try and get a fix in","date":"2015-06-24T16:37:23.602Z","type":"message"}
+{"nick":"gavellaneda","message":"ok, thanks","date":"2015-06-24T16:43:23.844Z","type":"message"}
+{"nick":"creationix","message":"hmm, so child processes have 5 different event sources (stdout data/end, stderr data/end, process-exit)","date":"2015-06-24T16:51:01.588Z","type":"message"}
+{"nick":"creationix","message":"I wonder if a uniform event stream would make sense","date":"2015-06-24T16:51:14.867Z","type":"message"}
+{"nick":"creationix","message":"nah, I'll just add the parallel helper and it will be pretty easy to use","date":"2015-06-24T17:00:46.696Z","type":"message"}
+{"nick":"cptG","message":"hrm... luvit segfaults in test-process.lua","date":"2015-06-24T17:01:27.832Z","type":"message"}
+{"nick":"cptG","message":"It also segfaults if I try to uv.spawn a command with my own std{io,out} pipes... can someone confirm?","date":"2015-06-24T17:02:03.836Z","type":"message"}
+{"nick":"cptG","message":":q!","date":"2015-06-24T17:02:42.066Z","type":"message"}
+{"nick":"rje","message":"rphillips, is all this fetid and rotting? https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/blob/luvi-up/tests/helper.lua","date":"2015-06-24T17:07:33.102Z","type":"message"}
+{"nick":"rphillips","message":"Yep. Helper is old. Could be removed","date":"2015-06-24T17:09:56.982Z","type":"message"}
+{"nick":"creationix","message":"cptG: ok, done with coro-spawn and coro-split","date":"2015-06-24T17:16:25.731Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/lit/commit/b93fcfb483c4d50ca03812a19246c94961aab127","date":"2015-06-24T17:16:27.773Z","type":"message"}
+{"nick":"creationix","message":"you can see usage in the newly modified exec.lua helper https://github.com/luvit/lit/blob/master/libs/exec.lua","date":"2015-06-24T17:16:54.026Z","type":"message"}
+{"nick":"creationix","message":"actually I'm going to change it a bit.  The logic for specifying which pipes to create is wrong","date":"2015-06-24T17:19:04.764Z","type":"message"}
+{"nick":"creationix","message":"ok, now it's good https://github.com/luvit/lit/blob/master/libs/exec.lua","date":"2015-06-24T17:21:13.511Z","type":"message"}
+{"nick":"creationix","message":"rphillips: how do you like the new exec.lua helper (showing off the new coro-spawn and coro-split libraries)","date":"2015-06-24T17:26:14.165Z","type":"message"}
+{"nick":"creationix","message":"hmm, I left debug prints in there","date":"2015-06-24T17:26:38.694Z","type":"message"}
+{"nick":"creationix","message":"waiting on all three is much easier this way than using events","date":"2015-06-24T17:28:27.929Z","type":"message"}
+{"nick":"creationix","message":"the exit event often comes before the end event for both the output streams.  Just a strange part of unix","date":"2015-06-24T17:28:41.923Z","type":"message"}
+{"nick":"creationix","message":"in node and luvit, you had to make sure to wait till both the exit had fired and both end events fired","date":"2015-06-24T17:29:01.498Z","type":"message"}
+{"nick":"creationix","message":"which split it's implicit that you want to wait for everything and order doesn't matter","date":"2015-06-24T17:29:13.593Z","type":"message"}
+{"nick":"creationix","message":"*with split","date":"2015-06-24T17:30:45.538Z","type":"message"}
+{"nick":"hdms","reason":"Quit: hdms","date":"2015-06-24T17:44:27.888Z","type":"quit"}
+{"nick":"rphillips","message":"creationix: wow. that is nice!","date":"2015-06-24T17:46:35.609Z","type":"message"}
+{"nick":"gavellaneda","date":"2015-06-24T18:24:17.032Z","type":"quit"}
+{"nick":"rphillips","message":"gavellaneda left :/","date":"2015-06-24T18:28:58.222Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/pull/753","date":"2015-06-24T18:28:59.734Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T18:30:26.495Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2246 (fixes/flush_stdout_on_exit - 6ffd025 : Ryan Phillips): The build passed.","date":"2015-06-24T18:30:27.504Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/6ffd025a7eee","date":"2015-06-24T18:30:27.691Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68202861","date":"2015-06-24T18:30:27.691Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T18:30:27.692Z","type":"part"}
+{"nick":"dan336","message":"just an FYI i opened 3 pull requests for the lit project to fix some of the deps.","date":"2015-06-24T19:08:02.725Z","type":"message"}
+{"nick":"rphillips","message":"nice. thanks!","date":"2015-06-24T19:21:14.233Z","type":"message"}
+{"nick":"cptG","message":"creationix: I just tried it and it works like a charm, thanks a lot!","date":"2015-06-24T19:37:12.352Z","type":"message"}
+{"nick":"creationix","message":"awesome","date":"2015-06-24T19:43:26.217Z","type":"message"}
+{"nick":"cptG","message":"creationix: fyi: I'm still seeing the illegal frame header problem on my armv7 machine :(","date":"2015-06-24T19:48:26.591Z","type":"message"}
+{"nick":"cptG","message":"but just to be sure: the update procedure is \"lit sync\" and \"lit update\" right?","date":"2015-06-24T19:48:47.904Z","type":"message"}
+{"nick":"cptG","message":"nah. pebcak","date":"2015-06-24T19:49:29.721Z","type":"message"}
+{"nick":"cptG","message":"did not update correctly :)","date":"2015-06-24T19:49:35.578Z","type":"message"}
+{"nick":"cptG","reason":"Quit: Konversation terminated!","date":"2015-06-24T20:16:23.273Z","type":"quit"}
+{"nick":"hdms","date":"2015-06-24T20:18:26.329Z","type":"join"}
+{"nick":"hdms","reason":"Quit: hdms","date":"2015-06-24T20:33:47.314Z","type":"quit"}
+{"nick":"travis-ci","date":"2015-06-24T20:54:36.732Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#558 (release - 6aad454 : Ryan Phillips): The build has errored.","date":"2015-06-24T20:54:37.786Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/affe225fdb68...6aad4548657f","date":"2015-06-24T20:54:37.921Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/68222036","date":"2015-06-24T20:54:37.921Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T20:54:37.921Z","type":"part"}
+{"nick":"rphillips","message":"updated the release branch on luvi","date":"2015-06-24T21:04:25.583Z","type":"message"}
+{"nick":"rphillips","message":"it builds now.. i don't think travis picked it up","date":"2015-06-24T21:04:45.671Z","type":"message"}
+{"nick":"creationix","message":"oops, sorry for forgetting to move release","date":"2015-06-24T21:05:28.303Z","type":"message"}
+{"nick":"creationix","message":"cptG is now gone, but I think there is confusion about what `lit sync` and `lit update` do","date":"2015-06-24T21:05:51.776Z","type":"message"}
+{"nick":"creationix","message":"there is no command to update deps in the local folder","date":"2015-06-24T21:06:04.348Z","type":"message"}
+{"nick":"creationix","message":"rm -rf deps && lit install works great though","date":"2015-06-24T21:06:15.152Z","type":"message"}
+{"nick":"creationix","message":"should be make a command to update local deps?","date":"2015-06-24T21:06:30.276Z","type":"message"}
+{"nick":"creationix","message":"now that we differentiate between deps and libs, deps can be used exclusively for external packages","date":"2015-06-24T21:07:20.742Z","type":"message"}
+{"nick":"rphillips","message":"creationix: https://xkcd.com/1537/","date":"2015-06-24T21:07:22.597Z","type":"message"}
+{"nick":"creationix","message":"yeah, saw that.  Even better than JS :)","date":"2015-06-24T21:07:44.474Z","type":"message"}
+{"nick":"rphillips","message":":)","date":"2015-06-24T21:11:15.175Z","type":"message"}
+{"nick":"rphillips","message":"lit install doesn't update local deps?","date":"2015-06-24T21:13:15.467Z","type":"message"}
+{"nick":"creationix","message":"nope","date":"2015-06-24T21:19:22.327Z","type":"message"}
+{"nick":"creationix","message":"lit install only installs missing deps.  It leaves whatever you have locally alone","date":"2015-06-24T21:19:36.689Z","type":"message"}
+{"nick":"creationix","message":"but if you do `lit install foo/bar` it will install over whatever might be there","date":"2015-06-24T21:19:56.912Z","type":"message"}
+{"nick":"rje","message":"creationix, is there a way to get a better error here as to why the compile failed? https://ci.appveyor.com/project/racker-buildbot/rackspace-monitoring-agent/build/1.0.393#L849","date":"2015-06-24T21:28:42.705Z","type":"message"}
+{"nick":"creationix","message":"rje: did lit crash?","date":"2015-06-24T21:30:20.740Z","type":"message"}
+{"nick":"creationix","message":"I don't think I exit -1 anywhere without first showing the reason, it must be a segfault or something","date":"2015-06-24T21:30:54.559Z","type":"message"}
+{"nick":"rje","message":"creationix, pm","date":"2015-06-24T21:32:43.501Z","type":"message"}
+{"nick":"creationix","message":"rje: that's strange.  I can't find that line in core.lua.  I wonder what version of lit that is","date":"2015-06-24T21:38:14.480Z","type":"message"}
+{"nick":"creationix","message":"the line I thought it was is at https://github.com/luvit/lit/blob/master/libs/export-zip.lua#L45","date":"2015-06-24T21:38:22.741Z","type":"message"}
+{"nick":"rje","message":"lit 2.0.4","date":"2015-06-24T21:38:51.571Z","type":"message"}
+{"nick":"creationix","message":"2.0.4 should have export-zip, it's new enough","date":"2015-06-24T21:40:43.427Z","type":"message"}
+{"nick":"creationix","message":"there is no dump anywhere in core.lua in 2.0.4","date":"2015-06-24T21:40:55.227Z","type":"message"}
+{"nick":"creationix","message":"core.lua line 421 is unrelated https://github.com/luvit/lit/blob/467ff55615d61f7dbde82a5ef28b0630f8dc1b57/libs/core.lua#L431","date":"2015-06-24T21:41:52.892Z","type":"message"}
+{"nick":"creationix","message":"It looks like you have a much older version of core.lua somehow https://github.com/luvit/lit/blob/a3312562e0557e18faff122db490880a2eb93ebf/libs/core.lua#L433","date":"2015-06-24T21:45:36.722Z","type":"message"}
+{"nick":"creationix","message":"this line would show the behavior you're seeing.  It's already fixed in the latest version","date":"2015-06-24T21:45:54.091Z","type":"message"}
+{"nick":"creationix","message":"rje: if you can, try updating to a later version of lit","date":"2015-06-24T21:46:39.048Z","type":"message"}
+{"nick":"creationix","message":"current is 2.0.10-1","date":"2015-06-24T21:46:55.226Z","type":"message"}
+{"nick":"rphillips","message":"the tag for the Make.bat would be 2.0.10 though","date":"2015-06-24T21:47:46.882Z","type":"message"}
+{"nick":"rje","message":"bumping it gives the error","date":"2015-06-24T21:49:12.155Z","type":"message"}
+{"nick":"rje","message":"thank you","date":"2015-06-24T21:52:30.320Z","type":"message"}
+{"nick":"rje","message":"missing comma","date":"2015-06-24T21:52:35.659Z","type":"message"}
+{"nick":"creationix","message":"oh, by \"gives the error\" you mean it gave a proper error message","date":"2015-06-24T21:54:26.602Z","type":"message"}
+{"nick":"rje","message":"yes, have error message, can fix","date":"2015-06-24T21:56:09.286Z","type":"message"}
+{"nick":"rphillips","message":"happens on my box as well","date":"2015-06-24T21:56:54.895Z","type":"message"}
+{"nick":"rphillips","message":"ah, error in the test file, nm","date":"2015-06-24T21:57:23.943Z","type":"message"}
+{"nick":"rphillips","message":"i think cmake is eating that error message","date":"2015-06-24T21:57:50.231Z","type":"message"}
+{"nick":"creationix","message":"btw, should lit allow .lua files containing syntax errors?  Currently it hard-errors, but I could change it to include the file uncompiled with a warning message.","date":"2015-06-24T22:00:40.523Z","type":"message"}
+{"nick":"creationix","message":"But I fear that message won't be seen and the error will be found much later","date":"2015-06-24T22:00:52.666Z","type":"message"}
+{"nick":"rphillips","message":"yeah, I think the current behavior is good","date":"2015-06-24T22:02:29.588Z","type":"message"}
+{"nick":"rphillips","message":"fail early","date":"2015-06-24T22:02:34.319Z","type":"message"}
+{"nick":"creationix","message":"if you do want to include a file with invalid lua, you'll just have to change the extension.  That shouldn't be a problem I hope","date":"2015-06-24T22:03:11.749Z","type":"message"}
+{"nick":"rphillips","message":"creationix: so, you think the emit('exit'... should be right before the os.exit?","date":"2015-06-24T22:04:28.838Z","type":"message"}
+{"nick":"creationix","message":"right.  I don't want things to work sometimes","date":"2015-06-24T22:04:45.136Z","type":"message"}
+{"nick":"rphillips","message":"got it... I'll buy that","date":"2015-06-24T22:04:53.577Z","type":"message"}
+{"nick":"creationix","message":"and if the exit handler wanted to do async work, all it has to do is call uv.run()","date":"2015-06-24T22:05:22.400Z","type":"message"}
+{"nick":"creationix","message":"probably should close all existing handles at that point though","date":"2015-06-24T22:05:51.192Z","type":"message"}
+{"nick":"creationix","message":"or maybe we could do that in the exit handler","date":"2015-06-24T22:05:58.192Z","type":"message"}
+{"nick":"creationix","message":"uv.walk(function (handle) if not handle:is_closing() then handle:close() end) uv.run()","date":"2015-06-24T22:06:38.730Z","type":"message"}
+{"nick":"creationix","message":"then call the exit handler and they'll have an empty loop","date":"2015-06-24T22:06:53.744Z","type":"message"}
+{"nick":"creationix","message":"may be too much though","date":"2015-06-24T22:06:58.114Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T22:09:30.301Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2248 (fixes/flush_stdout_on_exit - 80cc0aa : Ryan Phillips): The build passed.","date":"2015-06-24T22:09:31.254Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/6ffd025a7eee...80cc0aaaea18","date":"2015-06-24T22:09:31.442Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68234988","date":"2015-06-24T22:09:31.442Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T22:09:31.442Z","type":"part"}
+{"nick":"dan336","message":"so here is something I just tracked down. I'm using coro-http.request to make a lot of requests to a web server and it will suddenly stop without throwing an error or anything. I traced it down to a missing assert around the connect in coro-tcp, it was erroring out with EMFILE.","date":"2015-06-24T22:12:16.436Z","type":"message"}
+{"nick":"dan336","message":"however that still doesn't solve the issue of why coro-http isn't correctly reusing connections. and not closing down ones that can't be reused.","date":"2015-06-24T22:12:51.883Z","type":"message"}
+{"nick":"creationix","message":"dan336: are the connections to the same host?","date":"2015-06-24T22:16:27.468Z","type":"message"}
+{"nick":"creationix","message":"I thought I implemented in connection pooling","date":"2015-06-24T22:16:41.781Z","type":"message"}
+{"nick":"dan336","message":"they are. and only 1 is in use at a time.","date":"2015-06-24T22:16:43.714Z","type":"message"}
+{"nick":"creationix","message":"so it should be pooling them","date":"2015-06-24T22:16:52.469Z","type":"message"}
+{"nick":"dan336","message":"you did, but its not working because of what socket:is_active() is returning.","date":"2015-06-24T22:17:04.741Z","type":"message"}
+{"nick":"dan336","message":"and I'm not sure why it is returning false.","date":"2015-06-24T22:17:19.711Z","type":"message"}
+{"nick":"rphillips","message":"linux?","date":"2015-06-24T22:18:32.055Z","type":"message"}
+{"nick":"rphillips","message":"lsof on the process would be helpful","date":"2015-06-24T22:18:38.279Z","type":"message"}
+{"nick":"dan336","message":"osx","date":"2015-06-24T22:18:38.467Z","type":"message"}
+{"nick":"creationix","message":"uv_is_active is always a strange one","date":"2015-06-24T22:18:43.784Z","type":"message"}
+{"nick":"dan336","message":"yeah I was reading the docs on it http://docs.libuv.org/en/latest/handle.html#c.uv_is_active","date":"2015-06-24T22:18:51.948Z","type":"message"}
+{"nick":"creationix","message":"\" is active when it is doing something that involves i/o, like reading, writing, connecting, accepting new connections, etc.\"","date":"2015-06-24T22:19:23.325Z","type":"message"}
+{"nick":"dan336","message":"I was curious if the socket was being paused by the coro-wrapper, so I put some prints in there, but i only say it being unpaused once.","date":"2015-06-24T22:19:36.825Z","type":"message"}
+{"nick":"rphillips","message":"rje: hey, it passed!","date":"2015-06-24T22:19:37.984Z","type":"message"}
+{"nick":"dan336","message":"*saw","date":"2015-06-24T22:19:52.247Z","type":"message"}
+{"nick":"rje","message":"rphillips, that's just with the fixtures","date":"2015-06-24T22:19:55.162Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T22:20:10.732Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2250 (master - e9f7522 : Ryan Phillips): The build passed.","date":"2015-06-24T22:20:11.732Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/a8c8139f30b7...e9f7522d1f3c","date":"2015-06-24T22:20:11.920Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68236265","date":"2015-06-24T22:20:11.921Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T22:20:11.921Z","type":"part"}
+{"nick":"dan336","message":"sorry I was looking at the coro-channel module, not coro-wrapper","date":"2015-06-24T22:20:31.078Z","type":"message"}
+{"nick":"creationix","message":"dan336: does it work if you remove the is_active constraint?","date":"2015-06-24T22:20:35.146Z","type":"message"}
+{"nick":"dan336","message":"thats the thing, it segfaults when I remove it. so it should be there.","date":"2015-06-24T22:21:09.354Z","type":"message"}
+{"nick":"creationix","message":"segfaults is not a good sign, that shouldn't be possible from lua","date":"2015-06-24T22:21:29.850Z","type":"message"}
+{"nick":"creationix","message":"if an idle socket doesn't count as active, then we should remove that constraint.  I don't remember why I added it","date":"2015-06-24T22:22:47.788Z","type":"message"}
+{"nick":"creationix","message":"dan336: do you have a minimal test case using some public HTTP API?","date":"2015-06-24T22:23:09.965Z","type":"message"}
+{"nick":"dan336","message":"not yet, I was testing out something I was developing. I can create one.","date":"2015-06-24T22:23:41.006Z","type":"message"}
+{"nick":"creationix","message":"hmm, it looks like a paused socket will show as inactive","date":"2015-06-24T22:24:29.838Z","type":"message"}
+{"nick":"creationix","message":"(according to the \"Rule of thumb\")","date":"2015-06-24T22:24:44.662Z","type":"message"}
+{"nick":"creationix","message":"dan336: btw, you missed a hex-bin in the git submodule","date":"2015-06-24T22:27:35.185Z","type":"message"}
+{"nick":"creationix","message":"and I don't have it as a dependency either, my bad.","date":"2015-06-24T22:28:16.301Z","type":"message"}
+{"nick":"creationix","message":"ok, fixed it","date":"2015-06-24T22:30:20.744Z","type":"message"}
+{"nick":"dan336","message":"oh sorry, I just searched in lit and updated what I could find.","date":"2015-06-24T22:32:40.074Z","type":"message"}
+{"nick":"creationix","message":"no worries","date":"2015-06-24T22:36:57.583Z","type":"message"}
+{"nick":"creationix","message":"I can't reproduce the segfault, if I remove is_active, it reuses the connection just fine","date":"2015-06-24T22:37:09.933Z","type":"message"}
+{"nick":"rphillips","message":"dan336: double check that your ulimit for files is set to a reasonable amount","date":"2015-06-24T22:38:33.525Z","type":"message"}
+{"nick":"creationix","message":"I might be leaking connections","date":"2015-06-24T22:39:20.743Z","type":"message"}
+{"nick":"creationix","message":"looking through the code, I don't have any sort of timeout to close sockets","date":"2015-06-24T22:39:36.425Z","type":"message"}
+{"nick":"dan336","message":"its set to 256, however there should only be 1 connection at a time because of how the app is structured.","date":"2015-06-24T22:39:41.968Z","type":"message"}
+{"nick":"creationix","message":"they only close when the coro-channel abstraction tells them to","date":"2015-06-24T22:39:50.744Z","type":"message"}
+{"nick":"dan336","message":"actually 2 at a time.","date":"2015-06-24T22:39:58.661Z","type":"message"}
+{"nick":"creationix","message":"dan336: I've got to go soon, but I'm interested in this segfault.  I'm pretty sure the is_active needs to go away","date":"2015-06-24T22:40:29.587Z","type":"message"}
+{"nick":"creationix","message":"I vaguely remember thinking is_active was true for as long as the tcp connection was value, but now I see that's not true","date":"2015-06-24T22:40:50.742Z","type":"message"}
+{"nick":"dan336","message":"creationix: I think so too, I'll try to get a small test up. right now its just not working :)","date":"2015-06-24T22:41:06.665Z","type":"message"}
+{"nick":"creationix","message":"it will be false for any paused socket and possible even for unpaused, but idle connections","date":"2015-06-24T22:41:18.186Z","type":"message"}
+{"nick":"creationix","message":"dan336: ok, I published updated coro-http and websocket-codec packages to lit.  Try with the latest versions.","date":"2015-06-24T22:42:51.556Z","type":"message"}
+{"nick":"creationix","message":"see you all later","date":"2015-06-24T22:43:03.166Z","type":"message"}
+{"nick":"rphillips","message":"take care","date":"2015-06-24T22:52:49.209Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/pull/754","date":"2015-06-24T22:52:51.737Z","type":"message"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-06-24T22:55:19.670Z","type":"quit"}
+{"nick":"travis-ci","date":"2015-06-24T22:55:35.436Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2251 (fixes/stdout_stderr_exit - eeee695 : Ryan Phillips): The build passed.","date":"2015-06-24T22:55:36.350Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/eeee695e5c27","date":"2015-06-24T22:55:36.538Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68240841","date":"2015-06-24T22:55:36.538Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T22:55:36.538Z","type":"part"}
+{"nick":"dan336","date":"2015-06-24T22:57:15.422Z","type":"join"}
+{"nick":"dan336","reason":"Client Quit","date":"2015-06-24T23:00:11.340Z","type":"quit"}
+{"nick":"travis-ci","date":"2015-06-24T23:06:39.212Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2253 (fixes/stdout_stderr_exit - 3223caf : Ryan Phillips): The build passed.","date":"2015-06-24T23:06:40.218Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/eeee695e5c27...3223cafe443b","date":"2015-06-24T23:06:40.444Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68242416","date":"2015-06-24T23:06:40.444Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T23:06:40.444Z","type":"part"}
+{"nick":"travis-ci","date":"2015-06-24T23:21:48.074Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2255 (master - 86f3744 : Ryan Phillips): The build passed.","date":"2015-06-24T23:21:49.112Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/e9f7522d1f3c...86f37445e03e","date":"2015-06-24T23:21:49.112Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/68243746","date":"2015-06-24T23:21:49.112Z","type":"message"}
+{"nick":"travis-ci","date":"2015-06-24T23:21:49.112Z","type":"part"}
+{"nick":"dan336","date":"2015-06-24T23:30:25.415Z","type":"join"}
+{"nick":"dan336","reason":"Client Quit","date":"2015-06-24T23:31:06.036Z","type":"quit"}
