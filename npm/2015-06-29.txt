@@ -198,3 +198,206 @@
 {"nick":"domderen","message":"so I wanted to run it from my package.json script like this:","date":"2015-06-29T15:59:26.096Z","type":"message"}
 {"nick":"domderen","message":"\"myscript\": \"@company/package\"","date":"2015-06-29T15:59:43.148Z","type":"message"}
 {"nick":"domderen","message":"but this didn't work like with other scripts","date":"2015-06-29T15:59:52.995Z","type":"message"}
+{"nick":"domderen","message":"so I tried this:","date":"2015-06-29T16:00:01.569Z","type":"message"}
+{"nick":"domderen","message":"\"myscript\": \"./node_modules/.bin/@company/package\"","date":"2015-06-29T16:00:20.982Z","type":"message"}
+{"nick":"domderen","message":"but what is strange this doesn't work either","date":"2015-06-29T16:00:32.593Z","type":"message"}
+{"nick":"domderen","message":"I get an error \"sh: @company/package: No such file or directory\"","date":"2015-06-29T16:00:59.946Z","type":"message"}
+{"nick":"domderen","message":"like it is ignoring the \"./node_modules/.bin/\"","date":"2015-06-29T16:01:25.642Z","type":"message"}
+{"nick":"domderen","message":"even though things like babel-node that way \"./node_modules/.bin/babel-node\"","date":"2015-06-29T16:02:35.935Z","type":"message"}
+{"nick":"njbair","reason":"Ping timeout: 252 seconds","date":"2015-06-29T16:03:06.931Z","type":"quit"}
+{"nick":"rominronin","reason":"Quit: rominronin","date":"2015-06-29T16:04:58.942Z","type":"quit"}
+{"nick":"rominronin","date":"2015-06-29T16:05:42.998Z","type":"join"}
+{"nick":"iarna","message":"domderen: Yeah, it strips ./node_modules/.bin/ from the start of scripts as ./node_modules/.bin/ will be added to your path prior to trying to run them.","date":"2015-06-29T16:07:54.224Z","type":"message"}
+{"nick":"domderen","message":"@iarna yeah but it breaks with scoped packages...","date":"2015-06-29T16:08:29.006Z","type":"message"}
+{"nick":"domderen","message":"is there some way around it?","date":"2015-06-29T16:08:33.832Z","type":"message"}
+{"nick":"adamdicarlo","date":"2015-06-29T16:09:55.332Z","type":"join"}
+{"nick":"iarna","message":"domderen: ok, scoped binaries should just get installed into bin with their name, no scope.","date":"2015-06-29T16:10:36.696Z","type":"message"}
+{"nick":"iarna","message":"So if you have @company/package distributing a binary called \"foo\", then just call it as \"foo\" not as \"@company/foo\".","date":"2015-06-29T16:11:11.128Z","type":"message"}
+{"nick":"KushS","date":"2015-06-29T16:11:21.955Z","type":"join"}
+{"nick":"iarna","message":"This may require a fairly recent npm, as I'm pretty sure there were bugs around this for a while there.","date":"2015-06-29T16:11:28.779Z","type":"message"}
+{"nick":"bybb","date":"2015-06-29T16:15:14.604Z","type":"join"}
+{"nick":"domderen","message":"@iarna I've just updated to npm v.2.12.0 reinstalled my node_modules and tried to run my script as \"script\": \"package\" instead of \"script\": \"@company/package\"","date":"2015-06-29T16:20:45.531Z","type":"message"}
+{"nick":"domderen","message":"but it still doesn't work","date":"2015-06-29T16:20:50.416Z","type":"message"}
+{"nick":"domderen","message":"and the scoped package is still installed to node_modules/.bin/@company/package\"","date":"2015-06-29T16:21:08.676Z","type":"message"}
+{"nick":"domderen","message":"which probably shouldn't happen for it to work straight from the bin directory","date":"2015-06-29T16:21:25.170Z","type":"message"}
+{"nick":"iarna","message":"Ok, that's odd, that's not what it does for me… let me try w/ 2.x","date":"2015-06-29T16:23:01.490Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-06-29T16:23:47.128Z","type":"quit"}
+{"nick":"iarna","message":"Nope, not happening for me with v2.12.0","date":"2015-06-29T16:24:59.933Z","type":"message"}
+{"nick":"domderen","message":"@irana so what is happening for you?","date":"2015-06-29T16:25:33.919Z","type":"message"}
+{"nick":"iarna","message":"https://www.irccloud.com/pastebin/1FvElkqU/","date":"2015-06-29T16:25:44.220Z","type":"message"}
+{"nick":"iarna","message":"You can see, it symlinks the namespaced bin into node_modules/.bin without making a namespaced directory or anything.","date":"2015-06-29T16:26:48.398Z","type":"message"}
+{"nick":"domderen","message":"That is interesting ^^","date":"2015-06-29T16:27:48.052Z","type":"message"}
+{"nick":"domderen","message":"I am not sure if that matters, but the package I am talking about is npm private package","date":"2015-06-29T16:28:01.980Z","type":"message"}
+{"nick":"domderen","message":"could that be the reason for a different behaviour?","date":"2015-06-29T16:28:17.707Z","type":"message"}
+{"nick":"iarna","message":"It really shouldn't, that should be completely opaque to the installer","date":"2015-06-29T16:28:40.979Z","type":"message"}
+{"nick":"iarna","message":"My test cases are a module stored on an npme instance and a local scoped module.","date":"2015-06-29T16:29:12.545Z","type":"message"}
+{"nick":"iarna","message":"Hey, in the module exporting the binary, what does the `bin` section of its package.json look like?","date":"2015-06-29T16:29:48.209Z","type":"message"}
+{"nick":"ckross01","reason":"Quit: Connection closed for inactivity","date":"2015-06-29T16:32:07.384Z","type":"quit"}
+{"nick":"iarna","message":"Incidentally, the code responsible for this is here: https://github.com/npm/npm/blob/master/lib/build.js#L188-L223","date":"2015-06-29T16:34:17.813Z","type":"message"}
+{"nick":"iarna","message":"And you can see it _really_ shouldn't be putting the scope name in the install path. I actually can't see how it would. On the other hand, nothing would have stopped you from doing it yourself… and that wouldn't work…","date":"2015-06-29T16:35:23.692Z","type":"message"}
+{"nick":"iarna","message":"By which I mean, if the scoped module had a package.json section like: \"bin\": { \"@company/package\": \"./foo.js\" }","date":"2015-06-29T16:36:02.340Z","type":"message"}
+{"nick":"iarna","message":"that would produce what you're seeing and no, it can't be made to work.","date":"2015-06-29T16:36:12.273Z","type":"message"}
+{"nick":"KushS","reason":"Remote host closed the connection","date":"2015-06-29T16:36:27.020Z","type":"quit"}
+{"nick":"KushS","date":"2015-06-29T16:37:24.057Z","type":"join"}
+{"nick":"pluma","date":"2015-06-29T16:38:47.437Z","type":"join"}
+{"nick":"domderen","message":"@irana no, in my package I had: \"bin\": \"./path/to/script.js\"","date":"2015-06-29T16:39:45.753Z","type":"message"}
+{"nick":"domderen","message":"so it shouldn't matter","date":"2015-06-29T16:39:49.911Z","type":"message"}
+{"nick":"domderen","message":"but to be honest, it doesnt matter","date":"2015-06-29T16:39:57.125Z","type":"message"}
+{"nick":"domderen","message":"I just made the package public :)","date":"2015-06-29T16:40:02.950Z","type":"message"}
+{"nick":"iarna","message":"Oh!! You didn't have a name for your binary...","date":"2015-06-29T16:40:13.001Z","type":"message"}
+{"nick":"domderen","message":"Thank you very much for your help","date":"2015-06-29T16:40:14.853Z","type":"message"}
+{"nick":"domderen","message":"no I didn't","date":"2015-06-29T16:40:23.433Z","type":"message"}
+{"nick":"domderen","message":"was that the problem?","date":"2015-06-29T16:40:28.496Z","type":"message"}
+{"nick":"iarna","message":"So it defaulted to the package name, which included the scope.","date":"2015-06-29T16:40:35.579Z","type":"message"}
+{"nick":"iarna","message":"Yup","date":"2015-06-29T16:40:35.766Z","type":"message"}
+{"nick":"iarna","message":"TBH, I didn't even know you could just pass in a string there. 😁 That must be something special in read-package-json. It's full of surprisingly weird ways of diddling with the package.json. By the time npm itself sees it, it's normalized into an object with keys=script names, values=path to script file.","date":"2015-06-29T16:41:39.800Z","type":"message"}
+{"nick":"domderen","message":"good to know :D","date":"2015-06-29T16:42:37.281Z","type":"message"}
+{"nick":"domderen","message":"Well yeah I found the \"string\" option somewhere in the spawm of npm documentation","date":"2015-06-29T16:42:54.548Z","type":"message"}
+{"nick":"eperez","date":"2015-06-29T16:43:01.520Z","type":"join"}
+{"nick":"domderen","message":"and it seemd to be the simplest one so that's why I decided to use this one...","date":"2015-06-29T16:43:18.696Z","type":"message"}
+{"nick":"domderen","message":"I didn't think it would cause me waste half a day debugging...","date":"2015-06-29T16:43:31.600Z","type":"message"}
+{"nick":"KushS","reason":"Ping timeout: 276 seconds","date":"2015-06-29T16:43:37.719Z","type":"quit"}
+{"nick":"domderen","message":"anyway. thank you again, no problem anymore as the package is now public :)","date":"2015-06-29T16:43:49.404Z","type":"message"}
+{"nick":"lanceball","new_nick":"lance|afk","date":"2015-06-29T16:46:49.135Z","type":"nick"}
+{"nick":"bybb","date":"2015-06-29T16:49:04.387Z","type":"quit"}
+{"nick":"KushS","date":"2015-06-29T16:49:25.966Z","type":"join"}
+{"nick":"eperez","reason":"Ping timeout: 265 seconds","date":"2015-06-29T16:51:29.604Z","type":"quit"}
+{"nick":"SomeKittens","date":"2015-06-29T16:52:51.077Z","type":"join"}
+{"nick":"bobmcw","date":"2015-06-29T16:53:21.706Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 256 seconds","date":"2015-06-29T16:59:06.231Z","type":"quit"}
+{"nick":"bcoe","date":"2015-06-29T17:07:03.719Z","type":"join"}
+{"nick":"dbclk","reason":"Read error: Connection reset by peer","date":"2015-06-29T17:07:34.583Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-06-29T17:07:59.438Z","type":"join"}
+{"nick":"dbclk","date":"2015-06-29T17:09:30.381Z","type":"join"}
+{"nick":"rossk","date":"2015-06-29T17:11:48.564Z","type":"join"}
+{"nick":"eperez","date":"2015-06-29T17:13:19.540Z","type":"join"}
+{"nick":"eperez","reason":"Remote host closed the connection","date":"2015-06-29T17:14:28.222Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T17:15:03.616Z","type":"join"}
+{"nick":"veganista","reason":"Quit: (null)","date":"2015-06-29T17:15:25.165Z","type":"quit"}
+{"nick":"redonkulus","date":"2015-06-29T17:20:27.228Z","type":"join"}
+{"nick":"domderen","reason":"Ping timeout: 246 seconds","date":"2015-06-29T17:23:43.605Z","type":"quit"}
+{"nick":"eperez","reason":"Ping timeout: 265 seconds","date":"2015-06-29T17:23:52.585Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T17:27:05.395Z","type":"join"}
+{"nick":"fauntle","date":"2015-06-29T17:42:01.455Z","type":"join"}
+{"nick":"JoshGlzBrk","date":"2015-06-29T17:43:32.322Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-29T17:46:12.434Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-06-29T17:50:02.096Z","type":"join"}
+{"nick":"eperez","reason":"Read error: Connection reset by peer","date":"2015-06-29T17:55:18.513Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T17:55:48.457Z","type":"join"}
+{"nick":"rossk","reason":"Remote host closed the connection","date":"2015-06-29T17:57:37.997Z","type":"quit"}
+{"nick":"bcoe","reason":"Remote host closed the connection","date":"2015-06-29T17:59:39.525Z","type":"quit"}
+{"nick":"mich-cook","date":"2015-06-29T18:00:38.548Z","type":"join"}
+{"nick":"bradleymeck","date":"2015-06-29T18:00:49.375Z","type":"join"}
+{"nick":"redonkulus","reason":"Quit: Leaving.","date":"2015-06-29T18:04:00.012Z","type":"quit"}
+{"nick":"redonkulus","date":"2015-06-29T18:04:17.223Z","type":"join"}
+{"nick":"greensoup","reason":"Ping timeout: 256 seconds","date":"2015-06-29T18:14:37.300Z","type":"quit"}
+{"nick":"metasansana","date":"2015-06-29T18:15:26.450Z","type":"join"}
+{"nick":"eperez","reason":"Remote host closed the connection","date":"2015-06-29T18:20:08.757Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T18:20:47.589Z","type":"join"}
+{"nick":"eperez","reason":"Read error: Connection reset by peer","date":"2015-06-29T18:26:38.145Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T18:27:06.080Z","type":"join"}
+{"nick":"esatterwhite","date":"2015-06-29T18:32:29.174Z","type":"join"}
+{"nick":"bobmcw","date":"2015-06-29T18:43:36.675Z","type":"join"}
+{"nick":"eperez","reason":"Remote host closed the connection","date":"2015-06-29T18:44:22.764Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-29T18:46:07.883Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2015-06-29T18:47:11.253Z","type":"quit"}
+{"nick":"lance|afk","new_nick":"lanceball","date":"2015-06-29T18:54:36.515Z","type":"nick"}
+{"nick":"eperez","date":"2015-06-29T18:55:08.419Z","type":"join"}
+{"nick":"KushS","reason":"Remote host closed the connection","date":"2015-06-29T18:56:09.745Z","type":"quit"}
+{"nick":"eperez","reason":"Read error: Connection reset by peer","date":"2015-06-29T18:59:29.303Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T18:59:50.577Z","type":"join"}
+{"nick":"KushS","date":"2015-06-29T19:03:13.925Z","type":"join"}
+{"nick":"yoshuawuyts","date":"2015-06-29T19:05:37.934Z","type":"join"}
+{"nick":"rossk","date":"2015-06-29T19:06:35.955Z","type":"join"}
+{"nick":"ckross01","date":"2015-06-29T19:07:43.330Z","type":"join"}
+{"nick":"greensoup","date":"2015-06-29T19:11:02.427Z","type":"join"}
+{"nick":"nofxx","date":"2015-06-29T19:12:09.829Z","type":"join"}
+{"nick":"nofxx","message":"Pardon the naive question but is there some config file I can use to make npm auto install some files? e.g my projects keeps sources at 'www/js'  , using npm install/update my js will go to 'node_modules', the intended workflow is for me to cp what I want?","date":"2015-06-29T19:14:16.180Z","type":"message"}
+{"nick":"bradleymeck","message":"why does it need to be in `www/js`?","date":"2015-06-29T19:15:07.428Z","type":"message"}
+{"nick":"yoshuawuyts","reason":"Quit: WeeChat 1.2","date":"2015-06-29T19:15:18.976Z","type":"quit"}
+{"nick":"nofxx","message":"or the idea is npm install inside www/js ?   note: I can't symlink (darn precompiler bugs on cordova)","date":"2015-06-29T19:15:23.206Z","type":"message"}
+{"nick":"iarna","message":"nofxx: I think I need to know more about your intent? Typically each project would have its own package.json from which npm will create a node_modules filled with the packages referenced there.","date":"2015-06-29T19:15:25.018Z","type":"message"}
+{"nick":"bradleymeck","message":"not to my knowledge","date":"2015-06-29T19:15:26.116Z","type":"message"}
+{"nick":"yoshuawuyts","date":"2015-06-29T19:15:26.303Z","type":"join"}
+{"nick":"greensoup","reason":"Ping timeout: 250 seconds","date":"2015-06-29T19:15:27.399Z","type":"quit"}
+{"nick":"nofxx","message":"bradleymeck, it'll get a ton of precompilation and move around and whatnot....it'll better if I have just the js I need","date":"2015-06-29T19:16:02.168Z","type":"message"}
+{"nick":"iarna","message":"nofxx: It sounds like you mean for use in a browser?","date":"2015-06-29T19:16:12.705Z","type":"message"}
+{"nick":"nofxx","message":"cordova, i'll be compiled in multiple platforms and yeah, run in a browser, hehe","date":"2015-06-29T19:16:32.515Z","type":"message"}
+{"nick":"yoshuawuyts","reason":"Client Quit","date":"2015-06-29T19:16:33.888Z","type":"quit"}
+{"nick":"nofxx","message":"it'll*","date":"2015-06-29T19:16:36.992Z","type":"message"}
+{"nick":"bradleymeck","message":"if you use precompilation use something like browserify to bundle it all together and resolve node_modules","date":"2015-06-29T19:17:04.035Z","type":"message"}
+{"nick":"iarna","message":"Ahh, I gather cordova has its own tools for this? I'm not sure? For typical web use, you'd use a tool like webpack or browserify.","date":"2015-06-29T19:17:11.212Z","type":"message"}
+{"nick":"nofxx","message":"ahh, now I think I understand it. npm to install browserify/webpack to the include job","date":"2015-06-29T19:17:50.722Z","type":"message"}
+{"nick":"nofxx","message":"iarna, bradleymeck thanks for you time","date":"2015-06-29T19:18:19.847Z","type":"message"}
+{"nick":"eperez","reason":"Remote host closed the connection","date":"2015-06-29T19:18:23.634Z","type":"quit"}
+{"nick":"iarna","message":"nofxx: no problem 😄","date":"2015-06-29T19:18:30.344Z","type":"message"}
+{"nick":"ofrobots","date":"2015-06-29T19:19:54.014Z","type":"join"}
+{"nick":"eperez_","date":"2015-06-29T19:22:58.520Z","type":"join"}
+{"nick":"greensoup","date":"2015-06-29T19:26:07.284Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-29T19:30:43.526Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-06-29T19:32:24.338Z","type":"join"}
+{"nick":"eperez_","reason":"Remote host closed the connection","date":"2015-06-29T19:33:31.580Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T19:34:08.232Z","type":"join"}
+{"nick":"eperez","reason":"Ping timeout: 246 seconds","date":"2015-06-29T19:42:27.234Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-29T19:45:06.739Z","type":"quit"}
+{"nick":"bobmcw","date":"2015-06-29T19:47:34.344Z","type":"join"}
+{"nick":"bobmcw","reason":"Changing host","date":"2015-06-29T19:47:34.531Z","type":"quit"}
+{"nick":"bobmcw","date":"2015-06-29T19:47:34.531Z","type":"join"}
+{"nick":"bcoe","date":"2015-06-29T19:55:32.716Z","type":"join"}
+{"nick":"KushS","reason":"Remote host closed the connection","date":"2015-06-29T19:58:27.657Z","type":"quit"}
+{"nick":"KushS","date":"2015-06-29T19:58:40.694Z","type":"join"}
+{"nick":"ofrobots","date":"2015-06-29T19:59:42.044Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2015-06-29T20:01:01.795Z","type":"quit"}
+{"nick":"eperez","date":"2015-06-29T20:01:46.039Z","type":"join"}
+{"nick":"ofrobots","date":"2015-06-29T20:03:46.950Z","type":"join"}
+{"nick":"eperez","reason":"Ping timeout: 252 seconds","date":"2015-06-29T20:06:24.075Z","type":"quit"}
+{"nick":"hardeep","date":"2015-06-29T20:07:07.632Z","type":"join"}
+{"nick":"hardeep","message":"Anyone having issues installing packages from a github repo? I'm trying to use npm install gitana/alpaca but it seems to just hang. I'm using npm version 2.12.0.","date":"2015-06-29T20:08:31.620Z","type":"message"}
+{"nick":"bcoe","date":"2015-06-29T20:09:18.698Z","type":"quit"}
+{"nick":"lxe","date":"2015-06-29T20:21:11.234Z","type":"join"}
+{"nick":"KushS","reason":"Remote host closed the connection","date":"2015-06-29T20:35:49.617Z","type":"quit"}
+{"nick":"KushS","date":"2015-06-29T20:36:25.421Z","type":"join"}
+{"nick":"hardeep","message":"Things seem to be running again \\0/","date":"2015-06-29T20:47:05.118Z","type":"message"}
+{"nick":"JoshGlzBrk","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-06-29T20:48:34.020Z","type":"quit"}
+{"nick":"hardeep","reason":"Quit: Page closed","date":"2015-06-29T20:51:01.813Z","type":"quit"}
+{"nick":"danecando","reason":"Quit: yo my computer went to sleep holla","date":"2015-06-29T20:54:01.834Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2015-06-29T20:56:07.780Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-06-29T21:02:00.115Z","type":"quit"}
+{"nick":"lanceball","new_nick":"lance|afk","date":"2015-06-29T21:13:42.186Z","type":"nick"}
+{"nick":"mich-cook1","date":"2015-06-29T21:30:52.399Z","type":"join"}
+{"nick":"mich-cook","reason":"Ping timeout: 264 seconds","date":"2015-06-29T21:31:37.417Z","type":"quit"}
+{"nick":"sboudri__","date":"2015-06-29T21:39:54.466Z","type":"join"}
+{"nick":"sboudria_","reason":"Ping timeout: 264 seconds","date":"2015-06-29T21:40:01.429Z","type":"quit"}
+{"nick":"danecando_","date":"2015-06-29T21:52:22.467Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-06-29T21:53:58.402Z","type":"quit"}
+{"nick":"jvrousseau","reason":"Ping timeout: 248 seconds","date":"2015-06-29T22:03:27.487Z","type":"quit"}
+{"nick":"nobso","date":"2015-06-29T22:05:32.049Z","type":"join"}
+{"nick":"ofrobots","date":"2015-06-29T22:13:11.762Z","type":"join"}
+{"nick":"danecando_","reason":"Ping timeout: 255 seconds","date":"2015-06-29T22:22:55.548Z","type":"quit"}
+{"nick":"danecando_","date":"2015-06-29T22:29:11.956Z","type":"join"}
+{"nick":"danecando","date":"2015-06-29T22:38:08.210Z","type":"join"}
+{"nick":"danecando_","reason":"Ping timeout: 246 seconds","date":"2015-06-29T22:39:56.951Z","type":"quit"}
+{"nick":"redonkulus","reason":"Quit: Leaving.","date":"2015-06-29T22:41:02.837Z","type":"quit"}
+{"nick":"redonkulus","date":"2015-06-29T22:41:21.202Z","type":"join"}
+{"nick":"redonkulus","reason":"Client Quit","date":"2015-06-29T22:44:20.260Z","type":"quit"}
+{"nick":"redonkulus","date":"2015-06-29T22:44:39.205Z","type":"join"}
+{"nick":"prbc","date":"2015-06-29T22:47:51.559Z","type":"join"}
+{"nick":"mich-cook1","reason":"Quit: Leaving.","date":"2015-06-29T22:51:57.477Z","type":"quit"}
+{"nick":"mich-cook","date":"2015-06-29T22:52:45.250Z","type":"join"}
+{"nick":"sboudri__","reason":"Ping timeout: 255 seconds","date":"2015-06-29T23:00:16.518Z","type":"quit"}
+{"nick":"prbc","reason":"Remote host closed the connection","date":"2015-06-29T23:01:03.624Z","type":"quit"}
+{"nick":"nate","date":"2015-06-29T23:03:03.072Z","type":"join"}
+{"nick":"blazar_","reason":"Quit: Leaving","date":"2015-06-29T23:05:31.978Z","type":"quit"}
+{"nick":"dbclk","reason":"Read error: Connection reset by peer","date":"2015-06-29T23:07:31.744Z","type":"quit"}
+{"nick":"redonkulus","reason":"Read error: Connection reset by peer","date":"2015-06-29T23:08:25.932Z","type":"quit"}
+{"nick":"redonkulus","date":"2015-06-29T23:08:45.248Z","type":"join"}
+{"nick":"dbclk_","date":"2015-06-29T23:09:34.328Z","type":"join"}
+{"nick":"sboudria_","date":"2015-06-29T23:12:02.498Z","type":"join"}
+{"nick":"npmbot","reason":"Ping timeout: 246 seconds","date":"2015-06-29T23:26:08.961Z","type":"quit"}
+{"nick":"Havvy","reason":"Ping timeout: 264 seconds","date":"2015-06-29T23:26:13.406Z","type":"quit"}
+{"nick":"ofrobots","reason":"\"Textual IRC Client: www.textualapp.com\"","date":"2015-06-29T23:26:54.269Z","type":"part"}
+{"nick":"madjake45","reason":"Ping timeout: 244 seconds","date":"2015-06-29T23:27:31.302Z","type":"quit"}
+{"nick":"sboudria_","reason":"Remote host closed the connection","date":"2015-06-29T23:27:52.497Z","type":"quit"}
+{"nick":"sboudria_","date":"2015-06-29T23:30:02.904Z","type":"join"}
+{"nick":"sboudria_","reason":"Ping timeout: 255 seconds","date":"2015-06-29T23:34:55.558Z","type":"quit"}
+{"nick":"sboudria_","date":"2015-06-29T23:36:30.443Z","type":"join"}
