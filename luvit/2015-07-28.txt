@@ -1,0 +1,150 @@
+{"nick":"rphillips","message":"hmm","date":"2015-07-28T18:16:02.608Z","type":"message"}
+{"nick":"rphillips","message":"maybe not gc related... i disabled the gc and it still is asserting","date":"2015-07-28T18:16:18.345Z","type":"message"}
+{"nick":"creationix","message":"rphillips: any idea what kind of handle it was before it became undefined?  You could log the pointers of handles when created and compare with the pointer when it's bad","date":"2015-07-28T18:21:29.698Z","type":"message"}
+{"nick":"rphillips","message":"great idea... i'll print those out","date":"2015-07-28T18:21:52.168Z","type":"message"}
+{"nick":"creationix","message":"I'm guessing it's either a uv_pipe_t or uv_process_t since you reproduce it when using uv_spawn","date":"2015-07-28T18:24:41.039Z","type":"message"}
+{"nick":"rphillips","message":"it's the uv_process_t","date":"2015-07-28T18:24:47.902Z","type":"message"}
+{"nick":"creationix","message":"do you know if it's https://github.com/libuv/libuv/blob/60e515d9e6f3d86c0eedad583805201f32ea3aed/src/win/process.c#L865 or https://github.com/libuv/libuv/blob/60e515d9e6f3d86c0eedad583805201f32ea3aed/src/win/process.c#L909","date":"2015-07-28T18:27:04.087Z","type":"message"}
+{"nick":"rphillips","message":"i'll figure that out","date":"2015-07-28T18:29:06.242Z","type":"message"}
+{"nick":"rphillips","message":"it's the 909 one","date":"2015-07-28T18:33:12.741Z","type":"message"}
+{"nick":"rphillips","message":"uv_process_close","date":"2015-07-28T18:33:19.249Z","type":"message"}
+{"nick":"creationix","message":"rphillips: I wonder if we're calling close twice","date":"2015-07-28T18:44:03.907Z","type":"message"}
+{"nick":"creationix","message":"hmm, probably not there is a guard in luv https://github.com/luvit/luv/blob/master/src/handle.c#L72-L74","date":"2015-07-28T18:44:40.669Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luv/blob/master/src/process.c#L218","date":"2015-07-28T18:45:22.406Z","type":"message"}
+{"nick":"rphillips","message":"there is this close on the error path as well","date":"2015-07-28T18:45:30.843Z","type":"message"}
+{"nick":"creationix","message":"right, but in that case the userdata for the handle is never handed to lua","date":"2015-07-28T18:45:48.945Z","type":"message"}
+{"nick":"creationix","message":"but that is interesting. https://github.com/luvit/luv/blob/3c3e790d5b93e533d0f48c9802ae08d36d5ecfb5/src/lhandle.c#L104-L109","date":"2015-07-28T18:50:49.607Z","type":"message"}
+{"nick":"creationix","message":"in your sample, is the subprocess running or is it hitting this error case?","date":"2015-07-28T18:51:15.471Z","type":"message"}
+{"nick":"rphillips","message":"so the executable does not exist","date":"2015-07-28T18:52:28.132Z","type":"message"}
+{"nick":"rphillips","message":"so no, it is not running","date":"2015-07-28T18:52:32.790Z","type":"message"}
+{"nick":"creationix","message":"smells like gc","date":"2015-07-28T18:56:13.059Z","type":"message"}
+{"nick":"creationix","message":"in the error case, we remove all references to the userdata and then call uv_close()","date":"2015-07-28T18:56:28.874Z","type":"message"}
+{"nick":"creationix","message":"if libuv defers running the endgame till a later event tick, it might be GCed","date":"2015-07-28T18:56:54.507Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/joyent/libuv/issues/796","date":"2015-07-28T18:59:40.808Z","type":"message"}
+{"nick":"kostco","message":"not sure if relevent but","date":"2015-07-28T19:00:58.625Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/joyent/node/issues/1669","date":"2015-07-28T19:01:00.085Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/joyent/node/issues/3737","date":"2015-07-28T19:01:09.257Z","type":"message"}
+{"nick":"kostco","message":"im gonna circle back to the coroutine thing, gonna see if i cant port any more checks that dont need to run multiple spawns","date":"2015-07-28T19:01:54.259Z","type":"message"}
+{"nick":"rphillips","message":"the issue is that you need to wait for the end event","date":"2015-07-28T19:17:58.662Z","type":"message"}
+{"nick":"rphillips","message":"on the stdout","date":"2015-07-28T19:18:00.682Z","type":"message"}
+{"nick":"rphillips","message":"creationix: https://github.com/luvit/luv/compare/fix/exec_run_loop_after_close","date":"2015-07-28T19:23:29.519Z","type":"message"}
+{"nick":"rphillips","message":"this fixes it","date":"2015-07-28T19:23:32.527Z","type":"message"}
+{"nick":"rphillips","message":"not sure if we want to do it this way though","date":"2015-07-28T19:23:39.693Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T19:24:37.379Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#35 (fix/exec_run_loop_after_close - 7106483 : Ryan Phillips): The build passed.","date":"2015-07-28T19:24:38.276Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/commit/71064833dc77","date":"2015-07-28T19:24:38.277Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/73069106","date":"2015-07-28T19:24:38.277Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T19:24:38.278Z","type":"part"}
+{"nick":"rphillips","message":"hmm weird","date":"2015-07-28T19:28:14.546Z","type":"message"}
+{"nick":"rphillips","message":"i thought i had luv_get_loop","date":"2015-07-28T19:28:24.198Z","type":"message"}
+{"nick":"rphillips","message":"copy and pasted wrong","date":"2015-07-28T19:29:30.987Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T19:30:50.225Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#36 (fix/exec_run_loop_after_close - 80b68d0 : Ryan Phillips): The build passed.","date":"2015-07-28T19:30:51.220Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/71064833dc77...80b68d0fbe7e","date":"2015-07-28T19:30:51.222Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/73069930","date":"2015-07-28T19:30:51.223Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T19:30:51.223Z","type":"part"}
+{"nick":"creationix","message":"rphillips: I don't want to do that, but it's interesting that it fixes this case","date":"2015-07-28T19:35:48.421Z","type":"message"}
+{"nick":"rphillips","message":"yeah","date":"2015-07-28T19:35:59.901Z","type":"message"}
+{"nick":"creationix","message":"blocking during a non-blocking call will invalidate many assumptions","date":"2015-07-28T19:36:06.330Z","type":"message"}
+{"nick":"creationix","message":"so is your end handler calling close or something?","date":"2015-07-28T19:36:53.062Z","type":"message"}
+{"nick":"creationix","message":"or does libuv just break if you close before end?","date":"2015-07-28T19:37:01.923Z","type":"message"}
+{"nick":"kostco","message":"rphillips: but i do do that here dont i?","date":"2015-07-28T19:37:26.554Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/kaustavha/rackspace-monitoring-agent/blob/67b108e1bff5340a6153318ec1abef473668b555/hostinfo/misc.lua","date":"2015-07-28T19:37:26.677Z","type":"message"}
+{"nick":"kostco","message":"the cb doesnt fire till stdout emits an end","date":"2015-07-28T19:37:26.678Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/blob/master/deps/childprocess.lua#L58","date":"2015-07-28T19:38:13.775Z","type":"message"}
+{"nick":"rphillips","message":"it doesn't call :close() in the error case","date":"2015-07-28T19:38:21.788Z","type":"message"}
+{"nick":"rphillips","message":"right... so what are you seeing again?","date":"2015-07-28T19:39:13.315Z","type":"message"}
+{"nick":"creationix","message":"right, if the blocking uv_run fixes it, it has nothing to do with other lua code","date":"2015-07-28T19:39:22.133Z","type":"message"}
+{"nick":"creationix","message":"kostco: you can't assume an ordering between the stdio end events and the process exit event","date":"2015-07-28T19:39:47.448Z","type":"message"}
+{"nick":"creationix","message":"exit may come first or last","date":"2015-07-28T19:39:54.164Z","type":"message"}
+{"nick":"rphillips","message":"yeah, i think it's a libuv-ism","date":"2015-07-28T19:39:56.136Z","type":"message"}
+{"nick":"rphillips","message":"async.parallel takes that into account","date":"2015-07-28T19:40:13.442Z","type":"message"}
+{"nick":"creationix","message":"sounds like the callback version of coro-split","date":"2015-07-28T19:40:48.938Z","type":"message"}
+{"nick":"kostco","message":"hmm ill give the async parallel method a shot, but i think execfiletobuffers cant run with a bunch of asyncly spawned spawns due to the fireonce(callback) line","date":"2015-07-28T19:41:09.487Z","type":"message"}
+{"nick":"creationix","message":"rphillips: this was my worry in kostco's code https://github.com/kaustavha/rackspace-monitoring-agent/blob/67b108e1bff5340a6153318ec1abef473668b555/hostinfo/misc.lua#L161","date":"2015-07-28T19:41:37.053Z","type":"message"}
+{"nick":"creationix","message":"calling the cb here assumes that stdout#end is the last event","date":"2015-07-28T19:42:00.631Z","type":"message"}
+{"nick":"rphillips","message":"yeah, we have helpers we can use... let me find one","date":"2015-07-28T19:42:40.268Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/kaustavha/rackspace-monitoring-agent/blob/67b108e1bff5340a6153318ec1abef473668b555/hostinfo/misc.lua#L24","date":"2015-07-28T19:43:16.400Z","type":"message"}
+{"nick":"rphillips","message":"same file","date":"2015-07-28T19:43:18.834Z","type":"message"}
+{"nick":"creationix","message":"yep, that one looks safe","date":"2015-07-28T19:43:30.756Z","type":"message"}
+{"nick":"creationix","message":"kostco: the fireOnce isn't a problem because every call to the helper gets it's own once callback","date":"2015-07-28T19:44:46.203Z","type":"message"}
+{"nick":"creationix","message":"though in this particular function, the fireOnce check is redundant assuming async.parallel always fires once","date":"2015-07-28T19:45:26.223Z","type":"message"}
+{"nick":"kostco","message":"interesting","date":"2015-07-28T19:45:38.481Z","type":"message"}
+{"nick":"rphillips","message":"yep... let's remove it","date":"2015-07-28T19:46:50.380Z","type":"message"}
+{"nick":"kostco","message":"awesomesauce it works","date":"2015-07-28T19:54:30.204Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i think we will need to fix the spawn issue for all these new hostinfo calls","date":"2015-07-28T19:57:46.155Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2015-07-28T19:58:03.148Z","type":"message"}
+{"nick":"rphillips","message":"at least we know where it is now","date":"2015-07-28T19:58:14.929Z","type":"message"}
+{"nick":"creationix","message":"I'm still trying to figure out if this is a libuv bug or a luv bug","date":"2015-07-28T19:58:20.127Z","type":"message"}
+{"nick":"rphillips","message":"it seems to be the same issue on linux","date":"2015-07-28T19:58:23.432Z","type":"message"}
+{"nick":"creationix","message":"do you have a minimal use case to reproduce it?","date":"2015-07-28T19:58:44.464Z","type":"message"}
+{"nick":"rphillips","message":"i will work on that next.. not yet","date":"2015-07-28T19:59:10.380Z","type":"message"}
+{"nick":"creationix","message":"rphillips: this isn't enough to reproduce it https://gist.github.com/creationix/840b2f85d90353fb3842","date":"2015-07-28T20:00:51.803Z","type":"message"}
+{"nick":"creationix","message":"not on my linux box at least","date":"2015-07-28T20:00:59.978Z","type":"message"}
+{"nick":"kostco","message":"k i took care of the fireonce, should be good to go","date":"2015-07-28T20:21:10.382Z","type":"message"}
+{"nick":"kostco","message":"the prs, that is, took care of them too, fixes and such","date":"2015-07-28T20:21:27.816Z","type":"message"}
+{"nick":"kostco","message":"nvm travis isnt showing me much love","date":"2015-07-28T20:22:53.262Z","type":"message"}
+{"nick":"rphillips","message":"creationix: taking out the 2 collectgarbage() calls around the uv.run() in tap.lua fixes it as well","date":"2015-07-28T21:28:27.633Z","type":"message"}
+{"nick":"creationix","message":"yep, sounds gc related","date":"2015-07-28T21:28:47.676Z","type":"message"}
+{"nick":"kostco","message":"hmm i cant figure out why travis is failing here:","date":"2015-07-28T21:30:30.585Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/pull/811","date":"2015-07-28T21:30:30.626Z","type":"message"}
+{"nick":"kostco","message":"Can one of you take a look if you get a chance","date":"2015-07-28T21:30:30.626Z","type":"message"}
+{"nick":"creationix","message":"kostco: did you commit your misc.asyncSpawn.  I don't see it in that tree","date":"2015-07-28T21:34:12.237Z","type":"message"}
+{"nick":"kostco","message":"nope here ill merge it in","date":"2015-07-28T21:34:26.609Z","type":"message"}
+{"nick":"creationix","message":"on the long unit test runs, search for \"not ok\" to find failed tests quickly on travis","date":"2015-07-28T21:34:57.193Z","type":"message"}
+{"nick":"kostco","message":"ah thanks","date":"2015-07-28T21:35:18.628Z","type":"message"}
+{"nick":"kostco","message":"never worked with travis before yea that was very helpful lol","date":"2015-07-28T21:35:31.519Z","type":"message"}
+{"nick":"kostco","message":"hmm is there some way to make travis rerun a check without pushing","date":"2015-07-28T21:35:59.448Z","type":"message"}
+{"nick":"kostco","message":"what confused me was that is passed before with no asyncspawn in the tree, yesterday","date":"2015-07-28T21:36:28.181Z","type":"message"}
+{"nick":"kostco","message":"kk i figured it out","date":"2015-07-28T21:38:20.826Z","type":"message"}
+{"nick":"kostco","message":"thanks creationix","date":"2015-07-28T21:38:24.171Z","type":"message"}
+{"nick":"rphillips","message":"creationix: https://github.com/luvit/luv/pull/169","date":"2015-07-28T21:39:35.887Z","type":"message"}
+{"nick":"rphillips","message":"we may need to do that everywhere","date":"2015-07-28T21:39:44.082Z","type":"message"}
+{"nick":"creationix","message":"rphillips: great idea","date":"2015-07-28T21:40:16.988Z","type":"message"}
+{"nick":"creationix","message":"that's the only place that calls uv_close directly","date":"2015-07-28T21:40:44.294Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T21:40:46.442Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#40 (fix/close_process_async - 970d5a1 : Ryan Phillips): The build passed.","date":"2015-07-28T21:40:47.489Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/commit/970d5a185376","date":"2015-07-28T21:40:47.491Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/73091700","date":"2015-07-28T21:40:47.491Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T21:40:47.491Z","type":"part"}
+{"nick":"rphillips","message":"sweet","date":"2015-07-28T21:40:50.710Z","type":"message"}
+{"nick":"kostco","message":"hmmm so now i get a test fail and nothing turns up for not ok","date":"2015-07-28T21:40:53.452Z","type":"message"}
+{"nick":"creationix","message":"all other handles are handled by lua","date":"2015-07-28T21:40:54.638Z","type":"message"}
+{"nick":"creationix","message":"this came up fairly clean https://github.com/creationix/virgo-proto/blob/91e7ffccc273d644a0a0131fcfa4004710c825b5/checks/tcp.lua#L50-L128","date":"2015-07-28T21:44:00.011Z","type":"message"}
+{"nick":"creationix","message":"kostco: congrats, you've reproduced a segfault","date":"2015-07-28T21:44:36.454Z","type":"message"}
+{"nick":"creationix","message":"though that particular segfault looks like what rphillips is fixing","date":"2015-07-28T21:45:41.991Z","type":"message"}
+{"nick":"kostco","message":"so uhm what do i do? suggestions?","date":"2015-07-28T21:46:00.409Z","type":"message"}
+{"nick":"kostco","message":"yay!","date":"2015-07-28T21:46:02.569Z","type":"message"}
+{"nick":"creationix","message":"crash when trying to spawn a non-existent file","date":"2015-07-28T21:46:06.177Z","type":"message"}
+{"nick":"creationix","message":"I'm guessing that's what \"test custom plugin file does not exist\" does","date":"2015-07-28T21:46:29.844Z","type":"message"}
+{"nick":"kostco","message":"hmm thats rather weird cos if a user is in /etc/passwd, spawning passwd -S name should definitely return","date":"2015-07-28T21:46:44.093Z","type":"message"}
+{"nick":"creationix","message":"I'm talking about these lines: https://travis-ci.org/virgo-agent-toolkit/rackspace-monitoring-agent/builds/73088318#L1164-L1165","date":"2015-07-28T21:47:15.404Z","type":"message"}
+{"nick":"kostco","message":"hmm","date":"2015-07-28T21:48:04.216Z","type":"message"}
+{"nick":"kostco","message":"so wait is it something in my code causing the seg fault","date":"2015-07-28T21:49:27.173Z","type":"message"}
+{"nick":"kostco","message":"whats strange is the most likely culprit would be the asyncspawn func imo but the test there passes","date":"2015-07-28T21:49:42.714Z","type":"message"}
+{"nick":"kostco","message":"sigh","date":"2015-07-28T21:49:46.112Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T21:50:14.896Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#42 (master - 4b3a10c : Tim Caswell): The build passed.","date":"2015-07-28T21:50:15.961Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/55d81e9ea39d...4b3a10c79462","date":"2015-07-28T21:50:15.962Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/73093328","date":"2015-07-28T21:50:15.963Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T21:50:15.963Z","type":"part"}
+{"nick":"rphillips","message":"yes. This patch should fix that crash","date":"2015-07-28T21:50:42.351Z","type":"message"}
+{"nick":"rphillips","message":"Works on windows","date":"2015-07-28T21:50:51.841Z","type":"message"}
+{"nick":"creationix","message":"I've got to leave soon to take kids swimming.  I can maybe get the luv release builds started before then","date":"2015-07-28T21:51:13.106Z","type":"message"}
+{"nick":"creationix","message":"rphillips: ready to merge it?","date":"2015-07-28T21:51:18.613Z","type":"message"}
+{"nick":"creationix","message":"now that I see your fix, it all makes sense and was a GC issue all along","date":"2015-07-28T21:52:10.686Z","type":"message"}
+{"nick":"creationix","message":"kostco: you can maybe just re-run the test.  I don't think it crashes every time","date":"2015-07-28T21:54:44.900Z","type":"message"}
+{"nick":"kostco","message":"ill try that in a sec, figured out a small bug in my code as well, which shouldnt ever happen since the agent runs in sudo but might as well","date":"2015-07-28T21:55:27.836Z","type":"message"}
+{"nick":"creationix","action":"takes kids to the pool.  Can do a luvi release later","date":"2015-07-28T21:59:41.991Z","type":"action"}
+{"nick":"kostco","message":"itd be cool if luvit/lua had a built in function to check if something is empty, like doing the good old ~= nil and ~= '' is kinda ugly imo, but then most languages dont so meh","date":"2015-07-28T22:01:26.403Z","type":"message"}
+{"nick":"boxofrox","reason":"Ping timeout: 252 seconds","date":"2015-07-28T22:02:06.961Z","type":"quit"}
+{"nick":"boxofrox","date":"2015-07-28T22:29:22.997Z","type":"join"}
+{"nick":"rphillips","message":"ok. merged that patch","date":"2015-07-28T22:45:33.262Z","type":"message"}
+{"nick":"rphillips","message":"creationix: sorry, i had to drive home from my son's appointment... we can do a release tomorrow","date":"2015-07-28T22:46:06.096Z","type":"message"}
+{"nick":"rphillips","message":"or whenever","date":"2015-07-28T22:46:13.115Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T22:46:26.111Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#43 (fix/close_process_async - 91a4a05 : Ryan Phillips): The build passed.","date":"2015-07-28T22:46:27.109Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/970d5a185376...91a4a053a05c","date":"2015-07-28T22:46:27.111Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/73100701","date":"2015-07-28T22:46:27.111Z","type":"message"}
+{"nick":"travis-ci","date":"2015-07-28T22:46:27.111Z","type":"part"}
+{"nick":"hdms","reason":"Quit: hdms","date":"2015-07-28T23:56:11.287Z","type":"quit"}
