@@ -230,3 +230,172 @@
 {"nick":"rphillips","message":"hah!","date":"2015-08-06T15:54:18.957Z","type":"message"}
 {"nick":"rphillips","message":"that would do it","date":"2015-08-06T15:54:21.158Z","type":"message"}
 {"nick":"SkyRocknRoll","date":"2015-08-06T15:57:55.652Z","type":"join"}
+{"nick":"creationix","message":"I should use http for testing","date":"2015-08-06T16:01:25.695Z","type":"message"}
+{"nick":"creationix","message":"alright, now I report partial data on failure","date":"2015-08-06T16:20:08.554Z","type":"message"}
+{"nick":"creationix","message":"so if there is a timeout while waiting for the body, it will still have dls results, dns time, banner data, etc","date":"2015-08-06T16:20:30.359Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/creationix/0eb3960854d1baf69e41","date":"2015-08-06T16:22:37.797Z","type":"message"}
+{"nick":"creationix","message":"rphillips: will dns resolving be common for all remote checks?","date":"2015-08-06T16:38:20.113Z","type":"message"}
+{"nick":"creationix","message":"since target and dns family are part of the common attributes","date":"2015-08-06T16:38:33.707Z","type":"message"}
+{"nick":"rphillips","message":"yeah, it can be an ip or a fqdn","date":"2015-08-06T16:38:52.643Z","type":"message"}
+{"nick":"rphillips","message":"kostco: so, all side effects should be put into the callback","date":"2015-08-06T16:57:09.616Z","type":"message"}
+{"nick":"rphillips","message":"typically, an error is passed first","date":"2015-08-06T16:57:19.995Z","type":"message"}
+{"nick":"rphillips","message":"callback(err, param1, param2, etc)","date":"2015-08-06T16:57:28.776Z","type":"message"}
+{"nick":"kostco","message":"rphillips: my issue is with declaring the metric handler class in the checks is that its repetetive, only, and all of the hostinfo checks that rely on hostinfostdoutsubproc need it, so why not just tie it together and then you just need to worry about the hostinfostdoutsubproc class","date":"2015-08-06T17:01:37.020Z","type":"message"}
+{"nick":"kostco","message":"rphillips: the thing is we want to check the data as it streams, lines coming in need to be checked, so a callback wont work, whats wrong with just reading the lines and modifying state and handling any modifications to said state in the final cb?","date":"2015-08-06T17:02:28.915Z","type":"message"}
+{"nick":"rphillips","message":"it isn't all that reusable","date":"2015-08-06T17:03:14.712Z","type":"message"}
+{"nick":"kostco","message":"rphillips: so the casterfunc in readcast basically does that, draws data from the lines coming in","date":"2015-08-06T17:03:21.326Z","type":"message"}
+{"nick":"kostco","message":"what isnt the metric handler or the data being read by a function sent in via the params","date":"2015-08-06T17:03:53.515Z","type":"message"}
+{"nick":"rphillips","message":"have a code sample?","date":"2015-08-06T17:05:20.324Z","type":"message"}
+{"nick":"kostco","message":"so yea this is with the metric handler merged into the hostinfosubproc class, so it abstracts away the class declaration and just lets the check writer write logic to handle the lines streaming in","date":"2015-08-06T17:06:14.712Z","type":"message"}
+{"nick":"kostco","message":"https://gist.github.com/kaustavha/d747a39e616b7be96404","date":"2015-08-06T17:06:15.261Z","type":"message"}
+{"nick":"kostco","message":"and the readcast function here","date":"2015-08-06T17:06:51.389Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/blob/c3cce11157581b60f67c6f96a4af6caef5e35fb2/hostinfo/misc.lua","date":"2015-08-06T17:06:51.962Z","type":"message"}
+{"nick":"rphillips","message":"it's a lot of logic to have in a constructor","date":"2015-08-06T17:07:06.761Z","type":"message"}
+{"nick":"kostco","message":"casterfunc is called once per line, removes a lot of boilerplate for places it needs to be used","date":"2015-08-06T17:07:11.873Z","type":"message"}
+{"nick":"rphillips","message":"it's not testable either","date":"2015-08-06T17:07:13.124Z","type":"message"}
+{"nick":"kostco","message":"couldnt we just write a test that runs the hostinfo checks and returns the data they return?","date":"2015-08-06T17:07:36.374Z","type":"message"}
+{"nick":"kostco","message":"why test the hostinfosubproc when we can directly check wehre its being used","date":"2015-08-06T17:07:47.243Z","type":"message"}
+{"nick":"rphillips","message":"ideally there would be unit tests for each of these hostinfos","date":"2015-08-06T17:08:34.937Z","type":"message"}
+{"nick":"rphillips","message":"with mockups of the files","date":"2015-08-06T17:08:40.612Z","type":"message"}
+{"nick":"rphillips","message":"should not have to rely on the operating system for tests","date":"2015-08-06T17:09:09.014Z","type":"message"}
+{"nick":"kostco","message":"yea we can test that with the hostinfo subproc handling the abstraction for handling streams","date":"2015-08-06T17:09:16.375Z","type":"message"}
+{"nick":"kostco","message":"i do agree that its a lot of logic in a constructer and could prolly be rewritten better","date":"2015-08-06T17:09:37.155Z","type":"message"}
+{"nick":"kostco","message":"but i also feel that initializing the handlers everywhere we use the hostinfosubproc is kinda repettetive","date":"2015-08-06T17:09:54.793Z","type":"message"}
+{"nick":"rphillips","message":"function Info:_handleLine(line)","date":"2015-08-06T17:10:03.687Z","type":"message"}
+{"nick":"rphillips","message":"we could do that","date":"2015-08-06T17:10:17.149Z","type":"message"}
+{"nick":"kostco","message":"sure yea!","date":"2015-08-06T17:10:27.080Z","type":"message"}
+{"nick":"rphillips","message":"problem is, I feel that is not very clean","date":"2015-08-06T17:12:30.221Z","type":"message"}
+{"nick":"rphillips","message":"if it's a separate class we can add a unit test to read a mock file","date":"2015-08-06T17:12:49.408Z","type":"message"}
+{"nick":"rphillips","message":"and :pipe() it into the parser","date":"2015-08-06T17:12:59.979Z","type":"message"}
+{"nick":"rphillips","message":"aka, handler","date":"2015-08-06T17:13:04.047Z","type":"message"}
+{"nick":"rphillips","message":"and compare the results of the parse","date":"2015-08-06T17:13:21.606Z","type":"message"}
+{"nick":"kostco","message":"hmm","date":"2015-08-06T17:13:29.175Z","type":"message"}
+{"nick":"rphillips","message":"so the unit test would be","date":"2015-08-06T17:13:46.702Z","type":"message"}
+{"nick":"kostco","message":"why not have a declaration for the basic hostinfosubproc, and the metric handler in base","date":"2015-08-06T17:13:49.452Z","type":"message"}
+{"nick":"kostco","message":"we can write the unit tests that way","date":"2015-08-06T17:13:53.944Z","type":"message"}
+{"nick":"kostco","message":"but then we can use a version of it with the two classes merged in which we use in the hostinfo checks","date":"2015-08-06T17:14:07.752Z","type":"message"}
+{"nick":"kostco","message":"merged in as in something like","date":"2015-08-06T17:15:23.753Z","type":"message"}
+{"nick":"kostco","message":"exports.hostinfo = hostinfo","date":"2015-08-06T17:15:23.838Z","type":"message"}
+{"nick":"kostco","message":"exports.hostinfosubproc = 'merged class here'","date":"2015-08-06T17:15:23.839Z","type":"message"}
+{"nick":"kostco","message":"exports.hostinfostdoutsubproc = normal hostinfo subproc","date":"2015-08-06T17:15:23.839Z","type":"message"}
+{"nick":"kostco","message":"exports.metricshandler = metricshandler","date":"2015-08-06T17:15:23.840Z","type":"message"}
+{"nick":"kostco","message":"The last two arent actually used in the hostinfo checks","date":"2015-08-06T17:15:23.923Z","type":"message"}
+{"nick":"rphillips","message":"we support single inheritance","date":"2015-08-06T17:15:49.216Z","type":"message"}
+{"nick":"kostco","message":"ah but it wont be inhertence where we merge, itll be sort of similiar to what is happening right now","date":"2015-08-06T17:16:22.901Z","type":"message"}
+{"nick":"rphillips","message":"pr it up, and we can review it","date":"2015-08-06T17:16:51.263Z","type":"message"}
+{"nick":"kostco","message":"a class using another predeclared method on the metrichandler","date":"2015-08-06T17:16:52.659Z","type":"message"}
+{"nick":"kostco","message":"ye","date":"2015-08-06T17:16:54.449Z","type":"message"}
+{"nick":"kostco","message":"lemme see if i cant clean up the code in the gist i posted","date":"2015-08-06T17:17:07.614Z","type":"message"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2015-08-06T17:20:19.746Z","type":"quit"}
+{"nick":"kostco","message":"rphillips: creationix https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b","date":"2015-08-06T18:01:25.682Z","type":"message"}
+{"nick":"[zzz]","reason":"Read error: Connection reset by peer","date":"2015-08-06T18:20:07.459Z","type":"quit"}
+{"nick":"kostco","message":"couple things, i went with the detect self._error bit instead of the self.command nil check here","date":"2015-08-06T18:20:55.568Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/commit/afb2bdf5b22d694660158c981633cccb5d25c22c","date":"2015-08-06T18:20:55.569Z","type":"message"}
+{"nick":"kostco","message":"since self.command being nil could mean many things but the test writer can specify an error to be set when initializiation fails/detects something is off.","date":"2015-08-06T18:20:55.570Z","type":"message"}
+{"nick":"kostco","message":"will need to apply the changes from here","date":"2015-08-06T18:21:21.107Z","type":"message"}
+{"nick":"kostco","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/commit/c2fc85abe92bd8ab5234feb07c798a500b60757c","date":"2015-08-06T18:21:21.191Z","type":"message"}
+{"nick":"kostco","message":"to my gist","date":"2015-08-06T18:21:24.102Z","type":"message"}
+{"nick":"kostco","message":"also rphillips do you think itd make sense to have a hostinfo:concurrency function thats set in base and returns the concusrrency number? since right now we just have 5 in a lot of places where we do things with async","date":"2015-08-06T18:23:07.670Z","type":"message"}
+{"nick":"creationix","message":"kostco: sorry, I don’t quite understand the questions","date":"2015-08-06T18:29:39.001Z","type":"message"}
+{"nick":"kostco","message":"creationix: thoughts on the code in the gist","date":"2015-08-06T18:29:55.724Z","type":"message"}
+{"nick":"kostco","message":"im working on refactoring the agent","date":"2015-08-06T18:30:12.503Z","type":"message"}
+{"nick":"creationix","message":"right, I don’t know the existing object model enough to make intellegent comment","date":"2015-08-06T18:36:50.903Z","type":"message"}
+{"nick":"kostco","message":"ah kk fair enough","date":"2015-08-06T18:37:02.784Z","type":"message"}
+{"nick":"rphillips","message":"the initialize function should not have a callback function in it","date":"2015-08-06T18:42:08.837Z","type":"message"}
+{"nick":"rphillips","message":"https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b#file-autoup-lua-L51","date":"2015-08-06T18:42:14.656Z","type":"message"}
+{"nick":"kostco","message":"gotcha gimme one se","date":"2015-08-06T18:44:38.902Z","type":"message"}
+{"nick":"kostco","message":"x","date":"2015-08-06T18:44:39.997Z","type":"message"}
+{"nick":"kostco","message":"c","date":"2015-08-06T18:44:41.159Z","type":"message"}
+{"nick":"kostco","message":"changed it","date":"2015-08-06T18:58:22.403Z","type":"message"}
+{"nick":"kostco","message":"rphillips: https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b","date":"2015-08-06T18:58:24.516Z","type":"message"}
+{"nick":"rphillips","message":"you need to try it out","date":"2015-08-06T19:18:32.044Z","type":"message"}
+{"nick":"rphillips","message":"does it work?","date":"2015-08-06T19:18:38.400Z","type":"message"}
+{"nick":"kostco","message":"rphillips: yes","date":"2015-08-06T19:21:19.449Z","type":"message"}
+{"nick":"kostco","message":"rphillips: i test everything on a remote box","date":"2015-08-06T19:21:38.947Z","type":"message"}
+{"nick":"rphillips","message":"https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b#file-base-lua-L109","date":"2015-08-06T19:23:07.774Z","type":"message"}
+{"nick":"rphillips","message":"this is transforming the base class","date":"2015-08-06T19:23:14.489Z","type":"message"}
+{"nick":"rphillips","message":"transforming is the wrong word","date":"2015-08-06T19:23:22.852Z","type":"message"}
+{"nick":"rphillips","message":"modifying","date":"2015-08-06T19:23:24.393Z","type":"message"}
+{"nick":"rphillips","message":"i don't think this is the right approach","date":"2015-08-06T19:23:42.333Z","type":"message"}
+{"nick":"kostco","message":"rphillips: hmm indeed, i wonder if i can instantiate it first then modify it","date":"2015-08-06T19:24:04.913Z","type":"message"}
+{"nick":"rphillips","message":"I really don't like the _handleLines routine","date":"2015-08-06T19:24:08.416Z","type":"message"}
+{"nick":"kostco","message":"which part of it? why not?","date":"2015-08-06T19:24:34.641Z","type":"message"}
+{"nick":"kostco","message":"im not too picky on how its done, i just feel instantiating the handler when itll only ever be used via the hostinfostdoutsubproc is repetetive","date":"2015-08-06T19:25:02.594Z","type":"message"}
+{"nick":"rphillips","message":"we lose the ability to test it with a stream","date":"2015-08-06T19:25:04.242Z","type":"message"}
+{"nick":"rphillips","message":"it might be repetitive, but it's clear what it's doing","date":"2015-08-06T19:25:49.034Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/blob/ba55e2ee8d7558317869913eef211178016f84ee/hostinfo/packages.lua","date":"2015-08-06T19:30:37.489Z","type":"message"}
+{"nick":"rphillips","message":"i don't know how we could get this much cleaner","date":"2015-08-06T19:30:45.459Z","type":"message"}
+{"nick":"kostco","message":"i think we could actually by not making the test writer worry about the handler being extended and then setting the _transform function","date":"2015-08-06T19:36:23.342Z","type":"message"}
+{"nick":"kostco","message":"easier to understand as a built in handlelines function","date":"2015-08-06T19:36:32.314Z","type":"message"}
+{"nick":"kostco","message":"we can have a version we use with the self:bindmetrichandler()","date":"2015-08-06T19:36:48.154Z","type":"message"}
+{"nick":"kostco","message":"and a testable version without the self:bindmetrichandler()","date":"2015-08-06T19:36:58.629Z","type":"message"}
+{"nick":"kostco","message":"https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b","date":"2015-08-06T19:37:22.081Z","type":"message"}
+{"nick":"kostco","message":"https://gist.github.com/kaustavha/5056b6487125bbdde56d","date":"2015-08-06T19:44:41.365Z","type":"message"}
+{"nick":"kostco","message":"rphillips: https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b","date":"2015-08-06T19:52:15.234Z","type":"message"}
+{"nick":"kostco","message":"updates it, figured we can test it with streams that way if we set a self._test = true","date":"2015-08-06T19:52:29.964Z","type":"message"}
+{"nick":"travis-ci","date":"2015-08-06T20:22:01.159Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2452 (master - e63e83b : Tim Caswell): The build passed.","date":"2015-08-06T20:22:02.168Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/9bea919e0298...e63e83b90991","date":"2015-08-06T20:22:02.170Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/74471467","date":"2015-08-06T20:22:02.170Z","type":"message"}
+{"nick":"travis-ci","date":"2015-08-06T20:22:02.170Z","type":"part"}
+{"nick":"creationix","message":"rphillips: I fixed luvit/tap to not crash on errors in callbacks again","date":"2015-08-06T20:33:28.605Z","type":"message"}
+{"nick":"rphillips","message":"nice!","date":"2015-08-06T20:33:39.518Z","type":"message"}
+{"nick":"creationix","message":"It used to depend on uv.run throwing an exception which is no longer the case","date":"2015-08-06T20:34:15.511Z","type":"message"}
+{"nick":"creationix","message":"now luv hard exits if you don’t catch exceptions in a event callback","date":"2015-08-06T20:34:28.833Z","type":"message"}
+{"nick":"creationix","message":"but since all callbacks in tap usage are wrapped with expect anyway, I juse wrapped them with pcall and routed the error","date":"2015-08-06T20:34:48.216Z","type":"message"}
+{"nick":"creationix","message":"rphillips: where should this code go in the r-m-a repo? https://github.com/creationix/virgo-proto/tree/master/checks","date":"2015-08-06T20:36:22.554Z","type":"message"}
+{"nick":"creationix","message":"or should I keep developing it here till we’re ready to integrate it?","date":"2015-08-06T20:36:34.061Z","type":"message"}
+{"nick":"rphillips","message":"perhaps a ./poller directory","date":"2015-08-06T20:36:48.432Z","type":"message"}
+{"nick":"rphillips","message":"or if we come up with a better name","date":"2015-08-06T20:37:01.241Z","type":"message"}
+{"nick":"creationix","message":"since all checks are polling, perhaps “remote\"","date":"2015-08-06T20:37:30.936Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/pull/830/files","date":"2015-08-06T20:43:17.084Z","type":"message"}
+{"nick":"creationix","message":"interesting, luvit’s dns module doesn’t use libuv’s dns functions at all","date":"2015-08-06T20:53:41.988Z","type":"message"}
+{"nick":"creationix","message":"it’s manual dns on top of udp","date":"2015-08-06T20:53:56.590Z","type":"message"}
+{"nick":"rphillips","message":"yeah, libuv doesn't really have any dns functions","date":"2015-08-06T20:54:24.513Z","type":"message"}
+{"nick":"rphillips","message":"getaddrinfo only supports A and AAAA records","date":"2015-08-06T20:55:08.250Z","type":"message"}
+{"nick":"rphillips","message":"nodejs uses c-ares","date":"2015-08-06T20:55:29.661Z","type":"message"}
+{"nick":"creationix","message":"I’m using the libuv one here https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/blob/feat/remote-checks/remote/tcp.lua#L8-L16","date":"2015-08-06T20:55:56.816Z","type":"message"}
+{"nick":"creationix","message":"though they are just thread-pool enabled getnameinfo and getaddrinfo","date":"2015-08-06T20:56:50.430Z","type":"message"}
+{"nick":"rphillips","message":"that is fine for A or AAAA records","date":"2015-08-06T20:56:57.192Z","type":"message"}
+{"nick":"rphillips","message":"use getaddrinfo may become a bottleneck","date":"2015-08-06T20:57:21.801Z","type":"message"}
+{"nick":"rphillips","message":"using*","date":"2015-08-06T20:57:25.789Z","type":"message"}
+{"nick":"kostco","message":"rphillips: take a look at hostinfo/passwd.lua when you get a chance, unsure how to refactor it to match the hostinfosubprocstdout class style,  and the autoup gists if you want, should be testable while allowing one to skip declaring the handler class","date":"2015-08-06T20:58:36.540Z","type":"message"}
+{"nick":"creationix","message":"rphillips: right","date":"2015-08-06T20:58:47.976Z","type":"message"}
+{"nick":"creationix","message":"I do wonder how to do a combined ipv6/ipv4 query with luvit’s dns","date":"2015-08-06T20:59:08.012Z","type":"message"}
+{"nick":"creationix","message":"it just has quer4 and query6","date":"2015-08-06T20:59:15.359Z","type":"message"}
+{"nick":"creationix","message":"*query4","date":"2015-08-06T20:59:22.215Z","type":"message"}
+{"nick":"creationix","message":"I suppose I could just call query4 first and then fall-through to query6 if that doesn’t work","date":"2015-08-06T21:00:09.345Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i would use getaddrinfo from libuv","date":"2015-08-06T21:00:46.586Z","type":"message"}
+{"nick":"rphillips","message":"we don't have a function for it","date":"2015-08-06T21:00:50.737Z","type":"message"}
+{"nick":"rphillips","message":"that will allow for the OS to select the best fit","date":"2015-08-06T21:01:31.636Z","type":"message"}
+{"nick":"creationix","message":"got it, I’ll use the luvit library when I get to dns checks that need other types","date":"2015-08-06T21:02:48.472Z","type":"message"}
+{"nick":"rphillips","message":"exactly +1","date":"2015-08-06T21:03:19.518Z","type":"message"}
+{"nick":"rphillips","message":"the getaddrinfo from libuv also allows for hints","date":"2015-08-06T21:03:45.277Z","type":"message"}
+{"nick":"creationix","message":"I like doing things like passing in “https” for port and it gives back 443","date":"2015-08-06T21:04:35.140Z","type":"message"}
+{"nick":"creationix","message":"not sure how useful that information is though, it’s probably a small database","date":"2015-08-06T21:04:47.493Z","type":"message"}
+{"nick":"rphillips","message":"kostco: so adding a _transform using a stream looks like this: https://gist.github.com/rphillips/ff53252b5ea2a8886edd","date":"2015-08-06T21:04:58.312Z","type":"message"}
+{"nick":"rphillips","message":"i'm not buying it... it seems more complicated","date":"2015-08-06T21:05:06.559Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i'm thinking we should hardcode our default ports","date":"2015-08-06T21:06:11.898Z","type":"message"}
+{"nick":"rphillips","message":"for the major port numbers everything should match up","date":"2015-08-06T21:06:23.320Z","type":"message"}
+{"nick":"rphillips","message":"but there will be one of those systems that has a different services database","date":"2015-08-06T21:06:45.499Z","type":"message"}
+{"nick":"creationix","message":"rphillips: what do you mean?  The users specify the ports in case of remote checks right?","date":"2015-08-06T21:06:59.984Z","type":"message"}
+{"nick":"rphillips","message":"i think you are saying passing in 'https' into getaddrinfo","date":"2015-08-06T21:07:25.486Z","type":"message"}
+{"nick":"creationix","message":"right, I do that sometimes for fun","date":"2015-08-06T21:07:42.301Z","type":"message"}
+{"nick":"creationix","message":"not sure it’s ever a good idea","date":"2015-08-06T21:07:46.271Z","type":"message"}
+{"nick":"rphillips","message":":)","date":"2015-08-06T21:07:47.465Z","type":"message"}
+{"nick":"rphillips","message":"that use case, I'm just thinking of a stale services database","date":"2015-08-06T21:08:00.637Z","type":"message"}
+{"nick":"creationix","message":"but since I am passing the value to libuv from the user, they could type in “https” instead of a number and it would work","date":"2015-08-06T21:09:31.046Z","type":"message"}
+{"nick":"creationix","message":"(of course ele would invalidate it long before it got to us)","date":"2015-08-06T21:09:43.414Z","type":"message"}
+{"nick":"rphillips","message":"ah ok","date":"2015-08-06T21:09:54.454Z","type":"message"}
+{"nick":"kostco","message":"gotta go to a docker workshop so brb","date":"2015-08-06T21:21:35.952Z","type":"message"}
+{"nick":"kostco","message":"rphillips: did you get a chance to take a look at","date":"2015-08-06T21:22:12.260Z","type":"message"}
+{"nick":"kostco","message":"https://gist.github.com/kaustavha/7ff3f649ed5a90968b2b","date":"2015-08-06T21:22:12.353Z","type":"message"}
+{"nick":"kostco","message":"Yay/nay? is that what you said seemed more complicated","date":"2015-08-06T21:22:12.355Z","type":"message"}
+{"nick":"kostco","message":"shoulldve prolly waited till maas week before starting the refactoring process","date":"2015-08-06T21:25:50.396Z","type":"message"}
+{"nick":"coderkevin","message":"So, I'm looking into porting Luvit to QNX. Does anyone have a recommendation as to where I should start? Start with libuv first, then go from there?","date":"2015-08-06T22:35:56.179Z","type":"message"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-08-06T22:57:29.673Z","type":"quit"}
+{"nick":"creationix","message":"coderkevin: right, libuv and luajit are the hardest parts","date":"2015-08-06T23:33:10.635Z","type":"message"}
+{"nick":"creationix","message":"the rest is fairly portable","date":"2015-08-06T23:33:16.830Z","type":"message"}
+{"nick":"creationix","message":"rphillips: looks like George is doing something with robots https://github.com/libuv/libuv/pull/379","date":"2015-08-06T23:33:39.311Z","type":"message"}
+{"nick":"creationix","message":"I would love a serial primitive in libuv","date":"2015-08-06T23:33:45.422Z","type":"message"}
+{"nick":"rphillips","message":"that is really really cool","date":"2015-08-06T23:43:14.686Z","type":"message"}
