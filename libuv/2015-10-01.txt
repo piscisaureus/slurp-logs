@@ -1,0 +1,80 @@
+{"nick":"ircretary","reason":"Remote host closed the connection","date":"2015-10-01T00:00:01.596Z","type":"quit"}
+{"nick":"ircretary","date":"2015-10-01T00:00:09.463Z","type":"join"}
+{"nick":"jasnell","date":"2015-10-01T00:16:50.341Z","type":"join"}
+{"nick":"tunniclm_","date":"2015-10-01T00:25:20.487Z","type":"join"}
+{"nick":"Ralith","reason":"Ping timeout: 268 seconds","date":"2015-10-01T00:35:28.091Z","type":"quit"}
+{"nick":"qard","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-10-01T00:38:06.928Z","type":"quit"}
+{"nick":"Ralith","date":"2015-10-01T00:51:26.612Z","type":"join"}
+{"nick":"WalrusPony1","date":"2015-10-01T00:53:37.076Z","type":"join"}
+{"nick":"WalrusPony","reason":"Ping timeout: 264 seconds","date":"2015-10-01T00:55:37.351Z","type":"quit"}
+{"nick":"jasnell","reason":"Quit: Leaving...","date":"2015-10-01T01:01:18.251Z","type":"quit"}
+{"nick":"Dirkson","date":"2015-10-01T01:06:41.293Z","type":"join"}
+{"nick":"Dirkson","message":"Hey all. Does libuv provide any built in ways to tell when a remote tcp connection has stopped responding?","date":"2015-10-01T01:07:11.325Z","type":"message"}
+{"nick":"Ralith","message":"libuv does not mask the standard TCP facilities exposed by the OS which do that","date":"2015-10-01T01:08:44.610Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Are you saying that OSes provide that functionality, but libuv does not?","date":"2015-10-01T01:09:25.564Z","type":"message"}
+{"nick":"Ralith","message":"no, I'm saying that libuv exposes it in the same way it exposes all other TCP behavior","date":"2015-10-01T01:09:57.512Z","type":"message"}
+{"nick":"Ralith","message":"i.e. by a very thin wrapper around the common functionality","date":"2015-10-01T01:10:16.054Z","type":"message"}
+{"nick":"Dirkson","message":"Ok, cool. What keywords should I be looking for? Libuv is the first time I've fuddled around with TCP.","date":"2015-10-01T01:10:34.124Z","type":"message"}
+{"nick":"Ralith","message":"the POSIX API documentation for read(3) persuant to streams may be of interest","date":"2015-10-01T01:11:59.232Z","type":"message"}
+{"nick":"Ralith","message":"note that libuv read callbacks forward error codes translated to UV error codes in the ssize_t argument of the read callback","date":"2015-10-01T01:12:28.264Z","type":"message"}
+{"nick":"Ralith","message":"note also uv_strerror as useful for human-readable error reporting","date":"2015-10-01T01:13:44.948Z","type":"message"}
+{"nick":"Ralith","message":"of particular interest for TCP over WAN are ECONNRESET and ETIMEDOUT, which should be pretty self-explanatory","date":"2015-10-01T01:14:38.494Z","type":"message"}
+{"nick":"Ralith","message":"(typically prefix UV_ for the translated code)","date":"2015-10-01T01:16:24.893Z","type":"message"}
+{"nick":"Dirkson","message":"Looks like my libuv code already monitors for these errors and spits them out to console. Yay for forgetting I implemented stuff! Now I just need to lift the error message up in my stack so I can show the user : )","date":"2015-10-01T01:16:56.431Z","type":"message"}
+{"nick":"Dirkson","message":"Although curiously, I seem to get EOF rather than ECONNRESET or ETIMEOUT when I bring the server down, even with kill -9","date":"2015-10-01T01:17:28.570Z","type":"message"}
+{"nick":"Ralith","message":"you should expect a reset in that circumstance","date":"2015-10-01T01:18:16.283Z","type":"message"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-10-01T01:18:24.237Z","type":"quit"}
+{"nick":"Dirkson","message":"Ralith: But I don't seem to get one... Interesting, but probably not worth chasing down, I'm thinking - Any consistent error is good enough for what I need.","date":"2015-10-01T01:19:04.889Z","type":"message"}
+{"nick":"Ralith","message":"if you kill -9 the other end of the connection, I am sure you are receiving a reset","date":"2015-10-01T01:19:23.928Z","type":"message"}
+{"nick":"Dirkson","message":"And thus you're thinking my error reading code is wonky? I'm not sure, it seems simple enough: Error(\"Error reading TCP data: %i | %s | %s\", NumberRead, uv_err_name(NumberRead), uv_strerror(NumberRead));   Which results in: *ERR: Error reading TCP data: -4095 | EOF | end of file","date":"2015-10-01T01:20:52.996Z","type":"message"}
+{"nick":"Ralith","message":"NumberRead is the unmodified argument to the read callback?","date":"2015-10-01T01:23:20.840Z","type":"message"}
+{"nick":"Dirkson","message":"Ralith: Verifying... Yes.","date":"2015-10-01T01:24:35.137Z","type":"message"}
+{"nick":"Ralith","message":"then it might be interesting to examine a wire dump of the exchange","date":"2015-10-01T01:25:08.960Z","type":"message"}
+{"nick":"Ralith","message":"perhaps the linux TCP stack is weirder than I gave it credit for","date":"2015-10-01T01:26:16.208Z","type":"message"}
+{"nick":"Dirkson","message":"From my user's perspective, one error is mostly like another, so my needs are met. If there's some fuddling around with wireshark that might be useful/informative for you guys, though, I might be able to give it a go : )","date":"2015-10-01T01:26:28.341Z","type":"message"}
+{"nick":"Ralith","message":"no need","date":"2015-10-01T01:26:53.069Z","type":"message"}
+{"nick":"Dirkson","message":"But I definitely agree that getting back EOF from a tcp connection is interesting and unexpected behavior : )","date":"2015-10-01T01:27:14.055Z","type":"message"}
+{"nick":"Ralith","message":"that would actually explain some weird behavior I've been debugging at work recently, too","date":"2015-10-01T01:27:18.230Z","type":"message"}
+{"nick":"Ralith","message":"normally you'd get that after a graceful shutdown","date":"2015-10-01T01:27:36.525Z","type":"message"}
+{"nick":"Dirkson","message":"Interesting","date":"2015-10-01T01:28:03.751Z","type":"message"}
+{"nick":"Ralith","message":"if your information is accurate and libuv is not broken here (unlikely), it would appear that linux performs a graceful shutdown on its own after your process dies","date":"2015-10-01T01:28:06.240Z","type":"message"}
+{"nick":"Dirkson","message":"Hunh. Is that a good thing or not?","date":"2015-10-01T01:28:28.087Z","type":"message"}
+{"nick":"Ralith","message":"it shouldn't be of consequence","date":"2015-10-01T01:28:44.744Z","type":"message"}
+{"nick":"Ralith","message":"you can contrast it to the behavior you'll see if you explicitly close(3) the remote socket, or put the server on another computer and cut the power, then plug it back in before timeout","date":"2015-10-01T01:29:39.533Z","type":"message"}
+{"nick":"jasnell","date":"2015-10-01T01:29:41.457Z","type":"join"}
+{"nick":"Dirkson","message":"*nods*","date":"2015-10-01T01:30:01.672Z","type":"message"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-10-01T01:31:55.847Z","type":"quit"}
+{"nick":"jasnell","date":"2015-10-01T01:43:49.478Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-10-01T01:47:49.315Z","type":"quit"}
+{"nick":"tunniclm_","reason":"Ping timeout: 272 seconds","date":"2015-10-01T01:48:33.454Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-10-01T02:09:48.589Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-10-01T02:19:03.664Z","type":"join"}
+{"nick":"jasnell","date":"2015-10-01T02:22:45.472Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 246 seconds","date":"2015-10-01T02:23:44.877Z","type":"quit"}
+{"nick":"orangemocha_","reason":"Ping timeout: 260 seconds","date":"2015-10-01T02:27:51.902Z","type":"quit"}
+{"nick":"orangemocha","date":"2015-10-01T02:30:58.037Z","type":"join"}
+{"nick":"Bi3oN","date":"2015-10-01T02:59:18.130Z","type":"join"}
+{"nick":"Bi3oN","reason":"Client Quit","date":"2015-10-01T03:02:41.051Z","type":"quit"}
+{"nick":"Bi3oN","date":"2015-10-01T03:06:30.894Z","type":"join"}
+{"nick":"zju1","date":"2015-10-01T03:06:38.232Z","type":"join"}
+{"nick":"zju4","reason":"Ping timeout: 240 seconds","date":"2015-10-01T03:07:40.093Z","type":"quit"}
+{"nick":"zju3","reason":"Ping timeout: 250 seconds","date":"2015-10-01T03:07:43.382Z","type":"quit"}
+{"nick":"zju","date":"2015-10-01T03:07:58.092Z","type":"join"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-10-01T03:27:36.981Z","type":"quit"}
+{"nick":"jasnell","date":"2015-10-01T03:36:07.674Z","type":"join"}
+{"nick":"jgi","date":"2015-10-01T04:02:18.493Z","type":"join"}
+{"nick":"avalanche123","date":"2015-10-01T04:15:44.167Z","type":"join"}
+{"nick":"avalanche123","reason":"Client Quit","date":"2015-10-01T04:16:39.921Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-10-01T04:34:55.688Z","type":"quit"}
+{"nick":"jgi","date":"2015-10-01T04:35:34.299Z","type":"join"}
+{"nick":"inolen","date":"2015-10-01T04:42:47.077Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 260 seconds","date":"2015-10-01T04:55:19.910Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-10-01T05:37:35.209Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-10-01T05:44:29.973Z","type":"quit"}
+{"nick":"mmicko","date":"2015-10-01T05:59:01.261Z","type":"join"}
+{"nick":"Bi3oN","reason":"Ping timeout: 250 seconds","date":"2015-10-01T06:12:26.309Z","type":"quit"}
+{"nick":"AndreasMadsen","date":"2015-10-01T06:47:56.903Z","type":"join"}
+{"nick":"saghul_","reason":"Remote host closed the connection","date":"2015-10-01T07:14:09.313Z","type":"quit"}
+{"nick":"rendar","date":"2015-10-01T07:20:46.034Z","type":"join"}
+{"nick":"saghul","date":"2015-10-01T07:25:25.359Z","type":"join"}
+{"nick":"seishun","date":"2015-10-01T07:39:28.466Z","type":"join"}
