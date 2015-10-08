@@ -84,3 +84,75 @@
 {"nick":"peutetre","reason":"Quit: ...","date":"2015-10-07T15:42:57.613Z","type":"quit"}
 {"nick":"peutetre","date":"2015-10-07T15:46:07.419Z","type":"join"}
 {"nick":"drptbl","reason":"Quit: My MAC has gone to sleep. zZz..","date":"2015-10-07T15:50:54.007Z","type":"quit"}
+{"nick":"mafintosh","message":"mikolalysenko: using a trie you'd end up receiving the hashes you're missing sorted by the hash value right?","date":"2015-10-07T16:11:45.185Z","type":"message"}
+{"nick":"mikolalysenko","message":"depends on how you traverse the trie","date":"2015-10-07T16:12:19.643Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: if you traverse it left to right i guess","date":"2015-10-07T16:12:42.767Z","type":"message"}
+{"nick":"mikolalysenko","message":"sure","date":"2015-10-07T16:12:59.941Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: if i wanted to get the oldest dag nodes first would i then prefix the value i insert in the trie with a total number of children that dag node has?","date":"2015-10-07T16:23:52.143Z","type":"message"}
+{"nick":"mikolalysenko","message":"mafintosh: a simpler way to do it would be to tag each object with a creation time, then once you've got a diff sort by creation time","date":"2015-10-07T16:25:13.322Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: then i'd have to store the diff on disk though since it might be pretty big","date":"2015-10-07T16:28:04.317Z","type":"message"}
+{"nick":"mafintosh","message":"vs streaming it back as it is discovered","date":"2015-10-07T16:29:05.107Z","type":"message"}
+{"nick":"mikolalysenko","message":"I suppose","date":"2015-10-07T16:29:56.747Z","type":"message"}
+{"nick":"mikolalysenko","message":"though at that point, you might as well just store the whole thing in a bst keyed on [time, hash]","date":"2015-10-07T16:30:25.044Z","type":"message"}
+{"nick":"mikolalysenko","message":"assuming that you can assume time is a reasonable thing to query","date":"2015-10-07T16:30:38.843Z","type":"message"}
+{"nick":"AndreasMadsen","reason":"Remote host closed the connection","date":"2015-10-07T16:30:41.033Z","type":"quit"}
+{"nick":"mikolalysenko","message":"what you could maybe do is for each node of the trie, store the time of the earliest commit","date":"2015-10-07T16:31:20.561Z","type":"message"}
+{"nick":"mikolalysenko","message":"and then when you are traversing the trie, store the nodes to visit in a priority queue and expand those which are created sooner first","date":"2015-10-07T16:31:46.709Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is kind of a hack though, since you can't really trust wall clocks for this stuff","date":"2015-10-07T16:32:55.376Z","type":"message"}
+{"nick":"AndreasMadsen","date":"2015-10-07T16:37:49.536Z","type":"join"}
+{"nick":"peutetre","reason":"Quit: ...","date":"2015-10-07T16:50:11.366Z","type":"quit"}
+{"nick":"gozala","message":"Raynos: & friends can anyone point me to the code that deals with mercuries event system ?","date":"2015-10-07T16:52:33.761Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: by oldest i meant i'd prefer to get all links of node before getting the node itself. I think thats called a topological sort in graph terms","date":"2015-10-07T16:52:59.260Z","type":"message"}
+{"nick":"mikolalysenko","message":"mafintosh: one trouble with that definition is that it isn't a total order","date":"2015-10-07T16:53:33.997Z","type":"message"}
+{"nick":"mikolalysenko","message":"but you could just use a counter to get the same effect","date":"2015-10-07T16:53:49.386Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: but then i'd had to sync that counter as well across peers i guess","date":"2015-10-07T16:54:56.112Z","type":"message"}
+{"nick":"mikolalysenko","message":"or you can just have each peer maintain their own counter","date":"2015-10-07T16:55:11.160Z","type":"message"}
+{"nick":"mikolalysenko","message":"when you copy in nodes just increment it","date":"2015-10-07T16:55:27.237Z","type":"message"}
+{"nick":"mikolalysenko","message":"no need for it to be global, you just need to make sure you send nodes in topological order","date":"2015-10-07T16:55:50.988Z","type":"message"}
+{"nick":"gozala","message":"Raynos: I guess I was looking for this https://github.com/Matt-Esch/virtual-dom/blob/master/virtual-hyperscript/hooks/ev-hook.js","date":"2015-10-07T16:55:52.187Z","type":"message"}
+{"nick":"mikolalysenko","message":"and since nodes are created in topological order, a counter is sufficient","date":"2015-10-07T16:56:03.900Z","type":"message"}
+{"nick":"mikolalysenko","message":"each peer can use a separate counter with no problems, and you'll always get new nodes from that peer in topo order no sweat","date":"2015-10-07T16:56:35.546Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: yea i know but then i couldn't use that order when building the bst since order wasn't guaranteed to be the same","date":"2015-10-07T16:57:58.086Z","type":"message"}
+{"nick":"sethvincent","date":"2015-10-07T16:58:09.515Z","type":"join"}
+{"nick":"gozala","message":"Raynos: is there any capture phase support in EvHooks ?","date":"2015-10-07T16:58:25.653Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: but i might the able to get around that ordering requirement and just use your trie approach","date":"2015-10-07T16:58:43.573Z","type":"message"}
+{"nick":"mikolalysenko","message":"sure","date":"2015-10-07T16:58:51.268Z","type":"message"}
+{"nick":"mikolalysenko","message":"the trie will just send all the missing nodes over in whatever order you like","date":"2015-10-07T16:59:01.127Z","type":"message"}
+{"nick":"mikolalysenko","message":"but you could prioritize it to send more recent things using this counter trick","date":"2015-10-07T16:59:24.897Z","type":"message"}
+{"nick":"mafintosh","message":"mikolalysenko: for sure. i'm actually already using the counter trick","date":"2015-10-07T16:59:55.803Z","type":"message"}
+{"nick":"mikolalysenko","message":"or it just synchronizes the set of objects, without much thought to the order in which they get sent","date":"2015-10-07T17:00:01.416Z","type":"message"}
+{"nick":"niftylettuce","reason":"Quit: Connection closed for inactivity","date":"2015-10-07T17:11:39.339Z","type":"quit"}
+{"nick":"knownasilya","date":"2015-10-07T17:39:07.042Z","type":"join"}
+{"nick":"peutetre","date":"2015-10-07T17:49:34.410Z","type":"join"}
+{"nick":"peutetre","reason":"Quit: ...","date":"2015-10-07T18:05:18.756Z","type":"quit"}
+{"nick":"phated","date":"2015-10-07T18:34:01.389Z","type":"join"}
+{"nick":"peutetre","date":"2015-10-07T18:52:21.888Z","type":"join"}
+{"nick":"AndreasMadsen","date":"2015-10-07T19:09:58.362Z","type":"quit"}
+{"nick":"peutetre","reason":"Quit: ...","date":"2015-10-07T19:13:33.073Z","type":"quit"}
+{"nick":"Guest14553","new_nick":"JSON_voorhees","date":"2015-10-07T19:50:37.332Z","type":"nick"}
+{"nick":"JSON_voorhees","new_nick":"Guest87244","date":"2015-10-07T19:51:06.651Z","type":"nick"}
+{"nick":"phated","reason":"Remote host closed the connection","date":"2015-10-07T19:53:25.375Z","type":"quit"}
+{"nick":"niftylettuce","date":"2015-10-07T19:59:12.427Z","type":"join"}
+{"nick":"contrahax","date":"2015-10-07T20:02:23.704Z","type":"join"}
+{"nick":"contrahax","reason":"Read error: Connection reset by peer","date":"2015-10-07T20:04:05.702Z","type":"quit"}
+{"nick":"contrahax","date":"2015-10-07T20:04:42.232Z","type":"join"}
+{"nick":"shama","date":"2015-10-07T20:07:01.119Z","type":"join"}
+{"nick":"peutetre","date":"2015-10-07T20:07:55.457Z","type":"join"}
+{"nick":"peutetre","reason":"Client Quit","date":"2015-10-07T20:09:49.580Z","type":"quit"}
+{"nick":"phated","date":"2015-10-07T20:24:40.372Z","type":"join"}
+{"nick":"sethvincent","reason":"Ping timeout: 240 seconds","date":"2015-10-07T20:32:27.112Z","type":"quit"}
+{"nick":"eyeforeigneye","date":"2015-10-07T20:51:52.158Z","type":"join"}
+{"nick":"wa7son","message":"Auchenberg and I just published the module that will help you be more productive: https://github.com/auchenberg/volkswagen","date":"2015-10-07T20:53:18.808Z","type":"message"}
+{"nick":"jfhbrook","message":"wa7son: you saw the php version yeah?","date":"2015-10-07T21:06:28.012Z","type":"message"}
+{"nick":"wa7son","message":"jfhbrook: actually I didn’t. I just had the idea this morning, but Auchenberg saw it and we both thought it was an awesome idea ;)","date":"2015-10-07T21:07:21.303Z","type":"message"}
+{"nick":"jfhbrook","message":"wa7son: https://twitter.com/carlfish/status/651549999172423680 -heh-","date":"2015-10-07T21:10:57.384Z","type":"message"}
+{"nick":"wa7son","message":"jfhbrook: haha… Now I know where auchenberg got the project title from :)","date":"2015-10-07T21:11:50.639Z","type":"message"}
+{"nick":"wa7son","message":"jfhbrook: we just got to talk about it over lunch and he said someone did a similar php project :)","date":"2015-10-07T21:12:31.738Z","type":"message"}
+{"nick":"jfhbrook","message":"aha, very nice","date":"2015-10-07T21:12:57.199Z","type":"message"}
+{"nick":"eyeforeigneye","reason":"Ping timeout: 272 seconds","date":"2015-10-07T21:33:27.592Z","type":"quit"}
+{"nick":"eyeforeigneye","date":"2015-10-07T21:33:55.264Z","type":"join"}
+{"nick":"eyeforeigneye","reason":"Read error: Connection reset by peer","date":"2015-10-07T22:43:35.869Z","type":"quit"}
+{"nick":"sethvincent","date":"2015-10-07T23:05:59.656Z","type":"join"}
+{"nick":"pfraze","reason":"Remote host closed the connection","date":"2015-10-07T23:07:43.953Z","type":"quit"}
+{"nick":"pfraze","date":"2015-10-07T23:08:25.165Z","type":"join"}
+{"nick":"pfraze","reason":"Ping timeout: 240 seconds","date":"2015-10-07T23:12:40.145Z","type":"quit"}
