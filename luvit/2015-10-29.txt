@@ -21,3 +21,185 @@
 {"nick":"rphillips","message":"i don't think the leak is in luvi though","date":"2015-10-29T15:45:54.962Z","type":"message"}
 {"nick":"rphillips","message":"i'm betting it's something in the http module","date":"2015-10-29T15:46:06.417Z","type":"message"}
 {"nick":"rphillips","message":"in luvit","date":"2015-10-29T15:46:09.711Z","type":"message"}
+{"nick":"creationix","message":"I think lj_cf_os_date is used by the http server (for the Date header), but if luv_setup_handle had a leak, we'd see it all over the place","date":"2015-10-29T16:00:38.327Z","type":"message"}
+{"nick":"rphillips","message":"yeah, it might be the handle not being unref'ed","date":"2015-10-29T16:04:27.995Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2015-10-29T16:40:11.976Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i added a setInterval to net.lua","date":"2015-10-29T16:57:00.367Z","type":"message"}
+{"nick":"rphillips","message":"to dump out handle list with uv.walk","date":"2015-10-29T16:57:10.180Z","type":"message"}
+{"nick":"creationix","message":"is it leaking handles?","date":"2015-10-29T16:57:21.171Z","type":"message"}
+{"nick":"rphillips","message":"i'm not sure","date":"2015-10-29T16:57:26.451Z","type":"message"}
+{"nick":"creationix","message":"good idea btw","date":"2015-10-29T16:57:26.680Z","type":"message"}
+{"nick":"rphillips","message":"it started two interval timers","date":"2015-10-29T16:57:38.995Z","type":"message"}
+{"nick":"rphillips","message":"perhaps the require cache has a bug","date":"2015-10-29T16:57:54.660Z","type":"message"}
+{"nick":"rphillips","message":"+local i = 0","date":"2015-10-29T16:58:16.425Z","type":"message"}
+{"nick":"rphillips","message":"+timer.setInterval(5000, function()","date":"2015-10-29T16:58:19.274Z","type":"message"}
+{"nick":"rphillips","message":"+  p(string.format('*** walk start %d ***', i))","date":"2015-10-29T16:58:21.295Z","type":"message"}
+{"nick":"rphillips","message":"+  uv.walk(p)","date":"2015-10-29T16:58:23.216Z","type":"message"}
+{"nick":"rphillips","message":"+  p(string.format('*** walk end %d ***', i))","date":"2015-10-29T16:58:25.167Z","type":"message"}
+{"nick":"rphillips","message":"+  i = i + 1","date":"2015-10-29T16:58:27.250Z","type":"message"}
+{"nick":"rphillips","message":"+end)","date":"2015-10-29T16:58:29.160Z","type":"message"}
+{"nick":"rphillips","message":"https://www.evernote.com/l/AAk0xFxu_I5COLaxe5G9TS3TL7rxBCB7j8w","date":"2015-10-29T17:00:54.333Z","type":"message"}
+{"nick":"rphillips","message":"it's global to the module","date":"2015-10-29T17:01:07.976Z","type":"message"}
+{"nick":"creationix","message":"interesting","date":"2015-10-29T17:01:55.002Z","type":"message"}
+{"nick":"rphillips","message":"very. i thought i was seeing double for a second","date":"2015-10-29T17:02:32.044Z","type":"message"}
+{"nick":"creationix","message":"I don't see that https://gist.github.com/creationix/01d788dfea9e69c46d53","date":"2015-10-29T17:04:15.694Z","type":"message"}
+{"nick":"creationix","message":"where did you add the timer","date":"2015-10-29T17:04:21.277Z","type":"message"}
+{"nick":"rphillips","message":"creationix: line 220 of net.lua","date":"2015-10-29T17:07:43.424Z","type":"message"}
+{"nick":"rphillips","message":"right before the socket:destroy function","date":"2015-10-29T17:08:00.287Z","type":"message"}
+{"nick":"creationix","message":"yeah, that should be global","date":"2015-10-29T17:08:32.347Z","type":"message"}
+{"nick":"rphillips","message":"p('net.lua') does get printed twice","date":"2015-10-29T17:11:28.138Z","type":"message"}
+{"nick":"rphillips","message":"weird","date":"2015-10-29T17:11:33.238Z","type":"message"}
+{"nick":"creationix","message":"I can't reproduce that","date":"2015-10-29T17:13:35.977Z","type":"message"}
+{"nick":"creationix","message":"well, it's not leaking handles (not that uv.walk can see at least)","date":"2015-10-29T17:17:02.147Z","type":"message"}
+{"nick":"rphillips","message":"rphillips/double_import","date":"2015-10-29T17:17:34.990Z","type":"message"}
+{"nick":"rphillips","message":"./luvit examples/http-server.lua","date":"2015-10-29T17:17:45.764Z","type":"message"}
+{"nick":"rphillips","message":"prints out net.lua twice for me on OSX","date":"2015-10-29T17:17:55.322Z","type":"message"}
+{"nick":"rphillips","message":"clean luvit checkout on master","date":"2015-10-29T17:18:00.222Z","type":"message"}
+{"nick":"creationix","message":"found it!","date":"2015-10-29T17:20:58.287Z","type":"message"}
+{"nick":"creationix","message":"it only reproduces if loading net from the zip archive","date":"2015-10-29T17:21:08.432Z","type":"message"}
+{"nick":"creationix","message":"when running from disk, it doesn't double load","date":"2015-10-29T17:21:15.827Z","type":"message"}
+{"nick":"rphillips","message":"ah hah!","date":"2015-10-29T17:21:20.898Z","type":"message"}
+{"nick":"DarkGod","date":"2015-10-29T17:23:51.611Z","type":"join"}
+{"nick":"hdms","date":"2015-10-29T17:31:18.657Z","type":"join"}
+{"nick":"creationix","message":"the resolve algorithm is getting things sometimes wrong causing the require cache to not work","date":"2015-10-29T17:34:34.475Z","type":"message"}
+{"nick":"creationix","message":"the same file is keyed as both /Users/tim/luvit/luvit/deps/net.lua and /Users/tim/luvit/deps/net.lua","date":"2015-10-29T17:35:00.497Z","type":"message"}
+{"nick":"rphillips","message":"yeah, i see the same thing","date":"2015-10-29T17:39:34.579Z","type":"message"}
+{"nick":"rphillips","message":"tries the bundle first, then tries the local filesystem","date":"2015-10-29T17:39:46.456Z","type":"message"}
+{"nick":"creationix","message":"bundle.base is wrong","date":"2015-10-29T17:43:55.697Z","type":"message"}
+{"nick":"creationix","message":"it's '/Users/tim/luvit/luvit' for me","date":"2015-10-29T17:44:06.307Z","type":"message"}
+{"nick":"creationix","message":"I think that's set by luvi","date":"2015-10-29T17:44:14.301Z","type":"message"}
+{"nick":"creationix","message":"hmm, that's actually not wrong, it's just treating the luvi binary like a folder since it has a zip inside it","date":"2015-10-29T17:54:21.790Z","type":"message"}
+{"nick":"creationix","message":"it's a logical error in our require resolution logic","date":"2015-10-29T17:55:04.337Z","type":"message"}
+{"nick":"creationix","message":"the question is why one require uses the deps folder on disk and another require falls through to the built-ins in the bundle","date":"2015-10-29T17:55:55.015Z","type":"message"}
+{"nick":"creationix","message":"I would think both would resolve to the same place","date":"2015-10-29T17:56:09.187Z","type":"message"}
+{"nick":"creationix","message":"(but they are two different files, one is on disk, the other is inside a zip)","date":"2015-10-29T17:56:35.216Z","type":"message"}
+{"nick":"creationix","message":"but good news is the double require bug only happens because you're in the luvit folder","date":"2015-10-29T18:04:40.187Z","type":"message"}
+{"nick":"rphillips","message":"right","date":"2015-10-29T18:04:59.602Z","type":"message"}
+{"nick":"creationix","message":"if you move the example outside the luvit tree it won't happen","date":"2015-10-29T18:05:03.227Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2015-10-29T18:05:57.387Z","type":"message"}
+{"nick":"creationix","message":"rphillips, do you know why we load dns in luvit's main init.lua?","date":"2015-10-29T18:06:25.849Z","type":"message"}
+{"nick":"creationix","message":"why not just loadResolver when dns is required the first time?","date":"2015-10-29T18:06:42.173Z","type":"message"}
+{"nick":"creationix","message":"since it's loaded from init.lua, the base path is already inside the bundle so it looks there first","date":"2015-10-29T18:08:49.349Z","type":"message"}
+{"nick":"creationix","message":"but later when the example on disk loads net, it looks on the disk first and finds it there","date":"2015-10-29T18:09:05.718Z","type":"message"}
+{"nick":"creationix","message":"should we look in the first always and ignore modules on disk that match/conflict?","date":"2015-10-29T18:09:49.677Z","type":"message"}
+{"nick":"creationix","message":"*look in the bundle","date":"2015-10-29T18:09:57.018Z","type":"message"}
+{"nick":"rphillips","message":"yeah, looking in the bundle first","date":"2015-10-29T18:10:47.633Z","type":"message"}
+{"nick":"rphillips","message":"makes some sense","date":"2015-10-29T18:10:50.902Z","type":"message"}
+{"nick":"creationix","message":"node looks internal first btw","date":"2015-10-29T18:12:36.026Z","type":"message"}
+{"nick":"creationix","message":"looking on disk first is more powerful, but as we've seen can be confusing when running a luvi app from it's source folder","date":"2015-10-29T18:13:07.926Z","type":"message"}
+{"nick":"DarkGod","reason":"Remote host closed the connection","date":"2015-10-29T18:13:56.267Z","type":"quit"}
+{"nick":"creationix","message":"rphillips https://github.com/luvit/luvit/pull/822","date":"2015-10-29T18:24:56.053Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:25:11.513Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2590 (require-internal-first - d9d556d : Tim Caswell): The build has errored.","date":"2015-10-29T18:25:12.527Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/d9d556d65ae5","date":"2015-10-29T18:25:12.737Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/88179762","date":"2015-10-29T18:25:12.738Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:25:12.738Z","type":"part"}
+{"nick":"creationix","message":"hmm, still have that segfault on the thread test","date":"2015-10-29T18:26:12.396Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:28:50.647Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2590 (require-internal-first - d9d556d : Tim Caswell): The build passed.","date":"2015-10-29T18:28:51.589Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/d9d556d65ae5","date":"2015-10-29T18:28:51.800Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/88179762","date":"2015-10-29T18:28:51.800Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:28:51.800Z","type":"part"}
+{"nick":"creationix","message":"yeah, using instruments looks like the C side is clean","date":"2015-10-29T18:33:19.364Z","type":"message"}
+{"nick":"creationix","message":"maybe a couple bytes leaked in date, hard to tell","date":"2015-10-29T18:33:32.549Z","type":"message"}
+{"nick":"creationix","message":"it must be lua tables leaking","date":"2015-10-29T18:33:43.441Z","type":"message"}
+{"nick":"rphillips","message":"hmm yeah. doesn't fix the http module","date":"2015-10-29T18:35:43.206Z","type":"message"}
+{"nick":"rphillips","message":"leak","date":"2015-10-29T18:35:48.016Z","type":"message"}
+{"nick":"rphillips","message":"we could load the resolver when needed","date":"2015-10-29T18:36:15.956Z","type":"message"}
+{"nick":"creationix","message":"rphillips, this might help find the leak https://github.com/cloudwu/lua-snapshot","date":"2015-10-29T18:38:43.237Z","type":"message"}
+{"nick":"creationix","message":"pretty primitive, but better than uv.walk","date":"2015-10-29T18:38:51.131Z","type":"message"}
+{"nick":"creationix","message":"it's so tiny, I might just add it to luvi","date":"2015-10-29T18:39:10.867Z","type":"message"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-10-29T18:39:34.908Z","type":"quit"}
+{"nick":"rphillips","message":"yeah, that is slick","date":"2015-10-29T18:40:14.985Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:40:40.389Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2592 (master - 1888e7e : Tim Caswell): The build passed.","date":"2015-10-29T18:40:41.419Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/c8630dc89195...1888e7e8344e","date":"2015-10-29T18:40:41.630Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/88183050","date":"2015-10-29T18:40:41.631Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T18:40:41.631Z","type":"part"}
+{"nick":"creationix","message":"information overload","date":"2015-10-29T18:58:27.495Z","type":"message"}
+{"nick":"creationix","message":"rphillips https://github.com/luvit/luvi/pull/124","date":"2015-10-29T19:00:49.360Z","type":"message"}
+{"nick":"creationix","message":"and then test with https://gist.github.com/creationix/f2ca3b8c99131926f577","date":"2015-10-29T19:01:15.358Z","type":"message"}
+{"nick":"rphillips","message":"oh cool. did it work?","date":"2015-10-29T19:01:37.607Z","type":"message"}
+{"nick":"rphillips","message":"i got a Must require in main thread","date":"2015-10-29T19:01:48.165Z","type":"message"}
+{"nick":"rphillips","message":"error","date":"2015-10-29T19:01:50.554Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:03:48.836Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#778 (snapshot - b905818 : Tim Caswell): The build passed.","date":"2015-10-29T19:03:49.828Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/commit/b905818768f2","date":"2015-10-29T19:03:50.039Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/88187582","date":"2015-10-29T19:03:50.039Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:03:50.039Z","type":"part"}
+{"nick":"creationix","message":"rphillips, yeah you can't use it in the repl","date":"2015-10-29T19:05:06.127Z","type":"message"}
+{"nick":"creationix","message":"the repl is in a coroutine","date":"2015-10-29T19:05:10.978Z","type":"message"}
+{"nick":"creationix","message":"I get 80 new heap objects with every request","date":"2015-10-29T19:05:29.899Z","type":"message"}
+{"nick":"creationix","message":"though I figure some of them might get collected later","date":"2015-10-29T19:05:42.450Z","type":"message"}
+{"nick":"creationix","message":"maybe use timeouts before snapshotting","date":"2015-10-29T19:05:52.732Z","type":"message"}
+{"nick":"creationix","message":"yep, deferring with a timeout gives me 48 new heap objects every request","date":"2015-10-29T19:06:57.249Z","type":"message"}
+{"nick":"creationix","message":"updated gist https://gist.github.com/creationix/f2ca3b8c99131926f577","date":"2015-10-29T19:07:23.818Z","type":"message"}
+{"nick":"creationix","message":"we need a way to turn this data into a tree to find the roots","date":"2015-10-29T19:10:31.588Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:18:11.392Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2589 (rphillips/double_import - ba7f1a5 : Ryan Phillips): The build has errored.","date":"2015-10-29T19:18:12.393Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/ba7f1a5e69a7","date":"2015-10-29T19:18:12.603Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/88163439","date":"2015-10-29T19:18:12.604Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:18:12.604Z","type":"part"}
+{"nick":"creationix","message":"we're loosing about 13Kb of lua heap on every request","date":"2015-10-29T19:20:16.055Z","type":"message"}
+{"nick":"creationix","message":"I'm pretty sure it's the timeout handler leaking it's closure","date":"2015-10-29T19:23:44.284Z","type":"message"}
+{"nick":"creationix","message":"rphillips, yep.  It's the onExit.  Comment it out here and the leak goes away https://github.com/luvit/luvit/blob/master/deps/http.lua#L337","date":"2015-10-29T19:29:29.487Z","type":"message"}
+{"nick":"creationix","message":"I have no idea what that exit handler is for though","date":"2015-10-29T19:29:42.829Z","type":"message"}
+{"nick":"dan336","date":"2015-10-29T19:38:26.637Z","type":"join"}
+{"nick":"creationix","message":"https://github.com/luvit/luvit/pull/823","date":"2015-10-29T19:38:30.355Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:39:01.459Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2593 (fix-exit-leak - c5e6031 : Tim Caswell): The build passed.","date":"2015-10-29T19:39:02.574Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/c5e6031b91f1","date":"2015-10-29T19:39:02.785Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/88194756","date":"2015-10-29T19:39:02.785Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:39:02.785Z","type":"part"}
+{"nick":"creationix","message":"interesting, windows doesn't seem to have snprintf https://ci.appveyor.com/project/racker-buildbot/luvi/build/1.0.592/job/cd40bscs69luj314","date":"2015-10-29T19:47:24.344Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: it doesn't have a lot of things :P","date":"2015-10-29T19:52:26.228Z","type":"message"}
+{"nick":"creationix","message":"I guess that's part of c99.","date":"2015-10-29T19:52:45.247Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:53:20.749Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#783 (snapshot - b656dde : Tim Caswell): The build passed.","date":"2015-10-29T19:53:21.770Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/a1dd2f15f7d6...b656dde7c8f4","date":"2015-10-29T19:53:21.986Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/88197409","date":"2015-10-29T19:53:21.986Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T19:53:21.986Z","type":"part"}
+{"nick":"daurnimator","message":"creationix: they have it as _snprintf","date":"2015-10-29T19:53:41.267Z","type":"message"}
+{"nick":"creationix","message":"that's not quite the same thing though","date":"2015-10-29T19:53:52.993Z","type":"message"}
+{"nick":"torque","message":"visual studio 2015 has snprintf","date":"2015-10-29T19:54:54.947Z","type":"message"}
+{"nick":"daurnimator","message":"yeah. you also need to null terminator yourself with _snprintf","date":"2015-10-29T19:55:03.641Z","type":"message"}
+{"nick":"creationix","message":"yep yep","date":"2015-10-29T19:55:10.262Z","type":"message"}
+{"nick":"creationix","message":"appveyor must be using an older vs","date":"2015-10-29T19:55:20.416Z","type":"message"}
+{"nick":"creationix","message":"which is fine, not everyone building luvi will have the latest version","date":"2015-10-29T19:55:29.298Z","type":"message"}
+{"nick":"daurnimator","message":"just say you need 2015 to build on windows","date":"2015-10-29T19:56:05.599Z","type":"message"}
+{"nick":"daurnimator","message":"windows people rarely compile anyway","date":"2015-10-29T19:56:14.701Z","type":"message"}
+{"nick":"creationix","message":"alright, got it compiling on appveyor","date":"2015-10-29T20:07:04.514Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T20:07:13.856Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#784 (snapshot - 2c0929d : Tim Caswell): The build passed.","date":"2015-10-29T20:07:14.834Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/b656dde7c8f4...2c0929d6d722","date":"2015-10-29T20:07:15.046Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/88199959","date":"2015-10-29T20:07:15.046Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T20:07:15.046Z","type":"part"}
+{"nick":"travis-ci","date":"2015-10-29T20:11:00.401Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#785 (master - 730d0ca : Tim Caswell): The build passed.","date":"2015-10-29T20:11:01.230Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/9912d97c933b...730d0ca497ab","date":"2015-10-29T20:11:01.441Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/88200636","date":"2015-10-29T20:11:01.441Z","type":"message"}
+{"nick":"travis-ci","date":"2015-10-29T20:11:01.441Z","type":"part"}
+{"nick":"rphillips","message":"uhm","date":"2015-10-29T20:39:33.942Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/blob/master/deps/http.lua#L337","date":"2015-10-29T20:39:36.225Z","type":"message"}
+{"nick":"rphillips","message":"shouldn't that line be deleted?","date":"2015-10-29T20:39:40.993Z","type":"message"}
+{"nick":"rphillips","message":"that doesn't look kosher","date":"2015-10-29T20:39:43.616Z","type":"message"}
+{"nick":"creationix","message":"rphillips, my pr isn't merged yet https://github.com/luvit/luvit/pull/823","date":"2015-10-29T20:42:35.537Z","type":"message"}
+{"nick":"rphillips","message":"hmm, it's still leaking","date":"2015-10-29T20:55:46.832Z","type":"message"}
+{"nick":"creationix","message":"rphillips, leaking with my PR applied?","date":"2015-10-29T21:21:11.761Z","type":"message"}
+{"nick":"rphillips","message":"yeah","date":"2015-10-29T21:24:58.312Z","type":"message"}
+{"nick":"creationix","message":"rphillips, did you add a collectgarbage?","date":"2015-10-29T21:35:42.947Z","type":"message"}
+{"nick":"creationix","message":"the GC will use lots of memory before collecting otherwise","date":"2015-10-29T21:35:55.701Z","type":"message"}
+{"nick":"rphillips","message":"yeah","date":"2015-10-29T21:36:10.340Z","type":"message"}
+{"nick":"creationix","message":"strange","date":"2015-10-29T21:36:31.452Z","type":"message"}
+{"nick":"creationix","message":"hmm, maybe the collectgarbage() just slowed it down enough it looked fixed","date":"2015-10-29T21:40:29.147Z","type":"message"}
+{"nick":"creationix","message":"I ran it for 60 seconds and it only used 13mb","date":"2015-10-29T21:40:41.217Z","type":"message"}
+{"nick":"rphillips","message":"+  local gcCollect = uv.new_prepare()","date":"2015-10-29T21:42:07.136Z","type":"message"}
+{"nick":"rphillips","message":"+  uv.prepare_start(gcCollect, function() collectgarbage('step') end)","date":"2015-10-29T21:42:09.264Z","type":"message"}
+{"nick":"rphillips","message":"+  uv.unref(gcCollect)","date":"2015-10-29T21:42:11.119Z","type":"message"}
+{"nick":"rphillips","message":"i put this into init.lu","date":"2015-10-29T21:42:12.976Z","type":"message"}
+{"nick":"rphillips","message":"init.lua","date":"2015-10-29T21:42:15.475Z","type":"message"}
+{"nick":"creationix","message":"I'm not step is fast enough.  Doing a full GC on every request seems to keep it stable (though really slow)","date":"2015-10-29T21:54:19.791Z","type":"message"}
+{"nick":"rphillips","message":"k","date":"2015-10-29T22:29:42.722Z","type":"message"}
+{"nick":"rphillips","message":"exactly the reason why we didn't add auto gc into luvit","date":"2015-10-29T22:29:57.466Z","type":"message"}
+{"nick":"Something12","date":"2015-10-29T23:20:25.605Z","type":"join"}
+{"nick":"dan336","reason":"Quit: Leaving.","date":"2015-10-29T23:59:48.987Z","type":"quit"}
