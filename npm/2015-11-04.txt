@@ -249,3 +249,240 @@
 {"nick":"blazar","date":"2015-11-04T15:41:27.540Z","type":"join"}
 {"nick":"lencioni","date":"2015-11-04T15:53:51.244Z","type":"join"}
 {"nick":"rmg","date":"2015-11-04T15:57:50.410Z","type":"join"}
+{"nick":"lencioni","message":"Hello npm folks. I am running into an issue that I'm having a hard time figuring out and I'm wondering if someone here can help point me in the right direction","date":"2015-11-04T16:00:53.915Z","type":"message"}
+{"nick":"lencioni","message":"Here's the lowdown","date":"2015-11-04T16:00:59.290Z","type":"message"}
+{"nick":"lencioni","message":"We are using npm shrinkwrap in our project and have just upgraded from npm 2 to npm 3","date":"2015-11-04T16:01:22.632Z","type":"message"}
+{"nick":"lencioni","message":"Locally, on my Mac, things seem to work alright. I can npm prune and npm install and whatever and stuff seems to be working","date":"2015-11-04T16:01:47.402Z","type":"message"}
+{"nick":"lencioni","message":"However, in CI (Jenkins), things aren't quite so rosy","date":"2015-11-04T16:01:58.335Z","type":"message"}
+{"nick":"lencioni","message":"At least for some types of commits","date":"2015-11-04T16:02:05.902Z","type":"message"}
+{"nick":"lencioni","message":"I have a commit that upgrades babel from babel 5 to babel 6","date":"2015-11-04T16:02:25.723Z","type":"message"}
+{"nick":"rmg","reason":"Ping timeout: 244 seconds","date":"2015-11-04T16:02:32.934Z","type":"quit"}
+{"nick":"lencioni","message":"And on this commit, I get some errors like","date":"2015-11-04T16:02:46.139Z","type":"message"}
+{"nick":"lencioni","message":"npm ERR! path /var/lib/jenkins/workspace/brigade-jasmine/node_modules/babel-core/node_modules/regenerator/node_modules/defs/node_modules/ast-traverse","date":"2015-11-04T16:02:48.680Z","type":"message"}
+{"nick":"lencioni","message":"npm ERR! code ENOENT","date":"2015-11-04T16:02:48.892Z","type":"message"}
+{"nick":"lencioni","message":"npm ERR! errno -2","date":"2015-11-04T16:02:48.892Z","type":"message"}
+{"nick":"lencioni","message":"npm ERR! syscall rename","date":"2015-11-04T16:02:48.892Z","type":"message"}
+{"nick":"lencioni","message":"npm ERR! enoent ENOENT: no such file or directory, rename '/var/lib/jenkins/workspace/brigade-jasmine/node_modules/babel-core/node_modules/regenerator/node_modules/defs/node_modules/ast-traverse' -> '/var/lib/jenkins/workspace/brigade-jasmine/node_modules/ast-traverse'","date":"2015-11-04T16:02:58.920Z","type":"message"}
+{"nick":"lencioni","message":"And I haven't been able to reproduce it locally or figure out why this might be happening","date":"2015-11-04T16:03:17.893Z","type":"message"}
+{"nick":"lencioni","message":"There's also one sort of weird thing that we do in CI","date":"2015-11-04T16:03:34.020Z","type":"message"}
+{"nick":"lencioni","message":"After we npm install, we copy node_modules somewhere else.","date":"2015-11-04T16:03:57.536Z","type":"message"}
+{"nick":"lencioni","message":"And then at the beginning of the next job, before we npm install, we copy the node_modules back in","date":"2015-11-04T16:04:14.663Z","type":"message"}
+{"nick":"lencioni","message":"then we npm prune and npm install","date":"2015-11-04T16:04:18.669Z","type":"message"}
+{"nick":"lencioni","message":"This helps speed up our CI jobs","date":"2015-11-04T16:04:25.421Z","type":"message"}
+{"nick":"lencioni","message":"We were previously using a symlink for this, but ran into big problems when upgrading to npm 3","date":"2015-11-04T16:04:44.080Z","type":"message"}
+{"nick":"lencioni","message":"Some more info on that issue here if you are curious: https://github.com/npm/npm/issues/10013","date":"2015-11-04T16:05:10.308Z","type":"message"}
+{"nick":"lencioni","message":"So, does anyone have an idea of what might be happening here?","date":"2015-11-04T16:05:32.762Z","type":"message"}
+{"nick":"fiveisprime","date":"2015-11-04T16:07:23.140Z","type":"join"}
+{"nick":"othiym23","message":"lencioni: there have been a bunch of changes to the order in which operations are performed when shrinkwraps or bundledDependencies are involved in recent versions of npm@3","date":"2015-11-04T16:08:30.453Z","type":"message"}
+{"nick":"lencioni","message":"ok","date":"2015-11-04T16:08:43.703Z","type":"message"}
+{"nick":"othiym23","message":"lencioni: does this problem continue to happen if you upgrade npm on the CI server to npm@latest? npm@next?","date":"2015-11-04T16:09:26.429Z","type":"message"}
+{"nick":"lencioni","message":"It was happening on 3.3.6 and we just tried upgrading to 3.3.12","date":"2015-11-04T16:09:45.683Z","type":"message"}
+{"nick":"lencioni","message":"Which didn't help","date":"2015-11-04T16:09:54.005Z","type":"message"}
+{"nick":"lencioni","message":"Not sure if this is useful info, but I also see this line just after npm install starts:","date":"2015-11-04T16:10:20.622Z","type":"message"}
+{"nick":"lencioni","message":"ast-traverse@0.1.1 node_modules/babel-core/node_modules/regenerator/node_modules/defs/node_modules/ast-traverse -> node_modules/ast-traverse","date":"2015-11-04T16:10:21.514Z","type":"message"}
+{"nick":"bobmcw","date":"2015-11-04T16:16:26.427Z","type":"join"}
+{"nick":"bradleymeck","date":"2015-11-04T16:17:47.704Z","type":"join"}
+{"nick":"lance|afk","new_nick":"lanceball","date":"2015-11-04T16:19:58.976Z","type":"nick"}
+{"nick":"othiym23","message":"lencioni: if upgrading to npm@3.3.12 didn't fix it, then there's still a bug that one of the CLI team will need to look at","date":"2015-11-04T16:20:05.902Z","type":"message"}
+{"nick":"othiym23","message":"can you share your package.json and npm-shrinkwrap.json as a gist, or do they have sensitive data in them?","date":"2015-11-04T16:21:13.272Z","type":"message"}
+{"nick":"lencioni","message":"Let me check","date":"2015-11-04T16:21:24.477Z","type":"message"}
+{"nick":"lencioni","message":"othiym23: yeah I think I can put that in a gist","date":"2015-11-04T16:22:26.286Z","type":"message"}
+{"nick":"s3shs","date":"2015-11-04T16:22:42.543Z","type":"join"}
+{"nick":"lencioni","message":"give me a min","date":"2015-11-04T16:22:43.650Z","type":"message"}
+{"nick":"othiym23","message":"could you link to that gist from 10013 do we don't lose it?","date":"2015-11-04T16:23:11.023Z","type":"message"}
+{"nick":"hashpuppy","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T16:24:14.950Z","type":"quit"}
+{"nick":"lencioni","message":"othiym23: sure, but this is a different problem","date":"2015-11-04T16:27:11.612Z","type":"message"}
+{"nick":"lencioni","message":"Here's the gist https://gist.github.com/lencioni/008ee5374b2af271353e","date":"2015-11-04T16:27:15.280Z","type":"message"}
+{"nick":"lencioni","message":"10013 was about my node_modules dir being a symlink and all sorts of things blowing up","date":"2015-11-04T16:27:36.652Z","type":"message"}
+{"nick":"lencioni","message":"We worked around that by copying files around instead of using a symlink","date":"2015-11-04T16:27:52.365Z","type":"message"}
+{"nick":"lencioni","message":"And now we have this other issue","date":"2015-11-04T16:28:03.652Z","type":"message"}
+{"nick":"lencioni","message":"It might make more sense to open a new issue","date":"2015-11-04T16:28:18.906Z","type":"message"}
+{"nick":"ome","reason":"Quit: Connection closed for inactivity","date":"2015-11-04T16:30:25.811Z","type":"quit"}
+{"nick":"othiym23","message":"lencioni: go ahead and open a new issue, but be aware it may take us a bit to get back to you :o","date":"2015-11-04T16:31:38.576Z","type":"message"}
+{"nick":"othiym23","message":"there's a lot happening on the ol npm issue tracker at the moment","date":"2015-11-04T16:32:31.264Z","type":"message"}
+{"nick":"gigo1980_","date":"2015-11-04T16:33:49.134Z","type":"join"}
+{"nick":"Impaloo","message":"Is there a shorthand for --save-exact flag?","date":"2015-11-04T16:36:39.449Z","type":"message"}
+{"nick":"Impaloo","message":"Like -S (--save) and -D (--save-dev)","date":"2015-11-04T16:36:46.944Z","type":"message"}
+{"nick":"gigo1980_","reason":"Ping timeout: 240 seconds","date":"2015-11-04T16:37:59.080Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2015-11-04T16:48:24.856Z","type":"quit"}
+{"nick":"juanjo__","date":"2015-11-04T16:50:03.898Z","type":"join"}
+{"nick":"AustinMatherne","reason":"Ping timeout: 240 seconds","date":"2015-11-04T16:54:06.191Z","type":"quit"}
+{"nick":"AustinMatherne","date":"2015-11-04T16:55:10.213Z","type":"join"}
+{"nick":"rmg","date":"2015-11-04T16:56:45.560Z","type":"join"}
+{"nick":"LeBlaaanc","date":"2015-11-04T17:00:12.672Z","type":"join"}
+{"nick":"rominronin_","reason":"Quit: rominronin_","date":"2015-11-04T17:00:41.984Z","type":"quit"}
+{"nick":"lencioni","message":"othiym23: https://github.com/npm/npm/issues/10260 FYI","date":"2015-11-04T17:01:50.541Z","type":"message"}
+{"nick":"lencioni","message":"Thanks for the help","date":"2015-11-04T17:01:56.543Z","type":"message"}
+{"nick":"lencioni","message":"I hope this helps you track down the issue","date":"2015-11-04T17:02:05.145Z","type":"message"}
+{"nick":"slim_","date":"2015-11-04T17:05:23.620Z","type":"join"}
+{"nick":"slim_","reason":"Client Quit","date":"2015-11-04T17:05:46.499Z","type":"quit"}
+{"nick":"fiveisprime","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T17:08:03.042Z","type":"quit"}
+{"nick":"LeBlaaanc","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-04T17:14:19.895Z","type":"quit"}
+{"nick":"shinenelson","reason":"Quit: Connection closed for inactivity","date":"2015-11-04T17:18:59.780Z","type":"quit"}
+{"nick":"LeBlaaanc","date":"2015-11-04T17:19:30.977Z","type":"join"}
+{"nick":"DoubleMalt","reason":"Remote host closed the connection","date":"2015-11-04T17:23:57.756Z","type":"quit"}
+{"nick":"LeBlaaanc","reason":"Ping timeout: 244 seconds","date":"2015-11-04T17:24:10.954Z","type":"quit"}
+{"nick":"LeBlaaanc","date":"2015-11-04T17:25:01.797Z","type":"join"}
+{"nick":"s3shs","reason":"Remote host closed the connection","date":"2015-11-04T17:27:14.266Z","type":"quit"}
+{"nick":"LeBlaaan_","date":"2015-11-04T17:27:47.786Z","type":"join"}
+{"nick":"LeBlaaan_","reason":"Client Quit","date":"2015-11-04T17:30:38.597Z","type":"quit"}
+{"nick":"LeBlaaanc","reason":"Ping timeout: 264 seconds","date":"2015-11-04T17:31:23.787Z","type":"quit"}
+{"nick":"LeBlaaanc","date":"2015-11-04T17:33:04.431Z","type":"join"}
+{"nick":"SomeKittens","date":"2015-11-04T17:35:37.122Z","type":"join"}
+{"nick":"LeBlaaanc","reason":"Client Quit","date":"2015-11-04T17:37:19.861Z","type":"quit"}
+{"nick":"LeBlaaanc","date":"2015-11-04T17:39:24.598Z","type":"join"}
+{"nick":"proudlygeek","date":"2015-11-04T17:40:01.602Z","type":"join"}
+{"nick":"hashpuppy","date":"2015-11-04T17:43:58.339Z","type":"join"}
+{"nick":"Fishrock123","new_nick":"Fishrock|away","date":"2015-11-04T17:45:56.187Z","type":"nick"}
+{"nick":"proudlygeek","reason":"Remote host closed the connection","date":"2015-11-04T17:46:43.577Z","type":"quit"}
+{"nick":"rickharrison","message":"I have symlinks in node_modules. When I do `npm install` with 3.3.10, it removes those files from my node_modules folder. Is it possible to avoid this behavior?","date":"2015-11-04T18:00:10.734Z","type":"message"}
+{"nick":"s3shs","date":"2015-11-04T18:06:36.901Z","type":"join"}
+{"nick":"proudlygeek","date":"2015-11-04T18:06:46.976Z","type":"join"}
+{"nick":"s3shs","reason":"Remote host closed the connection","date":"2015-11-04T18:08:20.388Z","type":"quit"}
+{"nick":"s3shs","date":"2015-11-04T18:09:09.642Z","type":"join"}
+{"nick":"s3shs","reason":"Quit: Computer has gone to sleep.","date":"2015-11-04T18:19:33.190Z","type":"quit"}
+{"nick":"ljharb","message":"othiym23: https://travis-ci.org/es-shims/es5-shim/jobs/89264108 is using node 0.6 and npm 1.4.28 - and seems to be getting \"TypeError: Object #<Object> has no method 'tmpDir'\" - is there an older node i should use that works on node 0.6?","date":"2015-11-04T18:20:43.125Z","type":"message"}
+{"nick":"gigo1980_","date":"2015-11-04T18:34:42.540Z","type":"join"}
+{"nick":"hashpuppy","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T18:39:31.467Z","type":"quit"}
+{"nick":"gigo1980_","reason":"Ping timeout: 272 seconds","date":"2015-11-04T18:39:48.536Z","type":"quit"}
+{"nick":"metasansana","date":"2015-11-04T18:46:03.696Z","type":"join"}
+{"nick":"Fishrock|away","reason":"Remote host closed the connection","date":"2015-11-04T18:46:48.572Z","type":"quit"}
+{"nick":"djanowski_","date":"2015-11-04T18:47:23.637Z","type":"join"}
+{"nick":"s3shs","date":"2015-11-04T18:50:13.063Z","type":"join"}
+{"nick":"djanowski","reason":"Ping timeout: 260 seconds","date":"2015-11-04T18:51:07.269Z","type":"quit"}
+{"nick":"djanowski_","reason":"Ping timeout: 240 seconds","date":"2015-11-04T18:51:30.635Z","type":"quit"}
+{"nick":"matuzak","date":"2015-11-04T18:52:50.066Z","type":"join"}
+{"nick":"s3shs","reason":"Client Quit","date":"2015-11-04T18:53:05.484Z","type":"quit"}
+{"nick":"mich-cook","date":"2015-11-04T18:54:18.158Z","type":"join"}
+{"nick":"s3shs","date":"2015-11-04T18:56:54.001Z","type":"join"}
+{"nick":"proudlygeek","reason":"Remote host closed the connection","date":"2015-11-04T18:59:24.185Z","type":"quit"}
+{"nick":"s3shs","reason":"Client Quit","date":"2015-11-04T18:59:48.790Z","type":"quit"}
+{"nick":"proudlygeek","date":"2015-11-04T19:01:36.908Z","type":"join"}
+{"nick":"proudlygeek","reason":"Ping timeout: 264 seconds","date":"2015-11-04T19:06:11.759Z","type":"quit"}
+{"nick":"blazar","reason":"Ping timeout: 265 seconds","date":"2015-11-04T19:19:01.549Z","type":"quit"}
+{"nick":"williamle8300","date":"2015-11-04T19:22:00.961Z","type":"join"}
+{"nick":"bobmcw","date":"2015-11-04T19:22:44.200Z","type":"join"}
+{"nick":"williamle8300","date":"2015-11-04T19:23:21.282Z","type":"part"}
+{"nick":"bobmcw","reason":"Ping timeout: 260 seconds","date":"2015-11-04T19:27:30.966Z","type":"quit"}
+{"nick":"prbc","date":"2015-11-04T19:35:46.615Z","type":"join"}
+{"nick":"blazar","date":"2015-11-04T19:38:41.403Z","type":"join"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T19:40:15.196Z","type":"quit"}
+{"nick":"s3shs","date":"2015-11-04T19:40:31.974Z","type":"join"}
+{"nick":"s3shs_","date":"2015-11-04T19:42:32.063Z","type":"join"}
+{"nick":"s3shs","reason":"Ping timeout: 250 seconds","date":"2015-11-04T19:45:57.403Z","type":"quit"}
+{"nick":"Fishrock|away","date":"2015-11-04T19:47:41.031Z","type":"join"}
+{"nick":"Fishrock|away","reason":"Ping timeout: 260 seconds","date":"2015-11-04T19:52:34.980Z","type":"quit"}
+{"nick":"sboudrias","date":"2015-11-04T19:59:09.612Z","type":"join"}
+{"nick":"juanjo__","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-04T20:00:57.671Z","type":"quit"}
+{"nick":"s3shs_","reason":"Quit: Computer has gone to sleep.","date":"2015-11-04T20:01:31.217Z","type":"quit"}
+{"nick":"sboudria_","reason":"Ping timeout: 240 seconds","date":"2015-11-04T20:01:50.643Z","type":"quit"}
+{"nick":"Sam-T","date":"2015-11-04T20:11:24.169Z","type":"join"}
+{"nick":"metasansana","reason":"Read error: Connection reset by peer","date":"2015-11-04T20:12:40.570Z","type":"quit"}
+{"nick":"bobmcw","date":"2015-11-04T20:16:54.584Z","type":"join"}
+{"nick":"SomeKittens","reason":"Quit: Connection closed for inactivity","date":"2015-11-04T20:17:55.505Z","type":"quit"}
+{"nick":"sboudrias","reason":"Remote host closed the connection","date":"2015-11-04T20:18:29.622Z","type":"quit"}
+{"nick":"sboudrias","date":"2015-11-04T20:19:08.404Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 240 seconds","date":"2015-11-04T20:21:19.080Z","type":"quit"}
+{"nick":"mac_ified","date":"2015-11-04T20:31:35.160Z","type":"join"}
+{"nick":"gigo1980_","date":"2015-11-04T20:35:31.012Z","type":"join"}
+{"nick":"qard","date":"2015-11-04T20:37:19.858Z","type":"join"}
+{"nick":"qard","message":"I found a not very good thing. https://github.com/npm/npm/issues/10264","date":"2015-11-04T20:37:31.341Z","type":"message"}
+{"nick":"Fishrock|away","date":"2015-11-04T20:37:51.877Z","type":"join"}
+{"nick":"gigo1980_","reason":"Ping timeout: 260 seconds","date":"2015-11-04T20:40:10.976Z","type":"quit"}
+{"nick":"qard","message":"othiym23: Any idea what that is about? ^","date":"2015-11-04T20:42:27.930Z","type":"message"}
+{"nick":"metasansana","date":"2015-11-04T20:52:28.114Z","type":"join"}
+{"nick":"othiym23","message":"qard: what version of npm were you using?","date":"2015-11-04T20:55:42.760Z","type":"message"}
+{"nick":"qard","message":"3.3.6","date":"2015-11-04T20:55:55.935Z","type":"message"}
+{"nick":"prbc","reason":"Remote host closed the connection","date":"2015-11-04T20:56:07.047Z","type":"quit"}
+{"nick":"ehynds","date":"2015-11-04T20:56:18.509Z","type":"quit"}
+{"nick":"prbc","date":"2015-11-04T20:57:00.911Z","type":"join"}
+{"nick":"othiym23","message":"qard: I'm out and about; is that reproducible with npm@next?","date":"2015-11-04T20:57:09.767Z","type":"message"}
+{"nick":"prbc","reason":"Read error: Connection reset by peer","date":"2015-11-04T20:57:26.279Z","type":"quit"}
+{"nick":"qard","message":"I'll check,","date":"2015-11-04T20:57:28.947Z","type":"message"}
+{"nick":"othiym23","message":"hapi ships with a partial shrinkwrap which can confuse npm@3 in some cases","date":"2015-11-04T20:58:34.588Z","type":"message"}
+{"nick":"qard","message":"next seems to work. :)","date":"2015-11-04T20:59:16.347Z","type":"message"}
+{"nick":"othiym23","message":"excellent","date":"2015-11-04T20:59:32.710Z","type":"message"}
+{"nick":"othiym23","message":"that was probably a shrinkwrap-related issue","date":"2015-11-04T20:59:49.840Z","type":"message"}
+{"nick":"hashpuppy","date":"2015-11-04T21:00:38.253Z","type":"join"}
+{"nick":"qard","message":"Is next expected to ship with the next node patch release?","date":"2015-11-04T21:00:52.093Z","type":"message"}
+{"nick":"juanjo_","date":"2015-11-04T21:00:53.929Z","type":"join"}
+{"nick":"qard","message":"Not sure what the delay is between next -> latest and actually shipping with node.","date":"2015-11-04T21:01:30.781Z","type":"message"}
+{"nick":"ome","date":"2015-11-04T21:07:55.150Z","type":"join"}
+{"nick":"s3shs","date":"2015-11-04T21:11:27.266Z","type":"join"}
+{"nick":"Fishrock|away","new_nick":"Fishrock123","date":"2015-11-04T21:13:39.298Z","type":"nick"}
+{"nick":"hashpuppy","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T21:24:34.813Z","type":"quit"}
+{"nick":"bret","message":"its not possible to publish a module that depends on a git addressed module right?","date":"2015-11-04T21:28:08.781Z","type":"message"}
+{"nick":"bret","message":"(to npm)","date":"2015-11-04T21:28:15.698Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-11-04T21:28:44.650Z","type":"quit"}
+{"nick":"bradleymeck","date":"2015-11-04T21:30:38.165Z","type":"join"}
+{"nick":"ChALkeR","message":"bret: Are you sure?","date":"2015-11-04T21:38:04.180Z","type":"message"}
+{"nick":"bret","message":"im sorry i meant to say, is it not*","date":"2015-11-04T21:38:19.867Z","type":"message"}
+{"nick":"bret","message":"as a question","date":"2015-11-04T21:38:24.177Z","type":"message"}
+{"nick":"bret","message":"ChALkeR: im not sure","date":"2015-11-04T21:38:53.228Z","type":"message"}
+{"nick":"ChALkeR","message":"I don't know what's the current state of it, but I believe that I saw modules that depend on git addressed modules.","date":"2015-11-04T21:39:01.238Z","type":"message"}
+{"nick":"bret","message":"i guess ill just test it out","date":"2015-11-04T21:40:22.434Z","type":"message"}
+{"nick":"s34n","reason":"Quit: ChatZilla 0.9.92 [Firefox 41.0/20150922120153]","date":"2015-11-04T21:45:36.358Z","type":"quit"}
+{"nick":"sfeinste","date":"2015-11-04T21:57:30.899Z","type":"join"}
+{"nick":"sfeinste","reason":"Client Quit","date":"2015-11-04T21:57:32.323Z","type":"quit"}
+{"nick":"lewellyn","reason":"Ping timeout: 265 seconds","date":"2015-11-04T22:04:48.494Z","type":"quit"}
+{"nick":"lewellyn","date":"2015-11-04T22:12:41.816Z","type":"join"}
+{"nick":"gigo1980_","date":"2015-11-04T22:36:22.825Z","type":"join"}
+{"nick":"kutenai","message":"does npm ls -g list all global modules?","date":"2015-11-04T22:40:31.031Z","type":"message"}
+{"nick":"kutenai","message":"I get a ton of errors when using it....","date":"2015-11-04T22:40:40.885Z","type":"message"}
+{"nick":"kutenai","message":"extraneous: <lots> missing: <lots> .. not sure how to fix that.","date":"2015-11-04T22:41:00.757Z","type":"message"}
+{"nick":"gigo1980_","reason":"Ping timeout: 268 seconds","date":"2015-11-04T22:41:05.819Z","type":"quit"}
+{"nick":"ljharb","message":"kutenai: `npm ls -g --depth=0`","date":"2015-11-04T22:43:17.514Z","type":"message"}
+{"nick":"kutenai","message":"still getting a ton of errors.. I'd say my global node modules are pretty honked up.","date":"2015-11-04T22:44:08.326Z","type":"message"}
+{"nick":"kutenai","message":"I can remove /usr/local/lib/node_modules  - recursively and start over. But that won't remove annoying in /usr/local/bin","date":"2015-11-04T22:44:52.087Z","type":"message"}
+{"nick":"kutenai","message":"those are all linked though right?? SO I could remove any links to ../lib/node_modules..","date":"2015-11-04T22:45:07.786Z","type":"message"}
+{"nick":"ljharb","message":"do not do that","date":"2015-11-04T22:45:11.928Z","type":"message"}
+{"nick":"ljharb","message":"npm itself lives there","date":"2015-11-04T22:45:14.535Z","type":"message"}
+{"nick":"kutenai","message":"in node_modules?","date":"2015-11-04T22:45:25.625Z","type":"message"}
+{"nick":"ljharb","message":"yes","date":"2015-11-04T22:45:28.650Z","type":"message"}
+{"nick":"ljharb","message":"npm is a globally installed module","date":"2015-11-04T22:45:35.530Z","type":"message"}
+{"nick":"ljharb","message":"use `npm uninstall -g foo` to uninstall things.","date":"2015-11-04T22:45:45.302Z","type":"message"}
+{"nick":"kutenai","message":"how can I clean up the mess of modules I have then?","date":"2015-11-04T22:45:52.208Z","type":"message"}
+{"nick":"ljharb","message":"manually, one at a time?","date":"2015-11-04T22:47:10.930Z","type":"message"}
+{"nick":"mezod","reason":"Read error: Connection reset by peer","date":"2015-11-04T22:48:41.880Z","type":"quit"}
+{"nick":"kutenai","message":"that doesn't fun","date":"2015-11-04T22:49:06.564Z","type":"message"}
+{"nick":"mezod","date":"2015-11-04T22:51:14.658Z","type":"join"}
+{"nick":"othiym23","message":"qard: next gets promoted to latest, latest is then submitted as a PR to node against master, it gets reviewed and merged, and is then folded into the next Node release","date":"2015-11-04T22:52:55.079Z","type":"message"}
+{"nick":"othiym23","message":"so it takes a little while, in practice","date":"2015-11-04T22:53:00.735Z","type":"message"}
+{"nick":"othiym23","message":"bret: it's totally possible, and is totally a bad idea :D","date":"2015-11-04T22:53:25.791Z","type":"message"}
+{"nick":"qard","message":"Yeah, just not sure how long \"a little while\" is. :)","date":"2015-11-04T22:53:51.978Z","type":"message"}
+{"nick":"bret","message":"othiym23: cool good to know its possible and that its bad","date":"2015-11-04T22:54:10.965Z","type":"message"}
+{"nick":"othiym23","message":"qard: since the cadence of npm@5 is supposed to be every couple weeks, 3-4 weeks, most likely","date":"2015-11-04T22:54:12.902Z","type":"message"}
+{"nick":"qard","message":"Good to know. Thanks! :D","date":"2015-11-04T22:54:37.561Z","type":"message"}
+{"nick":"kutenai","message":"https://www.irccloud.com/pastebin/3lHr96IM/","date":"2015-11-04T22:55:01.343Z","type":"message"}
+{"nick":"blazar","reason":"Read error: Connection reset by peer","date":"2015-11-04T22:55:10.230Z","type":"quit"}
+{"nick":"kutenai","message":"ljharb: I don't think you appreciate the magnitude of the mess. See that pastebin","date":"2015-11-04T22:55:27.341Z","type":"message"}
+{"nick":"npmslack","date":"2015-11-04T22:57:36.488Z","type":"join"}
+{"nick":"kutenai","message":"I've tried to resolve this particular error: npm ERR! missing: debug@1.0.4, required by engine.io-client@1.5.4","date":"2015-11-04T22:58:14.454Z","type":"message"}
+{"nick":"ljharb","message":"kutenai: do `sudo npm uninstall -g generator-mocha ender` and try again","date":"2015-11-04T22:58:18.767Z","type":"message"}
+{"nick":"ljharb","message":"kutenai: you can't really resolve global dep errors manually","date":"2015-11-04T22:58:27.162Z","type":"message"}
+{"nick":"kutenai","message":"I still have a ton of missing errors, with things that npm@3.3.10 requires.","date":"2015-11-04T23:02:26.404Z","type":"message"}
+{"nick":"kutenai","message":"I'm actually running 3.3.12 though..","date":"2015-11-04T23:02:40.163Z","type":"message"}
+{"nick":"hashpuppy","date":"2015-11-04T23:02:48.603Z","type":"join"}
+{"nick":"kutenai","message":"and, why do I have all of the extraneous items?","date":"2015-11-04T23:03:15.467Z","type":"message"}
+{"nick":"kutenai","message":"I tried npm prune -g","date":"2015-11-04T23:03:42.357Z","type":"message"}
+{"nick":"ljharb","message":"kutenai: if you're getting errors with global npm, you should probably reinstall node.","date":"2015-11-04T23:05:16.798Z","type":"message"}
+{"nick":"kutenai","message":"I think so..","date":"2015-11-04T23:05:47.189Z","type":"message"}
+{"nick":"prbc","date":"2015-11-04T23:12:12.832Z","type":"join"}
+{"nick":"kutenai","message":"ljharb: I cleaned the slate and re-installed.. I grabbed the latest node and ran it.. now I have a clean npm","date":"2015-11-04T23:16:47.796Z","type":"message"}
+{"nick":"kutenai","message":"but, if I use outdated -g, It shows I'm on 2.14.7, and 3.3.10 is latest.. should I upgrade? That might have been my previous issue.. I did this","date":"2015-11-04T23:17:11.200Z","type":"message"}
+{"nick":"kutenai","message":"npm update -g npm","date":"2015-11-04T23:17:14.374Z","type":"message"}
+{"nick":"ljharb","message":"yep that's why","date":"2015-11-04T23:17:26.338Z","type":"message"}
+{"nick":"ljharb","message":"`npm install -g npm`","date":"2015-11-04T23:17:28.118Z","type":"message"}
+{"nick":"ljharb","message":"`npm update -g` absolutely will break your global modules","date":"2015-11-04T23:17:41.808Z","type":"message"}
+{"nick":"kutenai","message":"so, npm update work for local.. but is a non-no for global?","date":"2015-11-04T23:19:04.952Z","type":"message"}
+{"nick":"ome","reason":"Quit: Connection closed for inactivity","date":"2015-11-04T23:20:25.887Z","type":"quit"}
+{"nick":"ljharb","message":"i wouldn't use it for local either.","date":"2015-11-04T23:20:27.387Z","type":"message"}
+{"nick":"ljharb","message":"`npm update`, prior to some version of npm i forget which, recursively updated all dependencies, ignoring package.json semver ranges as it went","date":"2015-11-04T23:20:44.744Z","type":"message"}
+{"nick":"kutenai","message":"Wel... I went through all of the getting started docs today, including this one: https://docs.npmjs.com/getting-started/updating-local-packages","date":"2015-11-04T23:26:03.472Z","type":"message"}
+{"nick":"kutenai","message":"so.. I'm just following directions","date":"2015-11-04T23:26:13.137Z","type":"message"}
+{"nick":"ljharb","message":"with latest npm it's safe","date":"2015-11-04T23:29:59.133Z","type":"message"}
+{"nick":"ljharb","message":"but 2.14.7 isn't that","date":"2015-11-04T23:30:11.957Z","type":"message"}
+{"nick":"kutenai","message":"I reinstalled everything, and then update npm.. I've got a clean install now.. thanks for all the help","date":"2015-11-04T23:34:14.496Z","type":"message"}
+{"nick":"hashpuppy","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-04T23:35:08.875Z","type":"quit"}
+{"nick":"SomeKittens","date":"2015-11-04T23:36:37.687Z","type":"join"}
+{"nick":"ljharb","message":"np","date":"2015-11-04T23:46:13.497Z","type":"message"}
