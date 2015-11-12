@@ -1,0 +1,229 @@
+{"nick":"jasnell","message":"that makes sense","date":"2015-11-12T00:00:12.363Z","type":"message"}
+{"nick":"thealphanerd","message":"chrisdickinson: it appears like it is going through all the calls to flush","date":"2015-11-12T00:00:17.596Z","type":"message"}
+{"nick":"thealphanerd","message":"flush calls write","date":"2015-11-12T00:00:19.445Z","type":"message"}
+{"nick":"thealphanerd","message":"and hands the callback to write","date":"2015-11-12T00:00:23.515Z","type":"message"}
+{"nick":"thealphanerd","message":"and write never executes","date":"2015-11-12T00:00:26.830Z","type":"message"}
+{"nick":"chrisdickinson","message":"yep, which hands the callback to _write","date":"2015-11-12T00:00:32.066Z","type":"message"}
+{"nick":"mattloring","date":"2015-11-12T00:00:34.620Z","type":"join"}
+{"nick":"thealphanerd","message":"ahhh","date":"2015-11-12T00:00:36.760Z","type":"message"}
+{"nick":"thealphanerd","message":"OH in stream transform","date":"2015-11-12T00:00:55.243Z","type":"message"}
+{"nick":"thealphanerd","message":"one step ahead but two behind","date":"2015-11-12T00:01:09.096Z","type":"message"}
+{"nick":"chrisdickinson","message":"and since _write doesn't need a transform (nothing's reading from it) and doesn't need readable (nothing's reading from it), it falls back to \"is the readable state's length less than HWM?\"","date":"2015-11-12T00:01:10.038Z","type":"message"}
+{"nick":"chrisdickinson","message":"which for small buffers could be \"sure yep\"","date":"2015-11-12T00:01:30.933Z","type":"message"}
+{"nick":"jasnell","message":"so that makes sense and all but... why is it only happening intermittently?","date":"2015-11-12T00:01:49.352Z","type":"message"}
+{"nick":"chrisdickinson","message":"but for larger buffers, that single write may produce output that exceeds hwm","date":"2015-11-12T00:01:52.977Z","type":"message"}
+{"nick":"jasnell","message":"sometimes the flush callback is called, other times it is not","date":"2015-11-12T00:02:00.503Z","type":"message"}
+{"nick":"chrisdickinson","message":"so, a theory on that","date":"2015-11-12T00:02:43.882Z","type":"message"}
+{"nick":"chrisdickinson","message":"you're sending uninitialized buffer data to deflate","date":"2015-11-12T00:02:50.664Z","type":"message"}
+{"nick":"jasnell","message":"yep","date":"2015-11-12T00:02:54.871Z","type":"message"}
+{"nick":"chrisdickinson","message":"sometimes it'll deflate better than others","date":"2015-11-12T00:02:56.496Z","type":"message"}
+{"nick":"chrisdickinson","message":"so you may not hit readable hwm on the way out","date":"2015-11-12T00:03:13.606Z","type":"message"}
+{"nick":"jasnell","message":"aahhhh","date":"2015-11-12T00:03:29.658Z","type":"message"}
+{"nick":"jasnell","message":"yes","date":"2015-11-12T00:03:31.791Z","type":"message"}
+{"nick":"chrisdickinson","message":"(just a theory, though!)","date":"2015-11-12T00:03:33.132Z","type":"message"}
+{"nick":"jasnell","message":"that makes perfect sense actually","date":"2015-11-12T00:03:40.364Z","type":"message"}
+{"nick":"jasnell","message":"ok, so there is a bug here tho. this should not just be swallowing the call to flush without anything else happening","date":"2015-11-12T00:04:19.246Z","type":"message"}
+{"nick":"jasnell","message":"if nothing else, something needs to be documented","date":"2015-11-12T00:04:49.028Z","type":"message"}
+{"nick":"chrisdickinson","message":"it probably needs documented, it's hard to say whether it's a bug, though","date":"2015-11-12T00:05:39.318Z","type":"message"}
+{"nick":"chrisdickinson","message":"should `.flush` force the stream to exceed readable hwm? seems maybe a bit dangerous? but also maybe expected behavior?","date":"2015-11-12T00:06:08.748Z","type":"message"}
+{"nick":"chrisdickinson","message":"on the one hand the flush could be sitting behind a chunk that'll expand in a gigantic fashion, on the other, I guess that's what the user is asking for?","date":"2015-11-12T00:07:09.592Z","type":"message"}
+{"nick":"jasnell","message":"lemme see if I can paraphrase: when passing a large amount of data into Zlib, the readable state's highwatermark may max out. When this happens, the writable buffer cannot fully flush or drain until the readable buffer is cleared?","date":"2015-11-12T00:07:40.369Z","type":"message"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2015-11-12T00:07:55.852Z","type":"quit"}
+{"nick":"chrisdickinson","message":"I think that's accurate","date":"2015-11-12T00:08:14.289Z","type":"message"}
+{"nick":"chrisdickinson","message":"the drain bit throws me for a bit of a loop but it makes sense, I think.","date":"2015-11-12T00:08:31.157Z","type":"message"}
+{"nick":"jasnell","message":"re: having .flush force the stream to exceed the readable hwm, I'd say -1","date":"2015-11-12T00:08:37.892Z","type":"message"}
+{"nick":"jasnell","message":"I need to test the drain bit","date":"2015-11-12T00:08:50.878Z","type":"message"}
+{"nick":"jasnell","message":"we know for sure tho that flush is not completing when it hits this state","date":"2015-11-12T00:09:03.767Z","type":"message"}
+{"nick":"txdv","reason":"Ping timeout: 246 seconds","date":"2015-11-12T00:09:45.256Z","type":"quit"}
+{"nick":"jasnell","message":"in a transform, how does drain on the writable side affect the hwm on the readable side?","date":"2015-11-12T00:09:49.610Z","type":"message"}
+{"nick":"txdv_","date":"2015-11-12T00:09:50.533Z","type":"join"}
+{"nick":"rmg_","date":"2015-11-12T00:10:14.091Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 265 seconds","date":"2015-11-12T00:10:52.606Z","type":"quit"}
+{"nick":"chrisdickinson","message":"hm,","date":"2015-11-12T00:11:45.873Z","type":"message"}
+{"nick":"chrisdickinson","message":"it's hard to say, exactly — there are two separate buffers in transform streams, each with their own hwm","date":"2015-11-12T00:12:42.333Z","type":"message"}
+{"nick":"OliveiraDanilo","date":"2015-11-12T00:13:16.214Z","type":"join"}
+{"nick":"chrisdickinson","message":"if a transform's writable side needs to be drained that means its writable buffer is full; it may be that the readable side is also full at that point, or that the transform can't process data fast enough for the upstream writer","date":"2015-11-12T00:13:51.171Z","type":"message"}
+{"nick":"ncthom91","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2015-11-12T00:13:53.356Z","type":"quit"}
+{"nick":"rmg_","reason":"Ping timeout: 276 seconds","date":"2015-11-12T00:15:20.108Z","type":"quit"}
+{"nick":"jasnell","message":"so the question of the day is what happens in that state :-)","date":"2015-11-12T00:16:53.526Z","type":"message"}
+{"nick":"chrisdickinson","message":"generally: if a write happens to a transform without a reader, it'll try to move that data to the readable side's buffer via _transform","date":"2015-11-12T00:17:01.062Z","type":"message"}
+{"nick":"chrisdickinson","message":"so, write comes in, transform calls _read to trigger _transform. more writes come in during this presumably async _transform","date":"2015-11-12T00:19:36.239Z","type":"message"}
+{"nick":"chrisdickinson","message":"they are buffered on the writable side","date":"2015-11-12T00:19:43.996Z","type":"message"}
+{"nick":"chrisdickinson","message":"as soon as the transform finishes, it calls the cb, and clearBuffer on the writable side is fired, and the next pending write is shuttled in","date":"2015-11-12T00:20:10.163Z","type":"message"}
+{"nick":"chrisdickinson","message":"this continues until the readable side is filled up","date":"2015-11-12T00:20:23.266Z","type":"message"}
+{"nick":"chrisdickinson","message":"now, at some point, the readable buffer will hit hwm, at which point the transform stream will stop calling _read and thus stop calling _transform. now all writes are being buffered no matter what.","date":"2015-11-12T00:21:08.815Z","type":"message"}
+{"nick":"chrisdickinson","message":"now before or after that event, the writable buffer may have filled up. it's going to try and clear the buffer before emitting drain — basically it'll chew through the backlog before telling upstream that its ready to receive more writes","date":"2015-11-12T00:22:01.621Z","type":"message"}
+{"nick":"thealphanerd","message":"and that callback is lost in back pressure","date":"2015-11-12T00:22:01.829Z","type":"message"}
+{"nick":"chrisdickinson","message":"no callbacks are lost, but they might not be fired if nothing is reading from the stream","date":"2015-11-12T00:22:31.056Z","type":"message"}
+{"nick":"thealphanerd","message":"because they have not been written yet","date":"2015-11-12T00:23:19.492Z","type":"message"}
+{"nick":"jasnell","message":"This sounds like the perfect justification for a beer","date":"2015-11-12T00:23:49.236Z","type":"message"}
+{"nick":"chrisdickinson","message":"haha","date":"2015-11-12T00:23:52.706Z","type":"message"}
+{"nick":"chrisdickinson","message":"this is all in line with the M.O. of streams2+","date":"2015-11-12T00:24:00.271Z","type":"message"}
+{"nick":"thealphanerd","message":"streams… how do they work","date":"2015-11-12T00:24:04.166Z","type":"message"}
+{"nick":"chrisdickinson","message":"which is that streams are like a rusty garden spigot","date":"2015-11-12T00:24:13.550Z","type":"message"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2015-11-12T00:24:16.791Z","type":"quit"}
+{"nick":"chrisdickinson","message":"time consuming to turn on or off","date":"2015-11-12T00:24:22.534Z","type":"message"}
+{"nick":"jasnell","message":"ok, so yeah, it's working correctly but it's not obvious","date":"2015-11-12T00:24:28.439Z","type":"message"}
+{"nick":"chrisdickinson","message":"so we want to maximize the time between turning on or off","date":"2015-11-12T00:24:33.549Z","type":"message"}
+{"nick":"evanlucas","date":"2015-11-12T00:24:39.158Z","type":"join"}
+{"nick":"chrisdickinson","message":"(backpressure being the way these things get turned on or off, that is!)","date":"2015-11-12T00:24:52.167Z","type":"message"}
+{"nick":"jasnell","message":"I'll see if I can take some time to improve the documentation around this","date":"2015-11-12T00:24:54.403Z","type":"message"}
+{"nick":"jasnell","message":"for now, it's just about quitting time for the evening","date":"2015-11-12T00:25:19.978Z","type":"message"}
+{"nick":"chrisdickinson","message":"so we absorb writes we can't commit yet, and we store data for reads we haven't received yet","date":"2015-11-12T00:25:23.753Z","type":"message"}
+{"nick":"jasnell","message":"ok. thanks for the explanation chris! much appreciated","date":"2015-11-12T00:26:06.721Z","type":"message"}
+{"nick":"thealphanerd","message":"jasnell: my test passed CI fwiw","date":"2015-11-12T00:26:12.218Z","type":"message"}
+{"nick":"chrisdickinson","message":"jasnell: I was working on writing that up more fully here: https://gist.github.com/chrisdickinson/0a236ce62097c806113d","date":"2015-11-12T00:26:15.686Z","type":"message"}
+{"nick":"thealphanerd","message":"chrisdickinson: safe to assume you don’t really want this shared around right now as it is private?","date":"2015-11-12T00:26:42.475Z","type":"message"}
+{"nick":"chrisdickinson","message":"oh, no, feel free to share, I just automatically make every gist private as a force of habit","date":"2015-11-12T00:27:00.067Z","type":"message"}
+{"nick":"jasnell","message":"chrisdickinson === magic streams guru of great streams knowledge","date":"2015-11-12T00:27:02.316Z","type":"message"}
+{"nick":"chrisdickinson","message":"think of debugging streams as a directed headache with a finite ending","date":"2015-11-12T00:27:24.846Z","type":"message"}
+{"nick":"jasnell","message":"ok all, off now. ttyl!","date":"2015-11-12T00:27:25.429Z","type":"message"}
+{"nick":"chrisdickinson","message":"domains, on the other hand ...","date":"2015-11-12T00:27:30.454Z","type":"message"}
+{"nick":"chrisdickinson","message":"night!","date":"2015-11-12T00:27:32.564Z","type":"message"}
+{"nick":"jasnell","action":"is stepping away","date":"2015-11-12T00:27:33.846Z","type":"action"}
+{"nick":"thealphanerd","message":"cheer jasnell","date":"2015-11-12T00:27:38.142Z","type":"message"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-12T00:27:42.833Z","type":"quit"}
+{"nick":"thealphanerd","message":"s/cheer/cheers","date":"2015-11-12T00:27:43.345Z","type":"message"}
+{"nick":"zz_robotmayo","new_nick":"robotmayo","date":"2015-11-12T00:29:50.719Z","type":"nick"}
+{"nick":"ljharb","message":"chrisdickinson: you're familiar with the Observables proposal right?","date":"2015-11-12T00:29:56.963Z","type":"message"}
+{"nick":"chrisdickinson","message":"I've given it a really brief look — it seems neat on the face of it","date":"2015-11-12T00:30:31.064Z","type":"message"}
+{"nick":"chrisdickinson","message":"(TBH I've only really given the Streams spec a hard look)","date":"2015-11-12T00:30:50.799Z","type":"message"}
+{"nick":"mattloring","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-12T00:31:03.534Z","type":"quit"}
+{"nick":"robbyoconnor","reason":"Ping timeout: 265 seconds","date":"2015-11-12T00:33:06.461Z","type":"quit"}
+{"nick":"iojs-gh","date":"2015-11-12T00:34:33.151Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-12T00:34:33.394Z","type":"part"}
+{"nick":"bnoordhuis","date":"2015-11-12T00:37:51.093Z","type":"join"}
+{"nick":"filisko_","reason":"Ping timeout: 244 seconds","date":"2015-11-12T00:43:41.158Z","type":"quit"}
+{"nick":"hunseop","date":"2015-11-12T00:49:22.737Z","type":"join"}
+{"nick":"Oliveira_","date":"2015-11-12T00:52:43.415Z","type":"join"}
+{"nick":"OliveiraDanilo","reason":"Ping timeout: 246 seconds","date":"2015-11-12T00:55:36.156Z","type":"quit"}
+{"nick":"therebelrobot","reason":"Ping timeout: 272 seconds","date":"2015-11-12T00:58:02.517Z","type":"quit"}
+{"nick":"Oliveira_","reason":"Read error: Connection reset by peer","date":"2015-11-12T01:06:50.388Z","type":"quit"}
+{"nick":"bobmcw","date":"2015-11-12T01:08:21.324Z","type":"join"}
+{"nick":"AndChat|499956","reason":"Ping timeout: 240 seconds","date":"2015-11-12T01:08:39.093Z","type":"quit"}
+{"nick":"Oliveira_","date":"2015-11-12T01:10:38.227Z","type":"join"}
+{"nick":"rmg_","date":"2015-11-12T01:10:56.535Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-12T01:14:13.435Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-12T01:14:13.678Z","type":"part"}
+{"nick":"bobmcw","reason":"Ping timeout: 240 seconds","date":"2015-11-12T01:14:26.114Z","type":"quit"}
+{"nick":"rmg_","reason":"Ping timeout: 272 seconds","date":"2015-11-12T01:15:46.517Z","type":"quit"}
+{"nick":"Trangar","reason":"Quit: Leaving","date":"2015-11-12T01:16:02.793Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2015-11-12T01:20:21.631Z","type":"join"}
+{"nick":"macwinner","date":"2015-11-12T01:22:50.840Z","type":"join"}
+{"nick":"yosuke_furukawa","reason":"Ping timeout: 240 seconds","date":"2015-11-12T01:24:30.620Z","type":"quit"}
+{"nick":"jasnell","date":"2015-11-12T01:25:41.134Z","type":"join"}
+{"nick":"cspotcode","reason":"Quit: Connection closed for inactivity","date":"2015-11-12T01:27:18.594Z","type":"quit"}
+{"nick":"macwinner","reason":"Ping timeout: 240 seconds","date":"2015-11-12T01:27:30.602Z","type":"quit"}
+{"nick":"ofrobots","message":"@trevnorris when you were hitting the namespace error with gdb earlier, were you using a debug or release build?","date":"2015-11-12T01:27:39.477Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 240 seconds","date":"2015-11-12T01:28:39.083Z","type":"quit"}
+{"nick":"joshontheweb","date":"2015-11-12T01:29:13.225Z","type":"join"}
+{"nick":"springmeyer","reason":"Quit: springmeyer","date":"2015-11-12T01:30:15.389Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-12T01:32:10.925Z","type":"quit"}
+{"nick":"alrra","date":"2015-11-12T01:32:17.824Z","type":"join"}
+{"nick":"porri","reason":"Quit: This computer has gone to sleep","date":"2015-11-12T01:34:55.112Z","type":"quit"}
+{"nick":"Lee1092","date":"2015-11-12T01:35:26.823Z","type":"join"}
+{"nick":"peutetre","reason":"Quit: ...","date":"2015-11-12T01:37:13.406Z","type":"quit"}
+{"nick":"joshontheweb","reason":"Quit: Computer has gone to sleep.","date":"2015-11-12T01:40:05.235Z","type":"quit"}
+{"nick":"jellzero","reason":"Remote host closed the connection","date":"2015-11-12T01:41:41.047Z","type":"quit"}
+{"nick":"macwinner","date":"2015-11-12T01:41:46.474Z","type":"join"}
+{"nick":"evanlucas","reason":"Remote host closed the connection","date":"2015-11-12T01:45:38.977Z","type":"quit"}
+{"nick":"evanlucas","date":"2015-11-12T01:47:58.415Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-11-12T01:48:50.525Z","type":"quit"}
+{"nick":"mattloring","date":"2015-11-12T01:55:54.565Z","type":"join"}
+{"nick":"tyage","reason":"Quit: ZNC - http://znc.in","date":"2015-11-12T01:58:17.358Z","type":"quit"}
+{"nick":"bradleymeck","date":"2015-11-12T02:02:51.204Z","type":"join"}
+{"nick":"nuizzy","reason":"Quit: nuizzy","date":"2015-11-12T02:02:53.297Z","type":"quit"}
+{"nick":"mridgway","reason":"Quit: mridgway","date":"2015-11-12T02:03:42.024Z","type":"quit"}
+{"nick":"mattloring","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-12T02:03:49.211Z","type":"quit"}
+{"nick":"Oliveira_","reason":"Read error: Connection reset by peer","date":"2015-11-12T02:06:52.902Z","type":"quit"}
+{"nick":"Oliveira_","date":"2015-11-12T02:09:44.189Z","type":"join"}
+{"nick":"rmg_","date":"2015-11-12T02:11:41.105Z","type":"join"}
+{"nick":"rmg_","reason":"Ping timeout: 240 seconds","date":"2015-11-12T02:15:59.117Z","type":"quit"}
+{"nick":"waspinator_","reason":"Ping timeout: 244 seconds","date":"2015-11-12T02:16:41.208Z","type":"quit"}
+{"nick":"vravn","reason":"Excess Flood","date":"2015-11-12T02:20:13.357Z","type":"quit"}
+{"nick":"vravn","date":"2015-11-12T02:22:16.348Z","type":"join"}
+{"nick":"safe","reason":"Read error: Connection reset by peer","date":"2015-11-12T02:22:51.038Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2015-11-12T02:24:41.190Z","type":"quit"}
+{"nick":"vravn","reason":"Excess Flood","date":"2015-11-12T02:26:20.596Z","type":"quit"}
+{"nick":"vravn","date":"2015-11-12T02:27:47.194Z","type":"join"}
+{"nick":"bradleymeck","date":"2015-11-12T02:30:38.858Z","type":"join"}
+{"nick":"jasnell","date":"2015-11-12T02:32:42.976Z","type":"join"}
+{"nick":"bnoordhuis","date":"2015-11-12T02:35:31.396Z","type":"join"}
+{"nick":"jasnell","reason":"Ping timeout: 240 seconds","date":"2015-11-12T02:38:03.990Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 250 seconds","date":"2015-11-12T02:39:59.446Z","type":"quit"}
+{"nick":"filisko_","date":"2015-11-12T02:45:38.501Z","type":"join"}
+{"nick":"mich-cook","reason":"Read error: Connection reset by peer","date":"2015-11-12T02:50:20.508Z","type":"quit"}
+{"nick":"inex_","date":"2015-11-12T02:57:18.694Z","type":"join"}
+{"nick":"fmt_caret","reason":"Quit: fmt_caret","date":"2015-11-12T02:59:32.827Z","type":"quit"}
+{"nick":"inex","reason":"Ping timeout: 250 seconds","date":"2015-11-12T03:00:14.422Z","type":"quit"}
+{"nick":"Oliveira_","reason":"Read error: Connection reset by peer","date":"2015-11-12T03:09:39.917Z","type":"quit"}
+{"nick":"rmg_","date":"2015-11-12T03:12:27.130Z","type":"join"}
+{"nick":"bobmcw","date":"2015-11-12T03:12:33.492Z","type":"join"}
+{"nick":"jasnell","date":"2015-11-12T03:15:57.632Z","type":"join"}
+{"nick":"rmg_","reason":"Ping timeout: 244 seconds","date":"2015-11-12T03:16:37.097Z","type":"quit"}
+{"nick":"bobmcw","reason":"Ping timeout: 252 seconds","date":"2015-11-12T03:18:55.825Z","type":"quit"}
+{"nick":"cspent","reason":"Read error: Connection reset by peer","date":"2015-11-12T03:29:41.963Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-12T03:32:08.499Z","type":"quit"}
+{"nick":"fsalgo","reason":"Read error: Connection reset by peer","date":"2015-11-12T03:33:55.688Z","type":"quit"}
+{"nick":"fsalgo","date":"2015-11-12T03:34:39.163Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-12T03:44:24.677Z","type":"quit"}
+{"nick":"rmg_","date":"2015-11-12T04:13:13.438Z","type":"join"}
+{"nick":"rmg_","reason":"Ping timeout: 255 seconds","date":"2015-11-12T04:17:30.508Z","type":"quit"}
+{"nick":"Xiti`","date":"2015-11-12T04:19:08.430Z","type":"join"}
+{"nick":"Arnavion","reason":"Read error: Connection reset by peer","date":"2015-11-12T04:19:25.331Z","type":"quit"}
+{"nick":"Arnavion","date":"2015-11-12T04:19:43.449Z","type":"join"}
+{"nick":"robbyoconnor","date":"2015-11-12T04:21:57.257Z","type":"join"}
+{"nick":"Xiti","reason":"Ping timeout: 240 seconds","date":"2015-11-12T04:22:06.229Z","type":"quit"}
+{"nick":"fmt_caret","date":"2015-11-12T04:28:45.626Z","type":"join"}
+{"nick":"fmt_caret","reason":"Ping timeout: 240 seconds","date":"2015-11-12T04:32:55.637Z","type":"quit"}
+{"nick":"fsalgo","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-12T04:38:38.502Z","type":"quit"}
+{"nick":"fmt_caret","date":"2015-11-12T04:39:30.401Z","type":"join"}
+{"nick":"JamesMGreene","date":"2015-11-12T04:50:41.222Z","type":"join"}
+{"nick":"evanluca_","date":"2015-11-12T04:54:04.666Z","type":"join"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2015-11-12T04:54:22.073Z","type":"quit"}
+{"nick":"fsalgo","date":"2015-11-12T04:56:16.076Z","type":"join"}
+{"nick":"SomeKittens","date":"2015-11-12T04:56:35.306Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-12T05:01:27.812Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-12T05:01:28.058Z","type":"part"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2015-11-12T05:05:28.915Z","type":"quit"}
+{"nick":"rmg_","date":"2015-11-12T05:13:59.112Z","type":"join"}
+{"nick":"r04r","new_nick":"zz_r04r","date":"2015-11-12T05:14:47.069Z","type":"nick"}
+{"nick":"bobmcw","date":"2015-11-12T05:15:59.363Z","type":"join"}
+{"nick":"inex_","new_nick":"inex","date":"2015-11-12T05:17:21.529Z","type":"nick"}
+{"nick":"rmg_","reason":"Ping timeout: 246 seconds","date":"2015-11-12T05:18:06.095Z","type":"quit"}
+{"nick":"bobmcw","reason":"Ping timeout: 260 seconds","date":"2015-11-12T05:21:26.966Z","type":"quit"}
+{"nick":"jgi","date":"2015-11-12T05:24:30.824Z","type":"join"}
+{"nick":"boneskull","date":"2015-11-12T05:26:33.444Z","type":"join"}
+{"nick":"boneskull","date":"2015-11-12T05:26:58.695Z","type":"part"}
+{"nick":"filisko_","reason":"Ping timeout: 255 seconds","date":"2015-11-12T05:37:09.473Z","type":"quit"}
+{"nick":"nnyk","date":"2015-11-12T05:43:41.343Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-12T06:01:05.441Z","type":"quit"}
+{"nick":"nnyk","reason":"Ping timeout: 250 seconds","date":"2015-11-12T06:06:41.402Z","type":"quit"}
+{"nick":"jgi","date":"2015-11-12T06:07:13.835Z","type":"join"}
+{"nick":"rmg_","date":"2015-11-12T06:14:44.116Z","type":"join"}
+{"nick":"rmg_","reason":"Ping timeout: 240 seconds","date":"2015-11-12T06:18:46.164Z","type":"quit"}
+{"nick":"mapu","reason":"Quit: mapu","date":"2015-11-12T06:30:06.462Z","type":"quit"}
+{"nick":"Trangar","date":"2015-11-12T06:32:21.579Z","type":"join"}
+{"nick":"Trangar","reason":"Changing host","date":"2015-11-12T06:32:21.726Z","type":"quit"}
+{"nick":"Trangar","date":"2015-11-12T06:32:21.726Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-12T06:54:49.385Z","type":"quit"}
+{"nick":"lpin","date":"2015-11-12T07:04:23.169Z","type":"join"}
+{"nick":"David_Hernandez","date":"2015-11-12T07:09:36.116Z","type":"join"}
+{"nick":"STRML","reason":"Ping timeout: 250 seconds","date":"2015-11-12T07:14:10.583Z","type":"quit"}
+{"nick":"cjihrig","reason":"Ping timeout: 250 seconds","date":"2015-11-12T07:14:10.826Z","type":"quit"}
+{"nick":"cpc26","date":"2015-11-12T07:14:33.208Z","type":"join"}
+{"nick":"rickharrison","reason":"Ping timeout: 250 seconds","date":"2015-11-12T07:14:36.540Z","type":"quit"}
+{"nick":"zz_r04r","reason":"Ping timeout: 250 seconds","date":"2015-11-12T07:14:36.746Z","type":"quit"}
+{"nick":"filisko_","date":"2015-11-12T07:15:02.384Z","type":"join"}
+{"nick":"rickharrison","date":"2015-11-12T07:15:18.620Z","type":"join"}
+{"nick":"cpc26_","reason":"Ping timeout: 250 seconds","date":"2015-11-12T07:15:28.488Z","type":"quit"}
+{"nick":"rmg_","date":"2015-11-12T07:15:29.105Z","type":"join"}
+{"nick":"fernando_","reason":"Ping timeout: 264 seconds","date":"2015-11-12T07:18:11.739Z","type":"quit"}
+{"nick":"cjihrig","date":"2015-11-12T07:19:14.324Z","type":"join"}
+{"nick":"rmg_","reason":"Ping timeout: 240 seconds","date":"2015-11-12T07:19:46.134Z","type":"quit"}
+{"nick":"STRML","date":"2015-11-12T07:20:10.491Z","type":"join"}
+{"nick":"zz_r04r","date":"2015-11-12T07:22:13.369Z","type":"join"}
+{"nick":"porri","date":"2015-11-12T07:22:24.519Z","type":"join"}
+{"nick":"SomeKittens","reason":"Quit: Connection closed for inactivity","date":"2015-11-12T07:27:57.468Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2015-11-12T07:53:51.393Z","type":"join"}
+{"nick":"rendar","date":"2015-11-12T07:58:51.457Z","type":"join"}
