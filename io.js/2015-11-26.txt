@@ -1,0 +1,365 @@
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2015-11-26T00:00:47.034Z","type":"quit"}
+{"nick":"ofrobots","message":"indutny: one idea would be to build post-mortem data as a post-processing step. Basically build V8 with debug; extract the dwarf/stabs debug info and get the offsets from there. Not as elegant though.","date":"2015-11-26T00:08:32.616Z","type":"message"}
+{"nick":"yosuke_furukawa","reason":"Ping timeout: 250 seconds","date":"2015-11-26T00:08:43.360Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2015-11-26T00:08:55.073Z","type":"join"}
+{"nick":"indutny","message":"ofrobots: debug won't work, probably","date":"2015-11-26T00:09:04.544Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: it may have different offsets","date":"2015-11-26T00:09:15.328Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: unless it is just -O0","date":"2015-11-26T00:09:28.521Z","type":"message"}
+{"nick":"ofrobots","message":"indutny: Optdebug then","date":"2015-11-26T00:09:29.412Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2015-11-26T00:09:32.701Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: this means 2x build time, though","date":"2015-11-26T00:09:47.483Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: but this may work indeed","date":"2015-11-26T00:10:58.648Z","type":"message"}
+{"nick":"ofrobots","message":"Another idea would be build a C++ file with compiler forced to ignore C++ privacy. That C++ program could print the offsets you care about. This could live externally to the V8 code-base. Not sure if this is possible.","date":"2015-11-26T00:11:26.611Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: it probably won't work","date":"2015-11-26T00:12:41.071Z","type":"message"}
+{"nick":"indutny","message":"cc bnoordhuis","date":"2015-11-26T00:12:45.415Z","type":"message"}
+{"nick":"ofrobots","message":"something like, printf(\"%d\" offsetof(v8::internal::Object, ...));","date":"2015-11-26T00:13:01.162Z","type":"message"}
+{"nick":"ofrobots","message":"I used to do this in another VM I used to work on in a past life.","date":"2015-11-26T00:13:37.865Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: hm... with a private  fields?","date":"2015-11-26T00:17:24.784Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: what compiler flags did you use?","date":"2015-11-26T00:17:34.107Z","type":"message"}
+{"nick":"ofrobots","message":"in my case the fields were not private.","date":"2015-11-26T00:17:44.291Z","type":"message"}
+{"nick":"ofrobots","message":"But the compiler knows this info. If only we could force it to ignore c++ privacy.","date":"2015-11-26T00:18:15.173Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2015-11-26T00:18:25.624Z","type":"message"}
+{"nick":"jasnell","date":"2015-11-26T00:23:09.500Z","type":"join"}
+{"nick":"indutny","message":"ofrobots: gosh, if only they let me add `friend class` there","date":"2015-11-26T00:23:45.540Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: I will probably ask them about it","date":"2015-11-26T00:23:51.336Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: shouldn't change much for V8, but will make some difference for postmortem","date":"2015-11-26T00:24:10.428Z","type":"message"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-26T00:24:16.276Z","type":"quit"}
+{"nick":"jasnell","date":"2015-11-26T00:24:28.805Z","type":"join"}
+{"nick":"ofrobots","message":"indutny: agree that is the best approach. I can help lobby too.","date":"2015-11-26T00:25:35.767Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: thanks","date":"2015-11-26T00:25:46.434Z","type":"message"}
+{"nick":"obiwahn","reason":"Ping timeout: 276 seconds","date":"2015-11-26T00:31:31.637Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 276 seconds","date":"2015-11-26T00:31:31.866Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-26T00:32:34.717Z","type":"quit"}
+{"nick":"ofrobots","message":"indutny: btw, proof-of-concept of a compiler based tool: https://gist.github.com/ofrobots/242d1f92952054e10679","date":"2015-11-26T00:34:17.349Z","type":"message"}
+{"nick":"indutny","message":"oooh","date":"2015-11-26T00:34:32.199Z","type":"message"}
+{"nick":"ofrobots","message":"you can extract record layout from clang","date":"2015-11-26T00:34:34.165Z","type":"message"}
+{"nick":"indutny","message":"this is actually quite good","date":"2015-11-26T00:34:37.656Z","type":"message"}
+{"nick":"jasnell","date":"2015-11-26T00:34:58.539Z","type":"join"}
+{"nick":"indutny","message":"we just need to pass defines","date":"2015-11-26T00:35:00.862Z","type":"message"}
+{"nick":"indutny","message":"and it is an open question on how this could be done with gcc","date":"2015-11-26T00:35:29.141Z","type":"message"}
+{"nick":"indutny","message":"on other hand we can update this info during V8 updates","date":"2015-11-26T00:35:46.069Z","type":"message"}
+{"nick":"ofrobots","message":"BTW, my understanding is that the IBM's diagnostics tools for Node.js do a similar technique using a proprietary compiler","date":"2015-11-26T00:35:48.584Z","type":"message"}
+{"nick":"indutny","message":"and keep it aside in a separate file","date":"2015-11-26T00:35:50.752Z","type":"message"}
+{"nick":"JoWie","reason":"Quit: Connection closed for inactivity","date":"2015-11-26T00:37:33.571Z","type":"quit"}
+{"nick":"ofrobots","message":"indutny: why do we have to do this with gcc? because of the system ABI, the structure layout has to be the same between compilers","date":"2015-11-26T00:37:35.792Z","type":"message"}
+{"nick":"ofrobots","message":"unless V8 is doing layout pragmas that are gcc and/or clang specific","date":"2015-11-26T00:37:50.212Z","type":"message"}
+{"nick":"ofrobots","message":"(doubtful)","date":"2015-11-26T00:37:55.722Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: I totally understand this","date":"2015-11-26T00:37:58.438Z","type":"message"}
+{"nick":"ndhoule","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-26T00:38:05.835Z","type":"quit"}
+{"nick":"indutny","message":"ofrobots: we just currently support building with MSVC, gcc, clang","date":"2015-11-26T00:38:08.946Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: but if we would put this offsets into a separate file","date":"2015-11-26T00:38:24.356Z","type":"message"}
+{"nick":"indutny","message":"ofrobots: we don't need to ask people to build with clang","date":"2015-11-26T00:38:33.588Z","type":"message"}
+{"nick":"ofrobots","message":"Oh, I get your point about doing this on V8 updates.","date":"2015-11-26T00:39:13.396Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2015-11-26T00:39:32.728Z","type":"message"}
+{"nick":"indutny","message":"there are few nits, though","date":"2015-11-26T00:41:22.104Z","type":"message"}
+{"nick":"indutny","message":"we have different possible configurations","date":"2015-11-26T00:41:22.294Z","type":"message"}
+{"nick":"indutny","message":"x64.Debug, x64.Release, ia32.Debug, ia32.Release, ...","date":"2015-11-26T00:41:22.295Z","type":"message"}
+{"nick":"indutny","message":"arm","date":"2015-11-26T00:41:22.295Z","type":"message"}
+{"nick":"indutny","message":"so this means a separate file for each configuration","date":"2015-11-26T00:41:22.295Z","type":"message"}
+{"nick":"indutny","message":"bnoordhuis: where are you?","date":"2015-11-26T00:41:22.295Z","type":"message"}
+{"nick":"iojs-gh","date":"2015-11-26T00:41:56.942Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T00:41:57.171Z","type":"part"}
+{"nick":"km2_","date":"2015-11-26T00:45:26.130Z","type":"join"}
+{"nick":"r04r","new_nick":"zz_r04r","date":"2015-11-26T00:45:29.232Z","type":"nick"}
+{"nick":"MicMac1","date":"2015-11-26T00:45:43.702Z","type":"join"}
+{"nick":"km2","reason":"Ping timeout: 255 seconds","date":"2015-11-26T00:49:09.571Z","type":"quit"}
+{"nick":"km2_","reason":"Ping timeout: 240 seconds","date":"2015-11-26T00:49:46.070Z","type":"quit"}
+{"nick":"maciejpaprocki","date":"2015-11-26T00:58:29.998Z","type":"join"}
+{"nick":"rossk","date":"2015-11-26T00:59:39.336Z","type":"quit"}
+{"nick":"MicMac1","reason":"Quit: MicMac1","date":"2015-11-26T01:00:21.429Z","type":"quit"}
+{"nick":"bobmcw","date":"2015-11-26T01:01:58.110Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T01:02:05.604Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T01:02:05.796Z","type":"part"}
+{"nick":"robbyoconnor","date":"2015-11-26T01:02:51.726Z","type":"join"}
+{"nick":"maciejpaprocki","reason":"Ping timeout: 260 seconds","date":"2015-11-26T01:03:22.955Z","type":"quit"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-26T01:03:33.074Z","type":"quit"}
+{"nick":"bgerami","date":"2015-11-26T01:04:46.792Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 260 seconds","date":"2015-11-26T01:07:14.846Z","type":"quit"}
+{"nick":"iojs-gh","date":"2015-11-26T01:09:38.894Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T01:09:39.123Z","type":"part"}
+{"nick":"zkat","message":"it me!","date":"2015-11-26T01:09:49.053Z","type":"message"}
+{"nick":"springmeyer","date":"2015-11-26T01:20:28.177Z","type":"join"}
+{"nick":"ndhoule","date":"2015-11-26T01:25:21.391Z","type":"join"}
+{"nick":"springmeyer","reason":"Quit: springmeyer","date":"2015-11-26T01:26:12.079Z","type":"quit"}
+{"nick":"kiassimilation","message":"indutny, not sure if you're still there, but can you tell me what the best way is to provide a raw (non-JS/V8/node) argument to a New method of a ObjectWrap inherited struct, IE @ https://github.com/nodejs/node-addon-examples/blob/master/6_object_wrap/nan/myobject.cc#L28","date":"2015-11-26T01:27:03.325Z","type":"message"}
+{"nick":"Lee1092","date":"2015-11-26T01:28:37.909Z","type":"join"}
+{"nick":"kiassimilation","message":"esseentially, i need to provide an argument to the C++ ctor https://github.com/nodejs/node-addon-examples/blob/master/6_object_wrap/nan/myobject.cc#L32 but not one that's controlled by v8/node","date":"2015-11-26T01:28:50.474Z","type":"message"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-26T01:28:50.787Z","type":"quit"}
+{"nick":"yosuke_furukawa","reason":"Read error: Connection reset by peer","date":"2015-11-26T01:29:06.008Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2015-11-26T01:29:27.573Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-26T01:30:14.467Z","type":"quit"}
+{"nick":"kiassimilation","message":"Or do I have to unwrap the object and set its internal members after?","date":"2015-11-26T01:31:45.218Z","type":"message"}
+{"nick":"yosuke_furukawa","reason":"Remote host closed the connection","date":"2015-11-26T01:46:28.633Z","type":"quit"}
+{"nick":"maciejpaprocki","date":"2015-11-26T02:00:35.463Z","type":"join"}
+{"nick":"jasnell","date":"2015-11-26T02:04:22.638Z","type":"join"}
+{"nick":"maciejpaprocki","reason":"Ping timeout: 250 seconds","date":"2015-11-26T02:06:54.383Z","type":"quit"}
+{"nick":"nnyk","date":"2015-11-26T02:07:13.600Z","type":"join"}
+{"nick":"jgi","date":"2015-11-26T02:07:48.720Z","type":"join"}
+{"nick":"cpc26_","date":"2015-11-26T02:14:57.068Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T02:15:04.584Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T02:15:04.775Z","type":"part"}
+{"nick":"ndhoule","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2015-11-26T02:15:07.951Z","type":"quit"}
+{"nick":"cpc26","reason":"Ping timeout: 250 seconds","date":"2015-11-26T02:17:18.401Z","type":"quit"}
+{"nick":"cpc26","date":"2015-11-26T02:18:22.150Z","type":"join"}
+{"nick":"cpc26_","reason":"Ping timeout: 246 seconds","date":"2015-11-26T02:19:14.769Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-11-26T02:20:25.961Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2015-11-26T02:24:58.539Z","type":"quit"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 250 seconds","date":"2015-11-26T02:28:41.363Z","type":"quit"}
+{"nick":"jbergstroem","message":"i've done some tweaking to our jenkins ci. hopefully it should be  more responsive now. ping me if you have any issues (timeouts, etc) (ping: bnoordhuis, cjihrig)","date":"2015-11-26T02:37:34.476Z","type":"message"}
+{"nick":"ncthom91","date":"2015-11-26T02:40:49.111Z","type":"join"}
+{"nick":"bgerami","reason":"Read error: Connection reset by peer","date":"2015-11-26T02:40:59.781Z","type":"quit"}
+{"nick":"kiassimilation","message":"jbergstroem, curious, does your jenkins ci run on windows or a posix system?","date":"2015-11-26T02:41:19.222Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: linux","date":"2015-11-26T02:41:25.999Z","type":"message"}
+{"nick":"jbergstroem","message":"64-bit","date":"2015-11-26T02:41:29.545Z","type":"message"}
+{"nick":"kiassimilation","message":"ah, i see","date":"2015-11-26T02:41:34.146Z","type":"message"}
+{"nick":"kiassimilation","message":"my team at work runs it on windows, and we consistently have issues with java running out of heap space","date":"2015-11-26T02:41:55.937Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: jmap is your friend","date":"2015-11-26T02:42:07.431Z","type":"message"}
+{"nick":"kiassimilation","message":"hm, i'll look into it. don't think i've heard of that before.","date":"2015-11-26T02:42:21.483Z","type":"message"}
+{"nick":"kiassimilation","message":"it's likely due to a plugin","date":"2015-11-26T02:42:29.925Z","type":"message"}
+{"nick":"kiassimilation","message":"i'm surprised no one's written an alternative to jenkins using node tech","date":"2015-11-26T02:43:09.889Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: use jstack to figure out what you're up to. just checked the blocked stuff","date":"2015-11-26T02:44:16.933Z","type":"message"}
+{"nick":"kiassimilation","message":"is jstack a tool in addition to jmap?","date":"2015-11-26T02:44:52.915Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: see https://github.com/nodejs/build/issues/257 and https://github.com/nodejs/ci for a discussion about a nodejs ci as well as a few alternatives already out there","date":"2015-11-26T02:49:06.025Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: yes, jstack will dump your current thread stack","date":"2015-11-26T02:49:13.911Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: you also want to dump gc statistics. another way of understanding that is enabling gc logs. btw; this is as far as i've gone in debugging jenkins. I swore an oath 7 years ago to never revisit java and here I am :'(","date":"2015-11-26T02:50:36.874Z","type":"message"}
+{"nick":"Auger","reason":"Ping timeout: 255 seconds","date":"2015-11-26T02:52:00.632Z","type":"quit"}
+{"nick":"kiassimilation","message":"jbergstroem, completely feel you there. that's why i wouldn't mind seeing a world where node is a ci, with additional addon capabilities provided by c++ :D","date":"2015-11-26T02:54:01.525Z","type":"message"}
+{"nick":"kiassimilation","message":"not to mention node would allow for a much smaller footprint","date":"2015-11-26T02:54:48.480Z","type":"message"}
+{"nick":"kiassimilation","message":"jesus, java sucks so much.","date":"2015-11-26T02:54:56.846Z","type":"message"}
+{"nick":"jbergstroem","message":"kiassimilation: tbh buildbot is really good but requires a bit more from a devops point of view. i'd pick it 9/10 times.","date":"2015-11-26T02:59:19.896Z","type":"message"}
+{"nick":"kiassimilation","message":"hm, i haven't had a chance to investigate buildbot","date":"2015-11-26T02:59:39.496Z","type":"message"}
+{"nick":"kiassimilation","message":"is administering shit like jenkins and doing build administration considered devops these days?","date":"2015-11-26T03:00:03.076Z","type":"message"}
+{"nick":"kiassimilation","message":"trying to figure out whether the devops title applies to me or not :)","date":"2015-11-26T03:00:37.118Z","type":"message"}
+{"nick":"cspotcode","date":"2015-11-26T03:02:32.892Z","type":"join"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2015-11-26T03:05:38.131Z","type":"quit"}
+{"nick":"fernando__","reason":"Ping timeout: 264 seconds","date":"2015-11-26T03:09:11.773Z","type":"quit"}
+{"nick":"JamesMGreene","date":"2015-11-26T03:14:25.455Z","type":"join"}
+{"nick":"porri","reason":"Quit: This computer has gone to sleep","date":"2015-11-26T03:17:09.845Z","type":"quit"}
+{"nick":"waspinator","date":"2015-11-26T03:17:13.947Z","type":"join"}
+{"nick":"jbergstroem","message":"kiassimilation: the devops guy will share the pain sooner or later :)","date":"2015-11-26T03:20:39.745Z","type":"message"}
+{"nick":"fernando__","date":"2015-11-26T03:33:55.825Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-26T03:41:03.232Z","type":"quit"}
+{"nick":"ncthom91","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2015-11-26T03:50:25.264Z","type":"quit"}
+{"nick":"Arnavion","reason":"Ping timeout: 260 seconds","date":"2015-11-26T03:50:26.972Z","type":"quit"}
+{"nick":"Arnavion","date":"2015-11-26T03:50:43.684Z","type":"join"}
+{"nick":"maciejpaprocki","date":"2015-11-26T04:04:09.039Z","type":"join"}
+{"nick":"maciejpaprocki","reason":"Ping timeout: 240 seconds","date":"2015-11-26T04:08:26.056Z","type":"quit"}
+{"nick":"JamesMGreene","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-11-26T04:14:58.950Z","type":"quit"}
+{"nick":"dguttman","date":"2015-11-26T04:26:44.848Z","type":"join"}
+{"nick":"waspinator","reason":"Ping timeout: 244 seconds","date":"2015-11-26T04:34:27.291Z","type":"quit"}
+{"nick":"jasnell","date":"2015-11-26T04:36:19.743Z","type":"join"}
+{"nick":"jasnell","reason":"Ping timeout: 272 seconds","date":"2015-11-26T04:41:03.709Z","type":"quit"}
+{"nick":"JamesMGreene","date":"2015-11-26T04:44:05.145Z","type":"join"}
+{"nick":"JamesMGreene","reason":"Client Quit","date":"2015-11-26T04:45:39.420Z","type":"quit"}
+{"nick":"quakephil","reason":"Ping timeout: 265 seconds","date":"2015-11-26T04:46:12.612Z","type":"quit"}
+{"nick":"JamesMGreene","date":"2015-11-26T04:49:33.956Z","type":"join"}
+{"nick":"madjake45","reason":"Ping timeout: 240 seconds","date":"2015-11-26T04:51:26.057Z","type":"quit"}
+{"nick":"billautomata","reason":"Remote host closed the connection","date":"2015-11-26T04:51:54.268Z","type":"quit"}
+{"nick":"billautomata","date":"2015-11-26T04:52:30.241Z","type":"join"}
+{"nick":"waspinator","date":"2015-11-26T04:54:37.467Z","type":"join"}
+{"nick":"nnyk","reason":"Ping timeout: 260 seconds","date":"2015-11-26T04:55:26.828Z","type":"quit"}
+{"nick":"billautomata","reason":"Ping timeout: 240 seconds","date":"2015-11-26T04:56:35.627Z","type":"quit"}
+{"nick":"jgi","date":"2015-11-26T04:58:39.710Z","type":"join"}
+{"nick":"waspinator","reason":"Ping timeout: 255 seconds","date":"2015-11-26T05:02:57.502Z","type":"quit"}
+{"nick":"howdoi","date":"2015-11-26T05:04:31.904Z","type":"join"}
+{"nick":"bobmcw","date":"2015-11-26T05:05:10.244Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 246 seconds","date":"2015-11-26T05:10:23.716Z","type":"quit"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2015-11-26T05:22:52.626Z","type":"quit"}
+{"nick":"ofrobots","date":"2015-11-26T05:25:59.067Z","type":"join"}
+{"nick":"cspotcode","reason":"Quit: Connection closed for inactivity","date":"2015-11-26T05:27:24.095Z","type":"quit"}
+{"nick":"shama","reason":"Quit: (╯°□°）╯︵ɐɯɐɥs","date":"2015-11-26T05:30:27.258Z","type":"quit"}
+{"nick":"jasnell","date":"2015-11-26T05:37:33.851Z","type":"join"}
+{"nick":"jasnell","reason":"Ping timeout: 260 seconds","date":"2015-11-26T05:42:06.813Z","type":"quit"}
+{"nick":"mich-cook","reason":"Read error: Connection reset by peer","date":"2015-11-26T05:44:07.263Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-26T05:56:09.513Z","type":"quit"}
+{"nick":"jgi","date":"2015-11-26T05:56:33.635Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-11-26T06:02:47.787Z","type":"quit"}
+{"nick":"maciejpaprocki","date":"2015-11-26T06:05:02.745Z","type":"join"}
+{"nick":"peutetre","date":"2015-11-26T06:05:33.417Z","type":"join"}
+{"nick":"maciejpaprocki","reason":"Ping timeout: 264 seconds","date":"2015-11-26T06:09:47.742Z","type":"quit"}
+{"nick":"iojs-gh","date":"2015-11-26T06:12:59.493Z","type":"join"}
+{"nick":"iojs-gh","date":"2015-11-26T06:12:59.723Z","type":"part"}
+{"nick":"ssyrain","date":"2015-11-26T06:32:10.627Z","type":"join"}
+{"nick":"ssyrain_","date":"2015-11-26T06:32:45.786Z","type":"join"}
+{"nick":"ssyrain","reason":"Read error: Connection reset by peer","date":"2015-11-26T06:33:01.152Z","type":"quit"}
+{"nick":"jasnell","date":"2015-11-26T06:38:05.175Z","type":"join"}
+{"nick":"jasnell","reason":"Ping timeout: 244 seconds","date":"2015-11-26T06:43:37.074Z","type":"quit"}
+{"nick":"robotmayo","new_nick":"zz_robotmayo","date":"2015-11-26T07:00:39.030Z","type":"nick"}
+{"nick":"ssyrain_","reason":"Remote host closed the connection","date":"2015-11-26T07:01:54.447Z","type":"quit"}
+{"nick":"nnyk","date":"2015-11-26T07:03:22.023Z","type":"join"}
+{"nick":"lpin","date":"2015-11-26T07:04:56.561Z","type":"join"}
+{"nick":"JamesMGreene","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2015-11-26T07:05:23.584Z","type":"quit"}
+{"nick":"David_Hernandez","date":"2015-11-26T07:07:05.556Z","type":"join"}
+{"nick":"bobmcw","date":"2015-11-26T07:07:27.302Z","type":"join"}
+{"nick":"nnyk","reason":"Ping timeout: 276 seconds","date":"2015-11-26T07:08:29.058Z","type":"quit"}
+{"nick":"bobmcw","reason":"Ping timeout: 276 seconds","date":"2015-11-26T07:13:02.025Z","type":"quit"}
+{"nick":"ssyrain","date":"2015-11-26T07:19:48.216Z","type":"join"}
+{"nick":"ssyrain","reason":"Remote host closed the connection","date":"2015-11-26T07:21:00.921Z","type":"quit"}
+{"nick":"ssyrain","date":"2015-11-26T07:21:16.795Z","type":"join"}
+{"nick":"WebSpirit_","date":"2015-11-26T07:24:47.199Z","type":"join"}
+{"nick":"u0m3_","date":"2015-11-26T07:25:23.685Z","type":"join"}
+{"nick":"dahitokiri","date":"2015-11-26T07:26:30.058Z","type":"join"}
+{"nick":"DaGardner","reason":"Ping timeout: 265 seconds","date":"2015-11-26T07:27:09.970Z","type":"quit"}
+{"nick":"sdfsdfsfsfsdfsfs","date":"2015-11-26T07:27:10.433Z","type":"join"}
+{"nick":"e7d_","date":"2015-11-26T07:27:11.345Z","type":"join"}
+{"nick":"kylemath_","date":"2015-11-26T07:27:55.738Z","type":"join"}
+{"nick":"lpin_","date":"2015-11-26T07:28:03.384Z","type":"join"}
+{"nick":"WebSpirit","reason":"Ping timeout: 265 seconds","date":"2015-11-26T07:28:08.227Z","type":"quit"}
+{"nick":"scottstamp","reason":"Ping timeout: 265 seconds","date":"2015-11-26T07:28:09.302Z","type":"quit"}
+{"nick":"sxaPi2","date":"2015-11-26T07:28:37.090Z","type":"join"}
+{"nick":"u0m3","reason":"Ping timeout: 265 seconds","date":"2015-11-26T07:28:37.594Z","type":"quit"}
+{"nick":"Xiti`","date":"2015-11-26T07:29:19.065Z","type":"join"}
+{"nick":"inex_","date":"2015-11-26T07:30:14.684Z","type":"join"}
+{"nick":"ssyrain_","date":"2015-11-26T07:30:33.056Z","type":"join"}
+{"nick":"isaacs_","date":"2015-11-26T07:30:43.338Z","type":"join"}
+{"nick":"isaacs","reason":"Disconnected by services","date":"2015-11-26T07:30:43.529Z","type":"quit"}
+{"nick":"DANtheBE-","date":"2015-11-26T07:30:48.084Z","type":"join"}
+{"nick":"Arnavion","reason":"Disconnected by services","date":"2015-11-26T07:31:26.470Z","type":"quit"}
+{"nick":"Arnavion3","date":"2015-11-26T07:31:30.526Z","type":"join"}
+{"nick":"Arnavion3","new_nick":"Arnavion","date":"2015-11-26T07:31:34.464Z","type":"nick"}
+{"nick":"euoia","date":"2015-11-26T07:31:35.370Z","type":"join"}
+{"nick":"evanluca_","date":"2015-11-26T07:31:42.059Z","type":"join"}
+{"nick":"alanp_","date":"2015-11-26T07:31:55.827Z","type":"join"}
+{"nick":"lholmquist_","date":"2015-11-26T07:32:10.089Z","type":"join"}
+{"nick":"chiper-","date":"2015-11-26T07:32:20.315Z","type":"join"}
+{"nick":"halfdan_","date":"2015-11-26T07:32:20.506Z","type":"join"}
+{"nick":"rvagg__","date":"2015-11-26T07:32:23.986Z","type":"join"}
+{"nick":"jbenet_","date":"2015-11-26T07:32:25.346Z","type":"join"}
+{"nick":"lykkin","date":"2015-11-26T07:33:00.061Z","type":"join"}
+{"nick":"r04rs","date":"2015-11-26T07:33:09.431Z","type":"join"}
+{"nick":"ewokirc_","date":"2015-11-26T07:33:09.819Z","type":"join"}
+{"nick":"shrubbery","date":"2015-11-26T07:33:22.146Z","type":"join"}
+{"nick":"likewhoa-","date":"2015-11-26T07:33:24.733Z","type":"join"}
+{"nick":"m_gol-","date":"2015-11-26T07:33:57.886Z","type":"join"}
+{"nick":"DaGardner","date":"2015-11-26T07:34:06.948Z","type":"join"}
+{"nick":"BombAw","date":"2015-11-26T07:34:41.427Z","type":"join"}
+{"nick":"ruksii","date":"2015-11-26T07:34:48.881Z","type":"join"}
+{"nick":"LouisT_","date":"2015-11-26T07:34:57.061Z","type":"join"}
+{"nick":"Shayanjm_","date":"2015-11-26T07:34:57.529Z","type":"join"}
+{"nick":"David_Hernandez","reason":"*.net *.split","date":"2015-11-26T07:34:59.194Z","type":"quit"}
+{"nick":"fernando__","reason":"*.net *.split","date":"2015-11-26T07:34:59.385Z","type":"quit"}
+{"nick":"kiassimilation","reason":"*.net *.split","date":"2015-11-26T07:34:59.575Z","type":"quit"}
+{"nick":"lholmquist","reason":"*.net *.split","date":"2015-11-26T07:34:59.576Z","type":"quit"}
+{"nick":"Shayanjm","reason":"*.net *.split","date":"2015-11-26T07:34:59.576Z","type":"quit"}
+{"nick":"tkellen","reason":"*.net *.split","date":"2015-11-26T07:34:59.766Z","type":"quit"}
+{"nick":"Eloquence","reason":"*.net *.split","date":"2015-11-26T07:34:59.766Z","type":"quit"}
+{"nick":"mscdex","reason":"*.net *.split","date":"2015-11-26T07:34:59.766Z","type":"quit"}
+{"nick":"__TheEwok__","reason":"*.net *.split","date":"2015-11-26T07:34:59.957Z","type":"quit"}
+{"nick":"DANtheBEASTman","reason":"*.net *.split","date":"2015-11-26T07:35:00.148Z","type":"quit"}
+{"nick":"sxa","reason":"*.net *.split","date":"2015-11-26T07:35:00.148Z","type":"quit"}
+{"nick":"milkandtang","reason":"*.net *.split","date":"2015-11-26T07:35:00.148Z","type":"quit"}
+{"nick":"Tew","reason":"*.net *.split","date":"2015-11-26T07:35:00.374Z","type":"quit"}
+{"nick":"shrubbery","new_nick":"milkandtang","date":"2015-11-26T07:35:07.266Z","type":"nick"}
+{"nick":"goabonga_","date":"2015-11-26T07:35:42.482Z","type":"join"}
+{"nick":"tcurdt_","date":"2015-11-26T07:35:42.751Z","type":"join"}
+{"nick":"spader","date":"2015-11-26T07:35:47.243Z","type":"join"}
+{"nick":"early","date":"2015-11-26T07:35:54.437Z","type":"join"}
+{"nick":"uber_hulk","reason":"*.net *.split","date":"2015-11-26T07:35:59.440Z","type":"quit"}
+{"nick":"sindresorhus","reason":"*.net *.split","date":"2015-11-26T07:35:59.630Z","type":"quit"}
+{"nick":"michael_","reason":"*.net *.split","date":"2015-11-26T07:35:59.886Z","type":"quit"}
+{"nick":"joaocgreis","reason":"*.net *.split","date":"2015-11-26T07:36:00.078Z","type":"quit"}
+{"nick":"Sebmaster","reason":"*.net *.split","date":"2015-11-26T07:36:00.269Z","type":"quit"}
+{"nick":"jeremyw","reason":"*.net *.split","date":"2015-11-26T07:36:00.269Z","type":"quit"}
+{"nick":"peutetre","reason":"*.net *.split","date":"2015-11-26T07:36:27.075Z","type":"quit"}
+{"nick":"joshontheweb","reason":"*.net *.split","date":"2015-11-26T07:36:27.302Z","type":"quit"}
+{"nick":"Xiti","reason":"*.net *.split","date":"2015-11-26T07:36:27.493Z","type":"quit"}
+{"nick":"vravn","reason":"*.net *.split","date":"2015-11-26T07:36:27.493Z","type":"quit"}
+{"nick":"evanlucas","reason":"*.net *.split","date":"2015-11-26T07:36:27.493Z","type":"quit"}
+{"nick":"BombStrike","reason":"*.net *.split","date":"2015-11-26T07:36:27.683Z","type":"quit"}
+{"nick":"indutny","reason":"*.net *.split","date":"2015-11-26T07:36:27.874Z","type":"quit"}
+{"nick":"jakutis","reason":"*.net *.split","date":"2015-11-26T07:36:28.396Z","type":"quit"}
+{"nick":"ssyrain","reason":"*.net *.split","date":"2015-11-26T07:36:55.261Z","type":"quit"}
+{"nick":"jbergstroem","reason":"*.net *.split","date":"2015-11-26T07:36:56.052Z","type":"quit"}
+{"nick":"kylemathews","reason":"*.net *.split","date":"2015-11-26T07:36:56.242Z","type":"quit"}
+{"nick":"e7d","reason":"*.net *.split","date":"2015-11-26T07:36:56.243Z","type":"quit"}
+{"nick":"moniker_","reason":"*.net *.split","date":"2015-11-26T07:36:56.799Z","type":"quit"}
+{"nick":"littledan_","reason":"*.net *.split","date":"2015-11-26T07:36:57.055Z","type":"quit"}
+{"nick":"lokulin","reason":"*.net *.split","date":"2015-11-26T07:36:57.246Z","type":"quit"}
+{"nick":"PhDuck","reason":"*.net *.split","date":"2015-11-26T07:36:57.436Z","type":"quit"}
+{"nick":"tzero_","date":"2015-11-26T07:36:59.658Z","type":"join"}
+{"nick":"jeremyw","date":"2015-11-26T07:37:36.738Z","type":"join"}
+{"nick":"jbergstroem","date":"2015-11-26T07:37:37.053Z","type":"join"}
+{"nick":"David_Hernandez","date":"2015-11-26T07:38:03.117Z","type":"join"}
+{"nick":"vravn","date":"2015-11-26T07:38:10.435Z","type":"join"}
+{"nick":"lokulin","date":"2015-11-26T07:38:16.594Z","type":"join"}
+{"nick":"moniker_","date":"2015-11-26T07:38:17.603Z","type":"join"}
+{"nick":"pendo324_","date":"2015-11-26T07:38:51.811Z","type":"join"}
+{"nick":"lepahc","date":"2015-11-26T07:39:48.050Z","type":"join"}
+{"nick":"fl0wio","date":"2015-11-26T07:40:07.384Z","type":"join"}
+{"nick":"lpin","reason":"*.net *.split","date":"2015-11-26T07:40:15.898Z","type":"quit"}
+{"nick":"inex","reason":"*.net *.split","date":"2015-11-26T07:40:16.363Z","type":"quit"}
+{"nick":"aredridel","reason":"*.net *.split","date":"2015-11-26T07:40:16.863Z","type":"quit"}
+{"nick":"zz_r04r","reason":"*.net *.split","date":"2015-11-26T07:40:17.954Z","type":"quit"}
+{"nick":"robink","reason":"*.net *.split","date":"2015-11-26T07:40:18.145Z","type":"quit"}
+{"nick":"euoia_","reason":"*.net *.split","date":"2015-11-26T07:40:18.336Z","type":"quit"}
+{"nick":"gkatsev","reason":"*.net *.split","date":"2015-11-26T07:40:18.527Z","type":"quit"}
+{"nick":"sekrit","reason":"*.net *.split","date":"2015-11-26T07:40:18.719Z","type":"quit"}
+{"nick":"pkoretic","reason":"*.net *.split","date":"2015-11-26T07:40:18.910Z","type":"quit"}
+{"nick":"chapel","reason":"*.net *.split","date":"2015-11-26T07:40:18.910Z","type":"quit"}
+{"nick":"basicdays","reason":"*.net *.split","date":"2015-11-26T07:40:18.910Z","type":"quit"}
+{"nick":"txdv_","reason":"*.net *.split","date":"2015-11-26T07:40:19.616Z","type":"quit"}
+{"nick":"early`","reason":"*.net *.split","date":"2015-11-26T07:40:19.807Z","type":"quit"}
+{"nick":"fl0w","reason":"*.net *.split","date":"2015-11-26T07:40:20.019Z","type":"quit"}
+{"nick":"Eloquence","date":"2015-11-26T07:40:26.300Z","type":"join"}
+{"nick":"LouisT","reason":"*.net *.split","date":"2015-11-26T07:40:46.061Z","type":"quit"}
+{"nick":"likewhoa","reason":"*.net *.split","date":"2015-11-26T07:40:46.252Z","type":"quit"}
+{"nick":"reblunk","reason":"*.net *.split","date":"2015-11-26T07:40:46.572Z","type":"quit"}
+{"nick":"terinjokes","reason":"*.net *.split","date":"2015-11-26T07:40:46.762Z","type":"quit"}
+{"nick":"nant","reason":"*.net *.split","date":"2015-11-26T07:40:46.763Z","type":"quit"}
+{"nick":"guor","reason":"*.net *.split","date":"2015-11-26T07:40:46.953Z","type":"quit"}
+{"nick":"goabonga","reason":"*.net *.split","date":"2015-11-26T07:40:46.953Z","type":"quit"}
+{"nick":"chiper","reason":"*.net *.split","date":"2015-11-26T07:40:46.953Z","type":"quit"}
+{"nick":"zrl","reason":"*.net *.split","date":"2015-11-26T07:40:47.220Z","type":"quit"}
+{"nick":"alanp","reason":"*.net *.split","date":"2015-11-26T07:40:47.806Z","type":"quit"}
+{"nick":"tzero","reason":"*.net *.split","date":"2015-11-26T07:40:47.998Z","type":"quit"}
+{"nick":"sandfox__","reason":"*.net *.split","date":"2015-11-26T07:40:48.188Z","type":"quit"}
+{"nick":"jadne_","reason":"*.net *.split","date":"2015-11-26T07:40:48.380Z","type":"quit"}
+{"nick":"nikc","reason":"*.net *.split","date":"2015-11-26T07:40:48.575Z","type":"quit"}
+{"nick":"lance|afk","reason":"*.net *.split","date":"2015-11-26T07:40:48.576Z","type":"quit"}
+{"nick":"frozenice","reason":"*.net *.split","date":"2015-11-26T07:40:48.769Z","type":"quit"}
+{"nick":"sheldon_______","reason":"*.net *.split","date":"2015-11-26T07:40:48.769Z","type":"quit"}
+{"nick":"ag_dubs","reason":"*.net *.split","date":"2015-11-26T07:40:48.769Z","type":"quit"}
+{"nick":"kumavis","reason":"*.net *.split","date":"2015-11-26T07:40:48.960Z","type":"quit"}
+{"nick":"mafintosh","reason":"*.net *.split","date":"2015-11-26T07:40:48.960Z","type":"quit"}
+{"nick":"swaagie","reason":"*.net *.split","date":"2015-11-26T07:40:48.960Z","type":"quit"}
+{"nick":"caasih","reason":"*.net *.split","date":"2015-11-26T07:40:48.960Z","type":"quit"}
+{"nick":"pendo324","reason":"*.net *.split","date":"2015-11-26T07:40:49.150Z","type":"quit"}
+{"nick":"rickharrison","reason":"*.net *.split","date":"2015-11-26T07:40:49.150Z","type":"quit"}
+{"nick":"jbenet","reason":"*.net *.split","date":"2015-11-26T07:40:49.150Z","type":"quit"}
+{"nick":"owenb_____","reason":"*.net *.split","date":"2015-11-26T07:40:49.341Z","type":"quit"}
+{"nick":"flenter","reason":"*.net *.split","date":"2015-11-26T07:40:49.341Z","type":"quit"}
+{"nick":"halfdan","reason":"*.net *.split","date":"2015-11-26T07:40:49.341Z","type":"quit"}
+{"nick":"parshap","reason":"*.net *.split","date":"2015-11-26T07:40:49.531Z","type":"quit"}
+{"nick":"beaugunderson__","reason":"*.net *.split","date":"2015-11-26T07:40:49.532Z","type":"quit"}
+{"nick":"wenincode","reason":"*.net *.split","date":"2015-11-26T07:40:49.722Z","type":"quit"}
+{"nick":"wa7son","reason":"*.net *.split","date":"2015-11-26T07:40:49.723Z","type":"quit"}
+{"nick":"iarna","reason":"*.net *.split","date":"2015-11-26T07:40:49.723Z","type":"quit"}
+{"nick":"nrw","reason":"*.net *.split","date":"2015-11-26T07:40:49.913Z","type":"quit"}
+{"nick":"rvagg","reason":"*.net *.split","date":"2015-11-26T07:40:49.913Z","type":"quit"}
+{"nick":"MLM","reason":"*.net *.split","date":"2015-11-26T07:40:49.913Z","type":"quit"}
+{"nick":"m_gol","reason":"*.net *.split","date":"2015-11-26T07:40:49.913Z","type":"quit"}
+{"nick":"hackygolucky","reason":"*.net *.split","date":"2015-11-26T07:40:50.106Z","type":"quit"}
+{"nick":"dherman","reason":"*.net *.split","date":"2015-11-26T07:40:50.106Z","type":"quit"}
+{"nick":"tcurdt","reason":"*.net *.split","date":"2015-11-26T07:40:50.297Z","type":"quit"}
+{"nick":"sandinmyjoints","reason":"*.net *.split","date":"2015-11-26T07:40:50.297Z","type":"quit"}
+{"nick":"ruksi","reason":"*.net *.split","date":"2015-11-26T07:40:50.488Z","type":"quit"}
+{"nick":"Pagan","reason":"*.net *.split","date":"2015-11-26T07:40:50.678Z","type":"quit"}
+{"nick":"tellnes","reason":"*.net *.split","date":"2015-11-26T07:40:50.678Z","type":"quit"}
+{"nick":"spader","new_nick":"terinjokes","date":"2015-11-26T07:41:07.984Z","type":"nick"}
+{"nick":"indutny","date":"2015-11-26T07:41:08.260Z","type":"join"}
+{"nick":"indutny","new_nick":"Guest83182","date":"2015-11-26T07:41:09.508Z","type":"nick"}
+{"nick":"mscdex","date":"2015-11-26T07:41:19.763Z","type":"join"}
+{"nick":"guor","date":"2015-11-26T07:41:20.744Z","type":"join"}
+{"nick":"rvagg__","new_nick":"rvagg","date":"2015-11-26T07:41:27.174Z","type":"nick"}
+{"nick":"aredridel","date":"2015-11-26T07:41:43.435Z","type":"join"}
+{"nick":"WebSpirit_","reason":"*.net *.split","date":"2015-11-26T07:42:24.508Z","type":"quit"}
+{"nick":"bengl","reason":"*.net *.split","date":"2015-11-26T07:42:25.851Z","type":"quit"}
+{"nick":"juliangruber","reason":"*.net *.split","date":"2015-11-26T07:42:26.878Z","type":"quit"}
+{"nick":"basicdays","date":"2015-11-26T07:42:28.497Z","type":"join"}
+{"nick":"fernando__","date":"2015-11-26T07:42:40.858Z","type":"join"}
+{"nick":"uber_hulk","date":"2015-11-26T07:43:01.326Z","type":"join"}
+{"nick":"frozenice","date":"2015-11-26T07:43:14.057Z","type":"join"}
+{"nick":"joshontheweb","date":"2015-11-26T07:44:35.589Z","type":"join"}
+{"nick":"Arnavion","reason":"Quit: Arnavion","date":"2015-11-26T07:45:06.042Z","type":"quit"}
+{"nick":"michael___","date":"2015-11-26T07:45:25.761Z","type":"join"}
+{"nick":"joaocgreis","date":"2015-11-26T07:45:29.029Z","type":"join"}
