@@ -171,3 +171,137 @@
 {"nick":"fourq","new_nick":"fourq|away","date":"2015-12-17T15:41:42.319Z","type":"nick"}
 {"nick":"fourq|away","new_nick":"fourq","date":"2015-12-17T15:50:31.243Z","type":"nick"}
 {"nick":"s3shs","date":"2015-12-17T15:56:55.741Z","type":"join"}
+{"nick":"fourq","new_nick":"fourq|away","date":"2015-12-17T16:01:02.911Z","type":"nick"}
+{"nick":"kellabyte","message":"what are the implications of increasing the number of the backlog argument in uv_listen()? will it take a lot more memory or cpu time? what happens if you make it really big?","date":"2015-12-17T16:01:36.163Z","type":"message"}
+{"nick":"fourq|away","new_nick":"fourq","date":"2015-12-17T16:03:44.862Z","type":"nick"}
+{"nick":"saghul","message":"kellabyte: it adjusts the number of connections which can be queued in the kernel","date":"2015-12-17T16:03:48.534Z","type":"message"}
+{"nick":"saghul","message":"if more than those are pending, the kernel will start dropping them","date":"2015-12-17T16:04:02.704Z","type":"message"}
+{"nick":"kellabyte","message":"saghul: so if you want to do like 10k, 100k, 1M connection benchmarks you should increase that?","date":"2015-12-17T16:04:29.381Z","type":"message"}
+{"nick":"saghul","message":"on Linux at least, that value is capped, so no matter how big you make it, it gets capped","date":"2015-12-17T16:04:33.953Z","type":"message"}
+{"nick":"saghul","message":"kellabyte: yes and no :-) that's for the pending connections, if you accept them quick enough they won't be queued","date":"2015-12-17T16:05:16.184Z","type":"message"}
+{"nick":"saghul","message":"on Linux the value gets truncated to /proc/sys/net/core/somaxconn, which defaults to 128","date":"2015-12-17T16:06:15.861Z","type":"message"}
+{"nick":"saghul","message":"Node uses 511 as the default, because the kernel rounds it up to the next power of 2, so 512","date":"2015-12-17T16:06:47.373Z","type":"message"}
+{"nick":"kellabyte","message":"ah, so why not just specify 512 then? just curious","date":"2015-12-17T16:07:56.413Z","type":"message"}
+{"nick":"saghul","message":"then the kernel would pick 1024","date":"2015-12-17T16:08:14.289Z","type":"message"}
+{"nick":"saghul","message":"the *next* power of 2","date":"2015-12-17T16:08:22.036Z","type":"message"}
+{"nick":"kellabyte","message":"ah gotcha","date":"2015-12-17T16:08:27.292Z","type":"message"}
+{"nick":"saghul","message":"IIRC there was a nice article about this... let me see if I can find it","date":"2015-12-17T16:09:00.284Z","type":"message"}
+{"nick":"kellabyte","message":"when I try and hit my service with 2048 connections I get src/unix/stream.c:1499: uv_read_start: Assertion `((stream)->io_watcher.fd) >= 0' failed.","date":"2015-12-17T16:10:01.335Z","type":"message"}
+{"nick":"kellabyte","message":"seems I can handle up to 760 and after that things start to crap out, but I'm using 128 for that backlog value","date":"2015-12-17T16:10:21.846Z","type":"message"}
+{"nick":"saghul","message":"hum, that doesn't sound right","date":"2015-12-17T16:10:40.568Z","type":"message"}
+{"nick":"saghul","message":"are you reusing uv_tcp_t structures by any chance?","date":"2015-12-17T16:10:51.495Z","type":"message"}
+{"nick":"saghul","message":"checing for the return value of uv_accept?","date":"2015-12-17T16:11:02.643Z","type":"message"}
+{"nick":"saghul","message":"kellabyte: this is the article, if you are curious: http://veithen.github.io/2014/01/01/how-tcp-backlog-works-in-linux.html","date":"2015-12-17T16:11:39.003Z","type":"message"}
+{"nick":"kellabyte","message":"thank you!","date":"2015-12-17T16:11:47.947Z","type":"message"}
+{"nick":"kellabyte","message":"ahh that crash happens because of ulimit","date":"2015-12-17T16:11:55.717Z","type":"message"}
+{"nick":"Fishrock123","date":"2015-12-17T16:12:09.627Z","type":"join"}
+{"nick":"saghul","message":"ah, yeah, uv_accept could give you EMFILE","date":"2015-12-17T16:12:22.293Z","type":"message"}
+{"nick":"s3shs","reason":"Quit: Computer has gone to sleep.","date":"2015-12-17T16:13:00.436Z","type":"quit"}
+{"nick":"s3shs","date":"2015-12-17T16:14:22.091Z","type":"join"}
+{"nick":"kellabyte","message":"yeah it seems to be surviving 100k connections now, thank you very much for that information","date":"2015-12-17T16:14:59.196Z","type":"message"}
+{"nick":"kellabyte","message":"well, survived it but it rejected 76K of them for some reason but no crash","date":"2015-12-17T16:15:21.767Z","type":"message"}
+{"nick":"saghul","message":"no problemo, glad to hear it's working fine for you :-)","date":"2015-12-17T16:15:23.393Z","type":"message"}
+{"nick":"saghul","message":"oh","date":"2015-12-17T16:15:28.179Z","type":"message"}
+{"nick":"kellabyte","message":"whats the backlog capped at in the kernel?","date":"2015-12-17T16:15:28.700Z","type":"message"}
+{"nick":"saghul","message":"by default it's set to 128","date":"2015-12-17T16:15:43.594Z","type":"message"}
+{"nick":"kellabyte","message":"why not set it to something like 2047?","date":"2015-12-17T16:16:39.054Z","type":"message"}
+{"nick":"saghul","message":"\"X should be enough for everyone\" - famous last words, I guess :-)","date":"2015-12-17T16:17:15.933Z","type":"message"}
+{"nick":"kellabyte","message":"yeah setting it to 2047 didn't fix the socket errors, hrm","date":"2015-12-17T16:17:46.869Z","type":"message"}
+{"nick":"kellabyte","message":"wonder whats holding it back now","date":"2015-12-17T16:17:50.589Z","type":"message"}
+{"nick":"saghul","message":"you set it in proc and updated the call to uv_listen?","date":"2015-12-17T16:18:07.595Z","type":"message"}
+{"nick":"kellabyte","message":"what do you mean set it in proc?","date":"2015-12-17T16:19:27.750Z","type":"message"}
+{"nick":"saghul","message":"you need to raise the value in the kernel","date":"2015-12-17T16:19:41.523Z","type":"message"}
+{"nick":"saghul","message":"sysctl -w net.core.somaxconn=2048","date":"2015-12-17T16:19:50.470Z","type":"message"}
+{"nick":"kellabyte","message":"oh! that's probably the problem","date":"2015-12-17T16:19:57.669Z","type":"message"}
+{"nick":"saghul","message":"then call uv_listen with >= 2047","date":"2015-12-17T16:20:17.564Z","type":"message"}
+{"nick":"kellabyte","message":"is this setting only for accepting connections? does this have to be set on the benchmark client as well?","date":"2015-12-17T16:22:50.030Z","type":"message"}
+{"nick":"saghul","message":"IIRC it only has an effect for incoming connections","date":"2015-12-17T16:23:18.795Z","type":"message"}
+{"nick":"alexforster","date":"2015-12-17T16:27:03.563Z","type":"join"}
+{"nick":"fourq","new_nick":"fourq|away","date":"2015-12-17T16:27:11.422Z","type":"nick"}
+{"nick":"fourq|away","new_nick":"fourq","date":"2015-12-17T16:27:12.665Z","type":"nick"}
+{"nick":"kellabyte","message":"ok still not working but maybe there's another kernel networking tune thats needed","date":"2015-12-17T16:27:50.826Z","type":"message"}
+{"nick":"saghul","message":"yeah...","date":"2015-12-17T16:28:57.436Z","type":"message"}
+{"nick":"alexforster","reason":"Ping timeout: 246 seconds","date":"2015-12-17T16:31:53.586Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2015-12-17T16:32:52.386Z","type":"join"}
+{"nick":"s3shs","reason":"Quit: Computer has gone to sleep.","date":"2015-12-17T16:33:58.229Z","type":"quit"}
+{"nick":"s3shs","date":"2015-12-17T16:39:39.894Z","type":"join"}
+{"nick":"fourq","new_nick":"fourq|away","date":"2015-12-17T16:46:51.471Z","type":"nick"}
+{"nick":"ncthom91","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2015-12-17T16:50:26.826Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T16:50:28.558Z","type":"join"}
+{"nick":"s3shs","reason":"Quit: Computer has gone to sleep.","date":"2015-12-17T16:54:29.835Z","type":"quit"}
+{"nick":"dap_","date":"2015-12-17T17:00:34.548Z","type":"join"}
+{"nick":"boopisaway","new_nick":"boop","date":"2015-12-17T17:01:54.979Z","type":"nick"}
+{"nick":"jgi","date":"2015-12-17T17:09:02.535Z","type":"join"}
+{"nick":"s3shs","date":"2015-12-17T17:15:14.220Z","type":"join"}
+{"nick":"Dirkson","date":"2015-12-17T17:15:58.788Z","type":"join"}
+{"nick":"Dirkson","message":"Het all. Does anyone know if libuv's networking currently works under wine?","date":"2015-12-17T17:16:30.450Z","type":"message"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-12-17T17:21:33.740Z","type":"quit"}
+{"nick":"dignifiedquire_","new_nick":"dignifiedquire","date":"2015-12-17T17:23:57.899Z","type":"nick"}
+{"nick":"alexforster","date":"2015-12-17T17:30:10.388Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 256 seconds","date":"2015-12-17T17:34:22.388Z","type":"quit"}
+{"nick":"bnoordhuis","date":"2015-12-17T17:46:45.632Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T17:47:42.442Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T17:48:10.025Z","type":"join"}
+{"nick":"avalanche123","reason":"Ping timeout: 240 seconds","date":"2015-12-17T17:52:26.080Z","type":"quit"}
+{"nick":"jgi","date":"2015-12-17T17:55:31.388Z","type":"join"}
+{"nick":"davi","reason":"Ping timeout: 260 seconds","date":"2015-12-17T18:37:50.690Z","type":"quit"}
+{"nick":"rendar","message":"Dirkson: it should","date":"2015-12-17T18:42:54.856Z","type":"message"}
+{"nick":"Dirkson","message":"rendar: You know, I'm running into some issues there when using uv_udp_bind and uv_tcp_connect: http://paste.orangehattech.com/view/a17ab04d","date":"2015-12-17T18:45:05.597Z","type":"message"}
+{"nick":"Dirkson","message":"I haven't been able to work out exactly what wine is complaining about, other than \"something in those functions\"","date":"2015-12-17T18:46:17.894Z","type":"message"}
+{"nick":"dignifiedquire","reason":"Quit: dignifiedquire","date":"2015-12-17T18:48:49.652Z","type":"quit"}
+{"nick":"rendar","message":"Dirkson: hmm","date":"2015-12-17T18:49:51.158Z","type":"message"}
+{"nick":"rendar","message":"Dirkson: the fact is that libuv on windows uses some undocumented APIs, like that thing of polling from AFD.sys","date":"2015-12-17T18:50:16.825Z","type":"message"}
+{"nick":"rendar","message":"but i guess it can fallback to some standard thing","date":"2015-12-17T18:50:34.479Z","type":"message"}
+{"nick":"Dirkson","message":"rendar: Ahh. And it may have used some undocumented something-or-other in these functions? Can I tell it to fallback manually?","date":"2015-12-17T18:51:00.093Z","type":"message"}
+{"nick":"rendar","message":"Dirkson: dunno about that, saghul may help more than me","date":"2015-12-17T18:51:56.236Z","type":"message"}
+{"nick":"Dirkson","message":"Fair enough : )","date":"2015-12-17T18:52:06.191Z","type":"message"}
+{"nick":"rendar","message":":-)","date":"2015-12-17T18:52:09.741Z","type":"message"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-12-17T18:55:36.946Z","type":"quit"}
+{"nick":"reqshark","date":"2015-12-17T19:03:28.631Z","type":"join"}
+{"nick":"jgi","date":"2015-12-17T19:06:43.877Z","type":"join"}
+{"nick":"reqshark","reason":"Read error: Connection reset by peer","date":"2015-12-17T19:09:14.673Z","type":"quit"}
+{"nick":"reqshark","date":"2015-12-17T19:09:48.613Z","type":"join"}
+{"nick":"s3shs","reason":"Quit: Computer has gone to sleep.","date":"2015-12-17T19:11:04.274Z","type":"quit"}
+{"nick":"reqshark","reason":"Read error: Connection reset by peer","date":"2015-12-17T19:25:53.247Z","type":"quit"}
+{"nick":"reqshark","date":"2015-12-17T19:26:27.591Z","type":"join"}
+{"nick":"qard","date":"2015-12-17T19:30:56.514Z","type":"join"}
+{"nick":"toothrot","date":"2015-12-17T19:54:44.926Z","type":"join"}
+{"nick":"dignifiedquire","date":"2015-12-17T19:57:48.664Z","type":"join"}
+{"nick":"rendar","reason":"Ping timeout: 246 seconds","date":"2015-12-17T20:17:59.556Z","type":"quit"}
+{"nick":"rendar","date":"2015-12-17T20:24:30.126Z","type":"join"}
+{"nick":"toothrot","reason":"Ping timeout: 260 seconds","date":"2015-12-17T20:27:30.683Z","type":"quit"}
+{"nick":"s3shs","date":"2015-12-17T20:28:45.395Z","type":"join"}
+{"nick":"avalanche123","date":"2015-12-17T20:46:51.383Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T20:47:20.735Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T20:47:27.355Z","type":"join"}
+{"nick":"dap_1","date":"2015-12-17T21:01:48.108Z","type":"join"}
+{"nick":"dap_","reason":"Ping timeout: 265 seconds","date":"2015-12-17T21:04:42.571Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-12-17T21:11:49.947Z","type":"quit"}
+{"nick":"dignifiedquire","reason":"Ping timeout: 240 seconds","date":"2015-12-17T21:16:55.723Z","type":"quit"}
+{"nick":"jgi","date":"2015-12-17T21:19:51.587Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T21:25:36.992Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T21:26:04.237Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T21:26:19.443Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T21:26:26.099Z","type":"join"}
+{"nick":"reqshark","reason":"Quit: Be back later ...","date":"2015-12-17T21:35:45.835Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 272 seconds","date":"2015-12-17T21:37:30.686Z","type":"quit"}
+{"nick":"MoZu4k__","date":"2015-12-17T21:40:07.209Z","type":"join"}
+{"nick":"evanlucas","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2015-12-17T21:46:44.874Z","type":"quit"}
+{"nick":"alexforster","reason":"Ping timeout: 256 seconds","date":"2015-12-17T21:48:48.384Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2015-12-17T22:04:16.907Z","type":"quit"}
+{"nick":"fourq|away","new_nick":"fourq","date":"2015-12-17T22:13:48.442Z","type":"nick"}
+{"nick":"brson","date":"2015-12-17T22:15:11.637Z","type":"join"}
+{"nick":"dignifiedquire","date":"2015-12-17T22:42:22.382Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 260 seconds","date":"2015-12-17T22:51:00.632Z","type":"quit"}
+{"nick":"happy-dude","date":"2015-12-17T22:57:04.215Z","type":"join"}
+{"nick":"dignifiedquire","reason":"Ping timeout: 256 seconds","date":"2015-12-17T23:07:00.533Z","type":"quit"}
+{"nick":"boop","new_nick":"boopisaway","date":"2015-12-17T23:08:17.926Z","type":"nick"}
+{"nick":"jgi","date":"2015-12-17T23:19:17.381Z","type":"join"}
+{"nick":"MoZu4k__","reason":"Quit: MoZu4k__","date":"2015-12-17T23:28:13.433Z","type":"quit"}
+{"nick":"MoZu4k","date":"2015-12-17T23:43:13.517Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T23:47:51.012Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T23:48:18.102Z","type":"join"}
+{"nick":"avalanche123","reason":"Remote host closed the connection","date":"2015-12-17T23:49:14.463Z","type":"quit"}
+{"nick":"avalanche123","date":"2015-12-17T23:49:20.743Z","type":"join"}
+{"nick":"toothrot","date":"2015-12-17T23:52:35.621Z","type":"join"}
+{"nick":"bnoordhuis","date":"2015-12-17T23:57:08.789Z","type":"join"}
