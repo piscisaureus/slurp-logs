@@ -1,0 +1,179 @@
+{"nick":"jgi","message":"trevnorris: ok, will take a look at it soon","date":"2016-01-08T00:02:06.226Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: only if it's convenient. also in your patch were you removed all the trycatch. was that only in node::MakeCallback or for both?","date":"2016-01-08T00:03:05.646Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: both","date":"2016-01-08T00:03:41.469Z","type":"message"}
+{"nick":"trevnorris","message":"strange. for me it's killing the debugger test.","date":"2016-01-08T00:04:05.792Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: just guessing after taking a quick look at https://github.com/trevnorris/node/tree/domain-abort-jgi, does v8::Function::Call returns an Empty value because there’s a pending exception (the previous Function::Call threw)?","date":"2016-01-08T00:05:25.462Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: I haven’t run the code, just thinking out loud in case that helps you figure this out quicker","date":"2016-01-08T00:05:52.931Z","type":"message"}
+{"nick":"trevnorris","message":"jgi: yes I believe that's the case.","date":"2016-01-08T00:05:54.516Z","type":"message"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 246 seconds","date":"2016-01-08T00:07:56.830Z","type":"quit"}
+{"nick":"trevnorris","message":"jgi: funny enough, adding that abort when domain enter/exit threw has already saved me. good suggestion.","date":"2016-01-08T00:11:01.121Z","type":"message"}
+{"nick":"fracting","reason":"Read error: Connection reset by peer","date":"2016-01-08T00:11:20.392Z","type":"quit"}
+{"nick":"jellzero_","new_nick":"jellzero","date":"2016-01-08T00:18:08.082Z","type":"nick"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2016-01-08T00:18:16.820Z","type":"quit"}
+{"nick":"joshbuddy","date":"2016-01-08T00:18:19.168Z","type":"join"}
+{"nick":"mscdex","reason":"Quit: Leaving","date":"2016-01-08T00:19:28.623Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2016-01-08T00:22:10.970Z","type":"join"}
+{"nick":"evanluca_","message":"ah thealphanerd you beat me to it :]","date":"2016-01-08T00:26:29.747Z","type":"message"}
+{"nick":"fernando_","reason":"Ping timeout: 265 seconds","date":"2016-01-08T00:26:29.955Z","type":"quit"}
+{"nick":"thealphanerd","message":"you should take it if you want :D","date":"2016-01-08T00:26:40.305Z","type":"message"}
+{"nick":"yosuke_furukawa","reason":"Ping timeout: 250 seconds","date":"2016-01-08T00:26:42.922Z","type":"quit"}
+{"nick":"evanluca_","message":"all good","date":"2016-01-08T00:26:44.052Z","type":"message"}
+{"nick":"thealphanerd","message":" I can shadow jame s on LTS release","date":"2016-01-08T00:26:55.358Z","type":"message"}
+{"nick":"evanluca_","message":"do we need to add our keys?","date":"2016-01-08T00:27:02.678Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 260 seconds","date":"2016-01-08T00:30:10.880Z","type":"quit"}
+{"nick":"hoho","date":"2016-01-08T00:30:35.456Z","type":"join"}
+{"nick":"hoho","reason":"Remote host closed the connection","date":"2016-01-08T00:31:03.280Z","type":"quit"}
+{"nick":"thealphanerd","message":"Fishrock123 did you do that already?","date":"2016-01-08T00:32:24.506Z","type":"message"}
+{"nick":"Fishrock123","message":"?","date":"2016-01-08T00:33:11.580Z","type":"message"}
+{"nick":"Fishrock123","message":"oh","date":"2016-01-08T00:33:25.880Z","type":"message"}
+{"nick":"Fishrock123","message":"I can't add your keys, let me ping the build team.","date":"2016-01-08T00:33:42.158Z","type":"message"}
+{"nick":"Fishrock123","message":"Actually","date":"2016-01-08T00:33:46.191Z","type":"message"}
+{"nick":"Fishrock123","message":"evanluca_: thealphanerd: https://github.com/nodejs/node/issues/4319#issuecomment-169850870","date":"2016-01-08T00:34:43.684Z","type":"message"}
+{"nick":"bradleymeck","message":"indutny: have you read anything up on ES6 modules?","date":"2016-01-08T00:35:00.280Z","type":"message"}
+{"nick":"thealphanerd","message":"Fishrock123 https://github.com/nodejs/node/pull/4578","date":"2016-01-08T00:39:31.333Z","type":"message"}
+{"nick":"iojs-gh","date":"2016-01-08T00:39:38.121Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T00:39:38.311Z","type":"part"}
+{"nick":"knownasilya","reason":"Quit: Connection closed for inactivity","date":"2016-01-08T00:40:01.786Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T00:41:23.586Z","type":"quit"}
+{"nick":"iojs-gh","date":"2016-01-08T00:42:25.860Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T00:42:26.095Z","type":"part"}
+{"nick":"jgi","message":"trevnorris: ok, so when there’s no external exception handler (that is, no TryCatch instance) in node::*::MakeCallback, then after th call to Function::Call and if that Function::Call call threw, the exception is still pending, and any other Function::Call will just return an empty value","date":"2016-01-08T00:43:29.206Z","type":"message"}
+{"nick":"jgi","message":"trevnorris: ah wait, domain.prototype.exit is still called, so my analysis doesn’t make sense, sorry","date":"2016-01-08T00:44:53.124Z","type":"message"}
+{"nick":"Eloquence","reason":"Ping timeout: 240 seconds","date":"2016-01-08T00:46:06.337Z","type":"quit"}
+{"nick":"jgi","message":"trevnorris: I mean Domain.prototype.exit is called but doesn’t seem to terminate correctly (only ‘1’ is outputed)","date":"2016-01-08T00:49:17.052Z","type":"message"}
+{"nick":"iojs-gh","date":"2016-01-08T00:50:47.976Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T00:50:48.169Z","type":"part"}
+{"nick":"jgi","message":"trevnorris: I would expect all debug output to be outputed, and then node to abort due to FatalError because there’s still a pending exception","date":"2016-01-08T00:51:08.111Z","type":"message"}
+{"nick":"iojs-gh","date":"2016-01-08T00:51:29.938Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T00:51:30.142Z","type":"part"}
+{"nick":"Eloquence","date":"2016-01-08T00:52:12.880Z","type":"join"}
+{"nick":"porri","reason":"Quit: This computer has gone to sleep","date":"2016-01-08T00:53:12.354Z","type":"quit"}
+{"nick":"iojs-gh","date":"2016-01-08T00:56:27.207Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T00:56:27.423Z","type":"part"}
+{"nick":"GoddessPapa","date":"2016-01-08T00:59:43.159Z","type":"join"}
+{"nick":"hoho","date":"2016-01-08T01:01:32.326Z","type":"join"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2016-01-08T01:04:37.837Z","type":"quit"}
+{"nick":"hoho","reason":"Ping timeout: 240 seconds","date":"2016-01-08T01:05:46.367Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-01-08T01:06:43.116Z","type":"join"}
+{"nick":"bnoordhuis","date":"2016-01-08T01:13:56.861Z","type":"join"}
+{"nick":"joshontheweb","reason":"Ping timeout: 240 seconds","date":"2016-01-08T01:15:35.887Z","type":"quit"}
+{"nick":"mscdex","date":"2016-01-08T01:15:51.949Z","type":"join"}
+{"nick":"FunnyLookinHat","date":"2016-01-08T01:17:37.812Z","type":"quit"}
+{"nick":"jgi","message":"trevnorris: I can’t figure out why Domain.prototype.exit doesn’t run to completion in your domain-abort-jgi branch. But anyway I wouldn’t explore removing the TryCatch instance from node::*::MakeCallback now. Does that block you in your progress with https://github.com/nodejs/node/pull/4507?","date":"2016-01-08T01:17:40.318Z","type":"message"}
+{"nick":"joshontheweb","date":"2016-01-08T01:17:56.633Z","type":"join"}
+{"nick":"bnoordhuis","reason":"Ping timeout: 256 seconds","date":"2016-01-08T01:18:38.569Z","type":"quit"}
+{"nick":"bobmcw","date":"2016-01-08T01:26:50.582Z","type":"join"}
+{"nick":"shama","reason":"Remote host closed the connection","date":"2016-01-08T01:28:02.990Z","type":"quit"}
+{"nick":"shama","date":"2016-01-08T01:28:19.874Z","type":"join"}
+{"nick":"bobmcw","reason":"Ping timeout: 260 seconds","date":"2016-01-08T01:31:31.238Z","type":"quit"}
+{"nick":"Lee1092","date":"2016-01-08T01:34:05.045Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T01:45:04.096Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T01:45:04.298Z","type":"part"}
+{"nick":"mattloring","reason":"Quit: Connection closed for inactivity","date":"2016-01-08T01:49:25.956Z","type":"quit"}
+{"nick":"yosuke_furukawa","date":"2016-01-08T01:50:23.601Z","type":"join"}
+{"nick":"yosuke_furukawa","reason":"Ping timeout: 256 seconds","date":"2016-01-08T01:54:54.699Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T01:56:38.719Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2016-01-08T02:04:54.954Z","type":"quit"}
+{"nick":"jellzero","reason":"Remote host closed the connection","date":"2016-01-08T02:05:08.948Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-01-08T02:05:18.614Z","type":"quit"}
+{"nick":"jgi","date":"2016-01-08T02:05:47.187Z","type":"join"}
+{"nick":"jgi","reason":"Client Quit","date":"2016-01-08T02:05:47.187Z","type":"quit"}
+{"nick":"fernando_","date":"2016-01-08T02:09:19.533Z","type":"join"}
+{"nick":"Eloquence","reason":"Ping timeout: 250 seconds","date":"2016-01-08T02:12:52.937Z","type":"quit"}
+{"nick":"Eloquence","date":"2016-01-08T02:16:27.693Z","type":"join"}
+{"nick":"nuizzy","reason":"Quit: nuizzy","date":"2016-01-08T02:23:52.552Z","type":"quit"}
+{"nick":"waspinator","date":"2016-01-08T02:27:09.078Z","type":"join"}
+{"nick":"ajacksified","reason":"Remote host closed the connection","date":"2016-01-08T02:33:56.814Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-01-08T02:45:19.110Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2016-01-08T02:46:36.166Z","type":"quit"}
+{"nick":"joshbuddy","reason":"Quit: joshbuddy","date":"2016-01-08T02:51:34.498Z","type":"quit"}
+{"nick":"joshontheweb","reason":"Ping timeout: 240 seconds","date":"2016-01-08T02:54:15.936Z","type":"quit"}
+{"nick":"joshontheweb","date":"2016-01-08T02:56:15.581Z","type":"join"}
+{"nick":"hoho","date":"2016-01-08T03:03:36.278Z","type":"join"}
+{"nick":"quakephil","reason":"Ping timeout: 265 seconds","date":"2016-01-08T03:06:57.858Z","type":"quit"}
+{"nick":"hoho","reason":"Ping timeout: 240 seconds","date":"2016-01-08T03:07:46.318Z","type":"quit"}
+{"nick":"alrra","reason":"Quit: Connection closed for inactivity","date":"2016-01-08T03:08:54.358Z","type":"quit"}
+{"nick":"jgi","date":"2016-01-08T03:11:18.734Z","type":"join"}
+{"nick":"shama","reason":"Quit: (╯°□°）╯︵ɐɯɐɥs","date":"2016-01-08T03:16:45.449Z","type":"quit"}
+{"nick":"joshbuddy","date":"2016-01-08T03:18:42.301Z","type":"join"}
+{"nick":"cpc26_","reason":"Ping timeout: 260 seconds","date":"2016-01-08T03:21:11.332Z","type":"quit"}
+{"nick":"ajacksified","date":"2016-01-08T03:29:08.928Z","type":"join"}
+{"nick":"ajacksified","reason":"Remote host closed the connection","date":"2016-01-08T03:37:51.928Z","type":"quit"}
+{"nick":"joshbuddy","reason":"Quit: joshbuddy","date":"2016-01-08T03:38:42.164Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2016-01-08T03:41:49.916Z","type":"quit"}
+{"nick":"Xiti","reason":"Quit: Xiti","date":"2016-01-08T03:43:41.330Z","type":"quit"}
+{"nick":"ajacksified","date":"2016-01-08T03:45:33.901Z","type":"join"}
+{"nick":"fernando_","reason":"Ping timeout: 265 seconds","date":"2016-01-08T03:50:56.671Z","type":"quit"}
+{"nick":"PedroDio_","date":"2016-01-08T03:53:49.936Z","type":"join"}
+{"nick":"PedroDiogo","reason":"Read error: Connection reset by peer","date":"2016-01-08T03:54:46.889Z","type":"quit"}
+{"nick":"ajacksified","reason":"Remote host closed the connection","date":"2016-01-08T03:56:39.829Z","type":"quit"}
+{"nick":"fernando_","date":"2016-01-08T04:04:26.039Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T04:25:23.681Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T04:25:23.897Z","type":"part"}
+{"nick":"jasnell","reason":"Remote host closed the connection","date":"2016-01-08T04:31:31.251Z","type":"quit"}
+{"nick":"Xiti","date":"2016-01-08T04:39:19.550Z","type":"join"}
+{"nick":"jasnell","date":"2016-01-08T04:45:04.856Z","type":"join"}
+{"nick":"jgi","date":"2016-01-08T04:45:52.895Z","type":"join"}
+{"nick":"jasnell","reason":"Ping timeout: 264 seconds","date":"2016-01-08T04:50:00.033Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-01-08T04:50:19.222Z","type":"join"}
+{"nick":"rmg","reason":"Remote host closed the connection","date":"2016-01-08T04:57:30.168Z","type":"quit"}
+{"nick":"r04r","new_nick":"zz_r04r","date":"2016-01-08T04:58:10.231Z","type":"nick"}
+{"nick":"joshbuddy","date":"2016-01-08T05:00:55.010Z","type":"join"}
+{"nick":"ajacksified","date":"2016-01-08T05:05:11.041Z","type":"join"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2016-01-08T05:05:25.597Z","type":"quit"}
+{"nick":"hoho","date":"2016-01-08T05:05:36.289Z","type":"join"}
+{"nick":"hoho","reason":"Ping timeout: 240 seconds","date":"2016-01-08T05:09:46.356Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T05:15:03.813Z","type":"quit"}
+{"nick":"joshontheweb","reason":"Quit: Computer has gone to sleep.","date":"2016-01-08T05:28:04.767Z","type":"quit"}
+{"nick":"jgi","date":"2016-01-08T05:28:43.290Z","type":"join"}
+{"nick":"jgi","reason":"Client Quit","date":"2016-01-08T05:29:31.998Z","type":"quit"}
+{"nick":"jgi","date":"2016-01-08T05:32:31.221Z","type":"join"}
+{"nick":"dguttman","reason":"Quit: dguttman","date":"2016-01-08T05:38:55.095Z","type":"quit"}
+{"nick":"jgi","reason":"Quit: jgi","date":"2016-01-08T05:39:15.667Z","type":"quit"}
+{"nick":"iojs-gh","date":"2016-01-08T05:44:43.870Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T05:44:44.103Z","type":"part"}
+{"nick":"iojs-gh","date":"2016-01-08T05:45:00.045Z","type":"join"}
+{"nick":"iojs-gh","date":"2016-01-08T05:45:00.267Z","type":"part"}
+{"nick":"sunnyw","date":"2016-01-08T05:52:47.487Z","type":"join"}
+{"nick":"sunnyw","reason":"Remote host closed the connection","date":"2016-01-08T05:54:02.339Z","type":"quit"}
+{"nick":"rmg","date":"2016-01-08T05:57:55.991Z","type":"join"}
+{"nick":"ofrobots","date":"2016-01-08T05:58:46.227Z","type":"join"}
+{"nick":"rmg","reason":"Ping timeout: 265 seconds","date":"2016-01-08T06:02:53.658Z","type":"quit"}
+{"nick":"PedroDiogo","date":"2016-01-08T06:08:05.878Z","type":"join"}
+{"nick":"jgi","date":"2016-01-08T06:08:35.240Z","type":"join"}
+{"nick":"PedroDio_","reason":"Ping timeout: 260 seconds","date":"2016-01-08T06:11:25.904Z","type":"quit"}
+{"nick":"fernando_","reason":"Quit: Saliendo","date":"2016-01-08T06:11:34.190Z","type":"quit"}
+{"nick":"evanluca_","reason":"Read error: Connection reset by peer","date":"2016-01-08T06:40:52.309Z","type":"quit"}
+{"nick":"evanluca_","date":"2016-01-08T06:41:20.922Z","type":"join"}
+{"nick":"ajacksified_","date":"2016-01-08T06:42:22.757Z","type":"join"}
+{"nick":"ajacksified_","reason":"Remote host closed the connection","date":"2016-01-08T06:45:09.520Z","type":"quit"}
+{"nick":"ajacksified","reason":"Ping timeout: 250 seconds","date":"2016-01-08T06:45:26.974Z","type":"quit"}
+{"nick":"ajacksified","date":"2016-01-08T06:47:26.939Z","type":"join"}
+{"nick":"nnyk","date":"2016-01-08T06:47:53.005Z","type":"join"}
+{"nick":"ajacksified","reason":"Client Quit","date":"2016-01-08T06:48:55.201Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T06:56:34.358Z","type":"quit"}
+{"nick":"rmg","date":"2016-01-08T06:59:03.807Z","type":"join"}
+{"nick":"ofrobots","date":"2016-01-08T06:59:47.168Z","type":"join"}
+{"nick":"rmg","reason":"Ping timeout: 245 seconds","date":"2016-01-08T07:03:30.055Z","type":"quit"}
+{"nick":"goto-bus-stop","reason":"Quit: goto-bus-stop","date":"2016-01-08T07:05:11.494Z","type":"quit"}
+{"nick":"hoho","date":"2016-01-08T07:08:23.402Z","type":"join"}
+{"nick":"rendar","date":"2016-01-08T07:11:24.485Z","type":"join"}
+{"nick":"hoho","reason":"Ping timeout: 240 seconds","date":"2016-01-08T07:12:26.238Z","type":"quit"}
+{"nick":"joshbuddy","reason":"Quit: joshbuddy","date":"2016-01-08T07:14:34.912Z","type":"quit"}
+{"nick":"lpin","date":"2016-01-08T07:16:45.274Z","type":"join"}
+{"nick":"evanluca_","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2016-01-08T07:18:46.844Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-01-08T07:19:12.168Z","type":"join"}
+{"nick":"howdoi","date":"2016-01-08T07:19:43.846Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T07:21:39.110Z","type":"quit"}
+{"nick":"hoho","date":"2016-01-08T07:22:57.091Z","type":"join"}
+{"nick":"hoho","reason":"Remote host closed the connection","date":"2016-01-08T07:23:13.915Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-01-08T07:26:00.363Z","type":"join"}
+{"nick":"porri","date":"2016-01-08T07:30:17.689Z","type":"join"}
+{"nick":"bobmcw","date":"2016-01-08T07:31:27.221Z","type":"join"}
+{"nick":"evanlucas","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2016-01-08T07:32:56.383Z","type":"quit"}
+{"nick":"bobmcw","reason":"Ping timeout: 256 seconds","date":"2016-01-08T07:37:44.620Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-01-08T07:38:51.922Z","type":"join"}
+{"nick":"porri","reason":"Ping timeout: 265 seconds","date":"2016-01-08T07:41:00.642Z","type":"quit"}
+{"nick":"evanlucas","new_nick":"evanluca_","date":"2016-01-08T07:44:00.056Z","type":"nick"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-01-08T07:52:53.542Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-01-08T07:54:11.422Z","type":"join"}
