@@ -1,0 +1,98 @@
+{"nick":"noffle","message":"streams Q: I have a transform stream that, per byte read, write 8000 bytes. sure enough stream.push() returns false, indicating the next stream's buffer is full and writing should stop. so like a good citizen I do. however, transform streams don't seem to emit 'drain' events like writeable streams. I'm reading the node stream docs, but haven't puzzled out yet how to handle backpressure here.","date":"2016-02-04T00:02:12.300Z","type":"message"}
+{"nick":"jfhbrook","message":"noffle, I'm pretty clueless about modern streams, but maybe one of those transform stream modules, like through2, would help bridge the gap?","date":"2016-02-04T00:05:18.518Z","type":"message"}
+{"nick":"noffle","message":"jfhbrook: appreciated, but I'm really keen on closing this gap in my understanding of streams :)","date":"2016-02-04T00:05:50.521Z","type":"message"}
+{"nick":"jfhbrook","message":"yeah I feel you","date":"2016-02-04T00:05:58.935Z","type":"message"}
+{"nick":"jfhbrook","message":"good luck!","date":"2016-02-04T00:06:01.324Z","type":"message"}
+{"nick":"jfhbrook","message":"I'm all about cursor implementations these days over object streams","date":"2016-02-04T00:06:25.920Z","type":"message"}
+{"nick":"jfhbrook","message":"speaking of, any y'all fuck with redis cursors? the API is kinda hilarious","date":"2016-02-04T00:06:38.672Z","type":"message"}
+{"nick":"jfhbrook","message":"so like if you want to do a scan of all keys in redis, you start with","date":"2016-02-04T00:06:50.040Z","type":"message"}
+{"nick":"jfhbrook","message":"scan 0","date":"2016-02-04T00:06:56.042Z","type":"message"}
+{"nick":"jfhbrook","message":"and it's like, [ 31, [ 'some', 'keys' ] ]","date":"2016-02-04T00:07:07.151Z","type":"message"}
+{"nick":"jfhbrook","message":"where 31 is (to you) a seemingly-arbitrary number","date":"2016-02-04T00:07:20.351Z","type":"message"}
+{"nick":"jfhbrook","message":"so you call","date":"2016-02-04T00:07:22.049Z","type":"message"}
+{"nick":"jfhbrook","message":"scan 31","date":"2016-02-04T00:07:23.664Z","type":"message"}
+{"nick":"jfhbrook","message":"and get another similar result back","date":"2016-02-04T00:07:28.043Z","type":"message"}
+{"nick":"jfhbrook","message":"and you keep playing this choose-your-own-adventure until you get","date":"2016-02-04T00:07:36.145Z","type":"message"}
+{"nick":"jfhbrook","message":"[ 0, [ 'the', 'rest', 'of', 'the', 'keys' ]]","date":"2016-02-04T00:07:44.692Z","type":"message"}
+{"nick":"jfhbrook","message":"To get more keys, turn to page 31","date":"2016-02-04T00:08:02.439Z","type":"message"}
+{"nick":"mafintosh","message":"noffle: the transform stream will handle it for you","date":"2016-02-04T00:12:28.353Z","type":"message"}
+{"nick":"mafintosh","message":"noffle: it won't call ._transform again until the readable buffer is < HWM","date":"2016-02-04T00:12:54.518Z","type":"message"}
+{"nick":"noffle","message":"mafintosh: where does the extra data I write past what stream.push() wanted *go*?","date":"2016-02-04T00:13:07.864Z","type":"message"}
+{"nick":"noffle","message":"pipe() just puts it somewhere?","date":"2016-02-04T00:13:20.976Z","type":"message"}
+{"nick":"mafintosh","message":"noffle: it goes in a buffer","date":"2016-02-04T00:13:40.399Z","type":"message"}
+{"nick":"mafintosh","message":"noffle: (._readableState.buffer i think)","date":"2016-02-04T00:13:50.316Z","type":"message"}
+{"nick":"noffle","message":"okay, cool","date":"2016-02-04T00:14:07.290Z","type":"message"}
+{"nick":"noffle","message":"I'm suspecting that I'm not doing the wrong thing here then. maybe node-speaker is just not throttling itself when I oversaturate it with samples","date":"2016-02-04T00:14:59.521Z","type":"message"}
+{"nick":"PsionTheory","reason":"Remote host closed the connection","date":"2016-02-04T00:19:17.845Z","type":"quit"}
+{"nick":"mikolalysenko","message":"streams are good when you want to handle backpressure","date":"2016-02-04T00:32:21.742Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is the case in many situations","date":"2016-02-04T00:32:43.671Z","type":"message"}
+{"nick":"mikolalysenko","message":"but they are also very complicated and not always the best solution","date":"2016-02-04T00:33:05.069Z","type":"message"}
+{"nick":"jfhbrook","message":"right, and a lot of times I'm dealing with discrete http requests and a cursor.next(function(err, nextThing) { kinda situation","date":"2016-02-04T00:33:31.926Z","type":"message"}
+{"nick":"mikolalysenko","message":"if you are going to buffer the whole result anyway, then a stream makes no sense","date":"2016-02-04T00:33:55.736Z","type":"message"}
+{"nick":"jfhbrook","message":"I mean, I'm not doing cursor.asArray( here","date":"2016-02-04T00:34:18.714Z","type":"message"}
+{"nick":"jfhbrook","message":"(these are all mongodb-native apis I'm using here)","date":"2016-02-04T00:34:25.999Z","type":"message"}
+{"nick":"jfhbrook","message":"redis scan is more like, var idx = '0'; redis.scan(idx, function(err, data) { idx = data[0];","date":"2016-02-04T00:35:06.602Z","type":"message"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2016-02-04T00:57:02.469Z","type":"quit"}
+{"nick":"contrahax","date":"2016-02-04T00:59:47.875Z","type":"join"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2016-02-04T01:30:52.703Z","type":"quit"}
+{"nick":"contrahax","date":"2016-02-04T01:33:48.422Z","type":"join"}
+{"nick":"pfraze","date":"2016-02-04T01:36:06.670Z","type":"join"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2016-02-04T02:34:30.221Z","type":"quit"}
+{"nick":"pfraze","reason":"Remote host closed the connection","date":"2016-02-04T02:40:29.838Z","type":"quit"}
+{"nick":"pfraze","date":"2016-02-04T02:49:50.657Z","type":"join"}
+{"nick":"contrahax","date":"2016-02-04T03:12:45.161Z","type":"join"}
+{"nick":"tobie","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:11:39.690Z","type":"quit"}
+{"nick":"daviddias","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:11:39.875Z","type":"quit"}
+{"nick":"mikolalysenko","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:11:39.876Z","type":"quit"}
+{"nick":"karissa","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:11:39.877Z","type":"quit"}
+{"nick":"jhiesey","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:15.419Z","type":"quit"}
+{"nick":"rom1504","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:49.546Z","type":"quit"}
+{"nick":"grncdr","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:49.546Z","type":"quit"}
+{"nick":"eugeneware","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:49.548Z","type":"quit"}
+{"nick":"machty","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:49.732Z","type":"quit"}
+{"nick":"jlord","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:12:49.732Z","type":"quit"}
+{"nick":"karissa","date":"2016-02-04T04:12:51.593Z","type":"join"}
+{"nick":"indexzero","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:23.742Z","type":"quit"}
+{"nick":"tmpvar","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:24.702Z","type":"quit"}
+{"nick":"nrw","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:24.702Z","type":"quit"}
+{"nick":"mmckegg","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:24.703Z","type":"quit"}
+{"nick":"addisonj","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:24.703Z","type":"quit"}
+{"nick":"perlbot","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:13:24.703Z","type":"quit"}
+{"nick":"rom1504","date":"2016-02-04T04:13:36.128Z","type":"join"}
+{"nick":"perlbot","date":"2016-02-04T04:14:07.713Z","type":"join"}
+{"nick":"tmpvar","date":"2016-02-04T04:16:39.129Z","type":"join"}
+{"nick":"indexzero","date":"2016-02-04T04:16:39.957Z","type":"join"}
+{"nick":"addisonj","date":"2016-02-04T04:17:14.453Z","type":"join"}
+{"nick":"nrw","date":"2016-02-04T04:17:38.619Z","type":"join"}
+{"nick":"mmckegg","date":"2016-02-04T04:17:38.804Z","type":"join"}
+{"nick":"grncdr","date":"2016-02-04T04:17:51.165Z","type":"join"}
+{"nick":"eugeneware","date":"2016-02-04T04:18:23.015Z","type":"join"}
+{"nick":"dlmanning_","date":"2016-02-04T04:18:27.885Z","type":"join"}
+{"nick":"tobie","date":"2016-02-04T04:19:01.169Z","type":"join"}
+{"nick":"parshap","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:19:09.927Z","type":"quit"}
+{"nick":"lachenmayer","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:19:10.112Z","type":"quit"}
+{"nick":"dlmanning","reason":"Excess Flood","date":"2016-02-04T04:19:10.112Z","type":"quit"}
+{"nick":"dlmanning_","new_nick":"dlmanning","date":"2016-02-04T04:19:13.231Z","type":"nick"}
+{"nick":"substack","reason":"Ping timeout: 263 seconds","date":"2016-02-04T04:19:18.883Z","type":"quit"}
+{"nick":"parshap","date":"2016-02-04T04:19:40.795Z","type":"join"}
+{"nick":"jfhbrook","reason":"Ping timeout: 260 seconds","date":"2016-02-04T04:19:49.042Z","type":"quit"}
+{"nick":"lachenmayer","date":"2016-02-04T04:20:20.296Z","type":"join"}
+{"nick":"substack","date":"2016-02-04T04:20:32.643Z","type":"join"}
+{"nick":"jfhbrook","date":"2016-02-04T04:20:47.085Z","type":"join"}
+{"nick":"jlord","date":"2016-02-04T04:22:15.145Z","type":"join"}
+{"nick":"machty","date":"2016-02-04T04:22:33.106Z","type":"join"}
+{"nick":"mikolalysenko","date":"2016-02-04T04:22:59.478Z","type":"join"}
+{"nick":"jhiesey","date":"2016-02-04T04:23:14.166Z","type":"join"}
+{"nick":"daviddias","date":"2016-02-04T04:23:31.822Z","type":"join"}
+{"nick":"ec\\","date":"2016-02-04T04:24:03.084Z","type":"join"}
+{"nick":"pfraze","reason":"Remote host closed the connection","date":"2016-02-04T04:47:07.774Z","type":"quit"}
+{"nick":"knownasilya","reason":"Quit: Connection closed for inactivity","date":"2016-02-04T05:00:07.423Z","type":"quit"}
+{"nick":"domanic","date":"2016-02-04T06:08:57.396Z","type":"join"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2016-02-04T06:18:09.344Z","type":"quit"}
+{"nick":"contrahax","date":"2016-02-04T06:45:32.595Z","type":"join"}
+{"nick":"domanic","reason":"Ping timeout: 250 seconds","date":"2016-02-04T06:53:43.400Z","type":"quit"}
+{"nick":"phated","reason":"Remote host closed the connection","date":"2016-02-04T06:55:14.132Z","type":"quit"}
+{"nick":"domanic","date":"2016-02-04T07:38:45.575Z","type":"join"}
+{"nick":"contrahax","reason":"Quit: Sleeping","date":"2016-02-04T07:41:10.658Z","type":"quit"}
+{"nick":"domanic","reason":"Ping timeout: 276 seconds","date":"2016-02-04T07:44:17.160Z","type":"quit"}
+{"nick":"rwaldron","reason":"Remote host closed the connection","date":"2016-02-04T07:48:49.145Z","type":"quit"}
