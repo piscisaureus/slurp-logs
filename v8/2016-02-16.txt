@@ -69,3 +69,113 @@
 {"nick":"xaxxon","message":"hrmm, maybe Im' doing something else wrong... trying to simplify the code and it's still failing","date":"2016-02-16T07:54:42.273Z","type":"message"}
 {"nick":"JoWie","date":"2016-02-16T07:55:34.760Z","type":"join"}
 {"nick":"jochen__","message":"you have to create CppBackedObject from C++","date":"2016-02-16T07:59:53.572Z","type":"message"}
+{"nick":"jochen__","message":"in the browser, you'd use document.createElement('div') as opposed to new HTMLDivElement()","date":"2016-02-16T08:00:10.977Z","type":"message"}
+{"nick":"jochen__","message":"if you want new HTMLDivElement to work, you need to make the function template do something on call, then, if it's a construct call, create a new CppBackedObject and return that","date":"2016-02-16T08:00:58.359Z","type":"message"}
+{"nick":"xaxxon","message":"I'm not sure if I don't understand you or you don't understand me.   I have a function template that returns a working object.   cbo=new CppBackedObject(); cbo.function_only_in_cppbackedobject(); works fine.   ","date":"2016-02-16T08:07:06.117Z","type":"message"}
+{"nick":"xaxxon","message":"it's able to look up the internalfield in my callback and get the C++ object out of the external and then call a method on that c++ object pointer","date":"2016-02-16T08:07:46.431Z","type":"message"}
+{"nick":"xaxxon","message":"but if I say a=Object.create(new CppBackedObject()); and say a.function_only_in_cppbackedobject();    when I try to get the internal field, I get nullptr","date":"2016-02-16T08:08:17.976Z","type":"message"}
+{"nick":"xaxxon","message":"I'll try a couple more things and then post code","date":"2016-02-16T08:11:22.253Z","type":"message"}
+{"nick":"xaxxon","message":"Here's my code that doesn't work:   https://gist.github.com/xaxxon/49234d3921bacb6f4a72  It uses a library I wrote for wrapping the C++ class, but it seems to work for \"normal\" use.   If this use case SHOULD work, then I can put together a complete repro case but I wanted to know if it should work before I went to that effort","date":"2016-02-16T08:17:36.195Z","type":"message"}
+{"nick":"xaxxon","message":"jochen__ if you get a second to glance at that and let me know if it should work, I'd really appreciate it :)","date":"2016-02-16T08:20:42.206Z","type":"message"}
+{"nick":"jochen__","message":"have you checked what type holder is?","date":"2016-02-16T08:21:56.327Z","type":"message"}
+{"nick":"xaxxon","message":"no.   I'll do that now","date":"2016-02-16T08:22:12.194Z","type":"message"}
+{"nick":"xaxxon","message":"jochen__ I'm not 100% on what you mean by checking what type holder is, but I have something that takes a value and prints out every one of the IsX() boolean values of it... the only one that came back true is IsObject()","date":"2016-02-16T08:24:46.103Z","type":"message"}
+{"nick":"xaxxon","message":"which is the same as on the previous call that works","date":"2016-02-16T08:25:00.982Z","type":"message"}
+{"nick":"evanluca_","reason":"Read error: Connection reset by peer","date":"2016-02-16T08:26:29.794Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T08:26:43.711Z","type":"join"}
+{"nick":"xaxxon","message":"huh.. between the two calls that work, the addresses of This() and Holder() are the same","date":"2016-02-16T08:27:53.910Z","type":"message"}
+{"nick":"xaxxon","message":"*info.This() and *info.Holder() that is","date":"2016-02-16T08:28:12.196Z","type":"message"}
+{"nick":"xaxxon","message":"i guess that may not be interesting","date":"2016-02-16T08:30:25.184Z","type":"message"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T08:30:51.497Z","type":"quit"}
+{"nick":"evanluca_","date":"2016-02-16T08:30:53.216Z","type":"join"}
+{"nick":"xaxxon","message":"I just realzied I didn't know I was supposed to get the internalfield out of This or Holder (I was using Holder) so I cahnged it to This() but got no difference in behavior","date":"2016-02-16T08:36:22.798Z","type":"message"}
+{"nick":"xaxxon","message":"the \"embedder's guide\" uses holder, though so I'm guessing that's correct","date":"2016-02-16T08:37:50.114Z","type":"message"}
+{"nick":"evanluca_","reason":"Read error: Connection reset by peer","date":"2016-02-16T08:41:42.079Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T08:41:55.982Z","type":"join"}
+{"nick":"xaxxon","message":"I just changed the code to this, and it all works up until b.get_name:            c->run(\"c = new Animal(); c.get_name(); b=Object.create(c);c.get_name(); b.get_name();\");","date":"2016-02-16T08:42:26.796Z","type":"message"}
+{"nick":"xaxxon","message":"reading this post about what holder is: https://groups.google.com/forum/#!topic/v8-users/Axf4hF_RfZo","date":"2016-02-16T08:43:55.532Z","type":"message"}
+{"nick":"xaxxon","message":"do I need to use \"signatures\"? (I don't know what they are but I'm looking now)","date":"2016-02-16T08:48:26.079Z","type":"message"}
+{"nick":"xaxxon","message":"ok, I think I'm headed down the right path.   I think you may have been referring to functiontemplate::setclassname before which I didn't know about and hadn't been using.   ","date":"2016-02-16T08:57:45.971Z","type":"message"}
+{"nick":"xaxxon","message":"ok, so I'm setting the classname on my functiontemplate to the c++-generated typeid name.. and I'm always getting mangled Animal for both This and Holder - both when it works and when it doesn't work.","date":"2016-02-16T09:05:31.764Z","type":"message"}
+{"nick":"xaxxon","message":"when I use *v8::String::Utf8Value(i,info.This()(or Holder())","date":"2016-02-16T09:06:28.293Z","type":"message"}
+{"nick":"xaxxon","message":"oh but maybe that's inherited through the prototype somehow?","date":"2016-02-16T09:06:49.047Z","type":"message"}
+{"nick":"rendar","date":"2016-02-16T09:13:39.547Z","type":"join"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T09:17:08.506Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T09:17:44.584Z","type":"join"}
+{"nick":"plutoniix","reason":"Read error: Connection reset by peer","date":"2016-02-16T09:20:52.662Z","type":"quit"}
+{"nick":"xaxxon","message":"I'm really frickin' confused.   I put a piece of data in my c++ class and set it to rand() (I didn't srand it but whatever).   Each time I call my method, I get that piece of data and print it out.. it's always there and the same value.   Yet the hidden field disappears .. but when it's about to fail, if I look up that value, (which it has to go through other c++ code using the internal field to get), it works","date":"2016-02-16T09:25:15.298Z","type":"message"}
+{"nick":"xaxxon","message":"jochen__ what the holy hell?   In my functiontemplate callback that's about to fail, I call holder->get(\"I\"); which is a getter accessor and it gets the internal field just fine to look up the value for i, but then immediately after I do that, I say v8::Local<v8::External>::Cast(holder->GetInternalField(0))->Value() and its 0x0","date":"2016-02-16T09:34:25.270Z","type":"message"}
+{"nick":"xaxxon","message":"I gotta go to sleep but this is killing me","date":"2016-02-16T09:34:35.840Z","type":"message"}
+{"nick":"plutoniix","date":"2016-02-16T09:36:28.468Z","type":"join"}
+{"nick":"mostynb","date":"2016-02-16T09:43:56.821Z","type":"join"}
+{"nick":"mostynb","reason":"Client Quit","date":"2016-02-16T09:45:10.829Z","type":"quit"}
+{"nick":"xaxxon","message":"I'm gunna post this to v8 users and go to sleep","date":"2016-02-16T09:49:44.189Z","type":"message"}
+{"nick":"xaxxon","message":"..posted.   so sad","date":"2016-02-16T10:05:24.852Z","type":"message"}
+{"nick":"plutoniix","reason":"Ping timeout: 256 seconds","date":"2016-02-16T10:10:14.584Z","type":"quit"}
+{"nick":"plutoniix","date":"2016-02-16T10:12:45.154Z","type":"join"}
+{"nick":"plutoniix","reason":"Ping timeout: 272 seconds","date":"2016-02-16T10:18:44.535Z","type":"quit"}
+{"nick":"plutoniix","date":"2016-02-16T10:35:30.625Z","type":"join"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T10:37:55.763Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T10:38:09.940Z","type":"join"}
+{"nick":"plutoniix","reason":"Client Quit","date":"2016-02-16T10:38:39.130Z","type":"quit"}
+{"nick":"xaxxon","message":"posted full reproduction code to v8 users list... ","date":"2016-02-16T11:06:20.126Z","type":"message"}
+{"nick":"ashish0304","date":"2016-02-16T11:07:18.728Z","type":"join"}
+{"nick":"xaxxon","message":"also here: https://gist.github.com/xaxxon/4bd2abb161ea2253e68d","date":"2016-02-16T11:07:49.866Z","type":"message"}
+{"nick":"s1w","message":"Does anyone know if there's any good articles explaining how V8 works under the hood?","date":"2016-02-16T11:10:32.661Z","type":"message"}
+{"nick":"xaxxon","message":"1if it's more than a month old, it's probably out of date...","date":"2016-02-16T11:11:00.571Z","type":"message"}
+{"nick":"s1w","message":"Very true, but i'm after concepts more than implementation details","date":"2016-02-16T11:11:42.149Z","type":"message"}
+{"nick":"ashish0304","message":"While linking with statically built v8 libs I'm getting lots of errors like \"undefined reference to 'std::__1::ios_base::clear(unsigned int)'\". Please help.","date":"2016-02-16T11:13:30.986Z","type":"message"}
+{"nick":"xaxxon","message":"ashish0304 what platform?","date":"2016-02-16T11:15:43.162Z","type":"message"}
+{"nick":"ashish0304","message":"Android","date":"2016-02-16T11:16:00.617Z","type":"message"}
+{"nick":"xaxxon","message":"ashish0304 did you goolge?  there seem to be results for that message","date":"2016-02-16T11:16:30.140Z","type":"message"}
+{"nick":"xaxxon","message":"but the short of it is you're mixing libstdc++ and libc++ most likely","date":"2016-02-16T11:16:50.437Z","type":"message"}
+{"nick":"ashish0304","message":"I've got suggestion like including -lstdc++, but it is of no use.","date":"2016-02-16T11:17:10.987Z","type":"message"}
+{"nick":"xaxxon","message":"https://github.com/xaxxon/v8-class-wrapper/blob/master/build_instructions.txt <== look towards the bottom, those are the ENV vars I set to build with libc++ on os x","date":"2016-02-16T11:18:21.608Z","type":"message"}
+{"nick":"ashish0304","message":"Here is my Android.mk file","date":"2016-02-16T11:18:43.863Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_PATH:= $(call my-dir)","date":"2016-02-16T11:18:47.970Z","type":"message"}
+{"nick":"ashish0304","message":"include $(CLEAR_VARS)","date":"2016-02-16T11:18:48.505Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_CPP_EXTENSION := .cpp .cc","date":"2016-02-16T11:18:48.678Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_SRC_FILES = hello.cpp","date":"2016-02-16T11:18:48.679Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_MODULE := hello","date":"2016-02-16T11:18:48.679Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_CPP_FEATURES += exceptions","date":"2016-02-16T11:18:48.679Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_C_INCLUDES := $(LOCAL_PATH)/inc/","date":"2016-02-16T11:18:49.015Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_LDLIBS := -L$(LOCAL_PATH)/inc -lv8_base -lv8_libbase -lv8_libplatform -lv8_nosnapshot","date":"2016-02-16T11:18:49.189Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_CFLAGS += -std=c++11","date":"2016-02-16T11:18:50.026Z","type":"message"}
+{"nick":"ashish0304","message":"ifeq ($(TARGET_ARCH_ABI),x86)","date":"2016-02-16T11:18:50.200Z","type":"message"}
+{"nick":"ashish0304","message":"LOCAL_CFLAGS += -ffast-math -mtune=atom -mssse3 -mfpmath=sse","date":"2016-02-16T11:18:51.030Z","type":"message"}
+{"nick":"ashish0304","message":"endif","date":"2016-02-16T11:18:51.204Z","type":"message"}
+{"nick":"ashish0304","message":"include $(BUILD_EXECUTABLE)","date":"2016-02-16T11:18:52.031Z","type":"message"}
+{"nick":"xaxxon","message":"normally you don't paste that much to an IRC channel, you put it on a paste site and share the link","date":"2016-02-16T11:19:10.662Z","type":"message"}
+{"nick":"C-Man","date":"2016-02-16T11:19:26.811Z","type":"join"}
+{"nick":"ashish0304","message":"Sorry, I'm new on IRC","date":"2016-02-16T11:19:28.086Z","type":"message"}
+{"nick":"ashish0304","message":"Next time I'll take care of it","date":"2016-02-16T11:19:43.832Z","type":"message"}
+{"nick":"xaxxon","message":"I don't know anything about android.mk.   but doesn't gyp generate all the build files?","date":"2016-02-16T11:19:53.882Z","type":"message"}
+{"nick":"xaxxon","message":"also, I don't see anywhere in what you put about using libc++","date":"2016-02-16T11:20:34.377Z","type":"message"}
+{"nick":"ashish0304","message":"I'm using libs on other machine and copied v8 headers and libs.","date":"2016-02-16T11:20:36.261Z","type":"message"}
+{"nick":"xaxxon","message":"well, something you built uses libstdc++ and something else you built used libc++","date":"2016-02-16T11:21:34.767Z","type":"message"}
+{"nick":"xaxxon","message":"so you need to build everything with -std=libc++","date":"2016-02-16T11:21:48.896Z","type":"message"}
+{"nick":"ashish0304","message":"How to make v8 with -std=libc++","date":"2016-02-16T11:24:12.504Z","type":"message"}
+{"nick":"ashish0304","message":"I'm using default make android_arm.release","date":"2016-02-16T11:24:44.769Z","type":"message"}
+{"nick":"xaxxon","message":"ashish0304 did you look at the link I posted with the ENV vars at the bottom?","date":"2016-02-16T11:31:50.577Z","type":"message"}
+{"nick":"xaxxon","message":"or maybe read this: https://bugs.chromium.org/p/v8/issues/detail?id=4615","date":"2016-02-16T11:32:27.537Z","type":"message"}
+{"nick":"ashish0304","message":"Thanks, I'll look at it!","date":"2016-02-16T11:32:42.256Z","type":"message"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"Check\" on http://build.chromium.org/p/client.v8/builders/V8%20Mac64%20ASAN/builds/4705 \"V8 Mac64 ASAN\" from 0dfd7bcdaf38b974bdbb3f035059e5611ffc746b: jkummerow@chromium.org,rodolph.perfetta@arm.com)","date":"2016-02-16T11:50:13.929Z","type":"message"}
+{"nick":"ashish0304","reason":"\"Quit\"","date":"2016-02-16T11:52:18.864Z","type":"part"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by machenbach@chromium.org: open (arm hardware support down)","date":"2016-02-16T12:34:27.677Z","type":"message"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T13:02:06.052Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T13:02:30.579Z","type":"join"}
+{"nick":"xaxxon","message":"jochen__ so it turned out in my half-asleep daze before that the object I'm given when using my C++-made object as a prototype comes in as [object object] not [object MyClass] like the working ones do... but Im' still so confused :(","date":"2016-02-16T13:37:10.937Z","type":"message"}
+{"nick":"xaxxon","message":"and the whole \"signature\" thing didn't work out since I only have one FunctionTemplate and it seems signatures require two FT's... because you have to have the signature to make the FT and have to haave the FT to make the signature","date":"2016-02-16T13:39:55.171Z","type":"message"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T13:42:52.836Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T13:43:11.708Z","type":"join"}
+{"nick":"xaxxon","message":"apparently it's Holder().GetPrototype... :-\\","date":"2016-02-16T13:45:26.219Z","type":"message"}
+{"nick":"evanlucas","reason":"Read error: Connection reset by peer","date":"2016-02-16T13:45:47.348Z","type":"quit"}
+{"nick":"evanlucas","date":"2016-02-16T13:45:57.206Z","type":"join"}
+{"nick":"xaxxon","message":"and kt is the same object... so the remaining question is, how do you know how far up to go to get the right object?","date":"2016-02-16T13:55:26.065Z","type":"message"}
+{"nick":"jugglinmike","date":"2016-02-16T14:19:52.567Z","type":"join"}
+{"nick":"evanlucas","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2016-02-16T14:34:29.100Z","type":"quit"}
+{"nick":"xaxxon","message":"finally got all the answers... just one missing function call to FindInstanceInPrototypeChain... and that was a day's worth of work :(","date":"2016-02-16T15:00:53.302Z","type":"message"}
+{"nick":"xaxxon","message":"but better than 2","date":"2016-02-16T15:01:00.720Z","type":"message"}
+{"nick":"petka____","date":"2016-02-16T15:31:49.707Z","type":"join"}
+{"nick":"evanlucas","date":"2016-02-16T15:39:37.762Z","type":"join"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2010030309]","date":"2016-02-16T15:42:54.237Z","type":"quit"}
