@@ -41,3 +41,55 @@
 {"nick":"creationix","message":"it also means that nothing needs a dependency on openssl just because it might use tls","date":"2016-02-25T15:59:14.442Z","type":"message"}
 {"nick":"creationix","message":"they can just depend on coro-net.  And only *if* they try to use tls, will it notice if openssl is installed or not","date":"2016-02-25T15:59:47.319Z","type":"message"}
 {"nick":"creationix","message":"optional dependency","date":"2016-02-25T15:59:53.292Z","type":"message"}
+{"nick":"creationix","message":"so practically speaking, my servers can all now use luvi tiny since they sit behind nginx for ssl termination","date":"2016-02-25T16:00:36.951Z","type":"message"}
+{"nick":"creationix","message":"or lua or luajit","date":"2016-02-25T16:00:47.777Z","type":"message"}
+{"nick":"creationix","message":"all the other deps are now portable","date":"2016-02-25T16:00:56.273Z","type":"message"}
+{"nick":"creationix","message":"This should be big.  It means the general lua community can now use all our core libraries without needing luvit or luvi.  Just luv + libraries which are all now in portable format.","date":"2016-02-25T16:02:36.375Z","type":"message"}
+{"nick":"creationix","message":"I'll write up that blog post after I'm done cleaning up and testing all this.","date":"2016-02-25T16:02:49.803Z","type":"message"}
+{"nick":"creationix","message":"rphillips, so how well do you understand tcp?","date":"2016-02-25T16:16:15.116Z","type":"message"}
+{"nick":"rphillips","message":"pretty well","date":"2016-02-25T16:16:31.196Z","type":"message"}
+{"nick":"creationix","message":"I'm having trouble figuring out the expected and desired behavior of coro streams","date":"2016-02-25T16:16:34.305Z","type":"message"}
+{"nick":"creationix","message":"I understand that a duplex stream can be closed on either side (send a FIN), while the other is still sending data?","date":"2016-02-25T16:17:12.855Z","type":"message"}
+{"nick":"creationix","message":"so the two halves seem kinda independent","date":"2016-02-25T16:17:25.257Z","type":"message"}
+{"nick":"creationix","message":"in the coro interface, you write(nil) to end a write stream.  It calls uv.shutdown which I assume sends the FIN","date":"2016-02-25T16:17:55.641Z","type":"message"}
+{"nick":"creationix","message":"and on the read side, if you receive a FIN, libuv will pass a EOF to the onRead callback and coro-streams will return nil from read","date":"2016-02-25T16:18:29.130Z","type":"message"}
+{"nick":"creationix","message":"what I don't understand is what should happen if the client disconnects without sending the fin","date":"2016-02-25T16:18:53.738Z","type":"message"}
+{"nick":"creationix","message":"I would expect the OS to tell libuv the socket died and libuv give me either an error or EOF event, but it just does nothing.  The onRead callback in C is never called","date":"2016-02-25T16:19:29.867Z","type":"message"}
+{"nick":"rphillips","message":"you will need a read timeout","date":"2016-02-25T16:20:06.624Z","type":"message"}
+{"nick":"creationix","message":"I understand detecting the disconnected socket is difficult if it's idle so I added a heartbeat message that's sent","date":"2016-02-25T16:20:10.465Z","type":"message"}
+{"nick":"creationix","message":"the heartbeat will return EBADF or EPIPE (server or client) if the socket is dead","date":"2016-02-25T16:20:32.649Z","type":"message"}
+{"nick":"creationix","message":"but even then libuv still doesn't ever call onRead","date":"2016-02-25T16:20:44.849Z","type":"message"}
+{"nick":"creationix","message":"a timeout would only work if I'm expecting data.  What about long-lived and mostly idle connections?","date":"2016-02-25T16:21:14.883Z","type":"message"}
+{"nick":"rphillips","message":"you can also turn keep alive on but adds some overhead","date":"2016-02-25T16:22:27.599Z","type":"message"}
+{"nick":"creationix","message":"I think I would like read() in the coro-stream to return with an error if the socket is disconnected, but that involves coupling the read and write streams","date":"2016-02-25T16:22:29.659Z","type":"message"}
+{"nick":"creationix","message":"TCP keepalive, yeah that could work","date":"2016-02-25T16:22:47.655Z","type":"message"}
+{"nick":"creationix","message":"that basically just sends heartbeats at the TCP level right?","date":"2016-02-25T16:23:02.652Z","type":"message"}
+{"nick":"rphillips","message":"correct","date":"2016-02-25T16:23:44.952Z","type":"message"}
+{"nick":"rphillips","message":"keep alive is the way to go if the connection is mostly idle","date":"2016-02-25T16:23:52.864Z","type":"message"}
+{"nick":"creationix","message":"I've read several places that keepalive can break some networks, but maybe that's old information","date":"2016-02-25T16:24:02.782Z","type":"message"}
+{"nick":"creationix","message":"I know it's easy to enable using the libuv APIs","date":"2016-02-25T16:24:12.840Z","type":"message"}
+{"nick":"creationix","message":"websocket also has ping/pong and close control frames","date":"2016-02-25T16:24:50.472Z","type":"message"}
+{"nick":"creationix","message":"I'm just not sure what good the websocket level frames does.  Attempting to write to a dead socket doesn't trigger onRead to happen","date":"2016-02-25T16:25:25.510Z","type":"message"}
+{"nick":"creationix","message":"I'd have to couple the two halves and abort the read if a write on the same socket failed (just not sure that's a good idea or correct behavior)","date":"2016-02-25T16:25:53.359Z","type":"message"}
+{"nick":"creationix","message":"I think I'll try TCP keepalive.  That should be less overhead than websocket control frames","date":"2016-02-25T16:27:58.535Z","type":"message"}
+{"nick":"rphillips","message":"that does sound like correct behavior","date":"2016-02-25T16:29:08.273Z","type":"message"}
+{"nick":"rphillips","message":"if the socket fails the write then it usually needs to be torn down","date":"2016-02-25T16:29:22.226Z","type":"message"}
+{"nick":"creationix","message":"I guess it depends on why the write failed","date":"2016-02-25T16:29:42.765Z","type":"message"}
+{"nick":"creationix","message":"if I send a fin and then try to write, that will fail, but because I closed my write side","date":"2016-02-25T16:29:54.250Z","type":"message"}
+{"nick":"creationix","message":"the read-side might live on for a while in that case I think","date":"2016-02-25T16:30:13.318Z","type":"message"}
+{"nick":"creationix","message":"thanks, I'll see if tcp keepalive does what I want, if not, I'll couple the streams at the higher level","date":"2016-02-25T16:32:55.102Z","type":"message"}
+{"nick":"creationix","message":"the other problem is knowing when to close a socket handle","date":"2016-02-25T16:39:01.436Z","type":"message"}
+{"nick":"creationix","message":"currently coro-net closes after shutdown, but this is wrong, it's too soon","date":"2016-02-25T16:39:27.092Z","type":"message"}
+{"nick":"creationix","message":"I need to couple the two sides and only close after sending and receiving EOF","date":"2016-02-25T16:39:43.235Z","type":"message"}
+{"nick":"rphillips","message":"or an error is thrown","date":"2016-02-25T16:50:57.635Z","type":"message"}
+{"nick":"creationix","message":"so if write returns an error, onRead has an error or both sides have seen EOF, then we need to close the handle","date":"2016-02-25T16:55:34.911Z","type":"message"}
+{"nick":"creationix","message":"that should be enough to prevent leaks I think","date":"2016-02-25T16:55:42.342Z","type":"message"}
+{"nick":"creationix","message":"without closing too soon","date":"2016-02-25T16:55:49.015Z","type":"message"}
+{"nick":"creationix","message":"I wish we had something like npm link, should make this sometime https://github.com/luvit/lit/issues/175","date":"2016-02-25T19:08:14.670Z","type":"message"}
+{"nick":"travis-ci","date":"2016-02-25T19:16:46.805Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#202 (master - 767c34b : Tim Caswell): The build passed.","date":"2016-02-25T19:16:47.724Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/e1777f48a92e...767c34ba3a3d","date":"2016-02-25T19:16:47.936Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/111823730","date":"2016-02-25T19:16:47.936Z","type":"message"}
+{"nick":"travis-ci","date":"2016-02-25T19:16:47.936Z","type":"part"}
+{"nick":"erlbot--_","new_nick":"erlbot--","date":"2016-02-25T20:05:40.113Z","type":"nick"}
+{"nick":"creationix","message":"alright, we got a new lit version","date":"2016-02-25T20:19:01.490Z","type":"message"}
