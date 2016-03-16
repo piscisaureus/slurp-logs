@@ -16,3 +16,65 @@
 {"nick":"rendar","date":"2016-03-15T07:51:18.682Z","type":"join"}
 {"nick":"DarkGod","date":"2016-03-15T08:20:58.248Z","type":"join"}
 {"nick":"rphillips","message":"good morning","date":"2016-03-15T13:52:29.873Z","type":"message"}
+{"nick":"creationix","message":"mornin'","date":"2016-03-15T17:14:30.362Z","type":"message"}
+{"nick":"DarkGod","reason":"Ping timeout: 268 seconds","date":"2016-03-15T18:16:31.279Z","type":"quit"}
+{"nick":"Harageth","date":"2016-03-15T18:22:18.317Z","type":"join"}
+{"nick":"DarkGod","date":"2016-03-15T18:58:42.695Z","type":"join"}
+{"nick":"rendar","reason":"Ping timeout: 252 seconds","date":"2016-03-15T19:53:40.560Z","type":"quit"}
+{"nick":"rendar","date":"2016-03-15T19:59:59.322Z","type":"join"}
+{"nick":"Harageth","new_nick":"Adam_____","date":"2016-03-15T20:34:24.906Z","type":"nick"}
+{"nick":"Adam_____","message":"rphillips: creationix and I had a question for you regarding self signed certificates and coro-net","date":"2016-03-15T20:34:52.811Z","type":"message"}
+{"nick":"creationix","message":"Adam_____ fyi I don't think rphillips has done much with coro-net, but he knows a bit about openssl and certs","date":"2016-03-15T20:36:13.015Z","type":"message"}
+{"nick":"Adam_____","message":"ahhhh ok","date":"2016-03-15T20:36:30.191Z","type":"message"}
+{"nick":"creationix","message":"and worked on the monitoring agent that verifies certs using luvit","date":"2016-03-15T20:36:31.168Z","type":"message"}
+{"nick":"rphillips","message":"sure","date":"2016-03-15T20:45:35.408Z","type":"message"}
+{"nick":"rphillips","message":"Adam_____: whats up","date":"2016-03-15T20:45:36.488Z","type":"message"}
+{"nick":"rphillips","message":"You will need to pass down the chain as an array","date":"2016-03-15T20:46:09.434Z","type":"message"}
+{"nick":"Adam_____","message":"Ok so I load in the key/cert (tls = {key = ..., cert = ...}) on the aep and use it to bind to port 8443.","date":"2016-03-15T21:02:26.794Z","type":"message"}
+{"nick":"Adam_____","message":"I guess I don't really understand what you mean by pass it down the chain as an array","date":"2016-03-15T21:04:23.180Z","type":"message"}
+{"nick":"creationix","message":"Adam_____ in the agent, your server should be good","date":"2016-03-15T21:10:11.376Z","type":"message"}
+{"nick":"a__","reason":"Remote host closed the connection","date":"2016-03-15T21:10:26.247Z","type":"quit"}
+{"nick":"a__","date":"2016-03-15T21:11:16.229Z","type":"join"}
+{"nick":"Adam_____","message":"aaaaaa... yeah we had attempted to connect without giving the agent the cert expecting that the connection would be refused (it wasn't)","date":"2016-03-15T21:12:28.375Z","type":"message"}
+{"nick":"creationix","message":"rphillips, yep that was it https://github.com/luvit/lit/blob/master/deps/secure-socket/context.lua#L61-L68","date":"2016-03-15T21:15:55.433Z","type":"message"}
+{"nick":"creationix","message":"so we just need to pass tls = {ca = ... } coro-net's options for the client","date":"2016-03-15T21:16:15.086Z","type":"message"}
+{"nick":"creationix","message":"well, assuming this will work, we'll see","date":"2016-03-15T21:16:34.793Z","type":"message"}
+{"nick":"creationix","message":"rphillips, ok so the problem is coro-net won't refuse a connection if the server cert doesn't checkout","date":"2016-03-15T21:24:51.091Z","type":"message"}
+{"nick":"creationix","message":"is there a special flag I need to enable verification?","date":"2016-03-15T21:25:00.827Z","type":"message"}
+{"nick":"creationix","message":"it appears I'm using the default verify mode and not setting one explicitly in case of a cert chain https://github.com/luvit/lit/blob/master/deps/secure-socket/context.lua#L80-L84","date":"2016-03-15T21:25:37.545Z","type":"message"}
+{"nick":"creationix","message":"rphillips maybe I need to call getpeerverification somewhere before or after handshake https://github.com/luvit/luvit/blob/master/deps/tls/common.lua#L198","date":"2016-03-15T21:30:52.455Z","type":"message"}
+{"nick":"rphillips","message":"yep","date":"2016-03-15T21:35:26.307Z","type":"message"}
+{"nick":"rphillips","message":"that should do it","date":"2016-03-15T21:35:28.438Z","type":"message"}
+{"nick":"rphillips","message":"you probably want a flag to allow for insecure mode","date":"2016-03-15T21:35:54.429Z","type":"message"}
+{"nick":"rphillips","message":"creationix: it's after the handshake","date":"2016-03-15T21:38:09.539Z","type":"message"}
+{"nick":"creationix","message":"thanks","date":"2016-03-15T21:38:16.724Z","type":"message"}
+{"nick":"rphillips","message":"we defer the check after the handshake so we can customize it","date":"2016-03-15T21:39:10.907Z","type":"message"}
+{"nick":"rphillips","message":"usually it would be done in the ctx.context:verify_mode() function","date":"2016-03-15T21:39:25.867Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/luvit/blob/master/deps/tls/common.lua#L426","date":"2016-03-15T21:39:27.491Z","type":"message"}
+{"nick":"creationix","message":"so my plan is to set verify mode to either peer or none (depending on the insecure flag in options)","date":"2016-03-15T21:40:20.192Z","type":"message"}
+{"nick":"creationix","message":"and then just always verify after handshake?","date":"2016-03-15T21:40:27.893Z","type":"message"}
+{"nick":"rphillips","message":"right","date":"2016-03-15T21:40:47.628Z","type":"message"}
+{"nick":"rphillips","message":"the FSM is in my previous common.lua paste","date":"2016-03-15T21:41:12.292Z","type":"message"}
+{"nick":"creationix","message":"rphillips, I think I don't understand the terms","date":"2016-03-15T21:44:43.319Z","type":"message"}
+{"nick":"creationix","message":"does the aep need to verify the agent's cert?","date":"2016-03-15T21:44:50.656Z","type":"message"}
+{"nick":"rphillips","message":"no. it's all client side","date":"2016-03-15T21:45:14.450Z","type":"message"}
+{"nick":"rphillips","message":"the agents don't have certificates","date":"2016-03-15T21:45:22.833Z","type":"message"}
+{"nick":"rphillips","message":"just the CA certificate of the server","date":"2016-03-15T21:45:29.221Z","type":"message"}
+{"nick":"creationix","message":"but it could be done in SSL/TLS right?","date":"2016-03-15T21:45:35.391Z","type":"message"}
+{"nick":"rphillips","message":"it could be done, but we never implemented it","date":"2016-03-15T21:46:01.568Z","type":"message"}
+{"nick":"creationix","message":"I think I accidentally made my aep verify the agent","date":"2016-03-15T21:46:14.067Z","type":"message"}
+{"nick":"rphillips","message":"that is a valid use case in node","date":"2016-03-15T21:46:20.176Z","type":"message"}
+{"nick":"rphillips","message":"i think luvit it does it","date":"2016-03-15T21:46:33.812Z","type":"message"}
+{"nick":"rphillips","message":"but the agent just ships with a CA that the agent validated","date":"2016-03-15T21:46:43.365Z","type":"message"}
+{"nick":"rphillips","message":"validates*","date":"2016-03-15T21:46:46.845Z","type":"message"}
+{"nick":"creationix","message":"so what is ssl:peer() for?","date":"2016-03-15T21:49:13.185Z","type":"message"}
+{"nick":"creationix","message":"and ssl:getpeerverification()","date":"2016-03-15T21:49:22.237Z","type":"message"}
+{"nick":"creationix","message":"and they mean different things if called by client and server","date":"2016-03-15T21:49:31.976Z","type":"message"}
+{"nick":"creationix","message":"?","date":"2016-03-15T21:49:33.540Z","type":"message"}
+{"nick":"rphillips","message":"yeal, ssl:peer() will return the x509 certificate the client has presented","date":"2016-03-15T21:52:51.524Z","type":"message"}
+{"nick":"rphillips","message":"if they present a certificate","date":"2016-03-15T21:52:59.311Z","type":"message"}
+{"nick":"rphillips","message":"hmm. at least that I what I thought it returned. I bet it returns the entire cert chain presented from the client","date":"2016-03-15T21:58:02.608Z","type":"message"}
+{"nick":"creationix","message":"I got it working!","date":"2016-03-15T22:06:40.449Z","type":"message"}
+{"nick":"rphillips","message":"yay!","date":"2016-03-15T22:14:55.881Z","type":"message"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2016-03-15T22:36:07.483Z","type":"quit"}
+{"nick":"Adam_____","reason":"Quit: Leaving...","date":"2016-03-15T23:44:09.532Z","type":"quit"}
