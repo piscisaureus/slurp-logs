@@ -525,3 +525,361 @@
 {"nick":"jdetiber","message":"unkown: elastic-ips are fine, but will only help you for the master instances. For etcd hosts and nodes if the internal hostname/ip changes then you will encounter certificate errors there as well","date":"2016-03-16T15:58:54.963Z","type":"message"}
 {"nick":"TheSteve0","date":"2016-03-16T15:59:06.706Z","type":"join"}
 {"nick":"jdetiber","message":"Only the masters should really \"need\" public IP addresses/hostnames, the rest of the hosts can live with just private ip/dns entries","date":"2016-03-16T15:59:31.793Z","type":"message"}
+{"nick":"unkown","message":"okay thanks. at the moment I'm using elastic ip's and I didn't have an issue with internal hostnames ever","date":"2016-03-16T16:00:36.404Z","type":"message"}
+{"nick":"jdetiber","message":"unkown: you may want to take a look at https://github.com/2015-Middleware-Keynote/demo-ansible/pull/100 <- demo-ansible is as script we use for provisioning demo environments, it's highly opinionated and not \"production-ready\" in the sense that it can and will clobber items in AWS that are pre-existing and not OpenShift related if you aren't careful","date":"2016-03-16T16:01:37.521Z","type":"message"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:01:37.841Z","type":"quit"}
+{"nick":"jbossbot","message":"git pull req\u000f [demo-ansible\u000f] (open\u000f) thoraxe\u000f [WIP] Massive playbook overhaul and cleanup https://github.com/2015-Middleware-Keynote/demo-ansible/pull/100","date":"2016-03-16T16:01:38.558Z","type":"message"}
+{"nick":"unkown","message":"But the openshift-ansible script isn't supporting elastic ip's? Because you're only able to add elastic ip's after the script already ran. So the elastic IP would change the public-dns, which will be different than the public-dns and public ip in the master-conf.yaml","date":"2016-03-16T16:01:43.885Z","type":"message"}
+{"nick":"lkrejci","date":"2016-03-16T16:01:48.254Z","type":"join"}
+{"nick":"unkown","message":"I will take a look but we try to have a stable environment at the moment","date":"2016-03-16T16:02:48.244Z","type":"message"}
+{"nick":"sgoodwin","reason":"Ping timeout: 264 seconds","date":"2016-03-16T16:04:04.038Z","type":"quit"}
+{"nick":"jdetiber","message":"I'm not sure of a good way to handle that without modifying what the aws playbooks are doing provisioning/bootstrapping wise, or doing a manual install using the byo playbooks and overriding the openshift_public_ip for each host to reference the elastic IP","date":"2016-03-16T16:04:59.699Z","type":"message"}
+{"nick":"balunasj|mtg","date":"2016-03-16T16:05:15.167Z","type":"join"}
+{"nick":"unkown","message":"Is it a weird approach because noone did it before? With the cluster of the script you will always have troubles when the ec2-instance is turned off and on?","date":"2016-03-16T16:06:09.615Z","type":"message"}
+{"nick":"jdetiber","message":"The demo-ansible scripts make use of 3 ELB pairs, external API/Console, internal API/Console and one for the Router","date":"2016-03-16T16:06:19.563Z","type":"message"}
+{"nick":"gli","reason":"Quit: Leaving","date":"2016-03-16T16:06:40.762Z","type":"quit"}
+{"nick":"jdetiber","message":"unkown: indeed, generally we deal with always running clusters, or clusters that are created on demand","date":"2016-03-16T16:06:46.248Z","type":"message"}
+{"nick":"unkown","message":"Hmm but it's some of the big advantages of openshift. When we're turning off and on all the containers and stuff is recreated and working instantly.","date":"2016-03-16T16:07:23.769Z","type":"message"}
+{"nick":"bleathem","date":"2016-03-16T16:07:29.057Z","type":"join"}
+{"nick":"jsvgoncalves","reason":"Quit: Leaving","date":"2016-03-16T16:07:32.709Z","type":"quit"}
+{"nick":"sgoodwin","date":"2016-03-16T16:07:55.945Z","type":"join"}
+{"nick":"unkown","message":"And okay if we will use this in our real environment it will always be turned on but even than it will be safer to use the elastic ip's?","date":"2016-03-16T16:08:13.725Z","type":"message"}
+{"nick":"balunasj","reason":"Ping timeout: 276 seconds","date":"2016-03-16T16:08:18.331Z","type":"quit"}
+{"nick":"nodist","reason":"Quit: Leaving","date":"2016-03-16T16:08:32.377Z","type":"quit"}
+{"nick":"cben","date":"2016-03-16T16:09:13.044Z","type":"join"}
+{"nick":"bpeterse","reason":"Quit: Leaving.","date":"2016-03-16T16:09:49.508Z","type":"quit"}
+{"nick":"bpeterse","date":"2016-03-16T16:10:10.086Z","type":"join"}
+{"nick":"cben","message":"don't know where to report: https://install.openshift.com/ for m4 advises to run `sh <(curl -s https://install.openshift.com/origin-m4)` but https://install.openshift.com/origin-m4 returns HTML, not a shell script.","date":"2016-03-16T16:11:15.465Z","type":"message"}
+{"nick":"jbossbot","message":"Title:\u000f Install OpenShift Today!\u000f","date":"2016-03-16T16:11:16.399Z","type":"message"}
+{"nick":"jbossbot","message":"Title:\u000f Install OpenShift Today!\u000f","date":"2016-03-16T16:11:16.698Z","type":"message"}
+{"nick":"jdetiber","message":"unkown: with a manual install you can override the openshift_hostname, openshift_ip, openshift_public_hostname, openshift_public_ip as necessary to override the default detected values","date":"2016-03-16T16:13:27.204Z","type":"message"}
+{"nick":"cben","message":"[I'm not trying to install m4, was just browsing the various install options.]","date":"2016-03-16T16:13:35.924Z","type":"message"}
+{"nick":"axil42","reason":"Ping timeout: 250 seconds","date":"2016-03-16T16:14:03.090Z","type":"quit"}
+{"nick":"jdetiber","message":"for the case of nodes, it may be easier to kill them and re-provision new ones when bringing the envs back up (assuming persistent volumes are used to store the registry, metrics, logging, etc content)","date":"2016-03-16T16:14:21.425Z","type":"message"}
+{"nick":"unkown","message":"thanks, that are solutions but just using an elastic ip from the beginning and refering manually to the ip of the elastic ip is also stable isn't it?","date":"2016-03-16T16:15:37.161Z","type":"message"}
+{"nick":"jdetiber","message":"Miciah: any ideas who is currently handling the v2 installer? The issue cben mentions above?","date":"2016-03-16T16:15:55.511Z","type":"message"}
+{"nick":"balunasj|mtg","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:16:00.261Z","type":"quit"}
+{"nick":"jdetiber","message":"sure","date":"2016-03-16T16:16:08.364Z","type":"message"}
+{"nick":"balunasj","date":"2016-03-16T16:16:26.109Z","type":"join"}
+{"nick":"jdetiber","message":"the problem with elastic IPs are that they are public IPs, and nodes don't actually need public IPs (nor do they actually use the openshift_public_{ip, hostname} variables","date":"2016-03-16T16:16:45.308Z","type":"message"}
+{"nick":"unkown","message":"But isn't it necessary to access the router on a node?","date":"2016-03-16T16:17:23.774Z","type":"message"}
+{"nick":"jdetiber","message":"yes, but for an HA router, you'd want an ELB (or some other mechanism) in front of the router pods","date":"2016-03-16T16:17:57.373Z","type":"message"}
+{"nick":"Miciah","message":"jdetiber: That would be the Online team, particularly tiwillia, thrasher, and I.","date":"2016-03-16T16:18:50.889Z","type":"message"}
+{"nick":"chirino","date":"2016-03-16T16:19:14.430Z","type":"join"}
+{"nick":"jdetiber","message":"same thing with HA masters, the internal and external elb will provide the static names (using openshift_cluster_hostname and openshift_cluster_public_hostname)","date":"2016-03-16T16:19:20.948Z","type":"message"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:20:32.744Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T16:21:11.040Z","type":"join"}
+{"nick":"unkown","message":"thanks I understand","date":"2016-03-16T16:21:16.100Z","type":"message"}
+{"nick":"cben","message":"[BTW, https://install.openshift.com/ for \"Origin latest\" only mentions \"all-in-one Docker image\".  The link actually leads to https://github.com/openshift/origin/blob/master/README.md#getting-started which mentions several ways to install but it's not clear from that page that the \" \"Docker image\" link is useful if you're looking for other ways.]","date":"2016-03-16T16:21:35.795Z","type":"message"}
+{"nick":"jbossbot","message":"Title:\u000f Install OpenShift Today!\u000f","date":"2016-03-16T16:21:36.393Z","type":"message"}
+{"nick":"tiwillia","message":"cben: thanks for reporting that here, we are investigating. Not sure what change caused this issue.","date":"2016-03-16T16:23:17.474Z","type":"message"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:24:24.636Z","type":"quit"}
+{"nick":"vtech","message":"Hello, I posted a question earlier today wrt an issue with pushing to internal insecure docker-registry. Now when I see the channel much more active than in the morning I'll try again. As I was not able to solve the issue I described it here - https://github.com/openshift/openshift-ansible/issues/1625 and would really appreciate any help or comments on that.","date":"2016-03-16T16:24:26.481Z","type":"message"}
+{"nick":"jbossbot","message":"git issue\u000f [openshift-ansible\u000f] (open\u000f) vojtechcima\u000f Builder fails to push images to internal docker registry https://github.com/openshift/openshift-ansible/issues/1625","date":"2016-03-16T16:24:27.489Z","type":"message"}
+{"nick":"jdetiber","message":"tiwillia: at least on the plus side, that means that not too many people are still installing v2 :)","date":"2016-03-16T16:25:53.517Z","type":"message"}
+{"nick":"trifon","date":"2016-03-16T16:26:17.424Z","type":"join"}
+{"nick":"ppitonak","reason":"Ping timeout: 246 seconds","date":"2016-03-16T16:26:21.420Z","type":"quit"}
+{"nick":"havill","reason":"Quit: Leaving","date":"2016-03-16T16:26:41.569Z","type":"quit"}
+{"nick":"tiwillia","message":"jdetiber: haha, that is definitely a positive","date":"2016-03-16T16:26:57.422Z","type":"message"}
+{"nick":"vtech","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:27:00.794Z","type":"quit"}
+{"nick":"tiwillia","message":"Its been ~3 weeks since that site was updated, so its probably been broken that long.","date":"2016-03-16T16:27:15.837Z","type":"message"}
+{"nick":"vtech","date":"2016-03-16T16:27:21.722Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T16:30:02.051Z","type":"join"}
+{"nick":"unkown","reason":"Ping timeout: 252 seconds","date":"2016-03-16T16:32:20.487Z","type":"quit"}
+{"nick":"jdetiber","new_nick":"jdetiber|lunch","date":"2016-03-16T16:32:57.206Z","type":"nick"}
+{"nick":"iocanel","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2016-03-16T16:33:22.371Z","type":"quit"}
+{"nick":"daviddcc","reason":"Ping timeout: 244 seconds","date":"2016-03-16T16:33:22.668Z","type":"quit"}
+{"nick":"rlourenc","reason":"Ping timeout: 276 seconds","date":"2016-03-16T16:33:39.308Z","type":"quit"}
+{"nick":"iocanel","date":"2016-03-16T16:34:50.508Z","type":"join"}
+{"nick":"kpiwko","reason":"Remote host closed the connection","date":"2016-03-16T16:38:43.529Z","type":"quit"}
+{"nick":"links","reason":"Quit: Leaving","date":"2016-03-16T16:38:51.457Z","type":"quit"}
+{"nick":"jdetiber|lunch","new_nick":"jdetiber","date":"2016-03-16T16:42:30.161Z","type":"nick"}
+{"nick":"lphiri","reason":"Remote host closed the connection","date":"2016-03-16T16:42:34.310Z","type":"quit"}
+{"nick":"daviddcc","date":"2016-03-16T16:43:30.050Z","type":"join"}
+{"nick":"zemanel","reason":"Quit: zemanel","date":"2016-03-16T16:43:40.700Z","type":"quit"}
+{"nick":"ch007m","date":"2016-03-16T16:45:10.507Z","type":"join"}
+{"nick":"imcleod","reason":"Ping timeout: 276 seconds","date":"2016-03-16T16:53:09.294Z","type":"quit"}
+{"nick":"jfiala","reason":"Quit: Leaving","date":"2016-03-16T16:53:36.941Z","type":"quit"}
+{"nick":"tiwillia","message":"cben: the issue with install.openshift.com should be resolved now","date":"2016-03-16T16:54:47.144Z","type":"message"}
+{"nick":"tiwillia","message":"Please let me know if you are still having an issue with it","date":"2016-03-16T16:54:56.058Z","type":"message"}
+{"nick":"pradeepto","reason":"Ping timeout: 268 seconds","date":"2016-03-16T16:55:02.271Z","type":"quit"}
+{"nick":"tiwillia","message":"And thanks for letting us know","date":"2016-03-16T16:55:03.253Z","type":"message"}
+{"nick":"jdetiber","new_nick":"jdetiber|brb","date":"2016-03-16T16:56:53.616Z","type":"nick"}
+{"nick":"TMancini","reason":"Ping timeout: 260 seconds","date":"2016-03-16T16:57:44.488Z","type":"quit"}
+{"nick":"danmcp_lunch","new_nick":"danmcp_mtg","date":"2016-03-16T16:58:24.511Z","type":"nick"}
+{"nick":"rhcarvalho","reason":"Quit: Leaving","date":"2016-03-16T16:58:41.324Z","type":"quit"}
+{"nick":"ch007m_2","date":"2016-03-16T16:59:00.532Z","type":"join"}
+{"nick":"ch007m","reason":"Read error: Connection reset by peer","date":"2016-03-16T16:59:42.396Z","type":"quit"}
+{"nick":"ch007m_","date":"2016-03-16T16:59:47.530Z","type":"join"}
+{"nick":"jdetiber|brb","new_nick":"jdetiber","date":"2016-03-16T17:00:21.003Z","type":"nick"}
+{"nick":"ch007m_","reason":"Client Quit","date":"2016-03-16T17:01:12.322Z","type":"quit"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:01:39.396Z","type":"quit"}
+{"nick":"vtech","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-03-16T17:01:45.150Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T17:01:49.277Z","type":"join"}
+{"nick":"kpiwko","date":"2016-03-16T17:02:53.503Z","type":"join"}
+{"nick":"kpiwko","reason":"Changing host","date":"2016-03-16T17:02:53.731Z","type":"quit"}
+{"nick":"kpiwko","date":"2016-03-16T17:02:53.731Z","type":"join"}
+{"nick":"ch007m_2","reason":"Ping timeout: 260 seconds","date":"2016-03-16T17:03:34.464Z","type":"quit"}
+{"nick":"cben","reason":"Ping timeout: 260 seconds","date":"2016-03-16T17:05:19.489Z","type":"quit"}
+{"nick":"danmcp_mtg","new_nick":"danmcp","date":"2016-03-16T17:06:28.144Z","type":"nick"}
+{"nick":"dvdyzag","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:08:29.955Z","type":"quit"}
+{"nick":"danmace","date":"2016-03-16T17:11:40.997Z","type":"join"}
+{"nick":"hchiramm_","reason":"Ping timeout: 248 seconds","date":"2016-03-16T17:13:02.038Z","type":"quit"}
+{"nick":"hchiramm","reason":"Ping timeout: 248 seconds","date":"2016-03-16T17:13:07.823Z","type":"quit"}
+{"nick":"lphiri","date":"2016-03-16T17:15:35.537Z","type":"join"}
+{"nick":"senayar","date":"2016-03-16T17:16:33.277Z","type":"quit"}
+{"nick":"bpeterse","reason":"Quit: Leaving.","date":"2016-03-16T17:18:22.915Z","type":"quit"}
+{"nick":"bpeterse","date":"2016-03-16T17:21:19.305Z","type":"join"}
+{"nick":"bbrowning","new_nick":"bbrowning_away","date":"2016-03-16T17:24:09.497Z","type":"nick"}
+{"nick":"bpeterse","reason":"Client Quit","date":"2016-03-16T17:25:41.219Z","type":"quit"}
+{"nick":"Or1on","date":"2016-03-16T17:27:31.468Z","type":"join"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:27:31.685Z","type":"quit"}
+{"nick":"sgoodwin","reason":"Quit: sgoodwin","date":"2016-03-16T17:27:35.420Z","type":"quit"}
+{"nick":"hchiramm","date":"2016-03-16T17:29:35.532Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T17:29:55.553Z","type":"join"}
+{"nick":"bpeterse","date":"2016-03-16T17:31:01.454Z","type":"join"}
+{"nick":"hchiramm_","date":"2016-03-16T17:31:05.365Z","type":"join"}
+{"nick":"vtech","date":"2016-03-16T17:31:06.664Z","type":"join"}
+{"nick":"lphiri","reason":"Quit: Ex-Chat","date":"2016-03-16T17:31:20.651Z","type":"quit"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:31:20.900Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T17:31:49.678Z","type":"join"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:32:02.536Z","type":"quit"}
+{"nick":"sgoodwin","date":"2016-03-16T17:32:06.537Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T17:32:40.467Z","type":"join"}
+{"nick":"jhadvig","reason":"Ping timeout: 244 seconds","date":"2016-03-16T17:32:47.679Z","type":"quit"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:35:21.604Z","type":"quit"}
+{"nick":"balunasj|mtg","date":"2016-03-16T17:35:30.676Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T17:38:10.526Z","type":"join"}
+{"nick":"inecas","reason":"Quit: Leaving","date":"2016-03-16T17:39:04.750Z","type":"quit"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:40:22.338Z","type":"quit"}
+{"nick":"tplevko","date":"2016-03-16T17:40:47.060Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T17:40:55.745Z","type":"join"}
+{"nick":"balunasj|mtg","reason":"Ping timeout: 276 seconds","date":"2016-03-16T17:41:15.691Z","type":"quit"}
+{"nick":"balunasj|mtg","date":"2016-03-16T17:43:32.352Z","type":"join"}
+{"nick":"balunasj|mtg","reason":"Read error: Connection reset by peer","date":"2016-03-16T17:46:07.953Z","type":"quit"}
+{"nick":"balunasj_","date":"2016-03-16T17:46:13.890Z","type":"join"}
+{"nick":"balunasj","reason":"Ping timeout: 260 seconds","date":"2016-03-16T17:46:57.707Z","type":"quit"}
+{"nick":"ramr","date":"2016-03-16T17:48:44.239Z","type":"join"}
+{"nick":"blues-man","reason":"Remote host closed the connection","date":"2016-03-16T17:50:16.633Z","type":"quit"}
+{"nick":"kpiwko","reason":"Remote host closed the connection","date":"2016-03-16T17:53:44.112Z","type":"quit"}
+{"nick":"gmontero","date":"2016-03-16T17:56:05.636Z","type":"part"}
+{"nick":"jstrachan","reason":"Quit: Leaving...","date":"2016-03-16T17:58:48.852Z","type":"quit"}
+{"nick":"danmace","reason":"Remote host closed the connection","date":"2016-03-16T18:01:05.746Z","type":"quit"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:01:24.367Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T18:01:49.855Z","type":"join"}
+{"nick":"iocanel","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2016-03-16T18:03:19.288Z","type":"quit"}
+{"nick":"balunasj_","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:03:19.528Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T18:03:50.043Z","type":"join"}
+{"nick":"lphiri","date":"2016-03-16T18:05:39.058Z","type":"join"}
+{"nick":"jdetiber","new_nick":"jdetiber|afk","date":"2016-03-16T18:10:35.991Z","type":"nick"}
+{"nick":"`Calvin","date":"2016-03-16T18:12:27.672Z","type":"join"}
+{"nick":"zroubali_","reason":"Quit: Konversation terminated!","date":"2016-03-16T18:15:38.825Z","type":"quit"}
+{"nick":"kpiwko","date":"2016-03-16T18:16:02.044Z","type":"join"}
+{"nick":"kpiwko","reason":"Changing host","date":"2016-03-16T18:16:02.222Z","type":"quit"}
+{"nick":"kpiwko","date":"2016-03-16T18:16:02.222Z","type":"join"}
+{"nick":"IrishGringo","date":"2016-03-16T18:17:04.241Z","type":"join"}
+{"nick":"kpiwko","reason":"Ping timeout: 264 seconds","date":"2016-03-16T18:21:28.035Z","type":"quit"}
+{"nick":"tdawson__","reason":"Ping timeout: 268 seconds","date":"2016-03-16T18:22:36.238Z","type":"quit"}
+{"nick":"bleathem","reason":"Ping timeout: 250 seconds","date":"2016-03-16T18:25:47.030Z","type":"quit"}
+{"nick":"amyers","date":"2016-03-16T18:26:08.045Z","type":"join"}
+{"nick":"amyers","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:26:32.980Z","type":"quit"}
+{"nick":"amyers","date":"2016-03-16T18:26:53.145Z","type":"join"}
+{"nick":"asmyers","reason":"Ping timeout: 240 seconds","date":"2016-03-16T18:28:04.036Z","type":"quit"}
+{"nick":"iandow","date":"2016-03-16T18:29:44.999Z","type":"join"}
+{"nick":"IrishGringo","reason":"Ping timeout: 250 seconds","date":"2016-03-16T18:31:51.112Z","type":"quit"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:32:12.835Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T18:32:45.014Z","type":"join"}
+{"nick":"bpeterse","reason":"Quit: Leaving.","date":"2016-03-16T18:33:15.765Z","type":"quit"}
+{"nick":"bpeterse","date":"2016-03-16T18:33:53.300Z","type":"join"}
+{"nick":"Groan","reason":"Quit: Leaving.","date":"2016-03-16T18:34:42.834Z","type":"quit"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:34:53.133Z","type":"quit"}
+{"nick":"bpeterse","reason":"Client Quit","date":"2016-03-16T18:35:19.867Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T18:35:28.402Z","type":"join"}
+{"nick":"jhadvig","date":"2016-03-16T18:35:45.744Z","type":"join"}
+{"nick":"bpeterse","date":"2016-03-16T18:37:03.041Z","type":"join"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:39:34.224Z","type":"quit"}
+{"nick":"balunasj|mtg","date":"2016-03-16T18:39:40.130Z","type":"join"}
+{"nick":"IrishGringo","date":"2016-03-16T18:41:46.024Z","type":"join"}
+{"nick":"balunasj|mtg","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:42:21.399Z","type":"quit"}
+{"nick":"holmja","reason":"Quit: holmja","date":"2016-03-16T18:42:23.356Z","type":"quit"}
+{"nick":"bleathem","date":"2016-03-16T18:42:49.019Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T18:42:49.400Z","type":"join"}
+{"nick":"wtrocki","reason":"Quit: Sleeping.","date":"2016-03-16T18:43:22.497Z","type":"quit"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:45:17.929Z","type":"quit"}
+{"nick":"balunasj|mtg","date":"2016-03-16T18:45:23.539Z","type":"join"}
+{"nick":"daviddcc","reason":"Ping timeout: 264 seconds","date":"2016-03-16T18:46:04.061Z","type":"quit"}
+{"nick":"sspeiche_","date":"2016-03-16T18:47:00.093Z","type":"join"}
+{"nick":"bpeterse","reason":"Quit: Leaving.","date":"2016-03-16T18:47:29.165Z","type":"quit"}
+{"nick":"balunasj|mtg","reason":"Read error: Connection reset by peer","date":"2016-03-16T18:47:46.316Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T18:48:14.540Z","type":"join"}
+{"nick":"sspeiche_","reason":"Client Quit","date":"2016-03-16T18:48:38.330Z","type":"quit"}
+{"nick":"sspeiche_","date":"2016-03-16T18:48:59.410Z","type":"join"}
+{"nick":"vtech","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-03-16T18:49:35.316Z","type":"quit"}
+{"nick":"sspeiche","reason":"Ping timeout: 244 seconds","date":"2016-03-16T18:49:47.986Z","type":"quit"}
+{"nick":"vtech","date":"2016-03-16T18:51:59.886Z","type":"join"}
+{"nick":"bpeterse","date":"2016-03-16T18:52:03.360Z","type":"join"}
+{"nick":"Nemno","date":"2016-03-16T18:56:07.675Z","type":"join"}
+{"nick":"bleathem","reason":"Quit: WeeChat 1.3","date":"2016-03-16T18:56:18.075Z","type":"quit"}
+{"nick":"IrishGringo","reason":"Ping timeout: 248 seconds","date":"2016-03-16T19:00:46.057Z","type":"quit"}
+{"nick":"nmalik","reason":"Ping timeout: 268 seconds","date":"2016-03-16T19:02:41.275Z","type":"quit"}
+{"nick":"`Calvin","reason":"Ping timeout: 244 seconds","date":"2016-03-16T19:06:18.656Z","type":"quit"}
+{"nick":"Alex231","date":"2016-03-16T19:08:12.006Z","type":"join"}
+{"nick":"nmalik","date":"2016-03-16T19:17:41.095Z","type":"join"}
+{"nick":"iocanel","date":"2016-03-16T19:21:05.484Z","type":"join"}
+{"nick":"bill-auger","reason":"Ping timeout: 244 seconds","date":"2016-03-16T19:21:48.662Z","type":"quit"}
+{"nick":"bill-auger","date":"2016-03-16T19:28:28.686Z","type":"join"}
+{"nick":"bleathem","date":"2016-03-16T19:34:16.329Z","type":"join"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T19:38:25.487Z","type":"quit"}
+{"nick":"jdetiber|afk","new_nick":"jdetiber","date":"2016-03-16T19:39:22.482Z","type":"nick"}
+{"nick":"iocanel","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2016-03-16T19:39:41.153Z","type":"quit"}
+{"nick":"iocanel","date":"2016-03-16T19:40:52.028Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T19:43:15.326Z","type":"join"}
+{"nick":"iocanel","reason":"Read error: Connection reset by peer","date":"2016-03-16T19:49:25.064Z","type":"quit"}
+{"nick":"iocanel","date":"2016-03-16T19:50:55.504Z","type":"join"}
+{"nick":"dman32791","date":"2016-03-16T19:54:32.484Z","type":"join"}
+{"nick":"dman32791","message":"hello, for some reason my crons are not working anymore..","date":"2016-03-16T19:55:00.664Z","type":"message"}
+{"nick":"dman32791","reason":"Client Quit","date":"2016-03-16T19:56:34.876Z","type":"quit"}
+{"nick":"IrishGringo","date":"2016-03-16T19:58:46.112Z","type":"join"}
+{"nick":"nmalik","reason":"Ping timeout: 248 seconds","date":"2016-03-16T19:58:54.074Z","type":"quit"}
+{"nick":"wtrocki","date":"2016-03-16T19:59:31.266Z","type":"join"}
+{"nick":"trifon","reason":"Ping timeout: 268 seconds","date":"2016-03-16T20:01:53.248Z","type":"quit"}
+{"nick":"tdawson__","date":"2016-03-16T20:02:51.453Z","type":"join"}
+{"nick":"shadowkyogre","date":"2016-03-16T20:04:18.884Z","type":"join"}
+{"nick":"kpiwko","date":"2016-03-16T20:04:43.128Z","type":"join"}
+{"nick":"shadowkyogre","message":"Hey everyone! I was wondering if anyone found a 9.4 or 9.5 cartridge for PostgreSQL. I found this, but it's at 9.3.6 - https://github.com/CrunchyData/openshift-postgres-cartridge","date":"2016-03-16T20:05:01.208Z","type":"message"}
+{"nick":"shadowkyogre","message":"It's mainly so that way I can be a little more flexible with my data (in case I need to use JSONB fields, since I know there's a performance hit with using JSON fields since they're not stored in binary format)","date":"2016-03-16T20:07:02.713Z","type":"message"}
+{"nick":"sgoodwin","reason":"Quit: sgoodwin","date":"2016-03-16T20:07:34.341Z","type":"quit"}
+{"nick":"kpiwko","reason":"Ping timeout: 248 seconds","date":"2016-03-16T20:10:11.841Z","type":"quit"}
+{"nick":"msivanes","reason":"Remote host closed the connection","date":"2016-03-16T20:11:28.224Z","type":"quit"}
+{"nick":"nmalik","date":"2016-03-16T20:12:29.025Z","type":"join"}
+{"nick":"sgilda","reason":"Quit: Leaving","date":"2016-03-16T20:13:17.039Z","type":"quit"}
+{"nick":"sgilda","date":"2016-03-16T20:15:45.114Z","type":"join"}
+{"nick":"Groan","date":"2016-03-16T20:21:08.065Z","type":"join"}
+{"nick":"daviddcc","date":"2016-03-16T20:21:33.080Z","type":"join"}
+{"nick":"ggrzybek_bbl","new_nick":"ggrzybek","date":"2016-03-16T20:22:22.558Z","type":"nick"}
+{"nick":"ggrzybek","reason":"Quit: Leaving","date":"2016-03-16T20:23:47.961Z","type":"quit"}
+{"nick":"luksa","reason":"Remote host closed the connection","date":"2016-03-16T20:33:35.057Z","type":"quit"}
+{"nick":"jlucky_","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2016-03-16T20:38:04.331Z","type":"quit"}
+{"nick":"harish","reason":"Ping timeout: 276 seconds","date":"2016-03-16T20:45:51.322Z","type":"quit"}
+{"nick":"bbrowning_away","new_nick":"bbrowning","date":"2016-03-16T20:51:13.796Z","type":"nick"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T20:53:57.058Z","type":"quit"}
+{"nick":"balunasj","date":"2016-03-16T20:55:11.554Z","type":"join"}
+{"nick":"balunasj|mtg","date":"2016-03-16T20:57:37.717Z","type":"join"}
+{"nick":"balunasj","reason":"Read error: Connection reset by peer","date":"2016-03-16T20:57:42.231Z","type":"quit"}
+{"nick":"RedRat","reason":"Ping timeout: 252 seconds","date":"2016-03-16T20:57:55.560Z","type":"quit"}
+{"nick":"ipalade","date":"2016-03-16T21:00:07.442Z","type":"join"}
+{"nick":"jdyson","reason":"Quit: Leaving","date":"2016-03-16T21:00:30.033Z","type":"quit"}
+{"nick":"luksa","date":"2016-03-16T21:00:55.536Z","type":"join"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T21:00:56.003Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T21:01:21.093Z","type":"join"}
+{"nick":"siwinski","reason":"Quit: Leaving","date":"2016-03-16T21:02:00.556Z","type":"quit"}
+{"nick":"IrishGringo","reason":"Ping timeout: 250 seconds","date":"2016-03-16T21:03:31.088Z","type":"quit"}
+{"nick":"ansilva","reason":"Ping timeout: 244 seconds","date":"2016-03-16T21:03:36.957Z","type":"quit"}
+{"nick":"sgilda","reason":"Quit: Leaving","date":"2016-03-16T21:06:26.599Z","type":"quit"}
+{"nick":"sabre1041","reason":"Remote host closed the connection","date":"2016-03-16T21:07:28.480Z","type":"quit"}
+{"nick":"balunasj|mtg","reason":"Read error: Connection reset by peer","date":"2016-03-16T21:07:28.697Z","type":"quit"}
+{"nick":"sgilda","date":"2016-03-16T21:07:54.252Z","type":"join"}
+{"nick":"balunasj","date":"2016-03-16T21:09:08.537Z","type":"join"}
+{"nick":"chirino","reason":"Quit: Computer has gone to sleep.","date":"2016-03-16T21:10:05.872Z","type":"quit"}
+{"nick":"chirino","date":"2016-03-16T21:12:38.876Z","type":"join"}
+{"nick":"sgilda","new_nick":"sgilda_afk","date":"2016-03-16T21:14:57.616Z","type":"nick"}
+{"nick":"sspeiche_","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-03-16T21:15:08.078Z","type":"quit"}
+{"nick":"rlourenc","date":"2016-03-16T21:17:43.704Z","type":"join"}
+{"nick":"rlourenc","reason":"Client Quit","date":"2016-03-16T21:18:25.110Z","type":"quit"}
+{"nick":"iocanel","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2016-03-16T21:19:19.585Z","type":"quit"}
+{"nick":"markshut","reason":"Ping timeout: 240 seconds","date":"2016-03-16T21:20:33.955Z","type":"quit"}
+{"nick":"soltysh","date":"2016-03-16T21:20:54.272Z","type":"join"}
+{"nick":"harish","date":"2016-03-16T21:21:47.080Z","type":"join"}
+{"nick":"soltysh_away","reason":"Ping timeout: 276 seconds","date":"2016-03-16T21:24:12.394Z","type":"quit"}
+{"nick":"kebray","date":"2016-03-16T21:24:18.826Z","type":"join"}
+{"nick":"bbrowning","new_nick":"bbrowning_away","date":"2016-03-16T21:25:47.156Z","type":"nick"}
+{"nick":"markshut","date":"2016-03-16T21:28:37.548Z","type":"join"}
+{"nick":"jcarter2","reason":"Remote host closed the connection","date":"2016-03-16T21:31:01.464Z","type":"quit"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T21:31:01.641Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T21:31:27.197Z","type":"join"}
+{"nick":"lkoranda","reason":"Ping timeout: 244 seconds","date":"2016-03-16T21:32:31.693Z","type":"quit"}
+{"nick":"kebray","reason":"Read error: Connection reset by peer","date":"2016-03-16T21:32:50.091Z","type":"quit"}
+{"nick":"semushin","reason":"Ping timeout: 248 seconds","date":"2016-03-16T21:32:51.852Z","type":"quit"}
+{"nick":"marek","reason":"Ping timeout: 248 seconds","date":"2016-03-16T21:32:52.030Z","type":"quit"}
+{"nick":"ryanj_","new_nick":"ryanj_lunch","date":"2016-03-16T21:33:06.696Z","type":"nick"}
+{"nick":"gagrio","reason":"Ping timeout: 268 seconds","date":"2016-03-16T21:33:09.257Z","type":"quit"}
+{"nick":"pblaho","reason":"Ping timeout: 276 seconds","date":"2016-03-16T21:33:18.719Z","type":"quit"}
+{"nick":"trifon","date":"2016-03-16T21:33:53.385Z","type":"join"}
+{"nick":"bpeterse","reason":"Quit: Leaving.","date":"2016-03-16T21:34:35.510Z","type":"quit"}
+{"nick":"pblaho","date":"2016-03-16T21:34:43.275Z","type":"join"}
+{"nick":"marek","date":"2016-03-16T21:34:52.028Z","type":"join"}
+{"nick":"tplevko","reason":"Ping timeout: 248 seconds","date":"2016-03-16T21:37:02.054Z","type":"quit"}
+{"nick":"sabre1041","date":"2016-03-16T21:37:48.192Z","type":"join"}
+{"nick":"markshut","reason":"Ping timeout: 240 seconds","date":"2016-03-16T21:38:01.537Z","type":"quit"}
+{"nick":"lkoranda","date":"2016-03-16T21:38:01.715Z","type":"join"}
+{"nick":"kpiwko","date":"2016-03-16T21:39:25.176Z","type":"join"}
+{"nick":"jdetiber","new_nick":"jdetiber|gone","date":"2016-03-16T21:41:13.816Z","type":"nick"}
+{"nick":"sgoodwin","date":"2016-03-16T21:42:19.646Z","type":"join"}
+{"nick":"semushin","date":"2016-03-16T21:45:20.537Z","type":"join"}
+{"nick":"gagrio","date":"2016-03-16T21:45:23.721Z","type":"join"}
+{"nick":"kpiwko","reason":"Ping timeout: 248 seconds","date":"2016-03-16T21:46:06.059Z","type":"quit"}
+{"nick":"RedRat","date":"2016-03-16T21:49:06.096Z","type":"join"}
+{"nick":"fspolti","reason":"Quit: Leaving, see you tomorrow.","date":"2016-03-16T21:54:58.164Z","type":"quit"}
+{"nick":"_ari_","reason":"Quit: Has left the building","date":"2016-03-16T21:55:44.661Z","type":"quit"}
+{"nick":"markshut","date":"2016-03-16T21:56:05.105Z","type":"join"}
+{"nick":"balunasj","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-03-16T21:56:10.330Z","type":"quit"}
+{"nick":"danmcp","reason":"Quit: Leaving.","date":"2016-03-16T21:56:20.290Z","type":"quit"}
+{"nick":"fspolti","date":"2016-03-16T22:01:00.688Z","type":"join"}
+{"nick":"lkrejci","reason":"Read error: Connection reset by peer","date":"2016-03-16T22:01:00.908Z","type":"quit"}
+{"nick":"adietisheim","reason":"Ping timeout: 248 seconds","date":"2016-03-16T22:01:07.805Z","type":"quit"}
+{"nick":"lkrejci","date":"2016-03-16T22:01:21.028Z","type":"join"}
+{"nick":"fspolti","reason":"Read error: Connection reset by peer","date":"2016-03-16T22:01:23.296Z","type":"quit"}
+{"nick":"fspolti","date":"2016-03-16T22:02:01.597Z","type":"join"}
+{"nick":"fjuma","reason":"Quit: Leaving","date":"2016-03-16T22:02:33.815Z","type":"quit"}
+{"nick":"luksa","reason":"Ping timeout: 240 seconds","date":"2016-03-16T22:02:49.537Z","type":"quit"}
+{"nick":"brice","date":"2016-03-16T22:05:09.900Z","type":"join"}
+{"nick":"nmalik","reason":"Ping timeout: 264 seconds","date":"2016-03-16T22:05:52.243Z","type":"quit"}
+{"nick":"wtrocki","reason":"Quit: I will be back!","date":"2016-03-16T22:07:12.891Z","type":"quit"}
+{"nick":"soltysh","reason":"Quit: WeeChat 1.4","date":"2016-03-16T22:08:42.808Z","type":"quit"}
+{"nick":"daviddcc","reason":"Ping timeout: 248 seconds","date":"2016-03-16T22:11:42.056Z","type":"quit"}
+{"nick":"tkimura","reason":"Ping timeout: 276 seconds","date":"2016-03-16T22:14:54.816Z","type":"quit"}
+{"nick":"ichristo","reason":"Ping timeout: 260 seconds","date":"2016-03-16T22:16:50.753Z","type":"quit"}
+{"nick":"ichristo","date":"2016-03-16T22:16:50.753Z","type":"join"}
+{"nick":"tkimura","date":"2016-03-16T22:17:12.580Z","type":"join"}
+{"nick":"adietisheim","date":"2016-03-16T22:21:20.039Z","type":"join"}
+{"nick":"ipalade","reason":"Ping timeout: 252 seconds","date":"2016-03-16T22:21:31.427Z","type":"quit"}
+{"nick":"Groan1","date":"2016-03-16T22:26:26.138Z","type":"join"}
+{"nick":"derekwaynecarr","reason":"Ping timeout: 244 seconds","date":"2016-03-16T22:28:52.047Z","type":"quit"}
+{"nick":"trifon","reason":"Ping timeout: 244 seconds","date":"2016-03-16T22:32:59.985Z","type":"quit"}
+{"nick":"ryanj_lunch","new_nick":"ryanj_","date":"2016-03-16T22:34:29.112Z","type":"nick"}
+{"nick":"sferich888","reason":"Quit: WeeChat 1.4","date":"2016-03-16T22:41:44.034Z","type":"quit"}
+{"nick":"cdaley","reason":"Ping timeout: 250 seconds","date":"2016-03-16T22:46:13.044Z","type":"quit"}
+{"nick":"claytonc","reason":"Remote host closed the connection","date":"2016-03-16T22:46:45.791Z","type":"quit"}
+{"nick":"sjennings","reason":"Quit: Leaving","date":"2016-03-16T22:48:26.739Z","type":"quit"}
+{"nick":"sgoodwin","reason":"Ping timeout: 244 seconds","date":"2016-03-16T22:49:30.678Z","type":"quit"}
+{"nick":"MrTrick","date":"2016-03-16T22:51:19.386Z","type":"join"}
+{"nick":"gfidente","reason":"Quit: bye","date":"2016-03-16T22:51:41.317Z","type":"quit"}
+{"nick":"MrTrick","message":"I've got two sets of OSE nodes, one set slightly older, one set slightly newer. (date of creation, so mainly just differences in software x.x.patch version)","date":"2016-03-16T22:56:25.261Z","type":"message"}
+{"nick":"MrTrick","message":"A gear has a Java component that runs, listening to a port for internal requests.","date":"2016-03-16T22:56:25.663Z","type":"message"}
+{"nick":"MrTrick","message":"When this gear is deployed to the older set of nodes, it works fine!","date":"2016-03-16T22:56:25.840Z","type":"message"}
+{"nick":"MrTrick","message":"When deployed to the newer set of nodes, the component fails to start - it throws a Java.net.SocketException : Permission Denied.","date":"2016-03-16T22:56:25.840Z","type":"message"}
+{"nick":"MrTrick","message":"It makes no difference which port is used, whether the component's standard '5985', or '15985' or any other port tried.","date":"2016-03-16T22:56:26.085Z","type":"message"}
+{"nick":"MrTrick","message":"How do you suggest I troubleshoot this? Is a gear supposed to register the internal ports it uses?","date":"2016-03-16T22:56:27.178Z","type":"message"}
+{"nick":"Alex231","reason":"Read error: Connection reset by peer","date":"2016-03-16T22:57:27.712Z","type":"quit"}
+{"nick":"adietisheim","reason":"Remote host closed the connection","date":"2016-03-16T22:58:45.095Z","type":"quit"}
+{"nick":"TheSteve0","reason":"Quit: Leaving.","date":"2016-03-16T23:10:44.000Z","type":"quit"}
+{"nick":"senayar","date":"2016-03-16T23:12:00.986Z","type":"join"}
+{"nick":"dedgar","reason":"Quit: Leaving","date":"2016-03-16T23:15:06.985Z","type":"quit"}
+{"nick":"TheSteve0","date":"2016-03-16T23:16:56.727Z","type":"join"}
+{"nick":"bparees","reason":"Ping timeout: 248 seconds","date":"2016-03-16T23:20:03.821Z","type":"quit"}
+{"nick":"amyers","reason":"Ping timeout: 248 seconds","date":"2016-03-16T23:21:34.050Z","type":"quit"}
+{"nick":"sspeiche","date":"2016-03-16T23:24:15.055Z","type":"join"}
+{"nick":"chirino","reason":"Quit: Computer has gone to sleep.","date":"2016-03-16T23:29:49.421Z","type":"quit"}
+{"nick":"goern][","reason":"Ping timeout: 268 seconds","date":"2016-03-16T23:35:15.316Z","type":"quit"}
+{"nick":"Nemno","reason":"Ping timeout: 276 seconds","date":"2016-03-16T23:36:09.701Z","type":"quit"}
+{"nick":"fsimonce","reason":"Quit: Coyote finally caught me","date":"2016-03-16T23:39:21.735Z","type":"quit"}
+{"nick":"kpiwko","date":"2016-03-16T23:39:47.414Z","type":"join"}
+{"nick":"bpeterse","date":"2016-03-16T23:40:50.689Z","type":"join"}
+{"nick":"jhadvig","reason":"Ping timeout: 260 seconds","date":"2016-03-16T23:41:37.728Z","type":"quit"}
+{"nick":"zhizhang","date":"2016-03-16T23:45:13.345Z","type":"join"}
+{"nick":"kpiwko","reason":"Ping timeout: 276 seconds","date":"2016-03-16T23:45:15.305Z","type":"quit"}
+{"nick":"goern][","date":"2016-03-16T23:47:39.576Z","type":"join"}
+{"nick":"Groan","reason":"Quit: Leaving.","date":"2016-03-16T23:50:52.080Z","type":"quit"}
+{"nick":"imcleod","date":"2016-03-16T23:52:12.458Z","type":"join"}
+{"nick":"pradeepto","date":"2016-03-16T23:57:11.714Z","type":"join"}
+{"nick":"konishi","date":"2016-03-16T23:59:04.693Z","type":"join"}
