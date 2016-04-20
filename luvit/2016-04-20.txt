@@ -1,0 +1,403 @@
+{"nick":"Harageth","date":"2016-04-20T00:48:24.182Z","type":"join"}
+{"nick":"daurnimator","message":"creationix: you can","date":"2016-04-20T00:57:17.611Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: it's an issue in musl-gcc.","date":"2016-04-20T00:57:29.932Z","type":"message"}
+{"nick":"daurnimator","message":"you can compile it fine if you go to a full musl distro (e.g. alpine linux in a container) or just turn off external unwinding (LJ_NO_UNWIND I think? it's in lj_err.c)","date":"2016-04-20T00:58:26.869Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, wait, so if I use musl from alpine (default gcc?) then external unwinding will work?","date":"2016-04-20T01:03:48.881Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: correct.","date":"2016-04-20T01:03:58.132Z","type":"message"}
+{"nick":"creationix","action":"logs into alpine box","date":"2016-04-20T01:04:05.092Z","type":"action"}
+{"nick":"creationix","message":"that would be awesome","date":"2016-04-20T01:04:19.372Z","type":"message"}
+{"nick":"creationix","message":"dlopen would still be busted, but I don't use it that often anyway","date":"2016-04-20T01:04:30.098Z","type":"message"}
+{"nick":"creationix","message":"I'm worried that ffi.open also uses it though","date":"2016-04-20T01:04:42.023Z","type":"message"}
+{"nick":"creationix","message":"I do use that a bit","date":"2016-04-20T01:04:45.139Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: the issue is that if gcc is compiled with glibc, it links in libgcc_eh with everything you build.... usually it's not a problem, but for unwinding there are issues.","date":"2016-04-20T01:04:57.283Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: huh? what's wrong with dlopen?","date":"2016-04-20T01:05:05.223Z","type":"message"}
+{"nick":"creationix","message":"static musl doesn't support it I thought","date":"2016-04-20T01:05:17.516Z","type":"message"}
+{"nick":"daurnimator","message":"well yeah... it's static","date":"2016-04-20T01:05:27.497Z","type":"message"}
+{"nick":"daurnimator","message":"this is sort of the definition of static: not dynamic :P","date":"2016-04-20T01:05:37.730Z","type":"message"}
+{"nick":"creationix","message":"dynamically linked musl works great compiled on alpine.  I even blogged about that","date":"2016-04-20T01:05:40.261Z","type":"message"}
+{"nick":"DarkGod","reason":"Ping timeout: 276 seconds","date":"2016-04-20T01:05:59.895Z","type":"quit"}
+{"nick":"creationix","message":"well, can't I have a \"dynamic\" binary that simply doesn't link to anything for core functionality, but can optionally dlopen shared libraries at runtime?","date":"2016-04-20T01:06:19.061Z","type":"message"}
+{"nick":"creationix","message":"I mean, I currently statically link in libuv, luajit and openssl","date":"2016-04-20T01:07:28.420Z","type":"message"}
+{"nick":"creationix","message":"why not add musl as well, but still have dlopen functionality at runtime","date":"2016-04-20T01:07:41.206Z","type":"message"}
+{"nick":"creationix","message":"or is libc special?","date":"2016-04-20T01:07:51.167Z","type":"message"}
+{"nick":"creationix","message":"hmm, I guess I would need all of libc just in case the shared library used some part of it I'm not using","date":"2016-04-20T01:10:43.139Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: if you statically compile in libc, the shared libraries you load can't use libc.","date":"2016-04-20T01:11:12.072Z","type":"message"}
+{"nick":"daurnimator","message":"and.... everything uses libc :p","date":"2016-04-20T01:11:23.613Z","type":"message"}
+{"nick":"creationix","message":"I know this isn't possible, I'm just trying to understand why it was done this way","date":"2016-04-20T01:11:37.857Z","type":"message"}
+{"nick":"daurnimator","message":"i.e. supporting dlopen in a static libc is sort of pointless.","date":"2016-04-20T01:11:44.826Z","type":"message"}
+{"nick":"creationix","message":"not at all","date":"2016-04-20T01:11:55.055Z","type":"message"}
+{"nick":"creationix","message":"I want a portable binary that can load shared libraries and call functions in them","date":"2016-04-20T01:12:05.141Z","type":"message"}
+{"nick":"creationix","message":"but I guess that's not possible since the shared libraries are linked against another libc","date":"2016-04-20T01:12:21.318Z","type":"message"}
+{"nick":"daurnimator","message":"correct.","date":"2016-04-20T01:12:28.548Z","type":"message"}
+{"nick":"creationix","message":"that could cause some nasty problems","date":"2016-04-20T01:12:28.735Z","type":"message"}
+{"nick":"daurnimator","message":"the kernel sort of enforces \"one libc per process\"","date":"2016-04-20T01:12:39.719Z","type":"message"}
+{"nick":"creationix","message":"but still, I think a static version of luvi would be nice","date":"2016-04-20T01:12:52.923Z","type":"message"}
+{"nick":"creationix","message":"just can't seem to get it working, I'll try on alpine","date":"2016-04-20T01:13:00.272Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I played around with it yesterday. I pretty much got it working when I left cmake for dead :P","date":"2016-04-20T01:13:55.549Z","type":"message"}
+{"nick":"creationix","message":"I'm hoping midipix can let me drop libuv and cmake","date":"2016-04-20T01:14:21.065Z","type":"message"}
+{"nick":"creationix","message":"maybe later this year that might be feasable?","date":"2016-04-20T01:14:33.115Z","type":"message"}
+{"nick":"creationix","message":"first-class windows support is essential, most of the known luvit users and node users are on and targetting windows","date":"2016-04-20T01:15:21.463Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I hope so.... though my worry is the timeline might be longer.","date":"2016-04-20T01:15:25.013Z","type":"message"}
+{"nick":"creationix","message":"now by \"most\" I mean like 55-60%, but still","date":"2016-04-20T01:15:34.276Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, well it will take time to rewrite luvit to not use libuv as well.  I'm not even sure what that is","date":"2016-04-20T01:16:04.622Z","type":"message"}
+{"nick":"creationix","message":"would probably just migrate to your event loop","date":"2016-04-20T01:16:10.222Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: well yeah. at that point... you've removed the \"uv\" out of \"luvit\". so we just have..... lit? :P","date":"2016-04-20T01:16:45.312Z","type":"message"}
+{"nick":"creationix","message":"right, the luvi model with zip assets and the lit package manager exist outside the concept of lua flavored node","date":"2016-04-20T01:17:09.611Z","type":"message"}
+{"nick":"creationix","message":"but not even lua is essential for thatw","date":"2016-04-20T01:17:22.490Z","type":"message"}
+{"nick":"creationix","message":"I could have a lua version, a js version using duktape, and another using some scripting language I make up","date":"2016-04-20T01:17:42.682Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: at that point my question becomes: what is your goal?","date":"2016-04-20T01:18:09.879Z","type":"message"}
+{"nick":"creationix","message":"great question","date":"2016-04-20T01:18:17.922Z","type":"message"}
+{"nick":"creationix","message":"mostly have fun making useful things","date":"2016-04-20T01:18:22.435Z","type":"message"}
+{"nick":"creationix","message":"but I'm often guilty of creating solutions looking for problems","date":"2016-04-20T01:18:31.397Z","type":"message"}
+{"nick":"creationix","message":"or rehashing existing ideas to see how they can morph","date":"2016-04-20T01:18:44.637Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I'd be interested in seeing you re-take up brozula.","date":"2016-04-20T01:19:01.841Z","type":"message"}
+{"nick":"creationix","message":"think it's feasable?","date":"2016-04-20T01:19:15.012Z","type":"message"}
+{"nick":"creationix","message":"and I assume you've seen moonshine?","date":"2016-04-20T01:19:38.090Z","type":"message"}
+{"nick":"daurnimator","message":"yeah moonshine is *really* sloppy","date":"2016-04-20T01:19:48.349Z","type":"message"}
+{"nick":"creationix","message":"that's basically the same thing, but working and for lua bytecode","date":"2016-04-20T01:19:48.793Z","type":"message"}
+{"nick":"daurnimator","message":"I tried to help out and one point","date":"2016-04-20T01:19:58.959Z","type":"message"}
+{"nick":"creationix","message":"what's sloppy about it?  How could I avoid the same problems?","date":"2016-04-20T01:20:04.343Z","type":"message"}
+{"nick":"daurnimator","message":"but my feedback was acknowledged... then ignored.","date":"2016-04-20T01:20:09.531Z","type":"message"}
+{"nick":"creationix","message":"I'm kinda sloppy too :(","date":"2016-04-20T01:20:11.308Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: keeping true lua semantics.","date":"2016-04-20T01:20:32.570Z","type":"message"}
+{"nick":"creationix","message":"ahh, it wasn't quite lua","date":"2016-04-20T01:20:49.685Z","type":"message"}
+{"nick":"daurnimator","message":"not randomly introducing \"oh but if we allow 0 to be false here it makes X easier\"","date":"2016-04-20T01:20:56.852Z","type":"message"}
+{"nick":"creationix","message":"yeah, that's a bad idea","date":"2016-04-20T01:21:19.351Z","type":"message"}
+{"nick":"daurnimator","message":"or \"we .bind everything js exposed to lua cause it's easy for manipulating svgs.\"","date":"2016-04-20T01:21:29.939Z","type":"message"}
+{"nick":"creationix","message":"can't it be done instead using : syntax?","date":"2016-04-20T01:22:04.909Z","type":"message"}
+{"nick":"daurnimator","message":"it can!","date":"2016-04-20T01:22:09.747Z","type":"message"}
+{"nick":"creationix","message":"I mean, don't .bind in js","date":"2016-04-20T01:22:10.226Z","type":"message"}
+{"nick":"daurnimator","message":"and it should.","date":"2016-04-20T01:22:11.874Z","type":"message"}
+{"nick":"daurnimator","message":"but... moonshine didn't","date":"2016-04-20T01:22:15.549Z","type":"message"}
+{"nick":"daurnimator","message":"and doesn't want to change.","date":"2016-04-20T01:22:21.027Z","type":"message"}
+{"nick":"creationix","message":".bind is evil to begin with,  I would know","date":"2016-04-20T01:22:21.579Z","type":"message"}
+{"nick":"creationix","message":"ok, so if they don't have that market covered as I thought, then maybe there is value in brozula","date":"2016-04-20T01:22:42.626Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: he also started \"starlight\", which is moonshine targetting ES6","date":"2016-04-20T01:23:00.910Z","type":"message"}
+{"nick":"daurnimator","message":"same issues :(","date":"2016-04-20T01:23:04.779Z","type":"message"}
+{"nick":"creationix","message":"also I stopped before because browser JS just didn't have enough primitives in ES5","date":"2016-04-20T01:23:10.536Z","type":"message"}
+{"nick":"creationix","message":"now with generators, weak tables, maps, proxies, etc.  It should be much easier","date":"2016-04-20T01:23:26.155Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: FWIW I fixed up all the semantics in lua.vm.js. brozula should have the same semantics.","date":"2016-04-20T01:23:42.951Z","type":"message"}
+{"nick":"creationix","message":"remind me the approach that one took","date":"2016-04-20T01:24:07.845Z","type":"message"}
+{"nick":"daurnimator","message":"I suggest that you'd use lua.vm.js as the \"reference\" implementation.","date":"2016-04-20T01:24:08.241Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: emscripten","date":"2016-04-20T01:24:13.398Z","type":"message"}
+{"nick":"creationix","message":"ahh","date":"2016-04-20T01:24:19.381Z","type":"message"}
+{"nick":"creationix","message":"so mine should work the same more or less, but be a lot less code","date":"2016-04-20T01:24:39.036Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I fixed up it's JS <=> lua bridge. now it has really good semantics for calling between lua and js, both ways.","date":"2016-04-20T01:24:46.992Z","type":"message"}
+{"nick":"creationix","message":"lua bytecode or luajit bytecode?","date":"2016-04-20T01:24:53.495Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: less code; but also the important thing is using JS's garbage collector","date":"2016-04-20T01:25:10.989Z","type":"message"}
+{"nick":"creationix","message":"right","date":"2016-04-20T01:25:21.953Z","type":"message"}
+{"nick":"creationix","message":"though if webassembly ever exposes the GC to it's values, then something interesting could be done","date":"2016-04-20T01:25:38.430Z","type":"message"}
+{"nick":"daurnimator","message":"without that you have 2 gcs. which is an unsolved problem in computer science :P","date":"2016-04-20T01:25:39.131Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: well I *do* have that https://github.com/tc39/proposal-weakrefs ...","date":"2016-04-20T01:26:07.200Z","type":"message"}
+{"nick":"creationix","message":"I thought weak refs solved that.  That's how I solve rpc across two machines","date":"2016-04-20T01:26:13.717Z","type":"message"}
+{"nick":"daurnimator","message":"but you still end up with unbreakable cycles","date":"2016-04-20T01:26:22.585Z","type":"message"}
+{"nick":"creationix","message":"true","date":"2016-04-20T01:26:30.856Z","type":"message"}
+{"nick":"creationix","message":"cycle detection doesn't exactly work cross gc","date":"2016-04-20T01:26:40.043Z","type":"message"}
+{"nick":"daurnimator","message":"exactly","date":"2016-04-20T01:26:46.836Z","type":"message"}
+{"nick":"daurnimator","message":"which is a major reason to use JS objects to \"back\" lua objects.","date":"2016-04-20T01:27:03.171Z","type":"message"}
+{"nick":"creationix","message":"but still, the weakrefs are a way to manually break cycles, just not a general solution","date":"2016-04-20T01:27:05.959Z","type":"message"}
+{"nick":"daurnimator","message":"that way the JS GC can \"see\" everything","date":"2016-04-20T01:27:10.121Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: cycles aren't a problem for a GC.","date":"2016-04-20T01:27:40.781Z","type":"message"}
+{"nick":"daurnimator","message":"but they are for *two* GCs.","date":"2016-04-20T01:27:53.080Z","type":"message"}
+{"nick":"creationix","message":"right, I've written simple mark/sweep GC and ref-counting gcs","date":"2016-04-20T01:28:18.866Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: which bytecode you use doesn't matter. whatever makes you happier. you could even make your own.","date":"2016-04-20T01:28:30.047Z","type":"message"}
+{"nick":"creationix","message":"I think I read the luajit bytecode performs better","date":"2016-04-20T01:28:48.088Z","type":"message"}
+{"nick":"daurnimator","message":"==> bytecode isn't a defined piece in lua","date":"2016-04-20T01:28:50.593Z","type":"message"}
+{"nick":"creationix","message":"it is aligned better for sure, but not sure that matters in js","date":"2016-04-20T01:28:58.367Z","type":"message"}
+{"nick":"creationix","message":"it probably does,  typed arrays are fairly low level","date":"2016-04-20T01:29:05.852Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: you could even have structured instructions if you wanted to.","date":"2016-04-20T01:29:25.165Z","type":"message"}
+{"nick":"creationix","message":"I could just write a lua parser and interpret the ast","date":"2016-04-20T01:29:28.591Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: sure. or reuse one that already exists ;)","date":"2016-04-20T01:29:39.255Z","type":"message"}
+{"nick":"creationix","message":"is there a canonical lua parser?","date":"2016-04-20T01:29:54.343Z","type":"message"}
+{"nick":"creationix","message":"I do worry such a naive interpreter would be super slow","date":"2016-04-20T01:30:21.505Z","type":"message"}
+{"nick":"creationix","message":"though now sure how bytecode interpreter would be any faster","date":"2016-04-20T01:30:34.496Z","type":"message"}
+{"nick":"creationix","message":"when I was working on brozula, I wanted to write a bytecode jit","date":"2016-04-20T01:30:44.319Z","type":"message"}
+{"nick":"creationix","message":"jit to js so that V8 can hit to assembly","date":"2016-04-20T01:30:54.499Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: no canonical parser.","date":"2016-04-20T01:30:57.266Z","type":"message"}
+{"nick":"daurnimator","message":"it's not hard to write one though","date":"2016-04-20T01:31:38.039Z","type":"message"}
+{"nick":"creationix","message":"that's basically what pflua did to make a super fast packet filter \"interpreter\"","date":"2016-04-20T01:31:38.263Z","type":"message"}
+{"nick":"creationix","message":"he jitted the pf code to lua and let luajit jit it to assembly","date":"2016-04-20T01:31:47.887Z","type":"message"}
+{"nick":"creationix","message":"query and workload optimized assembly, it was faster than the linux kernel code by orders of magnitude","date":"2016-04-20T01:32:13.862Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: sort of... he just relied on luajit's optimizer and made sure to hit the fast parts.","date":"2016-04-20T01:32:21.067Z","type":"message"}
+{"nick":"creationix","message":"but didn't he translate the code to lua on the fly","date":"2016-04-20T01:32:38.552Z","type":"message"}
+{"nick":"creationix","message":"luajit can't optimize a giant switch loop, nothing can really","date":"2016-04-20T01:32:45.332Z","type":"message"}
+{"nick":"creationix","message":"that's the problem with interpreters","date":"2016-04-20T01:32:50.831Z","type":"message"}
+{"nick":"creationix","message":"btw, Andy is the reasons browser ever gained ES6 generator support","date":"2016-04-20T01:33:39.273Z","type":"message"}
+{"nick":"daurnimator","message":"diamond shaped control flow is diamond shaped control flow. you can only massage so much.","date":"2016-04-20T01:33:47.411Z","type":"message"}
+{"nick":"creationix","message":"his sponsor just up and paid him to implement it in all the major browsers, and he did","date":"2016-04-20T01:33:59.906Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: so the reason I think brozula-style is the way forward is coroutines: a source => source transpiler can never capture lua's awesome semantics around coroutines.","date":"2016-04-20T01:37:00.848Z","type":"message"}
+{"nick":"creationix","message":"I wonder if generators would be enough","date":"2016-04-20T01:38:19.558Z","type":"message"}
+{"nick":"daurnimator","message":"I don't think so.","date":"2016-04-20T01:38:37.121Z","type":"message"}
+{"nick":"creationix","message":"pretty much every function in the vm would need to be a generator.  That kills most the performance benifits","date":"2016-04-20T01:38:45.819Z","type":"message"}
+{"nick":"konobi","message":"lo","date":"2016-04-20T01:38:49.867Z","type":"message"}
+{"nick":"creationix","message":"well, every impure function that is","date":"2016-04-20T01:38:57.456Z","type":"message"}
+{"nick":"creationix","message":"konobi: hi","date":"2016-04-20T01:39:03.100Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: not impure functions; but any function that *may* (even indirectly) call coroutine.yield.","date":"2016-04-20T01:39:53.857Z","type":"message"}
+{"nick":"creationix","message":"daurnimator: right","date":"2016-04-20T01:40:00.751Z","type":"message"}
+{"nick":"creationix","message":"which is very hard to know statically","date":"2016-04-20T01:40:07.951Z","type":"message"}
+{"nick":"daurnimator","message":"pretty much. that'd be a major research project.","date":"2016-04-20T01:40:25.754Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, but you're right, proper coroutines is why I abondoned the jit idea for brozula before","date":"2016-04-20T01:41:52.971Z","type":"message"}
+{"nick":"daurnimator","message":"(and consider that almost might involve a coroutine.yield => indexing a table, adding two values.... etc)","date":"2016-04-20T01:41:55.139Z","type":"message"}
+{"nick":"konobi","message":"huh... haven't read talk like this since I frequented the perl6 channel","date":"2016-04-20T01:41:57.492Z","type":"message"}
+{"nick":"daurnimator","message":"s/almost might/almost anything might/","date":"2016-04-20T01:42:11.472Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: hmm?","date":"2016-04-20T01:42:18.845Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, good point, not a low hanging fruit at all","date":"2016-04-20T01:42:29.273Z","type":"message"}
+{"nick":"konobi","message":"oh gc, jit, coroutines, etc.","date":"2016-04-20T01:42:37.158Z","type":"message"}
+{"nick":"creationix","message":"konobi, you should see all the partially implemented vm and partially designed programming languages I've worked on in the last year alone","date":"2016-04-20T01:43:12.124Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: see https://github.com/creationix/brozula -- creationix was working on it back in 2012","date":"2016-04-20T01:43:16.799Z","type":"message"}
+{"nick":"creationix","message":"20+ for sure","date":"2016-04-20T01:43:17.263Z","type":"message"}
+{"nick":"konobi","message":"heh","date":"2016-04-20T01:43:23.899Z","type":"message"}
+{"nick":"konobi","message":"tried looking at moarvm?","date":"2016-04-20T01:43:38.036Z","type":"message"}
+{"nick":"daurnimator","message":"I think it's worth resuming work there. and might be a good outlet for creationix's creative efforts :p","date":"2016-04-20T01:43:50.941Z","type":"message"}
+{"nick":"konobi","message":"http://www.moarvm.org/","date":"2016-04-20T01:44:43.556Z","type":"message"}
+{"nick":"creationix","message":"no, havn't looked into moar yet.  I never did perl stuff","date":"2016-04-20T01:45:03.259Z","type":"message"}
+{"nick":"creationix","message":"looks like a pretty good vm toolkit","date":"2016-04-20T01:45:11.788Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: yeah i've seen it... good on them I guess","date":"2016-04-20T01:45:12.938Z","type":"message"}
+{"nick":"creationix","message":"pypy interested me as well","date":"2016-04-20T01:45:28.170Z","type":"message"}
+{"nick":"creationix","message":"learned neko (from haxe) years ago","date":"2016-04-20T01:45:40.103Z","type":"message"}
+{"nick":"creationix","message":"even considered jvm or clr","date":"2016-04-20T01:45:53.643Z","type":"message"}
+{"nick":"daurnimator","message":"one thing I've learnt from luajit is that you *shouln't* try to write a \"generic\" JIT: you should always try to match semantics of a target language. otherwise your heuristics are slow/bad.","date":"2016-04-20T01:46:08.761Z","type":"message"}
+{"nick":"creationix","message":"yes that","date":"2016-04-20T01:46:30.050Z","type":"message"}
+{"nick":"creationix","message":"also I hate fighting semantic mismatches","date":"2016-04-20T01:46:38.117Z","type":"message"}
+{"nick":"creationix","message":"the other reason I gave up on brozula.  JS and Lua are just different enough to be painful","date":"2016-04-20T01:46:56.668Z","type":"message"}
+{"nick":"konobi","message":"daurnimator: it's under active development, the dev lead is a very smart cookie and it's designed to be available not just to perl6","date":"2016-04-20T01:47:11.872Z","type":"message"}
+{"nick":"daurnimator","message":"and because of that lesson: I have no interest in moarvm. either it's good and matches perl semantics, in which case I don't care cause I don't write perl. or it's bad and is a \"generic vm\" and I don't want anything to do with it.","date":"2016-04-20T01:47:49.633Z","type":"message"}
+{"nick":"konobi","message":"it's a different approach, based on metamodels","date":"2016-04-20T01:48:18.578Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: yeah I thought that too. but thinking about CASTL (the JS=>lua transpiler) gave me hope.","date":"2016-04-20T01:48:38.080Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: last time we wrote it targetting all browsers. I think we have enough new things now we can make it work","date":"2016-04-20T01:49:03.532Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, don't worry as time goes JS adds more and more lua features ;)","date":"2016-04-20T01:49:07.930Z","type":"message"}
+{"nick":"daurnimator","message":"e.g. Map is in enough browsers now.","date":"2016-04-20T01:49:13.951Z","type":"message"}
+{"nick":"creationix","message":"too bad they can never drop anything","date":"2016-04-20T01:49:16.187Z","type":"message"}
+{"nick":"konobi","message":"there's always emscripten... mwuahahha","date":"2016-04-20T01:49:43.727Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I still think they can/should. have type=\"text/javascript2\" which is where all new features land.","date":"2016-04-20T01:49:52.614Z","type":"message"}
+{"nick":"daurnimator","message":"if you use the new feature; you can't use the old feature","date":"2016-04-20T01:50:06.668Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, not going to happen, but maybe webassembly will be that","date":"2016-04-20T01:50:11.213Z","type":"message"}
+{"nick":"creationix","message":"though they are doing that with the module format","date":"2016-04-20T01:50:21.464Z","type":"message"}
+{"nick":"creationix","message":"modules are not scripts, they are incompat. in subtle ways","date":"2016-04-20T01:50:31.924Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: AFAICS there's nothing to be exicted about with webassembly... it's just asm.js but not js.","date":"2016-04-20T01:50:33.623Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, initially, the long term goal is to break compat with js","date":"2016-04-20T01:50:48.270Z","type":"message"}
+{"nick":"creationix","message":"add threads and other features js can't add","date":"2016-04-20T01:50:54.153Z","type":"message"}
+{"nick":"daurnimator","message":"js already has threads. and they're supported by emscripten. they're called webworkers.","date":"2016-04-20T01:51:43.303Z","type":"message"}
+{"nick":"creationix","message":"I mean threads that share mutable state with locks and all that horror","date":"2016-04-20T01:52:02.696Z","type":"message"}
+{"nick":"daurnimator","message":"it's not a surprise that webworkers almost exactly map to pthreads semantics...","date":"2016-04-20T01:52:04.915Z","type":"message"}
+{"nick":"creationix","message":"what's odd is node.js never got workers","date":"2016-04-20T01:52:42.998Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: yep... you can share a typedarray with a webworker. and can do locks via postMessage (which is the best way to implement anyway)","date":"2016-04-20T01:52:44.601Z","type":"message"}
+{"nick":"creationix","message":"ok, then they are like threads","date":"2016-04-20T01:52:57.935Z","type":"message"}
+{"nick":"creationix","action":"wonders how closely c11 threads match","date":"2016-04-20T01:54:35.432Z","type":"action"}
+{"nick":"daurnimator","message":"considering c11 threads get implemented on top of pthreads; and webworkers match pthreads.......","date":"2016-04-20T01:55:12.656Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, ok so one thing I never understood about luajit bytecode is how upvalues work","date":"2016-04-20T01:57:23.600Z","type":"message"}
+{"nick":"creationix","message":"do you understand this?","date":"2016-04-20T01:57:30.707Z","type":"message"}
+{"nick":"creationix","message":"http://wiki.luajit.org/Bytecode-2.0#upvalue-and-function-ops","date":"2016-04-20T01:57:48.173Z","type":"message"}
+{"nick":"daurnimator","message":"not deeply. can probably figure it out with some staring.","date":"2016-04-20T01:57:54.616Z","type":"message"}
+{"nick":"creationix","message":"UCLO and FNEW didn't make sense to me","date":"2016-04-20T01:58:17.372Z","type":"message"}
+{"nick":"creationix","message":"since then I've implemented a couple lisps with closures, but my model doesn't seem to match what luajit is describing","date":"2016-04-20T01:58:38.265Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: what don't you understand about them?","date":"2016-04-20T01:58:49.202Z","type":"message"}
+{"nick":"creationix","message":"what does \"close upvalues for slots...\" mean","date":"2016-04-20T01:59:10.999Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: same as in normal lua I assume.","date":"2016-04-20T01:59:47.211Z","type":"message"}
+{"nick":"creationix","message":"I understand `uv` is just a number, a index into something","date":"2016-04-20T01:59:48.658Z","type":"message"}
+{"nick":"creationix","message":"the \"closure\" I assume","date":"2016-04-20T01:59:55.410Z","type":"message"}
+{"nick":"creationix","message":"but what exactly does it mean to close over something","date":"2016-04-20T02:00:03.664Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: http://luaforge.net/docman/83/98/ANoFrillsIntroToLua51VMInstructions.pdf see page 54","date":"2016-04-20T02:00:51.909Z","type":"message"}
+{"nick":"creationix","message":"I guess it means to make a copy of that section of value stack","date":"2016-04-20T02:02:53.244Z","type":"message"}
+{"nick":"creationix","message":"but where the copy is just reference to the variables somehow","date":"2016-04-20T02:03:06.335Z","type":"message"}
+{"nick":"daurnimator","message":"\"CLOSE in line [5] makes the virtual machine find all affected locals (they have to be open upvalues,) take them out of the stack, and place them in a safe place so that they do not disappear when the block or function goes out of scope\"","date":"2016-04-20T02:03:22.152Z","type":"message"}
+{"nick":"creationix","message":"because the stack itself will often unwind before the function is later executed","date":"2016-04-20T02:03:22.860Z","type":"message"}
+{"nick":"creationix","message":"ok, so I'm close, still a little muddy","date":"2016-04-20T02:04:18.560Z","type":"message"}
+{"nick":"creationix","message":"so in js, the stack would just be a js array","date":"2016-04-20T02:04:38.149Z","type":"message"}
+{"nick":"creationix","message":"maybe","date":"2016-04-20T02:04:49.778Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: likely.","date":"2016-04-20T02:09:02.314Z","type":"message"}
+{"nick":"creationix","message":"the value stack doesn't need to be js backed, just the lua values","date":"2016-04-20T02:09:29.404Z","type":"message"}
+{"nick":"creationix","message":"so it could be a typed array of indexes into a js array of values","date":"2016-04-20T02:09:40.121Z","type":"message"}
+{"nick":"creationix","message":"make that my heap","date":"2016-04-20T02:09:45.080Z","type":"message"}
+{"nick":"daurnimator","message":"\"value\" stack? you mean the constant table?","date":"2016-04-20T02:09:45.661Z","type":"message"}
+{"nick":"creationix","message":"no, I mean the local variables","date":"2016-04-20T02:10:13.908Z","type":"message"}
+{"nick":"creationix","message":"`var` in the luajit docs","date":"2016-04-20T02:10:27.077Z","type":"message"}
+{"nick":"daurnimator","message":"\"Lua employs two stacks. The Callinfo stack tracks activation frames. There is the secondary stack L->stack that is an array of TValue objects. The Callinfo objects index into this array. Registers are basically slots in the L->stack array.\"","date":"2016-04-20T02:10:45.172Z","type":"message"}
+{"nick":"creationix","message":"yep, the L->stack as lua calls it","date":"2016-04-20T02:13:45.616Z","type":"message"}
+{"nick":"creationix","message":"that's why the C api looks the way it does","date":"2016-04-20T02:13:58.166Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: btw, I'd also try and make something like the C api available (except for JS of course).","date":"2016-04-20T02:15:15.639Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/creationix/1d52c2723279105f2b0ccfdd0298a3fb#gistcomment-1756933","date":"2016-04-20T02:15:24.879Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: have you got a question there? :p","date":"2016-04-20T02:17:30.317Z","type":"message"}
+{"nick":"creationix","message":"just trying to understand it","date":"2016-04-20T02:17:40.160Z","type":"message"}
+{"nick":"creationix","message":"that's as simple as closures can be","date":"2016-04-20T02:17:44.951Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I added the example in comment that's simpler (from no frills)","date":"2016-04-20T02:17:52.340Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I'm still not sure which bit you don't understand","date":"2016-04-20T02:18:49.853Z","type":"message"}
+{"nick":"creationix","message":"it's the semantics of the references and what it means to \"move to a safe place\"","date":"2016-04-20T02:19:07.526Z","type":"message"}
+{"nick":"daurnimator","message":"`UCLO 0` means \"close over everything from upvalue 0 onwards\"","date":"2016-04-20T02:19:07.712Z","type":"message"}
+{"nick":"creationix","message":"right, so copies of the references?","date":"2016-04-20T02:19:22.571Z","type":"message"}
+{"nick":"creationix","message":"local code can use the slot after it's been closed over right?","date":"2016-04-20T02:19:46.967Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: it moves it from the open upvalues into the upvalue slot.","date":"2016-04-20T02:20:19.495Z","type":"message"}
+{"nick":"creationix","message":"ok, then what is an \"open upvalue\"","date":"2016-04-20T02:21:34.179Z","type":"message"}
+{"nick":"creationix","message":"what's \"open\" about it","date":"2016-04-20T02:21:38.082Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: not closed :P","date":"2016-04-20T02:22:01.302Z","type":"message"}
+{"nick":"daurnimator","message":"that's perhaps a bit tautological","date":"2016-04-20T02:22:28.558Z","type":"message"}
+{"nick":"creationix","message":"so what if two closures reference the same value?","date":"2016-04-20T02:22:50.433Z","type":"message"}
+{"nick":"creationix","message":"the generated code just reuses the same closure?","date":"2016-04-20T02:23:03.043Z","type":"message"}
+{"nick":"creationix","message":"can it still be used as a local variable?","date":"2016-04-20T02:23:17.348Z","type":"message"}
+{"nick":"creationix","message":"I guess I need to generate some more code to test","date":"2016-04-20T02:23:23.249Z","type":"message"}
+{"nick":"daurnimator","message":"functions have a \"prototype\" and then you have a \"closure\"","date":"2016-04-20T02:23:24.643Z","type":"message"}
+{"nick":"daurnimator","message":"a closure is what you probably think of as a function","date":"2016-04-20T02:23:58.244Z","type":"message"}
+{"nick":"creationix","message":"sure, I mean the set of closed over variables","date":"2016-04-20T02:24:33.736Z","type":"message"}
+{"nick":"creationix","message":"I guess multiple closures can share it","date":"2016-04-20T02:24:41.334Z","type":"message"}
+{"nick":"daurnimator","message":"uh, no?","date":"2016-04-20T02:25:32.448Z","type":"message"}
+{"nick":"daurnimator","message":"each closure has it's own list of upvalues","date":"2016-04-20T02:25:46.000Z","type":"message"}
+{"nick":"creationix","message":"then how can they close over the same value","date":"2016-04-20T02:26:27.367Z","type":"message"}
+{"nick":"creationix","message":"if it's closed over, it's not open anymore right?","date":"2016-04-20T02:26:37.580Z","type":"message"}
+{"nick":"creationix","message":"I know they can share mutable references to a single value","date":"2016-04-20T02:26:54.247Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: it's an open upvalue, not an open TValue.","date":"2016-04-20T02:27:31.286Z","type":"message"}
+{"nick":"daurnimator","message":"the upvalue(s) are a property of the closure","date":"2016-04-20T02:27:52.873Z","type":"message"}
+{"nick":"creationix","message":"but you close over tvalues","date":"2016-04-20T02:28:05.102Z","type":"message"}
+{"nick":"daurnimator","message":"an upvalue contains a pointer to a tvalue","date":"2016-04-20T02:28:27.270Z","type":"message"}
+{"nick":"creationix","message":"so it's not a move then, a pointer","date":"2016-04-20T02:28:45.686Z","type":"message"}
+{"nick":"daurnimator","message":"you *move* the \"upvalue\" structure from one list to another.","date":"2016-04-20T02:29:09.889Z","type":"message"}
+{"nick":"daurnimator","message":"the tvalue pointer inside that upvalue structure doesn't change during the \"closing\" process.","date":"2016-04-20T02:29:31.611Z","type":"message"}
+{"nick":"creationix","message":"ok, so what is \"KNIL     0   1\" creating in your sample?  That's a new local variable at slot 0 containing the value nil","date":"2016-04-20T02:30:17.142Z","type":"message"}
+{"nick":"creationix","message":"is that a TValue or an upvalue or something else?","date":"2016-04-20T02:30:25.940Z","type":"message"}
+{"nick":"daurnimator","message":"`KNIL     0   1` corresponds to `local p,q`: it creates two new (nil) values on the L->stack starting at indexes 0 and 1.","date":"2016-04-20T02:32:00.693Z","type":"message"}
+{"nick":"daurnimator","message":"(`nil` is a TValue)","date":"2016-04-20T02:32:31.281Z","type":"message"}
+{"nick":"creationix","message":"sure, but tvalues are immutable right?","date":"2016-04-20T02:33:14.571Z","type":"message"}
+{"nick":"creationix","message":"or can you change them in-place in the vm","date":"2016-04-20T02:33:20.391Z","type":"message"}
+{"nick":"creationix","message":"if so, that may be the part I'm missing","date":"2016-04-20T02:33:41.963Z","type":"message"}
+{"nick":"daurnimator","message":"a TValue (Tagged Value) is pretty much a lua object","date":"2016-04-20T02:33:59.753Z","type":"message"}
+{"nick":"creationix","message":"right, I get that","date":"2016-04-20T02:34:10.643Z","type":"message"}
+{"nick":"creationix","message":"but what happens when I later set a new value to slot 0?","date":"2016-04-20T02:34:33.373Z","type":"message"}
+{"nick":"creationix","message":"does the tvalue change in-place in memory?","date":"2016-04-20T02:34:45.917Z","type":"message"}
+{"nick":"creationix","message":"I didn't think things like nil were heap allocated","date":"2016-04-20T02:34:55.737Z","type":"message"}
+{"nick":"daurnimator","message":"no I don't believe tvalues ever change. they just get replaced.","date":"2016-04-20T02:36:35.325Z","type":"message"}
+{"nick":"creationix","message":"ok, so that's what I thought","date":"2016-04-20T02:36:47.202Z","type":"message"}
+{"nick":"creationix","message":"it's silly to box primitives like nil, boolean and small integers","date":"2016-04-20T02:36:57.893Z","type":"message"}
+{"nick":"daurnimator","message":"infact they aren't boxed in lua at all. in general: things that share a metatable aren't boxed.","date":"2016-04-20T02:37:36.586Z","type":"message"}
+{"nick":"creationix","message":"so it local slot contains the tvalue for nil and upvalue on closure 1 contains the same tvalue, and closure 2 contains the same tvalue, how are changes syncronized?","date":"2016-04-20T02:37:49.981Z","type":"message"}
+{"nick":"daurnimator","message":"(i.e. nil, booleans, numbers, strings, lightuserdata, functions)","date":"2016-04-20T02:37:53.926Z","type":"message"}
+{"nick":"creationix","message":"that's like lua code `a = 1; b = a; c = a;`  and then `a = 2` and expecting b and c to also equal 2","date":"2016-04-20T02:38:56.527Z","type":"message"}
+{"nick":"creationix","message":"there must be a level of indirection somewhere","date":"2016-04-20T02:39:09.824Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: the closure both share the same \"UpVal\" in their upvalue list.","date":"2016-04-20T02:39:28.927Z","type":"message"}
+{"nick":"creationix","message":"so upvalues are heap allocated and reference counted?","date":"2016-04-20T02:40:01.545Z","type":"message"}
+{"nick":"daurnimator","message":"upvalues are heap allocated. not reference counted.","date":"2016-04-20T02:40:23.797Z","type":"message"}
+{"nick":"creationix","message":"ok, not reference counted, but somehow it knows when to free them","date":"2016-04-20T02:40:42.935Z","type":"message"}
+{"nick":"creationix","message":"heap allocated boxes around tvalues","date":"2016-04-20T02:41:00.743Z","type":"message"}
+{"nick":"creationix","message":"and the closure list is just a list of pointers to upvalues?","date":"2016-04-20T02:41:11.233Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: c closures and lua closures are slightly different there.","date":"2016-04-20T02:41:38.248Z","type":"message"}
+{"nick":"creationix","message":"right, pointers are not the same as lua references","date":"2016-04-20T02:41:55.854Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I mean C closure can share upvalues. lua closures don't.","date":"2016-04-20T02:42:16.328Z","type":"message"}
+{"nick":"daurnimator","message":"C closures upvalues are an array of TValues. lua closures upvalues are an array of UpVal.","date":"2016-04-20T02:42:36.592Z","type":"message"}
+{"nick":"creationix","message":"and UpVal is just a pointer to a TVal right?","date":"2016-04-20T02:43:11.113Z","type":"message"}
+{"nick":"creationix","message":"a floating lua reference","date":"2016-04-20T02:43:25.616Z","type":"message"}
+{"nick":"daurnimator","message":"yes.","date":"2016-04-20T02:44:05.697Z","type":"message"}
+{"nick":"creationix","message":"so I think what is messing me up then is I keep worrying about the case where a TValue is used locally in a function but is also closed over and moved to an UpVal","date":"2016-04-20T02:44:53.627Z","type":"message"}
+{"nick":"creationix","message":"perhaps the compiler will never generate such code","date":"2016-04-20T02:45:05.634Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: UpVal only contains a pointer to the tvalue.","date":"2016-04-20T02:45:44.051Z","type":"message"}
+{"nick":"daurnimator","message":"it's not *moved* to an UpVal.","date":"2016-04-20T02:45:56.436Z","type":"message"}
+{"nick":"creationix","message":"are the local slots also pointers to TValues instead of TValues directly?","date":"2016-04-20T02:47:06.434Z","type":"message"}
+{"nick":"daurnimator","message":"L-stack is a list of TValue. (not pointers)","date":"2016-04-20T02:48:40.582Z","type":"message"}
+{"nick":"creationix","message":"hmm, still confused then","date":"2016-04-20T02:49:27.845Z","type":"message"}
+{"nick":"daurnimator","message":"uh wait sorry","date":"2016-04-20T02:50:11.474Z","type":"message"}
+{"nick":"daurnimator","message":"no.","date":"2016-04-20T02:50:13.359Z","type":"message"}
+{"nick":"daurnimator","message":"it's a pointer.","date":"2016-04-20T02:50:14.791Z","type":"message"}
+{"nick":"creationix","message":"so stack *is* a list of pointers?","date":"2016-04-20T02:51:50.043Z","type":"message"}
+{"nick":"daurnimator","message":"yep. sorry. The reference I quoted from didn't say that. and then I confused myself when I didn't see the `*` in the typedef for StkId.","date":"2016-04-20T02:53:43.461Z","type":"message"}
+{"nick":"creationix","message":"so I wonder where the TValues live","date":"2016-04-20T02:54:35.057Z","type":"message"}
+{"nick":"creationix","message":"boxed values are in the lua heap, pointers to integers have to point somewhere","date":"2016-04-20T02:55:46.208Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: the constant table","date":"2016-04-20T02:56:04.993Z","type":"message"}
+{"nick":"creationix","message":"sure for large constants, but aren't some just inline values in the TValue union?","date":"2016-04-20T02:56:38.148Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: the constant table is a list of TValue... I think. let me double check that one","date":"2016-04-20T02:57:03.413Z","type":"message"}
+{"nick":"creationix","message":"ok, that kinda makes sense","date":"2016-04-20T02:57:18.788Z","type":"message"}
+{"nick":"creationix","message":"but I wonder how they are garbage collected","date":"2016-04-20T02:57:52.362Z","type":"message"}
+{"nick":"konobi","message":"mkay... time to work on this app","date":"2016-04-20T02:58:15.709Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: yep. constant table is just a list of TValue.","date":"2016-04-20T02:59:37.315Z","type":"message"}
+{"nick":"creationix","message":"constant sounds like static liketime","date":"2016-04-20T03:00:00.203Z","type":"message"}
+{"nick":"creationix","message":"I guess the pointers to tvalues are tagged to know if it's a constant table entry or a heap entry","date":"2016-04-20T03:00:23.117Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: what do you mean? the constant table is a member of a Proto. when the Proto gets collected the constant table does too.","date":"2016-04-20T03:00:25.500Z","type":"message"}
+{"nick":"creationix","message":"oh, it's not global","date":"2016-04-20T03:00:58.977Z","type":"message"}
+{"nick":"creationix","message":"proto is scoped to function execution lifetime right?","date":"2016-04-20T03:01:10.775Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: each function prototype (Proto) has it's own constant table","date":"2016-04-20T03:01:34.259Z","type":"message"}
+{"nick":"creationix","message":"well and any closures created within it","date":"2016-04-20T03:01:37.826Z","type":"message"}
+{"nick":"daurnimator","message":"a closure (function as you know it) is a Proto + a list of upvalues","date":"2016-04-20T03:02:04.080Z","type":"message"}
+{"nick":"daurnimator","message":"(list of pointers to upvalues that is)","date":"2016-04-20T03:02:21.194Z","type":"message"}
+{"nick":"creationix","message":"and upvalues point to the parent proto","date":"2016-04-20T03:02:32.900Z","type":"message"}
+{"nick":"creationix","message":"the parent can't be GCed till the child is","date":"2016-04-20T03:02:39.328Z","type":"message"}
+{"nick":"creationix","message":"*UpVal's point to parent proto","date":"2016-04-20T03:03:00.100Z","type":"message"}
+{"nick":"daurnimator","message":"yep.","date":"2016-04-20T03:03:10.195Z","type":"message"}
+{"nick":"daurnimator","message":"http://www.lua.org/source/5.3/lobject.h.html#LClosure","date":"2016-04-20T03:03:13.488Z","type":"message"}
+{"nick":"creationix","message":"ok, this is closer to lisp style closures than I thought","date":"2016-04-20T03:03:26.153Z","type":"message"}
+{"nick":"konobi","message":"is there any module for doing stuff like farm-workers?","date":"2016-04-20T03:03:57.536Z","type":"message"}
+{"nick":"creationix","message":"farm-workers?","date":"2016-04-20T03:04:08.346Z","type":"message"}
+{"nick":"konobi","message":"npm module","date":"2016-04-20T03:04:31.981Z","type":"message"}
+{"nick":"konobi","message":"worker-farm even","date":"2016-04-20T03:04:45.138Z","type":"message"}
+{"nick":"creationix","message":"not that I know of","date":"2016-04-20T03:05:02.524Z","type":"message"}
+{"nick":"creationix","message":"spawning children with pipes to communicate is pretty easy using uv.spawn","date":"2016-04-20T03:05:28.497Z","type":"message"}
+{"nick":"creationix","message":"you can search the lit database for various keywords.  I don't know everything that is in there","date":"2016-04-20T03:05:49.359Z","type":"message"}
+{"nick":"creationix","message":"I only wrote half of it ;)","date":"2016-04-20T03:05:56.291Z","type":"message"}
+{"nick":"konobi","message":"i can't get a full list of packages","date":"2016-04-20T03:06:27.815Z","type":"message"}
+{"nick":"creationix","message":"yeah, must be a bug, says there are 174, but then only shows a couple pages worth","date":"2016-04-20T03:06:49.726Z","type":"message"}
+{"nick":"konobi","message":"seems like the results are being paged, but no paging shows","date":"2016-04-20T03:06:54.307Z","type":"message"}
+{"nick":"creationix","message":"konobi: right, but I don't remember implementing paging in the query engine","date":"2016-04-20T03:07:34.963Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, thanks it's making a lot more sense now","date":"2016-04-20T03:07:50.297Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, though, since it's called a \"constant\" table I expect the boxed values live elsewhere","date":"2016-04-20T03:08:42.428Z","type":"message"}
+{"nick":"creationix","message":"in the GC heap I would assume","date":"2016-04-20T03:08:53.136Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: perhaps look at a function like this: function() local x = 0; local function inc() x = x + 5; return x end return inc end","date":"2016-04-20T03:10:08.566Z","type":"message"}
+{"nick":"daurnimator","message":"hold on, adding labels for clarity in my following explanation","date":"2016-04-20T03:10:38.291Z","type":"message"}
+{"nick":"daurnimator","message":"function gen() local x = 0; local function inc() x = x + 5; return x end return inc end; local incrementers = {}; for i=1,10 do incrementers[i] = gen(); end","date":"2016-04-20T03:11:25.384Z","type":"message"}
+{"nick":"daurnimator","message":"there are 3 function prototypes in that. 'gen' 'inc', and the whole thing (an anonymous function).","date":"2016-04-20T03:12:18.713Z","type":"message"}
+{"nick":"daurnimator","message":"the 'gen' prototype has 1 constant: 0 (used to initialise x)","date":"2016-04-20T03:13:15.436Z","type":"message"}
+{"nick":"daurnimator","message":"the 'inc' prototype has 1 constant: 5","date":"2016-04-20T03:13:29.379Z","type":"message"}
+{"nick":"daurnimator","message":"the encapsulating function prototype has 3 constants: the string \"gen\" (used to get/set the global), and the numbers 1 and 10 (used in the `for` loop).","date":"2016-04-20T03:14:11.490Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: ^^ make sense?","date":"2016-04-20T03:14:47.769Z","type":"message"}
+{"nick":"creationix","message":"so every number ever stored to a local variable creates a new slot in the table?  seems wasteful","date":"2016-04-20T03:15:55.358Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: every constant used in a function is stored in the constant table... where else would they live? (they have to be *somewhere*)","date":"2016-04-20T03:17:16.755Z","type":"message"}
+{"nick":"creationix","message":"right, then a simple `for i = 1, 1000000000 do end` would eat a ton of ram","date":"2016-04-20T03:18:21.321Z","type":"message"}
+{"nick":"creationix","message":"that doesn't sound right","date":"2016-04-20T03:18:42.617Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: huh? there's only 2 constants there, 1 and 1000000000.","date":"2016-04-20T03:18:46.297Z","type":"message"}
+{"nick":"creationix","message":"all, misread your comment","date":"2016-04-20T03:19:07.247Z","type":"message"}
+{"nick":"creationix","message":"\"1 and 10\" not \"1 to 10\"","date":"2016-04-20T03:19:13.172Z","type":"message"}
+{"nick":"creationix","message":"except in luajit there are also immediate values in the bytecode","date":"2016-04-20T03:19:32.321Z","type":"message"}
+{"nick":"daurnimator","message":"right. in luajit it skips the constant table for small enough numbers.","date":"2016-04-20T03:19:51.377Z","type":"message"}
+{"nick":"creationix","message":"for some operations","date":"2016-04-20T03:20:34.868Z","type":"message"}
+{"nick":"daurnimator","message":"yep.","date":"2016-04-20T03:20:41.565Z","type":"message"}
+{"nick":"creationix","message":"ADDVN adds some inline constant to a slot","date":"2016-04-20T03:20:46.773Z","type":"message"}
+{"nick":"daurnimator","message":"usually it's best to \"think\" in lua. and add luajit optimisations on top.","date":"2016-04-20T03:21:01.350Z","type":"message"}
+{"nick":"creationix","message":"ok, so constant table is not what I'm looking for, it's what I thought it was before.  A place to store constants found in source code","date":"2016-04-20T03:21:41.837Z","type":"message"}
+{"nick":"creationix","message":"things that don't quite fit inline in the bytecode,","date":"2016-04-20T03:21:56.964Z","type":"message"}
+{"nick":"creationix","message":"I'm talking about runtime generated/computed values that have references to them from multiple places","date":"2016-04-20T03:22:51.094Z","type":"message"}
+{"nick":"creationix","message":"https://gist.github.com/creationix/1d52c2723279105f2b0ccfdd0298a3fb#gistcomment-1756972","date":"2016-04-20T03:24:44.935Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: you're asking where 'a' lives?","date":"2016-04-20T03:25:22.953Z","type":"message"}
+{"nick":"creationix","message":"KSHORT stored the value 1 in slot 0","date":"2016-04-20T03:25:31.089Z","type":"message"}
+{"nick":"creationix","message":"right, it's closed over, modified in the closure, and the return somehow has the updated value","date":"2016-04-20T03:25:46.321Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: I added comment with lua decompilation.","date":"2016-04-20T03:26:31.465Z","type":"message"}
+{"nick":"creationix","message":"the 1 exist as an inline part of the bytecode instruction.  I'm sure it's copied somwehere when the new TValue is created, but where does that TValue live?","date":"2016-04-20T03:26:38.394Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: huh? which bit are you talking about? lets refer to the lua decomp for now.","date":"2016-04-20T03:28:13.110Z","type":"message"}
+{"nick":"creationix","message":"sure looks like the same thing","date":"2016-04-20T03:28:26.778Z","type":"message"}
+{"nick":"creationix","message":"main loads the constant 1 into slot 0","date":"2016-04-20T03:28:40.247Z","type":"message"}
+{"nick":"daurnimator","message":"yes.","date":"2016-04-20T03:29:11.145Z","type":"message"}
+{"nick":"creationix","message":"looks like CLOSURE is closing over the slot and references the source in one shot and storing the prototype in slot 1","date":"2016-04-20T03:29:46.613Z","type":"message"}
+{"nick":"creationix","message":"interestingly, luajit creates the function, calls it and then does UCLO before returning","date":"2016-04-20T03:31:03.795Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: the 2 functions are the opposite way around in the 2 dumps","date":"2016-04-20T03:31:32.794Z","type":"message"}
+{"nick":"daurnimator","message":"creationix: UCLO is *also* a JMP. i.e. it's just like the double return in lua.","date":"2016-04-20T03:32:08.673Z","type":"message"}
+{"nick":"daurnimator","message":"actually no sorry. UCLO *can* be. but in this case it isn't... it just jumps to the next instruction","date":"2016-04-20T03:32:51.981Z","type":"message"}
+{"nick":"konobi","message":"creationix: client side code error on lit","date":"2016-04-20T03:33:13.114Z","type":"message"}
+{"nick":"creationix","message":"konobi, interesting, the json from the server looks right https://lit.luvit.io/search/*","date":"2016-04-20T03:34:43.261Z","type":"message"}
+{"nick":"creationix","message":"parses as JSON for me and has a lot of entries, perhaps all of them","date":"2016-04-20T03:34:53.156Z","type":"message"}
+{"nick":"creationix","message":"daurnimator: I understand the flow, just confused on what closing over variables does","date":"2016-04-20T03:39:14.448Z","type":"message"}
+{"nick":"creationix","message":"especially since it's done *after* creating and calling the closure","date":"2016-04-20T03:39:24.828Z","type":"message"}
+{"nick":"creationix","message":"most importantly, where does UGET 0 0 read from? FNEW doesn't specify anything about closures, just function prototype from the constant table and storing instance in local slot","date":"2016-04-20T03:41:33.223Z","type":"message"}
+{"nick":"creationix","message":"anyway, I need some sleep, I'm pretty sick today and don't need to get sicker, thanks for being patient with me.","date":"2016-04-20T03:41:59.001Z","type":"message"}
+{"nick":"creationix","message":"daurnimator, g'night","date":"2016-04-20T03:42:03.756Z","type":"message"}
+{"nick":"konobi","message":"are there any coverage tools for lua?","date":"2016-04-20T03:53:30.754Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: yep. luacov","date":"2016-04-20T03:58:01.394Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: if you use busted `busted -c` turns on coverage analysis (requires luacov to be installed))","date":"2016-04-20T03:58:20.407Z","type":"message"}
+{"nick":"konobi","message":"daurnimator: awesome, thanks. now to see if it'll work with luvit","date":"2016-04-20T04:00:56.657Z","type":"message"}
+{"nick":"daurnimator","message":"konobi: btw, if you're interested in vm stuff: https://www.reddit.com/r/programming/comments/badl2/luajit_2_beta_3_is_out_support_both_x32_x64/c0lrus0","date":"2016-04-20T04:04:24.004Z","type":"message"}
+{"nick":"konobi","message":"i used to do a bit of VM work back in a previous experimental version of perl6","date":"2016-04-20T04:05:59.902Z","type":"message"}
+{"nick":"konobi","message":"huh... nice","date":"2016-04-20T04:08:46.204Z","type":"message"}
+{"nick":"SkyRocknRoll","date":"2016-04-20T04:58:13.955Z","type":"join"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-04-20T05:08:39.801Z","type":"quit"}
+{"nick":"Harageth","date":"2016-04-20T05:13:17.930Z","type":"join"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-04-20T06:14:25.086Z","type":"quit"}
+{"nick":"daurnimator","reason":"Quit: WeeChat 1.4","date":"2016-04-20T07:00:26.590Z","type":"quit"}
+{"nick":"daurnimator","date":"2016-04-20T07:06:36.091Z","type":"join"}
+{"nick":"Something12_","date":"2016-04-20T07:10:48.428Z","type":"join"}
+{"nick":"Something12","reason":"Ping timeout: 244 seconds","date":"2016-04-20T07:13:39.001Z","type":"quit"}
+{"nick":"daurnimator","reason":"Quit: WeeChat 1.4","date":"2016-04-20T07:14:23.999Z","type":"quit"}
+{"nick":"ksheedlo","reason":"Ping timeout: 264 seconds","date":"2016-04-20T07:24:28.069Z","type":"quit"}
+{"nick":"ksheedlo","date":"2016-04-20T07:25:31.375Z","type":"join"}
+{"nick":"rendar","date":"2016-04-20T07:39:05.407Z","type":"join"}
