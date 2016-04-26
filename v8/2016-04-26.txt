@@ -1,0 +1,110 @@
+{"nick":"dherman","message":"where is v8::Integer::Cast defined?","date":"2016-04-26T00:08:30.173Z","type":"message"}
+{"nick":"dherman","message":"(I suspect I'm getting pwned by token-pasting macros again)","date":"2016-04-26T00:08:48.766Z","type":"message"}
+{"nick":"aklein","message":"it's in v8.h","date":"2016-04-26T00:09:15.626Z","type":"message"}
+{"nick":"aklein","message":"no macros involved","date":"2016-04-26T00:09:18.097Z","type":"message"}
+{"nick":"dherman","message":"ha","date":"2016-04-26T00:09:29.580Z","type":"message"}
+{"nick":"aklein","message":"it's not very interesting, though :)","date":"2016-04-26T00:09:30.422Z","type":"message"}
+{"nick":"dherman","message":"how'd I miss that","date":"2016-04-26T00:09:31.512Z","type":"message"}
+{"nick":"dherman","message":"thanks","date":"2016-04-26T00:09:32.394Z","type":"message"}
+{"nick":"dherman","message":"I'm having a terrible time figuring out what exactly Integer means","date":"2016-04-26T00:09:48.845Z","type":"message"}
+{"nick":"dherman","message":"i.e. what values are considered Integers","date":"2016-04-26T00:10:07.413Z","type":"message"}
+{"nick":"dherman","message":"there's no IsInteger() predicate","date":"2016-04-26T00:10:18.287Z","type":"message"}
+{"nick":"aklein","message":"it doesn't map to any particular type","date":"2016-04-26T00:10:47.421Z","type":"message"}
+{"nick":"dherman","message":"given that it exists, there must be some notion of when it's valid to convert a Number to an Integer","date":"2016-04-26T00:12:10.596Z","type":"message"}
+{"nick":"aklein","message":"IsInt32() and IsUint32() are the predicates that ask that question","date":"2016-04-26T00:12:31.762Z","type":"message"}
+{"nick":"dherman","message":"so it represents the union of int32 and uint32?","date":"2016-04-26T00:12:50.092Z","type":"message"}
+{"nick":"dherman","message":"{ x \\in Z | x >= int32.MIN && x <= uint32.MAX }","date":"2016-04-26T00:14:09.249Z","type":"message"}
+{"nick":"aklein","message":"hmm, it looks like Integer is actually pretty specific","date":"2016-04-26T00:15:30.797Z","type":"message"}
+{"nick":"aklein","message":"I feel like it's misused in the API","date":"2016-04-26T00:16:03.878Z","type":"message"}
+{"nick":"dherman","message":":'-(","date":"2016-04-26T00:16:23.924Z","type":"message"}
+{"nick":"dherman","message":"tell me?","date":"2016-04-26T00:16:27.794Z","type":"message"}
+{"nick":"aklein","message":"well, let me back up, why do you care about Integer to begin with?","date":"2016-04-26T00:18:07.571Z","type":"message"}
+{"nick":"aklein","message":"(the only thing in the API that has any reasonable use of Integer seems to me to be v8::Value::ToInteger)","date":"2016-04-26T00:18:53.125Z","type":"message"}
+{"nick":"pringlescan","reason":"Quit: Leaving.","date":"2016-04-26T00:18:54.461Z","type":"quit"}
+{"nick":"aklein","message":"(which corresponds to the ECMAScript spec operation ToInteger)","date":"2016-04-26T00:19:02.610Z","type":"message"}
+{"nick":"dherman","message":"I guess I was under the impression that Integer was exposing some faster paths in the engine","date":"2016-04-26T00:19:17.970Z","type":"message"}
+{"nick":"dherman","message":"for dealing with numbers that happen to be integers","date":"2016-04-26T00:19:23.294Z","type":"message"}
+{"nick":"dherman","message":"if I'm mistaken, maybe I shouldn't be exposing any aspect of it to the neon api","date":"2016-04-26T00:19:32.396Z","type":"message"}
+{"nick":"dherman","message":"obvs I can create convenience api's for converting to/from Rust integers and JS numbers","date":"2016-04-26T00:19:59.361Z","type":"message"}
+{"nick":"aklein","message":"yeah, it doesn't correspond to our internal thing","date":"2016-04-26T00:20:31.151Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-04-26T00:20:34.552Z","type":"quit"}
+{"nick":"dherman","message":"the internal thing == Smi ?","date":"2016-04-26T00:20:38.717Z","type":"message"}
+{"nick":"aklein","message":"yeah","date":"2016-04-26T00:20:40.566Z","type":"message"}
+{"nick":"dherman","message":"yeah I figured that much out","date":"2016-04-26T00:20:45.317Z","type":"message"}
+{"nick":"dherman","message":"what is the purpose of v8::Integer?","date":"2016-04-26T00:20:51.103Z","type":"message"}
+{"nick":"aklein","message":"they're 31 bit integers on 32 bit architectures, 32 bit integers on 64 bit architectures","date":"2016-04-26T00:20:54.569Z","type":"message"}
+{"nick":"aklein","message":"dherman: to expose the v8::Integer::Value() method, it looks like to me","date":"2016-04-26T00:21:31.857Z","type":"message"}
+{"nick":"dherman","message":"yeah so IOW you didn't want to expose that, since it's observable and non-portable","date":"2016-04-26T00:21:33.355Z","type":"message"}
+{"nick":"aklein","message":"yeah","date":"2016-04-26T00:21:41.869Z","type":"message"}
+{"nick":"dherman","message":"ok but this is what confuses me","date":"2016-04-26T00:21:47.784Z","type":"message"}
+{"nick":"dherman","message":"I get what v8::Integer::Value() does","date":"2016-04-26T00:21:52.192Z","type":"message"}
+{"nick":"dherman","message":"which is useful","date":"2016-04-26T00:21:53.730Z","type":"message"}
+{"nick":"dherman","message":"but then","date":"2016-04-26T00:21:54.724Z","type":"message"}
+{"nick":"dherman","message":"I can only use it if I know to begin with that something is an integer","date":"2016-04-26T00:22:04.376Z","type":"message"}
+{"nick":"dherman","message":"but for that","date":"2016-04-26T00:22:05.592Z","type":"message"}
+{"nick":"dherman","message":"I have to know what \"integer\" means :)","date":"2016-04-26T00:22:08.965Z","type":"message"}
+{"nick":"dherman","message":"there are multiple plausible definitions","date":"2016-04-26T00:22:49.615Z","type":"message"}
+{"nick":"dherman","message":"like, 2^53 + 2 is representable as a JS number, but it's not inside the range of contiguously representable integers","date":"2016-04-26T00:23:53.631Z","type":"message"}
+{"nick":"dherman","message":"so integer could mean \"integer representable in IEEE754 double\"","date":"2016-04-26T00:24:06.164Z","type":"message"}
+{"nick":"dherman","message":"or it could mean \"integer in the maximum contiguous range of representable integers in IEEE754 double\"","date":"2016-04-26T00:24:20.909Z","type":"message"}
+{"nick":"dherman","message":"or it could mean \"integer in int32 U uint32\"","date":"2016-04-26T00:24:27.972Z","type":"message"}
+{"nick":"dherman","message":"I guess an alternative option for me is to say, all we get is doubles, and you can convert those to ints in Rust","date":"2016-04-26T00:25:00.792Z","type":"message"}
+{"nick":"aklein","message":"I'd agree that this type is a bit sloppy","date":"2016-04-26T00:25:09.228Z","type":"message"}
+{"nick":"aklein","message":"all that Integer::Cast guarantees is that it's a Number","date":"2016-04-26T00:25:19.025Z","type":"message"}
+{"nick":"dherman","message":"yeah that confused me","date":"2016-04-26T00:25:27.356Z","type":"message"}
+{"nick":"dherman","message":"maybe I should just avoid it","date":"2016-04-26T00:25:33.895Z","type":"message"}
+{"nick":"dherman","message":"hm","date":"2016-04-26T00:25:35.853Z","type":"message"}
+{"nick":"aklein","message":"I kinda feel like there just shouldn't be Integer::Cast","date":"2016-04-26T00:26:19.807Z","type":"message"}
+{"nick":"dherman","message":"I guess it's not really providing much benefit","date":"2016-04-26T00:26:20.276Z","type":"message"}
+{"nick":"dherman","message":"yeah","date":"2016-04-26T00:26:24.812Z","type":"message"}
+{"nick":"aklein","message":"that way the only way to get one would to be to have it vended from the API, from e.g. Value::ToInteger()","date":"2016-04-26T00:26:59.049Z","type":"message"}
+{"nick":"dherman","message":"of course then it's clear what the domain of the type is","date":"2016-04-26T00:27:08.555Z","type":"message"}
+{"nick":"dherman","message":"int32 U uint32","date":"2016-04-26T00:27:11.522Z","type":"message"}
+{"nick":"dherman","message":"at which point you *could* have a Cast operation","date":"2016-04-26T00:27:21.417Z","type":"message"}
+{"nick":"dherman","message":"but it should use IsInt32 U IsUint32","date":"2016-04-26T00:27:30.572Z","type":"message"}
+{"nick":"aklein","message":"does ToInteger limit to 32 bits?","date":"2016-04-26T00:27:31.402Z","type":"message"}
+{"nick":"aklein","message":"I don't think it does","date":"2016-04-26T00:27:33.633Z","type":"message"}
+{"nick":"aklein","message":"(the ES abstract op)","date":"2016-04-26T00:27:42.237Z","type":"message"}
+{"nick":"dherman","message":"I don't remember","date":"2016-04-26T00:27:49.009Z","type":"message"}
+{"nick":"dherman","action":"looks","date":"2016-04-26T00:27:51.888Z","type":"action"}
+{"nick":"dherman","message":"> Return the number value that is the same sign as number and whose magnitude is floor(abs(number)).","date":"2016-04-26T00:28:29.109Z","type":"message"}
+{"nick":"dherman","message":"I think floor/abs don't limit the domain","date":"2016-04-26T00:29:16.369Z","type":"message"}
+{"nick":"dherman","message":"Number.isInteger uses ToInteger directly","date":"2016-04-26T00:30:02.391Z","type":"message"}
+{"nick":"dherman","message":"yeah very large integers are considered integers","date":"2016-04-26T00:30:47.617Z","type":"message"}
+{"nick":"dherman","message":"e.g. 2^53","date":"2016-04-26T00:30:51.638Z","type":"message"}
+{"nick":"dherman","message":"I think the right thing for me to do is kill the use of v8::Integer","date":"2016-04-26T00:31:31.083Z","type":"message"}
+{"nick":"dherman","message":"thx for the help","date":"2016-04-26T00:31:34.499Z","type":"message"}
+{"nick":"Venemo","reason":"Quit: Communi 3.5.0 - http://communi.github.com","date":"2016-04-26T00:36:34.122Z","type":"quit"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-04-26T01:18:00.270Z","type":"quit"}
+{"nick":"pringlescan","date":"2016-04-26T01:29:50.943Z","type":"join"}
+{"nick":"plutoniix","date":"2016-04-26T01:31:39.746Z","type":"join"}
+{"nick":"pringlescan","reason":"Quit: Leaving.","date":"2016-04-26T01:50:00.573Z","type":"quit"}
+{"nick":"plutoniix","reason":"Read error: Connection reset by peer","date":"2016-04-26T01:51:32.502Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-04-26T01:53:25.145Z","type":"join"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2016-04-26T01:56:06.076Z","type":"quit"}
+{"nick":"pringlescan","date":"2016-04-26T02:00:49.244Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-04-26T02:07:53.639Z","type":"quit"}
+{"nick":"bobmcw","date":"2016-04-26T02:51:11.180Z","type":"join"}
+{"nick":"pringlescan","reason":"Quit: Leaving.","date":"2016-04-26T02:52:02.230Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-04-26T02:56:23.231Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-04-26T03:06:17.088Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2016-04-26T03:28:54.538Z","type":"quit"}
+{"nick":"xaxxon_","date":"2016-04-26T04:16:20.463Z","type":"join"}
+{"nick":"bobmcw","date":"2016-04-26T04:28:55.617Z","type":"join"}
+{"nick":"ofrobots","date":"2016-04-26T04:34:41.501Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2016-04-26T04:38:17.077Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-04-26T04:42:33.590Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2016-04-26T04:43:32.454Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2016-04-26T04:49:12.672Z","type":"quit"}
+{"nick":"bobmcw","date":"2016-04-26T04:50:41.095Z","type":"join"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2016-04-26T04:51:58.770Z","type":"quit"}
+{"nick":"ofrobots","date":"2016-04-26T04:52:41.871Z","type":"join"}
+{"nick":"ofrobots","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-04-26T05:19:30.017Z","type":"quit"}
+{"nick":"bradleymeck","date":"2016-04-26T05:22:01.054Z","type":"join"}
+{"nick":"ofrobots","date":"2016-04-26T05:41:32.666Z","type":"join"}
+{"nick":"ofrobots","reason":"Client Quit","date":"2016-04-26T05:44:21.415Z","type":"quit"}
+{"nick":"thefourtheye___","date":"2016-04-26T06:05:03.030Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-04-26T06:19:17.546Z","type":"quit"}
+{"nick":"xaxxon_","reason":"Ping timeout: 260 seconds","date":"2016-04-26T06:48:42.685Z","type":"quit"}
+{"nick":"plutoniix","date":"2016-04-26T07:09:47.717Z","type":"join"}
+{"nick":"rendar","date":"2016-04-26T07:43:06.919Z","type":"join"}
