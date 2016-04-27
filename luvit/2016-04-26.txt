@@ -28,3 +28,234 @@
 {"nick":"creationix","message":"konobi, oh so use torch like a library","date":"2016-04-26T16:59:39.826Z","type":"message"}
 {"nick":"creationix","message":"Harageth, well either way, we're leaking","date":"2016-04-26T16:59:51.058Z","type":"message"}
 {"nick":"creationix","message":"I'm trying to use the snapshot library to get some hints as to what it leaking","date":"2016-04-26T17:00:01.844Z","type":"message"}
+{"nick":"creationix!creationix@2600","topic":"http://luvit.io | https://gitter.im/luvit/luvit | IRC Logs at http://logs.nodejs.org/luvit/latest","date":"2016-04-26T17:00:53.042Z","type":"topic"}
+{"nick":"creationix","message":"ok, part of the leak is the etag-cache module","date":"2016-04-26T17:03:16.119Z","type":"message"}
+{"nick":"creationix","message":"that's probably causing more harm than good, I'll just remove it","date":"2016-04-26T17:03:25.133Z","type":"message"}
+{"nick":"creationix","message":"still leaking slowly though","date":"2016-04-26T17:03:31.243Z","type":"message"}
+{"nick":"DarkGod","reason":"Ping timeout: 276 seconds","date":"2016-04-26T17:06:29.837Z","type":"quit"}
+{"nick":"konobi","message":"creationix: yup","date":"2016-04-26T17:08:13.142Z","type":"message"}
+{"nick":"creationix","message":"Harageth, I think part of the leak is the recursive closures used by weblit-app","date":"2016-04-26T17:30:59.903Z","type":"message"}
+{"nick":"creationix","message":"reimplementing that to see if it cleans up any","date":"2016-04-26T17:31:07.408Z","type":"message"}
+{"nick":"DarkGod","date":"2016-04-26T17:43:49.832Z","type":"join"}
+{"nick":"creationix","message":"hmm, removing the recursion/closure doesn't help","date":"2016-04-26T17:45:54.953Z","type":"message"}
+{"nick":"Harageth","message":"creationix do logs show when this issue started?","date":"2016-04-26T18:03:21.068Z","type":"message"}
+{"nick":"creationix","message":"not really","date":"2016-04-26T18:03:34.699Z","type":"message"}
+{"nick":"creationix","message":"it's been going on for a while.  I did set a daily cron to restart the server, that helped","date":"2016-04-26T18:03:48.329Z","type":"message"}
+{"nick":"creationix","message":"but the site was still down this morning (I guess extra traffic that triggers the problem)","date":"2016-04-26T18:04:06.025Z","type":"message"}
+{"nick":"Harageth","message":"so we dont really know if it is configuration related or code related then?","date":"2016-04-26T18:04:06.627Z","type":"message"}
+{"nick":"creationix","message":"probably code","date":"2016-04-26T18:04:13.019Z","type":"message"}
+{"nick":"creationix","message":"which hasn't changed in a while","date":"2016-04-26T18:04:28.513Z","type":"message"}
+{"nick":"Harageth","message":"right I was looking at commit history","date":"2016-04-26T18:04:37.607Z","type":"message"}
+{"nick":"Harageth","message":"I also had forgotten that you had created that restart cron job a while ago","date":"2016-04-26T18:04:53.082Z","type":"message"}
+{"nick":"erlbot--","reason":"Remote host closed the connection","date":"2016-04-26T18:08:27.721Z","type":"quit"}
+{"nick":"erlbot--_","date":"2016-04-26T18:09:14.970Z","type":"join"}
+{"nick":"Harageth","message":"When did you start that cron job? Wondering if its related.","date":"2016-04-26T18:14:14.994Z","type":"message"}
+{"nick":"Harageth","message":"and it gives a good date to start looking at commits","date":"2016-04-26T18:14:35.985Z","type":"message"}
+{"nick":"creationix","message":"Harageth, so the code that renders the site hasn't really changed since last summer.  It's been content updates since then","date":"2016-04-26T18:21:31.258Z","type":"message"}
+{"nick":"creationix","message":"as far as I know it's always been a little unstable","date":"2016-04-26T18:21:38.056Z","type":"message"}
+{"nick":"Harageth","message":"well that makes it more difficult to track down","date":"2016-04-26T18:21:54.141Z","type":"message"}
+{"nick":"creationix","message":"but I have a tool that gives hints as to what exactly is leaking in the heap","date":"2016-04-26T18:22:11.821Z","type":"message"}
+{"nick":"creationix","message":"if you want to join my room, I can show you","date":"2016-04-26T18:22:19.047Z","type":"message"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-04-26T19:01:10.426Z","type":"quit"}
+{"nick":"creationix","message":"serving static files leaks a lot","date":"2016-04-26T19:13:16.273Z","type":"message"}
+{"nick":"creationix","message":"when the browser gets 304 responses from weblit, we don't leak heap objects","date":"2016-04-26T19:13:52.397Z","type":"message"}
+{"nick":"creationix","message":"but forcing a reload from the browser (disabling conditional get requests) leaks a lot","date":"2016-04-26T19:15:04.148Z","type":"message"}
+{"nick":"creationix","message":"Serving a single static file leaks 16 heap objects","date":"2016-04-26T19:16:39.517Z","type":"message"}
+{"nick":"creationix","message":"ahh, it has nothing to do with static file serving, it's the http keepalive","date":"2016-04-26T19:21:51.564Z","type":"message"}
+{"nick":"creationix","message":"when the browser forces a refresh, it also gets a new tcp connection","date":"2016-04-26T19:22:02.066Z","type":"message"}
+{"nick":"creationix","message":"disabling etags doesn't (and thus conditional GET requests) doesn't affect leakage","date":"2016-04-26T19:22:20.577Z","type":"message"}
+{"nick":"creationix","message":"sockets are leaking closures!","date":"2016-04-26T19:22:32.472Z","type":"message"}
+{"nick":"rendar","reason":"Ping timeout: 260 seconds","date":"2016-04-26T19:44:32.716Z","type":"quit"}
+{"nick":"creationix","message":"I think I found it.  In coro-channel socket:shutdown(wait()) is being called, but it's returning nil, ENOTCONN (which we were ignoring)","date":"2016-04-26T19:49:05.704Z","type":"message"}
+{"nick":"creationix","message":"but luv never released the GC handle on the generated callback closure which pulls in 11 other heap objects","date":"2016-04-26T19:49:27.036Z","type":"message"}
+{"nick":"creationix","message":"so I think the leak is in luv","date":"2016-04-26T19:49:42.696Z","type":"message"}
+{"nick":"creationix","message":"but only manifests if you try to call shutdown on an unconnected socket","date":"2016-04-26T19:49:57.231Z","type":"message"}
+{"nick":"creationix","message":"rphillips, have you ever seen a case with the agent where shutdown callbacks leak?","date":"2016-04-26T19:50:20.450Z","type":"message"}
+{"nick":"creationix","message":"luvit and agent don't use coro-channel","date":"2016-04-26T19:50:28.868Z","type":"message"}
+{"nick":"rendar","date":"2016-04-26T19:50:44.912Z","type":"join"}
+{"nick":"rphillips","message":"hmm. no... but we have a timeout on our socket shutdown","date":"2016-04-26T19:50:49.441Z","type":"message"}
+{"nick":"creationix","message":"well, that won't help","date":"2016-04-26T19:56:46.246Z","type":"message"}
+{"nick":"creationix","message":"it's not the socket that leaks, it's callbacks passed to functions like shutdown","date":"2016-04-26T19:56:57.785Z","type":"message"}
+{"nick":"creationix","message":"luv will ref the callback, but then never unref it in case the uv function errors out","date":"2016-04-26T19:57:26.427Z","type":"message"}
+{"nick":"creationix","message":"but if you never call shutdown on a broken socket, you'll never hit this particular path","date":"2016-04-26T19:57:45.352Z","type":"message"}
+{"nick":"Harageth","date":"2016-04-26T20:01:41.939Z","type":"join"}
+{"nick":"rphillips","message":"ahhh","date":"2016-04-26T20:04:09.109Z","type":"message"}
+{"nick":"Harageth","reason":"Ping timeout: 244 seconds","date":"2016-04-26T20:06:16.942Z","type":"quit"}
+{"nick":"creationix","message":"rphillips: this *should* fix it.  Luv tests all pass, trying in my app now https://github.com/luvit/luv/commit/36d26e39238ca43a77040a5a91a975156de38c23","date":"2016-04-26T20:08:44.878Z","type":"message"}
+{"nick":"rphillips","message":"nice!","date":"2016-04-26T20:09:30.108Z","type":"message"}
+{"nick":"creationix","message":"oops, forgot to check fs","date":"2016-04-26T20:09:35.593Z","type":"message"}
+{"nick":"creationix","message":"looks like fs already has the fix","date":"2016-04-26T20:10:11.878Z","type":"message"}
+{"nick":"creationix","message":"I seem to remember that PR a while back","date":"2016-04-26T20:10:17.503Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T20:14:10.423Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#255 (master - 36d26e3 : Tim Caswell): The build passed.","date":"2016-04-26T20:14:11.531Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/97984a874ae8...36d26e39238c","date":"2016-04-26T20:14:11.701Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/125932810","date":"2016-04-26T20:14:11.701Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T20:14:11.701Z","type":"part"}
+{"nick":"rendar","reason":"Ping timeout: 260 seconds","date":"2016-04-26T20:14:17.717Z","type":"quit"}
+{"nick":"creationix","message":"yep, that helped the heap object leak","date":"2016-04-26T20:16:55.275Z","type":"message"}
+{"nick":"creationix","message":"now my server has a stable number of heap objects in each snapshot","date":"2016-04-26T20:17:15.039Z","type":"message"}
+{"nick":"creationix","message":"time for a luvi release.  (I also reverted the lua-openssl bump in luvi that broke lit and luvit's ssl tests)","date":"2016-04-26T20:18:26.056Z","type":"message"}
+{"nick":"rphillips","message":"that might help memory usage for sure","date":"2016-04-26T20:21:36.102Z","type":"message"}
+{"nick":"rphillips","message":"nice find","date":"2016-04-26T20:21:59.050Z","type":"message"}
+{"nick":"creationix","message":"alright, new luv published with memory leak fixed","date":"2016-04-26T20:26:11.069Z","type":"message"}
+{"nick":"creationix","message":"the luvit.io servers have been crashing for months and I finally got tired and decided to find the root cause","date":"2016-04-26T20:26:44.126Z","type":"message"}
+{"nick":"rphillips","message":"creationix: did you get the fs module tweaked as well?","date":"2016-04-26T20:27:33.339Z","type":"message"}
+{"nick":"creationix","message":"it already had the fix","date":"2016-04-26T20:27:45.025Z","type":"message"}
+{"nick":"creationix","message":"wow, since Oct. 1 2014","date":"2016-04-26T20:29:06.187Z","type":"message"}
+{"nick":"rphillips","message":"i'll get the agent updated when you get a luvi release","date":"2016-04-26T20:29:18.821Z","type":"message"}
+{"nick":"creationix","message":"it might not affect the agent, but just in case, it's good to have","date":"2016-04-26T20:29:36.244Z","type":"message"}
+{"nick":"creationix","message":"if affects anything coro-channel based for sure","date":"2016-04-26T20:29:45.382Z","type":"message"}
+{"nick":"Harageth","date":"2016-04-26T20:30:50.536Z","type":"join"}
+{"nick":"travis-ci","date":"2016-04-26T20:31:27.832Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#256 (1.9.0-3 - 65fdb31 : Tim Caswell): The build passed.","date":"2016-04-26T20:31:28.832Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/commit/65fdb31b6f0c","date":"2016-04-26T20:31:29.002Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/125936931","date":"2016-04-26T20:31:29.003Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T20:31:29.003Z","type":"part"}
+{"nick":"creationix","message":"rphillips, luvit still fails tls peer certificate.  I reverted the lua-openssl bump in luvi thinking that was the cause","date":"2016-04-26T20:31:45.904Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2016-04-26T20:32:28.229Z","type":"message"}
+{"nick":"rphillips","message":"perhaps there is a luvit patch that was applied?","date":"2016-04-26T20:32:52.498Z","type":"message"}
+{"nick":"creationix","message":"fails with my custom luvi (v2.7.0-5-gd2b924f) and the last luvi release of (v2.7.0)","date":"2016-04-26T20:33:45.940Z","type":"message"}
+{"nick":"creationix","message":"master on luvit","date":"2016-04-26T20:33:49.372Z","type":"message"}
+{"nick":"creationix","message":"if I downgrade luvi to v2.6.1 the luvit tests pass","date":"2016-04-26T20:34:17.163Z","type":"message"}
+{"nick":"creationix","message":"how do I compare between tags on github?","date":"2016-04-26T20:34:48.680Z","type":"message"}
+{"nick":"rphillips","message":"git diff [tag name]..[tag name 2]","date":"2016-04-26T20:35:04.551Z","type":"message"}
+{"nick":"rphillips","message":"without the brackets","date":"2016-04-26T20:35:10.300Z","type":"message"}
+{"nick":"rphillips","message":"oh on github","date":"2016-04-26T20:35:25.458Z","type":"message"}
+{"nick":"rphillips","message":"don't know","date":"2016-04-26T20:35:34.904Z","type":"message"}
+{"nick":"creationix","message":"found it https://github.com/luvit/luvi/compare/v2.6.1...v2.7.0","date":"2016-04-26T20:36:52.919Z","type":"message"}
+{"nick":"creationix","message":"somewhere between these two versions the tls test in luvit broke","date":"2016-04-26T20:37:09.281Z","type":"message"}
+{"nick":"creationix","message":"I thought it was when I bumped lua-openssl, but reverting it doesn't seem to help","date":"2016-04-26T20:37:25.093Z","type":"message"}
+{"nick":"creationix","message":"hmm, also updated openssl itself","date":"2016-04-26T20:38:44.472Z","type":"message"}
+{"nick":"creationix","message":"let's see if reverting that fixes the problem...","date":"2016-04-26T20:39:39.631Z","type":"message"}
+{"nick":"Harageth","message":"creationix: Figure out the memory leak?","date":"2016-04-26T20:40:23.681Z","type":"message"}
+{"nick":"creationix","message":"Harageth, yep it was in the C code in luv","date":"2016-04-26T20:40:35.241Z","type":"message"}
+{"nick":"Harageth","message":"ahhhhh fun stuff","date":"2016-04-26T20:40:42.778Z","type":"message"}
+{"nick":"creationix","message":"coro-channel was calling socket:shutdown on an already disconnected socket.  Luv put the passed in callback on the gc refs, but never released it because the call to shutdown errored out","date":"2016-04-26T20:41:19.918Z","type":"message"}
+{"nick":"creationix","message":"Harageth, for the gory details https://github.com/luvit/luv/commit/36d26e39238ca43a77040a5a91a975156de38c23","date":"2016-04-26T20:41:48.660Z","type":"message"}
+{"nick":"creationix","message":"I published a new luv to luarocks and am now trying to get a stable luvi release out so luvit and lit can use it too","date":"2016-04-26T20:42:06.689Z","type":"message"}
+{"nick":"creationix","message":"rphillips, reverting openssl in the submodule fixes it.  Do you want to look into this or can I just release the known working version for now and worry about updating openssl till later","date":"2016-04-26T20:43:19.821Z","type":"message"}
+{"nick":"erlbot--_","new_nick":"erlbot--","date":"2016-04-26T20:45:46.846Z","type":"nick"}
+{"nick":"travis-ci","date":"2016-04-26T20:47:15.088Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#891 (master - a3c6e1a : Tim Caswell): The build passed.","date":"2016-04-26T20:47:15.993Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/d2b924f4cb46...a3c6e1a6b7c1","date":"2016-04-26T20:47:16.163Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125941705","date":"2016-04-26T20:47:16.164Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T20:47:16.164Z","type":"part"}
+{"nick":"creationix","message":"new luvi with reverted ssl fixed lit's tests too.  I'm cutting a luvi release","date":"2016-04-26T20:52:12.206Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luvi/commit/05e051b38706b1fec1475bb2f3c18455b3601a75, will build binaries as soon as *all* ci servers pass","date":"2016-04-26T20:55:31.312Z","type":"message"}
+{"nick":"creationix","action":"has been burned too many times building binaries before testing everything","date":"2016-04-26T20:55:41.415Z","type":"action"}
+{"nick":"travis-ci","date":"2016-04-26T20:58:04.684Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#892 (master - 05e051b : Tim Caswell): The build passed.","date":"2016-04-26T20:58:05.651Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/a3c6e1a6b7c1...05e051b38706","date":"2016-04-26T20:58:05.821Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125944206","date":"2016-04-26T20:58:05.821Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T20:58:05.821Z","type":"part"}
+{"nick":"erlbot--","reason":"Remote host closed the connection","date":"2016-04-26T20:59:52.754Z","type":"quit"}
+{"nick":"erlbot--","date":"2016-04-26T21:00:44.677Z","type":"join"}
+{"nick":"travis-ci","date":"2016-04-26T21:01:06.678Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#893 (v2.7.1 - 05e051b : Tim Caswell): The build passed.","date":"2016-04-26T21:01:07.708Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/v2.7.1","date":"2016-04-26T21:01:07.878Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125944903","date":"2016-04-26T21:01:07.879Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:01:07.879Z","type":"part"}
+{"nick":"rphillips","message":"creationix: 1.0.2e probably isn't a very good version to roll to","date":"2016-04-26T21:04:47.404Z","type":"message"}
+{"nick":"creationix","message":"no, but it's what we're on right now","date":"2016-04-26T21:05:01.877Z","type":"message"}
+{"nick":"creationix","message":"or did the agent use the new 2.7.0 luvi?","date":"2016-04-26T21:05:13.729Z","type":"message"}
+{"nick":"creationix","message":"I never could get luvit or lit on it","date":"2016-04-26T21:05:18.417Z","type":"message"}
+{"nick":"rphillips","message":"agent uses it, yes","date":"2016-04-26T21:07:57.961Z","type":"message"}
+{"nick":"creationix","message":"I guess you just never hit whatever changed API breaks the tests","date":"2016-04-26T21:08:38.689Z","type":"message"}
+{"nick":"creationix","message":"ok, I would hold off updating the agent then.  I'm unsure if this memory leak even affects you and downgrading openssl is probably bad","date":"2016-04-26T21:13:55.803Z","type":"message"}
+{"nick":"creationix","message":"after this is out, I'll see about updating the ssl version in another luvi release","date":"2016-04-26T21:14:11.178Z","type":"message"}
+{"nick":"rphillips","message":"creationix: I think I have a patch","date":"2016-04-26T21:20:54.869Z","type":"message"}
+{"nick":"creationix","message":"awesome","date":"2016-04-26T21:21:03.093Z","type":"message"}
+{"nick":"rphillips","message":"tests are running on osx","date":"2016-04-26T21:21:07.749Z","type":"message"}
+{"nick":"rphillips","message":"'All tests pass'","date":"2016-04-26T21:21:24.177Z","type":"message"}
+{"nick":"rphillips","message":"creationix: https://github.com/luvit/luvi/pull/151","date":"2016-04-26T21:25:13.472Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/luvit/openssl/pull/23","date":"2016-04-26T21:25:47.228Z","type":"message"}
+{"nick":"rphillips","message":"regenerates the assembler optimizations","date":"2016-04-26T21:25:58.296Z","type":"message"}
+{"nick":"rphillips","message":"that luvi passes all master luvit tests for me","date":"2016-04-26T21:26:07.824Z","type":"message"}
+{"nick":"creationix","message":"great","date":"2016-04-26T21:26:27.765Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:26:31.512Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#894 (fixes/bump_openssl_1_0_2g - a88e772 : Ryan Phillips): The build passed.","date":"2016-04-26T21:26:32.462Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/commit/a88e772f7779","date":"2016-04-26T21:26:32.632Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125950807","date":"2016-04-26T21:26:32.632Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:26:32.633Z","type":"part"}
+{"nick":"creationix","message":"so no need to update lua-openssl then?","date":"2016-04-26T21:26:42.855Z","type":"message"}
+{"nick":"rphillips","message":"correct","date":"2016-04-26T21:26:56.277Z","type":"message"}
+{"nick":"rphillips","message":"creationix: just want to make sure the window builder works","date":"2016-04-26T21:28:15.077Z","type":"message"}
+{"nick":"rphillips","message":"windows*","date":"2016-04-26T21:28:19.521Z","type":"message"}
+{"nick":"rphillips","message":"regular-asm worked on windows","date":"2016-04-26T21:28:36.233Z","type":"message"}
+{"nick":"rphillips","message":"last one https://ci.appveyor.com/project/racker-buildbot/luvi/build/1.0.708/job/excch5blt134w9wn","date":"2016-04-26T21:28:44.877Z","type":"message"}
+{"nick":"creationix","message":"tested on your macbook too right?","date":"2016-04-26T21:29:01.964Z","type":"message"}
+{"nick":"rphillips","message":"roger","date":"2016-04-26T21:30:07.544Z","type":"message"}
+{"nick":"rphillips","message":"creationix: wait one","date":"2016-04-26T21:30:23.274Z","type":"message"}
+{"nick":"rphillips","message":"it failed on the 32bit compile","date":"2016-04-26T21:30:27.224Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:43:25.013Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#896 (fixes/bump_openssl_1_0_2g - fead911 : Ryan Phillips): The build passed.","date":"2016-04-26T21:43:26.327Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/a88e772f7779...fead911d62b6","date":"2016-04-26T21:43:26.327Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125955107","date":"2016-04-26T21:43:26.327Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:43:26.327Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T21:52:11.141Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#898 (fixes/bump_openssl_1_0_2g - 1964644 : Ryan Phillips): The build passed.","date":"2016-04-26T21:52:12.147Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/fead911d62b6...1964644bf10d","date":"2016-04-26T21:52:12.318Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125956840","date":"2016-04-26T21:52:12.318Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T21:52:12.318Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:06:38.692Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#900 (fixes/bump_openssl_1_0_2g - ef3fae6 : Ryan Phillips): The build passed.","date":"2016-04-26T22:06:39.658Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/1964644bf10d...ef3fae64ac2d","date":"2016-04-26T22:06:39.828Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125959589","date":"2016-04-26T22:06:39.829Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:06:39.829Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:14:00.116Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#902 (fixes/bump_openssl_1_0_2g - 65e34b7 : Ryan Phillips): The build passed.","date":"2016-04-26T22:14:01.114Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/ef3fae64ac2d...65e34b77f61f","date":"2016-04-26T22:14:01.284Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125961537","date":"2016-04-26T22:14:01.285Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:14:01.285Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:22:33.426Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#904 (fixes/bump_openssl_1_0_2g - 7cf7bcd : Ryan Phillips): The build has errored.","date":"2016-04-26T22:22:34.480Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/65e34b77f61f...7cf7bcd665f8","date":"2016-04-26T22:22:34.650Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125963555","date":"2016-04-26T22:22:34.651Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:22:34.651Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:29:52.682Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#904 (fixes/bump_openssl_1_0_2g - 7cf7bcd : Ryan Phillips): The build passed.","date":"2016-04-26T22:29:53.698Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/65e34b77f61f...7cf7bcd665f8","date":"2016-04-26T22:29:53.869Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125963555","date":"2016-04-26T22:29:53.869Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:29:53.869Z","type":"part"}
+{"nick":"creationix","message":"rphillips, any idea what changed with asm on windows?","date":"2016-04-26T22:45:01.171Z","type":"message"}
+{"nick":"creationix","message":"appveyor environment or openssl?","date":"2016-04-26T22:45:09.251Z","type":"message"}
+{"nick":"rphillips","message":"openssl","date":"2016-04-26T22:45:14.090Z","type":"message"}
+{"nick":"rphillips","message":"it will require nasm for the assembler","date":"2016-04-26T22:45:21.152Z","type":"message"}
+{"nick":"rphillips","message":"1.0.2 says that is the only supported assembler","date":"2016-04-26T22:45:40.878Z","type":"message"}
+{"nick":"creationix","message":"btw, luvi 2.7.1 is done, I can start the builds again once you get nasm stable","date":"2016-04-26T22:45:58.329Z","type":"message"}
+{"nick":"rphillips","message":"i'm working through the different architectures","date":"2016-04-26T22:45:58.991Z","type":"message"}
+{"nick":"rphillips","message":"thanks","date":"2016-04-26T22:46:04.213Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:46:05.292Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#906 (fixes/bump_openssl_1_0_2g - f21a14c : Ryan Phillips): The build passed.","date":"2016-04-26T22:46:06.224Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/7cf7bcd665f8...f21a14c2e06b","date":"2016-04-26T22:46:06.394Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125969440","date":"2016-04-26T22:46:06.395Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:46:06.395Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:52:46.196Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#909 (fixes/bump_openssl_1_0_2g - 5dd3123 : Ryan Phillips): The build has errored.","date":"2016-04-26T22:52:47.199Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/f21a14c2e06b...5dd3123136d8","date":"2016-04-26T22:52:47.369Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125970962","date":"2016-04-26T22:52:47.369Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:52:47.369Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T22:55:56.222Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#910 (fixes/bump_openssl_1_0_2g - 5cafc69 : Ryan Phillips): The build passed.","date":"2016-04-26T22:55:57.260Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/5dd3123136d8...5cafc69c81f4","date":"2016-04-26T22:55:57.430Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125971201","date":"2016-04-26T22:55:57.430Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T22:55:57.430Z","type":"part"}
+{"nick":"creationix","message":"dinner time","date":"2016-04-26T23:05:45.753Z","type":"message"}
+{"nick":"creationix","message":"updated lit and luvit published","date":"2016-04-26T23:05:51.312Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T23:06:36.013Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2784 (master - 7520d33 : Tim Caswell): The build passed.","date":"2016-04-26T23:06:36.995Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/f5f9be0cced9...7520d33fe88d","date":"2016-04-26T23:06:37.165Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/125973071","date":"2016-04-26T23:06:37.165Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T23:06:37.165Z","type":"part"}
+{"nick":"creationix","message":"wohoo, memory leak fixed in luvit.io! https://luvit.io/stats https://luvit.io/snapshots","date":"2016-04-26T23:07:05.491Z","type":"message"}
+{"nick":"creationix","message":"and I assume in lit as well, we'll see what sam's charts say","date":"2016-04-26T23:07:16.309Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T23:07:29.680Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2785 (2.10.0 - 7520d33 : Tim Caswell): The build failed.","date":"2016-04-26T23:07:30.653Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/2.10.0","date":"2016-04-26T23:07:30.823Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/125973253","date":"2016-04-26T23:07:30.823Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T23:07:30.823Z","type":"part"}
+{"nick":"travis-ci","date":"2016-04-26T23:08:56.833Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvi#912 (fixes/bump_openssl_1_0_2g - 5670358 : Ryan Phillips): The build passed.","date":"2016-04-26T23:08:57.833Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvi/compare/5cafc69c81f4...5670358c9d0a","date":"2016-04-26T23:08:58.002Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvi/builds/125973332","date":"2016-04-26T23:08:58.003Z","type":"message"}
+{"nick":"travis-ci","date":"2016-04-26T23:08:58.003Z","type":"part"}
