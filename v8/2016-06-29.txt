@@ -1,0 +1,60 @@
+{"nick":"jugglinmike","reason":"Ping timeout: 260 seconds","date":"2016-06-29T00:00:02.669Z","type":"quit"}
+{"nick":"caitp","message":"oop, forgot to mention that part","date":"2016-06-29T00:08:34.023Z","type":"message"}
+{"nick":"jwolfe","message":"when i try running the octane benchmark repeatedly, i'm getting a variance of about 13%. doesn't that seem too unreliable? is my change even going to make a noticeable difference in that context?","date":"2016-06-29T00:08:53.388Z","type":"message"}
+{"nick":"jwolfe","message":"i'm guessing i should work on getting more stable results from the benchmark.","date":"2016-06-29T00:09:05.551Z","type":"message"}
+{"nick":"aklein","message":"yeah you're not going to notice your patch with that variance","date":"2016-06-29T00:09:43.604Z","type":"message"}
+{"nick":"aklein","message":"ideally you'd just run the CodeLoad sub-test","date":"2016-06-29T00:10:02.633Z","type":"message"}
+{"nick":"caitp","message":"a lot of things impact it, and you can minimize the variance to some degree","date":"2016-06-29T00:10:17.572Z","type":"message"}
+{"nick":"caitp","message":"eg by using ramfs and fully loaded scripts to minimize i/o latency","date":"2016-06-29T00:11:10.979Z","type":"message"}
+{"nick":"jwolfe","message":"well, i don't know what to do about this. should i give up on this experiment and just commit my patch?","date":"2016-06-29T00:15:17.911Z","type":"message"}
+{"nick":"aklein","message":"jwolfe: if you check it out from https://github.com/chromium/octane it might not be too hard to comment out the non-CodeLoad bits; that's analogous to what I do locally","date":"2016-06-29T00:17:28.517Z","type":"message"}
+{"nick":"aklein","message":"basically you comment out the bits of https://github.com/chromium/octane/blob/master/run.js you don't want to run","date":"2016-06-29T00:17:43.396Z","type":"message"}
+{"nick":"jwolfe","message":"alright, i'll try that.","date":"2016-06-29T00:17:54.902Z","type":"message"}
+{"nick":"jwolfe","message":"and then do i run some kind of local web server, like python -m SimpleHTTPServer, or do i use file: urls?","date":"2016-06-29T00:18:27.522Z","type":"message"}
+{"nick":"aklein","message":"I suspect you'll need SimpleHTTPServer or the like to allow loading files","date":"2016-06-29T00:21:25.940Z","type":"message"}
+{"nick":"caitp","message":"jwolfe: fwiw, I think it's okay if you commit the patch","date":"2016-06-29T00:30:56.975Z","type":"message"}
+{"nick":"caitp","message":"if the perf hit is _that_ bad, we can always revert it and try a different approach","date":"2016-06-29T00:31:12.654Z","type":"message"}
+{"nick":"caitp","message":"but it's nice to have at least a rough idea","date":"2016-06-29T00:31:21.457Z","type":"message"}
+{"nick":"caitp","message":"if it looks good to adam, I think you should go for it","date":"2016-06-29T00:32:09.220Z","type":"message"}
+{"nick":"jwolfe","message":"aklein, fwiw it was index.html's <script> includes i had to comment out, not the list in run.js.","date":"2016-06-29T00:34:03.392Z","type":"message"}
+{"nick":"aklein","message":"yeah, I'd do this in parallel with committing fwiw","date":"2016-06-29T00:40:06.230Z","type":"message"}
+{"nick":"aklein","message":"jwolfe: ah, makes sense","date":"2016-06-29T00:40:14.655Z","type":"message"}
+{"nick":"jwolfe","message":"i'm getting even worse variance with just CodeLoad on a local checkout >_< 24%. i don't think my dev environment is the proper place to run performance tests.","date":"2016-06-29T00:40:56.505Z","type":"message"}
+{"nick":"jwolfe","message":"i'm just going to commit.","date":"2016-06-29T00:41:18.727Z","type":"message"}
+{"nick":"caitp","message":"jwolfe: I could probably try it out","date":"2016-06-29T00:43:37.267Z","type":"message"}
+{"nick":"jwolfe","message":"caitp, be my guest. i'm working on getting git and git cl to agree on what a rebase means...","date":"2016-06-29T00:44:01.439Z","type":"message"}
+{"nick":"caitp","message":"I didn't know git cl rebase was a thing","date":"2016-06-29T00:44:26.239Z","type":"message"}
+{"nick":"caitp","message":"huh","date":"2016-06-29T00:44:27.384Z","type":"message"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2016-06-29T00:47:24.288Z","type":"quit"}
+{"nick":"jwolfe","message":"caitp, i just mean getting git cl upload to not think that a rebase/merge is a change to a bunch of unrelated files.","date":"2016-06-29T01:07:42.772Z","type":"message"}
+{"nick":"jwolfe","message":"i think where i'm getting stuck is if i start with a merge, and then do a rebase, everything's broken. if i start with a rebase, then it seems to work.","date":"2016-06-29T01:08:13.429Z","type":"message"}
+{"nick":"caitp","message":"do you mean how after a rebase, changes that aren't yours show up in the rietveld CL?","date":"2016-06-29T01:08:50.961Z","type":"message"}
+{"nick":"caitp","message":"or something else?","date":"2016-06-29T01:09:06.884Z","type":"message"}
+{"nick":"jwolfe","message":"yeah, that kind of thing.","date":"2016-06-29T01:09:21.372Z","type":"message"}
+{"nick":"jwolfe","message":"i don't know how git cl upload finds the base of the changes to start the diff.","date":"2016-06-29T01:09:42.829Z","type":"message"}
+{"nick":"caitp","message":"unfortunately, i don't think there's really a fix for that","date":"2016-06-29T01:10:04.980Z","type":"message"}
+{"nick":"jwolfe","message":"does anyone know how `git cl upload` finds the commit in your history that is out of scope for the change? does it go based on author? based on origin/master?","date":"2016-06-29T01:12:00.377Z","type":"message"}
+{"nick":"jwolfe","message":"i think the key is that your history should be linear from a single commit that's in origin/master. if there's a merge commit with a fork in the timeline, then `git cl upload` will probably do the wrong thing. in other words: rebase; don't merge.","date":"2016-06-29T01:15:03.443Z","type":"message"}
+{"nick":"caitp","message":"jwolfe: it actually looks like it bases it on the upstream branch","date":"2016-06-29T01:17:58.594Z","type":"message"}
+{"nick":"caitp","message":"which is probably origin/master for you here","date":"2016-06-29T01:18:00.515Z","type":"message"}
+{"nick":"caitp","message":"that may not be quite right, but it's worth a shot","date":"2016-06-29T01:18:48.651Z","type":"message"}
+{"nick":"caitp","message":"(based on the call to GetChange() in CMDUpload in git-cl.py)","date":"2016-06-29T01:20:27.613Z","type":"message"}
+{"nick":"caitp","message":"jwolfe: based on 10 runs of ToT vs 10 runs with your patch applied, I'm seeing a 1.3% regression on CodeLoad (across the geometric mean of the runs)","date":"2016-06-29T01:42:18.575Z","type":"message"}
+{"nick":"caitp","message":"but looking at each run individually, it looks almost perf neutral","date":"2016-06-29T01:42:33.231Z","type":"message"}
+{"nick":"caitp","message":"also, the best-case score for both patched vs unpatched remains the same, while the worst case across the 10 runs is nearly 3% worse in the patched version","date":"2016-06-29T01:43:12.374Z","type":"message"}
+{"nick":"caitp","message":"but this could be attributed to other factors","date":"2016-06-29T01:43:17.922Z","type":"message"}
+{"nick":"caitp","message":"really need more runs to get any statistically significant info","date":"2016-06-29T01:43:30.637Z","type":"message"}
+{"nick":"caitp","message":"I think it's unlikely to be more of a regression than async arrow functions","date":"2016-06-29T01:44:17.631Z","type":"message"}
+{"nick":"caitp","message":"I'm curious if it does any better with the alternative strategy though","date":"2016-06-29T01:48:14.727Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-06-29T01:59:59.604Z","type":"quit"}
+{"nick":"sin8h","date":"2016-06-29T02:49:18.462Z","type":"join"}
+{"nick":"fairfieldt","date":"2016-06-29T02:49:48.199Z","type":"join"}
+{"nick":"fairfieldt","date":"2016-06-29T02:49:59.217Z","type":"part"}
+{"nick":"plutoniix","date":"2016-06-29T05:06:51.543Z","type":"join"}
+{"nick":"plutoniix","reason":"Max SendQ exceeded","date":"2016-06-29T05:06:54.374Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"Check\" on http://build.chromium.org/p/client.v8/builders/V8%20Linux64/builds/10997 \"V8 Linux64\" from 33452e7a052b98481118a26d0d8225591509ed79: machenbach@chromium.org)","date":"2016-06-29T07:22:56.712Z","type":"message"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by machenbach@chromium.org: closed - fixing","date":"2016-06-29T07:26:59.564Z","type":"message"}
+{"nick":"davi","date":"2016-06-29T07:27:25.627Z","type":"join"}
+{"nick":"davi","reason":"Ping timeout: 260 seconds","date":"2016-06-29T07:34:49.464Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by machenbach@chromium.org: open","date":"2016-06-29T07:37:03.992Z","type":"message"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: Tree is closed (Automatic: \"Check\" on http://build.chromium.org/p/client.v8/builders/V8%20Linux%20-%20nosnap%20-%20debug/builds/7618 \"V8 Linux - nosnap - debug\" from 33452e7a052b98481118a26d0d8225591509ed79: machenbach@chromium.org)","date":"2016-06-29T07:42:06.338Z","type":"message"}
