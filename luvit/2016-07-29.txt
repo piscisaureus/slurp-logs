@@ -85,3 +85,166 @@
 {"nick":"rphillips","message":"nice","date":"2016-07-29T15:53:16.965Z","type":"message"}
 {"nick":"creationix","message":"now I'm trying to run just that one test to narrow it down","date":"2016-07-29T15:53:34.835Z","type":"message"}
 {"nick":"creationix","message":"nevermind, test-check is the first one run it seems, now to uncommit the commit in question and get a pair of dumps to compare","date":"2016-07-29T15:55:31.758Z","type":"message"}
+{"nick":"creationix","message":"rphillips reverting the commit in question didn't make the error go away.  Now trying a clean build","date":"2016-07-29T16:00:26.884Z","type":"message"}
+{"nick":"creationix","message":"this is how I got the trace working.  https://gist.github.com/creationix/e597b67b87bbe1a91a4ef349486c90eb","date":"2016-07-29T16:01:22.044Z","type":"message"}
+{"nick":"creationix","message":"after copying the dump file into the agent's deps folder","date":"2016-07-29T16:01:53.454Z","type":"message"}
+{"nick":"creationix","message":"hmm, still crashing with commit reverted","date":"2016-07-29T16:03:17.852Z","type":"message"}
+{"nick":"creationix","message":"(the bug is still reproducing)","date":"2016-07-29T16:03:30.169Z","type":"message"}
+{"nick":"creationix","message":"I even undid the submodule bump all the way back and it's still reproducing","date":"2016-07-29T16:05:42.533Z","type":"message"}
+{"nick":"cat5e","message":"that doesn't sound right...","date":"2016-07-29T16:06:15.180Z","type":"message"}
+{"nick":"creationix","message":"now trying master in the luvi fork, that was working for me before","date":"2016-07-29T16:09:41.830Z","type":"message"}
+{"nick":"creationix","message":"ok, that passes","date":"2016-07-29T16:10:11.262Z","type":"message"}
+{"nick":"creationix","message":"I think the bug isn't in luajit","date":"2016-07-29T16:16:16.040Z","type":"message"}
+{"nick":"creationix","message":"rphillips, doing a clean build of virgo/luvi passes as expected.  But updating only luajit to latest v2.1 still passes","date":"2016-07-29T16:16:44.336Z","type":"message"}
+{"nick":"creationix","message":"so I'm thinking the bug is in luv","date":"2016-07-29T16:17:01.041Z","type":"message"}
+{"nick":"rphillips","message":"hmm","date":"2016-07-29T16:17:07.299Z","type":"message"}
+{"nick":"creationix","message":"we also updated libuv","date":"2016-07-29T16:17:42.076Z","type":"message"}
+{"nick":"creationix","message":"from d989902ac658b4323a4f4020446e6f4dc449e25c to 229b3a4cc150aebd6561e6bd43076eafa7a03756","date":"2016-07-29T16:17:58.205Z","type":"message"}
+{"nick":"creationix","message":"looks like v1.9.0 to v1.9.1","date":"2016-07-29T16:18:30.397Z","type":"message"}
+{"nick":"creationix","message":"trying now with just libuv and luajit updated, but luv left as-is","date":"2016-07-29T16:19:02.099Z","type":"message"}
+{"nick":"creationix","message":"and that breaks it","date":"2016-07-29T16:20:24.731Z","type":"message"}
+{"nick":"creationix","message":"I guess time to bisect libuv","date":"2016-07-29T16:20:53.915Z","type":"message"}
+{"nick":"Harageth","date":"2016-07-29T16:21:22.717Z","type":"join"}
+{"nick":"cat5e","message":"creationix, what happens if you just update libuv?","date":"2016-07-29T16:25:43.384Z","type":"message"}
+{"nick":"creationix","message":"cat5e you mean update libuv, but not luajit?","date":"2016-07-29T16:26:16.298Z","type":"message"}
+{"nick":"cat5e","message":"yeah","date":"2016-07-29T16:26:25.864Z","type":"message"}
+{"nick":"creationix","message":"I could try that later","date":"2016-07-29T16:26:32.034Z","type":"message"}
+{"nick":"creationix","message":"hmm, all the commits are failing in this bisect, perhaps it's not libuv after all.  The bug is just not reliable","date":"2016-07-29T16:32:48.638Z","type":"message"}
+{"nick":"creationix","message":"bisect blames this one https://github.com/libuv/libuv/commit/4b444d3fbc4d588834b6089d401587dd0a8e85ee","date":"2016-07-29T16:34:00.939Z","type":"message"}
+{"nick":"creationix","message":"that's the first commit after the v1.9.0 tag that I told it was good","date":"2016-07-29T16:34:16.307Z","type":"message"}
+{"nick":"SkyRocknRoll","date":"2016-07-29T16:38:12.992Z","type":"join"}
+{"nick":"creationix","message":"ok, updating just libuv, but not luajit doesn't reproduce the error","date":"2016-07-29T16:40:17.023Z","type":"message"}
+{"nick":"cat5e","message":"creationix, welp","date":"2016-07-29T16:40:24.142Z","type":"message"}
+{"nick":"cat5e","message":"I feel sorry for you","date":"2016-07-29T16:40:30.745Z","type":"message"}
+{"nick":"creationix","message":"I'm pretty sure the bug is in luv itself","date":"2016-07-29T16:40:34.225Z","type":"message"}
+{"nick":"cat5e","message":"creationix, how?","date":"2016-07-29T16:40:55.957Z","type":"message"}
+{"nick":"cat5e","message":"does luv fiddle with luajit internals?","date":"2016-07-29T16:41:07.845Z","type":"message"}
+{"nick":"creationix","message":"updating luajit alone didn't do it, updating libuv alone didn't","date":"2016-07-29T16:41:11.956Z","type":"message"}
+{"nick":"creationix","message":"but when I was testing both, luv was also updated somehow","date":"2016-07-29T16:41:21.656Z","type":"message"}
+{"nick":"cat5e","message":"ah","date":"2016-07-29T16:41:47.539Z","type":"message"}
+{"nick":"creationix","message":"now trying with old luv and new libuv and luajit","date":"2016-07-29T16:42:30.273Z","type":"message"}
+{"nick":"creationix","message":"all passed","date":"2016-07-29T16:43:39.641Z","type":"message"}
+{"nick":"creationix","message":"I'm not bisecting luv itself","date":"2016-07-29T16:45:44.112Z","type":"message"}
+{"nick":"creationix","message":"I'm keeping the new versions of luajit and libuv","date":"2016-07-29T16:46:12.904Z","type":"message"}
+{"nick":"creationix","message":"hmm, maybe not, that causes build issues","date":"2016-07-29T16:46:39.969Z","type":"message"}
+{"nick":"creationix","message":"rphillips: found it, sort of https://github.com/luvit/luv/commit/36a80080f46bbf614008edd957890a58aeb97f46","date":"2016-07-29T16:54:03.790Z","type":"message"}
+{"nick":"creationix","message":"I think the issue is much older, but this commit added stronger error checking","date":"2016-07-29T16:54:16.260Z","type":"message"}
+{"nick":"creationix","message":"so basically your timer's handle is NULL and has been for some time, but this commit causes it to fail the type check and crash instead of the previous undefined behavior","date":"2016-07-29T16:55:16.402Z","type":"message"}
+{"nick":"rphillips","message":"interesting","date":"2016-07-29T16:56:56.969Z","type":"message"}
+{"nick":"creationix","message":"so what to do.  I don't really want to revert my check and go back to undefined behavior","date":"2016-07-29T16:59:10.669Z","type":"message"}
+{"nick":"creationix","message":"I guess reduce the test case and continue looking for the root cause?","date":"2016-07-29T17:01:39.877Z","type":"message"}
+{"nick":"rphillips","message":"perhaps... i'm looking at the commit","date":"2016-07-29T17:04:35.347Z","type":"message"}
+{"nick":"creationix","message":"I just asked the neovim people since they were seeing a similar issue (the reason I added the guard)","date":"2016-07-29T17:04:55.304Z","type":"message"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-07-29T17:05:57.917Z","type":"quit"}
+{"nick":"Harageth","date":"2016-07-29T17:06:33.994Z","type":"join"}
+{"nick":"creationix","message":"hmm, actually the previous behavior isn't that undefined, it should have segfaulted","date":"2016-07-29T17:08:33.461Z","type":"message"}
+{"nick":"creationix","message":"nope, it's undefined, is_closing never dereferences ->data like most do","date":"2016-07-29T17:20:23.127Z","type":"message"}
+{"nick":"creationix","message":"so I'm pretty sure this is what's causing ->data to be NULL https://github.com/luvit/luv/blob/master/src/handle.c#L80","date":"2016-07-29T18:08:41.655Z","type":"message"}
+{"nick":"creationix","message":"so it sounds like we're trying to use an already closed timer","date":"2016-07-29T18:08:54.864Z","type":"message"}
+{"nick":"creationix","message":"I wonder if I can tweak the type check code to not fail a valid handle that's been closed","date":"2016-07-29T18:09:20.657Z","type":"message"}
+{"nick":"creationix","message":"rphillips, so this workaround seems to work for the failing test.  I need to go back and remember why I nulled out the data property.  I suspect it's because that pointer is no longer valid and we don't want dangling pointers.","date":"2016-07-29T18:19:05.743Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luv/pull/243","date":"2016-07-29T18:19:06.499Z","type":"message"}
+{"nick":"rphillips","message":"perhaps it should bit *(handle->data) = NULL","date":"2016-07-29T18:20:01.377Z","type":"message"}
+{"nick":"rphillips","message":"be*","date":"2016-07-29T18:20:03.002Z","type":"message"}
+{"nick":"rphillips","message":"?","date":"2016-07-29T18:20:05.088Z","type":"message"}
+{"nick":"creationix","message":"no, the code works, it NULLs out the field as designed","date":"2016-07-29T18:20:58.675Z","type":"message"}
+{"nick":"creationix","message":"the problem is a design issue","date":"2016-07-29T18:21:01.547Z","type":"message"}
+{"nick":"creationix","message":"lua still can have references to libuv types that have been closed.","date":"2016-07-29T18:21:26.088Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T18:21:33.739Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#281 (closed-handles-typecheck - 814f91c : Tim Caswell): The build passed.","date":"2016-07-29T18:21:34.763Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/commit/814f91c9d89d","date":"2016-07-29T18:21:34.818Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148383307","date":"2016-07-29T18:21:34.818Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T18:21:34.818Z","type":"part"}
+{"nick":"rphillips","message":"ah gotcha","date":"2016-07-29T18:21:50.870Z","type":"message"}
+{"nick":"creationix","message":"and it should probably be NULLed out since it's now a dangling pointer and lua can still reference the uv_handle","date":"2016-07-29T18:22:37.256Z","type":"message"}
+{"nick":"creationix","message":"but so much code assumes if it's a handle, it also has a luv_handle","date":"2016-07-29T18:22:53.470Z","type":"message"}
+{"nick":"creationix","message":"maybe I just need to not clean out the luv_handle till it's GCed by lua","date":"2016-07-29T18:23:09.425Z","type":"message"}
+{"nick":"creationix","message":"handle is a uv_handle_t subclass allocated as userdata on the lua heap","date":"2016-07-29T18:23:41.935Z","type":"message"}
+{"nick":"creationix","message":"handle->data is a luv_handle_t allocated in C using malloc","date":"2016-07-29T18:23:51.920Z","type":"message"}
+{"nick":"creationix","message":"sometimes there is also handle->data->extra that's allocated in C using malloc","date":"2016-07-29T18:24:01.593Z","type":"message"}
+{"nick":"creationix","message":"rphillips. I think this fixes it properly.  I'm going to run it through all the tests to make sure.","date":"2016-07-29T19:07:29.424Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luv/pull/243/files","date":"2016-07-29T19:07:30.293Z","type":"message"}
+{"nick":"creationix","message":"It does affect memory usage a little.  Now we never free luv_handle_t instances till after the parent uv_handle_t userdata is being garbage collected","date":"2016-07-29T19:08:45.137Z","type":"message"}
+{"nick":"creationix","message":"so programs that leak references to the userdata will never free the luv_handles either","date":"2016-07-29T19:09:00.840Z","type":"message"}
+{"nick":"creationix","message":"should be a problem for well behaving programs though","date":"2016-07-29T19:09:11.206Z","type":"message"}
+{"nick":"rphillips","message":"creationix: i don't think you need to if statements","date":"2016-07-29T19:10:21.202Z","type":"message"}
+{"nick":"rphillips","message":"free can handle a NULL","date":"2016-07-29T19:10:25.668Z","type":"message"}
+{"nick":"rphillips","message":"s/to//","date":"2016-07-29T19:10:31.725Z","type":"message"}
+{"nick":"creationix","message":"true","date":"2016-07-29T19:10:34.746Z","type":"message"}
+{"nick":"creationix","message":"better https://github.com/luvit/luv/pull/243/commits/1238696035654a509d58de2ec6492f4fe05dae06","date":"2016-07-29T19:11:35.168Z","type":"message"}
+{"nick":"creationix","message":"hmm, I don't think I need to free(handle) either","date":"2016-07-29T19:12:41.672Z","type":"message"}
+{"nick":"creationix","message":"if that is the userdata, lua will free it for me right?  But if that were true, I would get double-free errors","date":"2016-07-29T19:13:02.826Z","type":"message"}
+{"nick":"rphillips","message":"that is true","date":"2016-07-29T19:13:10.689Z","type":"message"}
+{"nick":"rphillips","message":"i think the gc frees the userdata","date":"2016-07-29T19:13:20.707Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T19:13:59.371Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#283 (closed-handles-typecheck - dee2415 : Tim Caswell): The build has errored.","date":"2016-07-29T19:14:00.396Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/814f91c9d89d...dee2415aa993","date":"2016-07-29T19:14:00.450Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148400241","date":"2016-07-29T19:14:00.451Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T19:14:00.451Z","type":"part"}
+{"nick":"cat5e","message":"can luvit run the lua test suite?","date":"2016-07-29T19:16:43.334Z","type":"message"}
+{"nick":"creationix","message":"cat5e why would it want to?  I assume luajit implements lua correctly","date":"2016-07-29T19:17:08.550Z","type":"message"}
+{"nick":"creationix","message":"rphillips, hmm, the lots-o-timers leak test is failing","date":"2016-07-29T19:17:32.288Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T19:18:31.231Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#284 (closed-handles-typecheck - 1238696 : Tim Caswell): The build was broken.","date":"2016-07-29T19:18:32.175Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/dee2415aa993...123869603565","date":"2016-07-29T19:18:32.272Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148401969","date":"2016-07-29T19:18:32.326Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T19:18:32.326Z","type":"part"}
+{"nick":"cat5e","message":"creationix, lua test suite does GC etc stress-testing","date":"2016-07-29T19:18:48.941Z","type":"message"}
+{"nick":"cat5e","message":"idk if luajit has a similar test suite","date":"2016-07-29T19:19:02.815Z","type":"message"}
+{"nick":"creationix","message":"right, but for lua itself, not for my luv bindings","date":"2016-07-29T19:19:10.220Z","type":"message"}
+{"nick":"creationix","message":"I'm trusting the GC works, I'm interested in testing to see if my bindings leak","date":"2016-07-29T19:19:45.226Z","type":"message"}
+{"nick":"cat5e","message":"creationix, it can also stress-test require etc","date":"2016-07-29T19:20:48.490Z","type":"message"}
+{"nick":"creationix","message":"rphillips I wonder why lots-o-timers is the only leak test that fails.  It just creates and then closes lots of timers","date":"2016-07-29T19:22:01.196Z","type":"message"}
+{"nick":"rphillips","message":"does it crash out, so we can get a backtrace?","date":"2016-07-29T19:22:30.271Z","type":"message"}
+{"nick":"creationix","message":"no, I think it's just going too fast to let the GC catch anything","date":"2016-07-29T19:25:59.109Z","type":"message"}
+{"nick":"creationix","message":"if I add a uv.run() after closing each timer, it doesn't leak","date":"2016-07-29T19:26:11.435Z","type":"message"}
+{"nick":"creationix","message":"since we deferred the cleanup till GC, it must not be happening till a later tick than before","date":"2016-07-29T19:26:36.849Z","type":"message"}
+{"nick":"creationix","message":"or I can just call collectgarbage twice to get finalizers","date":"2016-07-29T19:27:46.013Z","type":"message"}
+{"nick":"creationix","message":"that seems a more portable solution","date":"2016-07-29T19:27:53.324Z","type":"message"}
+{"nick":"creationix","message":"which explains why it passed on lua 5.2, but failed on luajit and 5.3, they have two-phase GCs","date":"2016-07-29T19:28:23.126Z","type":"message"}
+{"nick":"cat5e","message":"creationix, you should call it 4 times to be safe","date":"2016-07-29T19:30:09.955Z","type":"message"}
+{"nick":"cat5e","message":"(LJ 3.x is gonna have a 4-pass GC or something)","date":"2016-07-29T19:30:43.071Z","type":"message"}
+{"nick":"creationix","message":"hmm, still leaking","date":"2016-07-29T19:32:58.226Z","type":"message"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-07-29T19:36:42.078Z","type":"quit"}
+{"nick":"rgrinberg","reason":"Ping timeout: 250 seconds","date":"2016-07-29T19:41:59.391Z","type":"quit"}
+{"nick":"rphillips","message":"creationix: vidyo, my room?","date":"2016-07-29T19:51:07.660Z","type":"message"}
+{"nick":"creationix","message":"sure","date":"2016-07-29T19:52:55.115Z","type":"message"}
+{"nick":"creationix","message":"rphillips &","date":"2016-07-29T19:52:57.775Z","type":"message"}
+{"nick":"creationix","message":"^","date":"2016-07-29T19:52:59.343Z","type":"message"}
+{"nick":"Harageth","date":"2016-07-29T20:00:20.316Z","type":"join"}
+{"nick":"Harageth","reason":"Ping timeout: 258 seconds","date":"2016-07-29T20:04:56.160Z","type":"quit"}
+{"nick":"travis-ci","date":"2016-07-29T20:15:35.733Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#285 (closed-handles-typecheck - c872abf : Tim Caswell): The build is still failing.","date":"2016-07-29T20:15:36.695Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/123869603565...c872abfb17f3","date":"2016-07-29T20:15:36.750Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148417143","date":"2016-07-29T20:15:36.750Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T20:15:36.750Z","type":"part"}
+{"nick":"travis-ci","date":"2016-07-29T20:21:10.302Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#286 (master - 2de9229 : Tim Caswell): The build failed.","date":"2016-07-29T20:21:11.301Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/30010c081930...2de9229517ca","date":"2016-07-29T20:21:12.312Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148418280","date":"2016-07-29T20:21:13.328Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T20:21:14.321Z","type":"part"}
+{"nick":"creationix","message":"found the reason for the close","date":"2016-07-29T20:22:58.707Z","type":"message"}
+{"nick":"creationix","message":"I think it's related to spawn","date":"2016-07-29T20:23:48.659Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/luv/blob/master/src/process.c#L229-L235","date":"2016-07-29T20:25:22.830Z","type":"message"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2016-07-29T20:46:47.571Z","type":"quit"}
+{"nick":"Harageth","date":"2016-07-29T21:01:50.029Z","type":"join"}
+{"nick":"creationix","message":"yay, builds are passing now","date":"2016-07-29T21:03:19.606Z","type":"message"}
+{"nick":"creationix","message":"not sure why we have that edge case for spawn, but I'm not digging into it today.  One fix at a time","date":"2016-07-29T21:03:41.447Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T21:04:36.744Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luv#287 (master - 1dfdd82 : Tim Caswell): The build was fixed.","date":"2016-07-29T21:04:37.757Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luv/compare/2de9229517ca...1dfdd82706d1","date":"2016-07-29T21:04:37.812Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luv/builds/148427706","date":"2016-07-29T21:04:37.812Z","type":"message"}
+{"nick":"travis-ci","date":"2016-07-29T21:04:37.812Z","type":"part"}
+{"nick":"Harageth","reason":"Ping timeout: 250 seconds","date":"2016-07-29T21:06:23.009Z","type":"quit"}
+{"nick":"Harageth","date":"2016-07-29T21:28:58.798Z","type":"join"}
+{"nick":"rgrinberg","date":"2016-07-29T21:40:30.108Z","type":"join"}
+{"nick":"Harageth","reason":"Remote host closed the connection","date":"2016-07-29T22:11:08.012Z","type":"quit"}
+{"nick":"Harageth","date":"2016-07-29T22:12:36.243Z","type":"join"}
+{"nick":"rendar","reason":"Ping timeout: 276 seconds","date":"2016-07-29T22:20:09.414Z","type":"quit"}
+{"nick":"Harageth","message":"creationix did I see earlier that you might have pinned down what that bug we saw yesterday was?","date":"2016-07-29T22:31:03.790Z","type":"message"}
+{"nick":"creationix","message":"Harageth yep","date":"2016-07-29T22:32:26.993Z","type":"message"}
+{"nick":"creationix","message":"so we should do a release on Monday","date":"2016-07-29T22:32:31.752Z","type":"message"}
+{"nick":"Harageth","message":"ok cool. rphillips and I got through quite a bit of my documentation for deploying yesterday so hopefully that will go more smoothly!","date":"2016-07-29T22:33:17.667Z","type":"message"}
+{"nick":"Harageth","message":"and hopefully oncall will be as smooth as this week","date":"2016-07-29T22:33:38.528Z","type":"message"}
+{"nick":"rgrinberg","reason":"Ping timeout: 244 seconds","date":"2016-07-29T23:00:41.032Z","type":"quit"}
+{"nick":"rgrinberg","date":"2016-07-29T23:15:08.010Z","type":"join"}
