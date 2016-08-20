@@ -72,3 +72,99 @@
 {"nick":"urzds","message":"... put before \"date\"","date":"2016-08-19T15:52:36.098Z","type":"message"}
 {"nick":"urzds","message":"It even works if I require \"..../date\".","date":"2016-08-19T15:56:04.137Z","type":"message"}
 {"nick":"urzds","message":"Literally. Four dots.","date":"2016-08-19T15:56:15.272Z","type":"message"}
+{"nick":"urzds","message":"creationix: Is that somehow expected, or did I mess something up?","date":"2016-08-19T16:00:13.129Z","type":"message"}
+{"nick":"creationix","message":"that's strange","date":"2016-08-19T16:02:07.504Z","type":"message"}
+{"nick":"creationix","message":"which require are you using?","date":"2016-08-19T16:02:11.940Z","type":"message"}
+{"nick":"urzds","message":"The default require that I get in luvit...","date":"2016-08-19T16:02:21.978Z","type":"message"}
+{"nick":"creationix","message":"weird","date":"2016-08-19T16:02:26.502Z","type":"message"}
+{"nick":"urzds","message":"This is the code: https://github.com/urzds/luvit-date","date":"2016-08-19T16:02:44.140Z","type":"message"}
+{"nick":"urzds","message":"# mv libs/date.lua .","date":"2016-08-19T16:03:25.076Z","type":"message"}
+{"nick":"creationix","message":"looks like a bug in require","date":"2016-08-19T16:03:30.928Z","type":"message"}
+{"nick":"urzds","message":"And put the contents of package.lua into date.lua, and then you have the exact same state as I have.","date":"2016-08-19T16:03:47.137Z","type":"message"}
+{"nick":"creationix","message":"or lua's require is doing something funly","date":"2016-08-19T16:04:17.358Z","type":"message"}
+{"nick":"urzds","message":"LUA_PATH=\"${HOME}/.luarocks/share/lua/5.1/?.lua;${HOME}/.luarocks/share/lua/5.1/?/init.lua;${HOME}/.local/share/lua/5.1/?.lua;${HOME}/.local/share/lua/5.1/?/init.lua;./?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua;/usr/local/lib/lua/5.1/?.lua;/usr/local/lib/lua/5.1/?/init.lua;/usr/share/lua/5.1/?.lua;/usr/share/lua/5.1/?/init.lua\"","date":"2016-08-19T16:04:42.238Z","type":"message"}
+{"nick":"creationix","message":"change date to something wrong and look at the stack trace","date":"2016-08-19T16:04:45.378Z","type":"message"}
+{"nick":"creationix","message":"require('..../date2'), for example","date":"2016-08-19T16:04:57.319Z","type":"message"}
+{"nick":"urzds","message":"Then it starts to look into this location, e.g. $HOME/.luarocks/share/lua/5.1////////////datex.lua","date":"2016-08-19T16:05:28.210Z","type":"message"}
+{"nick":"creationix","message":"yep, it's stripping the leading dots","date":"2016-08-19T16:05:48.322Z","type":"message"}
+{"nick":"creationix","message":"that's why 4 works","date":"2016-08-19T16:05:52.074Z","type":"message"}
+{"nick":"creationix","message":"those \"no file\" lines in the stack trace are from native require","date":"2016-08-19T16:06:06.988Z","type":"message"}
+{"nick":"urzds","message":"It replaces dots by /","date":"2016-08-19T16:06:08.373Z","type":"message"}
+{"nick":"creationix","message":"and luvit currently doesn't use it, but only as a fallback if it can't find the module","date":"2016-08-19T16:06:19.598Z","type":"message"}
+{"nick":"urzds","message":"Ah, I get it.","date":"2016-08-19T16:06:35.844Z","type":"message"}
+{"nick":"creationix","message":"I've switched everything else over to the lit-loader require system that just adds a new loader to native require, but it would be a breaking change to do it for luvit","date":"2016-08-19T16:06:47.437Z","type":"message"}
+{"nick":"creationix","message":"the semantics are slightly different","date":"2016-08-19T16:06:53.427Z","type":"message"}
+{"nick":"urzds","message":"So I can require\"foo.bar\" and get foo/bar.lua","date":"2016-08-19T16:06:53.866Z","type":"message"}
+{"nick":"urzds","message":"What is \"everything else\"?","date":"2016-08-19T16:07:14.707Z","type":"message"}
+{"nick":"creationix","message":"right, just be aware of the limitations of luvit's native require.  Those paths are relative to cwd, not the file calling require","date":"2016-08-19T16:07:19.613Z","type":"message"}
+{"nick":"creationix","message":"lit itself and all the projects I make with luvit","date":"2016-08-19T16:07:28.835Z","type":"message"}
+{"nick":"creationix","message":"^ (those are everything else)","date":"2016-08-19T16:07:41.010Z","type":"message"}
+{"nick":"creationix","message":"here is the require system for lit https://github.com/luvit/lit/blob/master/luvit-loader.lua","date":"2016-08-19T16:08:04.803Z","type":"message"}
+{"nick":"urzds","message":"So can I make my lib use that lit-loader and it will be more sane?","date":"2016-08-19T16:08:08.649Z","type":"message"}
+{"nick":"creationix","message":"it's just a plugin into native lua require","date":"2016-08-19T16:08:09.850Z","type":"message"}
+{"nick":"creationix","message":"yes, but if you're still using `luvit` the CLI tool to run your program, then luvit's require will still get injected","date":"2016-08-19T16:08:38.659Z","type":"message"}
+{"nick":"creationix","message":"though someone has made a version of the luvit cli tool that removes all the opinoins","date":"2016-08-19T16:08:53.612Z","type":"message"}
+{"nick":"creationix","message":"it's really nice and clean","date":"2016-08-19T16:08:57.451Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/squeek502/luver","date":"2016-08-19T16:09:49.130Z","type":"message"}
+{"nick":"creationix","message":"the `luvit` cli tool is legacy, it's the node.js clone","date":"2016-08-19T16:09:59.227Z","type":"message"}
+{"nick":"creationix","message":"I'm just not sure how to rename things since the project itself is called \"luvit\"","date":"2016-08-19T16:10:12.142Z","type":"message"}
+{"nick":"creationix","message":"notice that he uses luvit-loader instead of the node-clone require in luvit https://github.com/squeek502/luver/blob/master/deps/luvit-loader.lua","date":"2016-08-19T16:10:43.798Z","type":"message"}
+{"nick":"creationix","message":"he's not done with it yet and so it's not published to lit, but you can build it directly from github","date":"2016-08-19T16:12:54.660Z","type":"message"}
+{"nick":"creationix","message":"lit make github://squeek502/luver","date":"2016-08-19T16:12:55.448Z","type":"message"}
+{"nick":"creationix","message":"then `./luver yourapp/entry.lua`","date":"2016-08-19T16:13:12.602Z","type":"message"}
+{"nick":"urzds","message":"luvit is legacy? I thought the whole point of luvit was to have a node.js clone?","date":"2016-08-19T16:13:41.123Z","type":"message"}
+{"nick":"creationix","message":"it was","date":"2016-08-19T16:15:40.866Z","type":"message"}
+{"nick":"creationix","message":"but after 5 years there was virtually no interest in a node clone in lua","date":"2016-08-19T16:16:02.187Z","type":"message"}
+{"nick":"creationix","message":"but there is a lot more interest in something node-like, but adapter for lua's strengths","date":"2016-08-19T16:16:17.745Z","type":"message"}
+{"nick":"creationix","message":"*adapted","date":"2016-08-19T16:16:23.661Z","type":"message"}
+{"nick":"urzds","message":"Ah, ok.","date":"2016-08-19T16:16:30.672Z","type":"message"}
+{"nick":"urzds","message":"As long as it is well documented...","date":"2016-08-19T16:16:38.995Z","type":"message"}
+{"nick":"urzds","message":"That was nice about luvit initially - it would (almost) work, if you followed the node.js docs.","date":"2016-08-19T16:17:00.521Z","type":"message"}
+{"nick":"creationix","message":"right, that's why the legacy luvit interface is still maintained","date":"2016-08-19T16:17:16.803Z","type":"message"}
+{"nick":"creationix","message":"it's even installed by default when you do `lit update`","date":"2016-08-19T16:17:27.291Z","type":"message"}
+{"nick":"creationix","message":"and rackspace still uses it heavily internally","date":"2016-08-19T16:17:36.790Z","type":"message"}
+{"nick":"creationix","message":"but almost all new development is in the lit and luvi based stuff","date":"2016-08-19T16:17:48.706Z","type":"message"}
+{"nick":"urzds","message":"In lit publish, with --[[lit-meta, how do you get all the values? Do you simply grab them from _G?","date":"2016-08-19T16:19:07.228Z","type":"message"}
+{"nick":"rgrinberg","date":"2016-08-19T16:19:38.282Z","type":"join"}
+{"nick":"urzds","message":"I tried to copy my stuff from package.lua, stripping the surrounding table, but got bitten by the trailing ,","date":"2016-08-19T16:19:46.173Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/luvit/lit/blob/d80d38407a9234988f2d70d49275b6eead120f9b/libs/pkg.lua#L36-L83","date":"2016-08-19T16:22:02.027Z","type":"message"}
+{"nick":"creationix","message":"yeah, it evals the string and then returns the resulting global table","date":"2016-08-19T16:22:47.090Z","type":"message"}
+{"nick":"creationix","message":"(evals in a new environment with empty global)","date":"2016-08-19T16:22:56.017Z","type":"message"}
+{"nick":"urzds","message":"Is the exports field in any way special?","date":"2016-08-19T16:25:25.810Z","type":"message"}
+{"nick":"urzds","message":"What's nice about naming it init.lua is that I can do lit publish, without knowing the filename.","date":"2016-08-19T16:26:53.789Z","type":"message"}
+{"nick":"jpleau","message":"creationix: what versions of Lua did you use when running tests on arm64? luajit?","date":"2016-08-19T16:35:42.662Z","type":"message"}
+{"nick":"creationix","message":"jpleau yep","date":"2016-08-19T16:38:27.533Z","type":"message"}
+{"nick":"creationix","message":"didn't try anything other than the official luvi binary","date":"2016-08-19T16:38:41.347Z","type":"message"}
+{"nick":"creationix","message":"this was all I needed to add to our luajit cmake file https://github.com/luvit/luv/commit/e4f2a80b7f7a3ffcddbbaed8fa002a3989c9a9f6","date":"2016-08-19T16:39:13.593Z","type":"message"}
+{"nick":"jpleau","message":"okay. I'm still waiting access to arm64 machines on debian architectures, we have tests failing /hanging on arm64 with lua5.2 (probably happens with other versions, it's just the first one that gets built)","date":"2016-08-19T16:39:27.545Z","type":"message"}
+{"nick":"jpleau","message":"I'll be able to debug it in a few days","date":"2016-08-19T16:39:42.620Z","type":"message"}
+{"nick":"creationix","message":"I was using an odroid C2 running ubuntu 16.04 for my tests, you can get one fairly cheap","date":"2016-08-19T16:42:39.968Z","type":"message"}
+{"nick":"creationix","message":"http://ameridroid.com/products/odroid-c2","date":"2016-08-19T16:43:32.880Z","type":"message"}
+{"nick":"creationix","message":"it's the same CPI as the PI3, but clocked faster I think","date":"2016-08-19T16:43:49.145Z","type":"message"}
+{"nick":"creationix","message":"*CPU","date":"2016-08-19T16:43:52.275Z","type":"message"}
+{"nick":"jpleau","message":"I'm not certain I'm willing to buy, I already have a rpi2 that I bought the day it came out, it's still unboxed :P","date":"2016-08-19T16:44:40.257Z","type":"message"}
+{"nick":"urzds","message":"creationix: Do you have a nice way to automatically publish from CI? Is it possible to pass Lit a GH personal access token via an env var?","date":"2016-08-19T17:28:00.298Z","type":"message"}
+{"nick":"creationix","message":"lit publishes by signing using your ssh private key as an rsa key","date":"2016-08-19T17:28:36.277Z","type":"message"}
+{"nick":"creationix","message":"so you just need to give the CI server an SSH key that you've authorized with your github account","date":"2016-08-19T17:28:49.474Z","type":"message"}
+{"nick":"creationix","message":"there are environment variables for custom paths to a lit config file which can then have a custom path to the key","date":"2016-08-19T17:29:21.955Z","type":"message"}
+{"nick":"urzds","message":"Hm... Has anyone done that with Travis before?","date":"2016-08-19T17:29:23.205Z","type":"message"}
+{"nick":"creationix","message":"but I could add a feature to pull the key directly from env (assuming it's not too large)","date":"2016-08-19T17:29:46.092Z","type":"message"}
+{"nick":"creationix","message":"not that I know of","date":"2016-08-19T17:29:51.363Z","type":"message"}
+{"nick":"urzds","message":"But in any case: The purpose of a signature is probably that not anyone can sign my packages - so I'd have to trust the CI system...","date":"2016-08-19T17:30:10.282Z","type":"message"}
+{"nick":"creationix","message":"obviously","date":"2016-08-19T17:30:20.464Z","type":"message"}
+{"nick":"urzds","message":"Thus I shouldn't actually push my Docker container images with Travis, either...","date":"2016-08-19T17:32:00.781Z","type":"message"}
+{"nick":"urzds","message":"I'll think about that... Thanks for the advice.","date":"2016-08-19T17:32:26.830Z","type":"message"}
+{"nick":"creationix","message":"trust-less systems are very hard.  I've designed a few and in the end, you always have to have someone or something you trust","date":"2016-08-19T17:32:39.729Z","type":"message"}
+{"nick":"creationix","message":"I wonder if I could add another way to authenticate people on publish.  SSH keys have full access","date":"2016-08-19T17:33:20.947Z","type":"message"}
+{"nick":"creationix","message":"while github tokens could be more limited","date":"2016-08-19T17:33:28.206Z","type":"message"}
+{"nick":"APNG","message":"hi creationix","date":"2016-08-19T17:33:40.962Z","type":"message"}
+{"nick":"creationix","message":"APNG hi","date":"2016-08-19T17:33:45.156Z","type":"message"}
+{"nick":"APNG","message":"uh can you help me with a thing? it's js tho...","date":"2016-08-19T17:34:20.450Z","type":"message"}
+{"nick":"APNG","message":"creationix, any idea about this? http://stackoverflow.com/questions/25456794/does-javascript-have-a-standard-equivalence-method-you-can-define-on-your-own-ob","date":"2016-08-19T17:36:15.357Z","type":"message"}
+{"nick":"creationix","message":"APNG if JS does have that, it will be part of the Proxy interface","date":"2016-08-19T17:36:43.714Z","type":"message"}
+{"nick":"creationix","message":"doesn't look like there is a trap for equivalence https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy","date":"2016-08-19T17:37:22.087Z","type":"message"}
+{"nick":"rendar","reason":"Ping timeout: 276 seconds","date":"2016-08-19T18:13:45.649Z","type":"quit"}
+{"nick":"rendar","date":"2016-08-19T18:42:50.008Z","type":"join"}
+{"nick":"rgrinberg","reason":"Ping timeout: 244 seconds","date":"2016-08-19T18:59:23.226Z","type":"quit"}
+{"nick":"rgrinberg","date":"2016-08-19T19:09:58.278Z","type":"join"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2016-08-19T22:46:15.946Z","type":"quit"}
