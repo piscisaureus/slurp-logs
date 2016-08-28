@@ -112,3 +112,112 @@
 {"nick":"xaxxon","message":"wrong button","date":"2016-08-28T06:44:04.667Z","type":"message"}
 {"nick":"wingo","reason":"Quit: ZNC 1.6.1+deb1 - http://znc.in","date":"2016-08-28T07:46:25.816Z","type":"quit"}
 {"nick":"wingo","date":"2016-08-28T07:48:21.177Z","type":"join"}
+{"nick":"xiinotulp","date":"2016-08-28T08:19:56.286Z","type":"join"}
+{"nick":"plutoniix","reason":"Ping timeout: 244 seconds","date":"2016-08-28T08:22:55.103Z","type":"quit"}
+{"nick":"davi","date":"2016-08-28T08:33:43.872Z","type":"join"}
+{"nick":"dostoyevsky","message":"xaxxon: I tried for a while to see if I could decompose HandleScope into manual mode but it doesn't work... So I will change my internal API to be able to use a true C++ scope and then I should be set...  So what we did was still helpful","date":"2016-08-28T08:42:59.603Z","type":"message"}
+{"nick":"xaxxon","message":"dostoyevsky, hrmmm hang on","date":"2016-08-28T08:44:05.917Z","type":"message"}
+{"nick":"xaxxon","message":"so the \"ref count\" is the combination of the active javascript variables AND the handlescope","date":"2016-08-28T08:44:22.042Z","type":"message"}
+{"nick":"xaxxon","message":"so in yoru real code, if you have a handlescope around the loop, it doesn't matter what goes on in javsript","date":"2016-08-28T08:44:45.647Z","type":"message"}
+{"nick":"xaxxon","message":"*typing is hard","date":"2016-08-28T08:44:49.422Z","type":"message"}
+{"nick":"xaxxon","message":"both the v8::Local, v8::Global, and plain javascript variables all contribute to the lifetime of the actual memory and inhibit GC","date":"2016-08-28T08:45:44.237Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: The HandleScope in my example that you moved into another scope (of the for loop) cannot be moved in my current code... but there seems not other way","date":"2016-08-28T08:46:08.630Z","type":"message"}
+{"nick":"xaxxon","message":"You can create sub-handle scopes","date":"2016-08-28T08:46:23.360Z","type":"message"}
+{"nick":"xaxxon","message":"(I think)","date":"2016-08-28T08:46:27.413Z","type":"message"}
+{"nick":"xaxxon","message":"locals are associated with the most local handlescope","date":"2016-08-28T08:46:36.917Z","type":"message"}
+{"nick":"xaxxon","message":"(I think)","date":"2016-08-28T08:46:41.809Z","type":"message"}
+{"nick":"xaxxon","message":"(I'm making this up, but there's a chance it's true)","date":"2016-08-28T08:46:50.120Z","type":"message"}
+{"nick":"xaxxon","message":"v8::local is associated with the most \"tightest\" handlescope","date":"2016-08-28T08:47:29.746Z","type":"message"}
+{"nick":"xaxxon","message":"am I making sense?  I'm not sure","date":"2016-08-28T08:47:39.559Z","type":"message"}
+{"nick":"xaxxon","message":"so you can do handlescope some_local_that_lives_a_while for_loop{handlscope some_short_lifespan_local}","date":"2016-08-28T08:48:15.698Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: Well you have different kinds of references...","date":"2016-08-28T08:48:19.626Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: But Scopes are either HandleScope, EscapableHandleScope (return value from a function), or SealHandleScope ... I couldn't find any other use cases in v8's source code","date":"2016-08-28T08:49:35.668Z","type":"message"}
+{"nick":"xaxxon","message":"hang on","date":"2016-08-28T08:49:44.511Z","type":"message"}
+{"nick":"davi","reason":"Ping timeout: 265 seconds","date":"2016-08-28T08:49:54.704Z","type":"quit"}
+{"nick":"xaxxon","message":"dostoyevsky, http://melpon.org/wandbox/permlink/dRtjGHrbPu3LaVM9","date":"2016-08-28T08:50:48.455Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: Yeah, but the for-scope doesn't exist in my code...","date":"2016-08-28T08:52:03.736Z","type":"message"}
+{"nick":"xaxxon","message":"what are you doing that results in so mayn variables being created that you run out of space?","date":"2016-08-28T08:52:34.704Z","type":"message"}
+{"nick":"dostoyevsky","message":"Newer versions of v8 have CloseAndEscape for a scope, which might do what I want","date":"2016-08-28T08:52:44.129Z","type":"message"}
+{"nick":"dostoyevsky","message":"http://melpon.org/wandbox/permlink/okjgXfENBxOfAdTB (c&p from v8 source)","date":"2016-08-28T08:55:04.622Z","type":"message"}
+{"nick":"dostoyevsky","message":"slow_storage = loop_scope.CloseAndEscape(new_storage); // this might be just what I would need ... ","date":"2016-08-28T08:55:49.916Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: I keep some GB of data in sqlite databases and want to process these GB of data... in JavaScript... so the result sets become too large","date":"2016-08-28T08:56:49.322Z","type":"message"}
+{"nick":"xaxxon","message":"right, I was figuring you'd load a row, process it, then throw away the row","date":"2016-08-28T08:57:19.341Z","type":"message"}
+{"nick":"xaxxon","message":"load the next row","date":"2016-08-28T08:57:26.288Z","type":"message"}
+{"nick":"xaxxon","message":"for(auto & row : results) {","date":"2016-08-28T08:57:50.350Z","type":"message"}
+{"nick":"xaxxon","message":"handlescope hs; ...create JS objects...;  call_callback(...js objects...); }","date":"2016-08-28T08:58:16.903Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: I call the callback for every 10000 rows, to keep the overhead minimal","date":"2016-08-28T08:58:35.162Z","type":"message"}
+{"nick":"xaxxon","message":"have you benchmarked this?   I'm guessing the cost of creating all these JS vars is massive compared to the per-call cost of calling your callback","date":"2016-08-28T08:59:38.318Z","type":"message"}
+{"nick":"xaxxon","message":"also, did you try bumping up the heap size limit?","date":"2016-08-28T08:59:53.980Z","type":"message"}
+{"nick":"xaxxon","message":"there's no memory leak.   You're simply creating more objects than it's set to allow","date":"2016-08-28T09:00:10.289Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: I need to be websql compatible too...","date":"2016-08-28T09:00:10.849Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: the callback expects the full dataset in results.rows ...  I just had the idea of calling the cb multiple times to get it work with my GB of datasets","date":"2016-08-28T09:01:17.877Z","type":"message"}
+{"nick":"thefourtheye","date":"2016-08-28T09:01:28.489Z","type":"join"}
+{"nick":"xaxxon","message":"dostoyevsky, you don't have to actually put all the data in there, though.   You can pretend","date":"2016-08-28T09:01:49.280Z","type":"message"}
+{"nick":"xaxxon","message":"and load lazy behind the scenes","date":"2016-08-28T09:01:53.414Z","type":"message"}
+{"nick":"xaxxon","message":"no good database driver dumps all the data on you in one big chunk ","date":"2016-08-28T09:02:35.528Z","type":"message"}
+{"nick":"xaxxon","message":"and with javascript it's extra super easy to intercept the calls","date":"2016-08-28T09:02:58.734Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: they don't?  Well, websql has a 20M limit or so :)","date":"2016-08-28T09:03:02.704Z","type":"message"}
+{"nick":"xaxxon","message":"but does it actually load up all the data right away?","date":"2016-08-28T09:03:42.300Z","type":"message"}
+{"nick":"xaxxon","message":"I'm guessing no, it just makes it look like it","date":"2016-08-28T09:03:59.886Z","type":"message"}
+{"nick":"dostoyevsky","message":"But still, I just can return EMOREDATAREADY in my sql_retrieve function and then have a loop in the v8 module... for the scope","date":"2016-08-28T09:04:20.713Z","type":"message"}
+{"nick":"xaxxon","message":"but anyhow, you can't return more objects than your JS environment will let you -- doesn't matter if it's embedded V8 or running in chrome","date":"2016-08-28T09:04:23.226Z","type":"message"}
+{"nick":"xiinotulp","new_nick":"plutoniix","date":"2016-08-28T09:04:31.927Z","type":"nick"}
+{"nick":"xaxxon","message":"so either you increase the memory limit or you lower the max rows returned at once","date":"2016-08-28T09:04:48.894Z","type":"message"}
+{"nick":"xaxxon","message":"the point is that V8 is acting appropriately and you're calling it correctly","date":"2016-08-28T09:05:00.346Z","type":"message"}
+{"nick":"xaxxon","message":"you're simply asking it to do something it won't","date":"2016-08-28T09:05:06.070Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: websql will load all the data right away... but the other node.js sql apis use streaming apis to cope with large data sets","date":"2016-08-28T09:05:21.541Z","type":"message"}
+{"nick":"xaxxon","message":"you don't need a \"streaming api\" to not load all the data at once","date":"2016-08-28T09:05:39.549Z","type":"message"}
+{"nick":"xaxxon","message":"you can hook into array and atribute lookups","date":"2016-08-28T09:05:55.239Z","type":"message"}
+{"nick":"xaxxon","message":"so when someone says database_results[2].some_value -- you can intercept the array index call and load the result then","date":"2016-08-28T09:06:32.653Z","type":"message"}
+{"nick":"xaxxon","message":"or take it out of a c++ cache","date":"2016-08-28T09:06:40.991Z","type":"message"}
+{"nick":"xaxxon","message":"from a coding perspective, you don't know if the data is being loaded all at once or not","date":"2016-08-28T09:07:26.052Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: Well, suppose you had such a cache in a v8 module, how could you sope it?  You would load it when?  In what cope and when you read it from JS--it's still there?  What kind of sope would that be?  And you'd end up with the same problem","date":"2016-08-28T09:08:37.221Z","type":"message"}
+{"nick":"xaxxon","message":"the handlescope would be inside the callback associated with the array lookup","date":"2016-08-28T09:09:13.910Z","type":"message"}
+{"nick":"xaxxon","message":"which would leave the only references in the user code and allow the GC to run on the data as soon as the user code didn't have a reference to it","date":"2016-08-28T09:09:37.378Z","type":"message"}
+{"nick":"xaxxon","message":"so if the user handled it row by row, then only a row's worth of data at a time would be unGCable","date":"2016-08-28T09:10:05.871Z","type":"message"}
+{"nick":"xaxxon","message":"but that's what you want -- the memory usage to scale with the user-code's requirements","date":"2016-08-28T09:10:29.244Z","type":"message"}
+{"nick":"xaxxon","message":"not with the full data set's","date":"2016-08-28T09:10:46.856Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: And how would you not end up with all the data in memory?  What are you going to do if someoone periodiacally asks for results.item(0) ?  Just re-execute the SQL for the data you already purged from RAM?","date":"2016-08-28T09:10:58.973Z","type":"message"}
+{"nick":"xaxxon","message":"dostoyevsky, there are all sorts of caching options.   ","date":"2016-08-28T09:11:52.377Z","type":"message"}
+{"nick":"xaxxon","message":"but I don't understand what else you think you can do","date":"2016-08-28T09:11:57.430Z","type":"message"}
+{"nick":"dostoyevsky","message":"You'd be implementing a virtual memory management based on SQL results sets... ","date":"2016-08-28T09:11:57.589Z","type":"message"}
+{"nick":"xaxxon","message":"you're trying to put more stuff in memory than V8 will allow for.  ","date":"2016-08-28T09:12:20.791Z","type":"message"}
+{"nick":"xaxxon","message":"you HAVE to do something differnet","date":"2016-08-28T09:12:30.291Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: Yeah, just operate in chunks... same like with when you do read() in c++... your idea seems to be to invent mmap() for sql :)","date":"2016-08-28T09:13:06.335Z","type":"message"}
+{"nick":"xaxxon","message":"this is what most database drivers do","date":"2016-08-28T09:13:30.515Z","type":"message"}
+{"nick":"xaxxon","message":"you can request amssive datasets an access them as if it's all there, but it's being loaded from the DB behind the scenes","date":"2016-08-28T09:13:51.230Z","type":"message"}
+{"nick":"xaxxon","message":"optimziations can be done to help certain acces patterns have lower latency","date":"2016-08-28T09:14:42.307Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: I've never seen any db driver like this... and never seen a low level SQL api offer that kind of caching","date":"2016-08-28T09:15:29.153Z","type":"message"}
+{"nick":"xaxxon","message":"well, anyhow, you have to figure out something else, and you know your use cases best.. ","date":"2016-08-28T09:17:31.040Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: Yeah, but thanks for helping me figuring out how to use handle scope properly :)","date":"2016-08-28T09:19:06.787Z","type":"message"}
+{"nick":"xaxxon","message":"dostoyevsky, happy to help","date":"2016-08-28T09:21:44.065Z","type":"message"}
+{"nick":"xaxxon","message":"I learned something too.   also, usually this channel is compltely dead","date":"2016-08-28T09:21:54.250Z","type":"message"}
+{"nick":"xaxxon","message":"v8-users mailing list or stackoverflow are better places to find help","date":"2016-08-28T09:22:06.717Z","type":"message"}
+{"nick":"dostoyevsky","message":"yeah :-/  reading the v8 source code is quite educating...  but still I do not really like that kind of c++ very much, very dogmatic, not really versatile to use in your own c++ code","date":"2016-08-28T09:25:02.041Z","type":"message"}
+{"nick":"xaxxon","message":"dostoyevsky, well, much of v8 is dictated by requirements for javascript and for performance. ","date":"2016-08-28T09:29:00.742Z","type":"message"}
+{"nick":"xaxxon","message":"it's very important for it to be fast, ls that requires certain usability tradeoffs.   but the options are always there.   ","date":"2016-08-28T09:29:49.467Z","type":"message"}
+{"nick":"dostoyevsky","message":"xaxxon: e->Set(v8::String::NewFromUtf8(isolate, \"message\"), v8::String::NewFromUtf8(isolate, s->error)) // why not just write e->Set(\"message\", s->error) ?  It's not like boost hasn't taught us for decades how to write great APIs... ","date":"2016-08-28T09:34:26.800Z","type":"message"}
+{"nick":"xaxxon","message":"https://google.github.io/styleguide/cppguide.html#Function_Overloading","date":"2016-08-28T09:35:45.715Z","type":"message"}
+{"nick":"xaxxon","message":"the number of combinatinos you'd need to provide would be quite large","date":"2016-08-28T09:35:58.771Z","type":"message"}
+{"nick":"xaxxon","message":"the API is consistent in wanting the JS types, not C++ types","date":"2016-08-28T09:36:15.931Z","type":"message"}
+{"nick":"xaxxon","message":"because you'd have to accept the JS types, too.   and would you take JS/C++ and C++/JS as well as C++/C++ and JS/JS?","date":"2016-08-28T09:37:01.892Z","type":"message"}
+{"nick":"xaxxon","message":"what about std::string?","date":"2016-08-28T09:37:07.497Z","type":"message"}
+{"nick":"xaxxon","message":"the point is that the type is going to be a JS type, so if it needs to be converted, let the user take care of deciding how to do it","date":"2016-08-28T09:37:32.641Z","type":"message"}
+{"nick":"xaxxon","message":"at least that' smy interpretation","date":"2016-08-28T09:37:42.185Z","type":"message"}
+{"nick":"xaxxon","message":"also, boost isn't what I'd call great APIs","date":"2016-08-28T09:40:43.023Z","type":"message"}
+{"nick":"wingo","reason":"Quit: ZNC 1.6.1+deb1 - http://znc.in","date":"2016-08-28T09:57:10.022Z","type":"quit"}
+{"nick":"xaxxon","reason":"Ping timeout: 250 seconds","date":"2016-08-28T09:58:03.723Z","type":"quit"}
+{"nick":"xaxxon","date":"2016-08-28T10:11:54.335Z","type":"join"}
+{"nick":"wingo","date":"2016-08-28T10:16:23.844Z","type":"join"}
+{"nick":"xaxxon","reason":"Quit: xaxxon","date":"2016-08-28T11:28:15.504Z","type":"quit"}
+{"nick":"saper_","new_nick":"saper","date":"2016-08-28T11:31:17.375Z","type":"nick"}
+{"nick":"davi","date":"2016-08-28T11:36:27.903Z","type":"join"}
+{"nick":"davi","reason":"Remote host closed the connection","date":"2016-08-28T11:56:30.044Z","type":"quit"}
+{"nick":"rmcilroy","reason":"Ping timeout: 264 seconds","date":"2016-08-28T12:23:15.986Z","type":"quit"}
+{"nick":"rmcilroy","date":"2016-08-28T12:35:33.979Z","type":"join"}
+{"nick":"rmcilroy","reason":"Ping timeout: 264 seconds","date":"2016-08-28T13:13:03.983Z","type":"quit"}
+{"nick":"rmcilroy","date":"2016-08-28T13:25:05.992Z","type":"join"}
+{"nick":"rmcilroy","reason":"Ping timeout: 264 seconds","date":"2016-08-28T13:46:03.981Z","type":"quit"}
+{"nick":"bradleymeck","date":"2016-08-28T13:57:59.003Z","type":"join"}
+{"nick":"rmcilroy","date":"2016-08-28T14:45:13.004Z","type":"join"}
+{"nick":"davi","date":"2016-08-28T15:38:09.672Z","type":"join"}
