@@ -120,3 +120,186 @@
 {"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2016-10-13T12:36:46.296Z","type":"quit"}
 {"nick":"rgrinberg","date":"2016-10-13T13:07:54.909Z","type":"join"}
 {"nick":"rgrinberg","reason":"Ping timeout: 268 seconds","date":"2016-10-13T15:50:32.763Z","type":"quit"}
+{"nick":"rgrinberg","date":"2016-10-13T16:19:46.900Z","type":"join"}
+{"nick":"rgrinberg","reason":"Read error: Connection reset by peer","date":"2016-10-13T17:18:00.121Z","type":"quit"}
+{"nick":"rgrinberg","date":"2016-10-13T17:38:16.835Z","type":"join"}
+{"nick":"creationix","message":"APNG hit a pretty serious problem. https://github.com/luvit/luvit/pull/932#issuecomment-253363964","date":"2016-10-13T18:23:02.702Z","type":"message"}
+{"nick":"APNG","message":"creationix, you're supposed to use local modname = ... and require(modname .. \".whatever\")","date":"2016-10-13T18:25:40.758Z","type":"message"}
+{"nick":"APNG","message":"the modname declaration goes at the top of the file, before any function scopes","date":"2016-10-13T18:25:54.927Z","type":"message"}
+{"nick":"creationix","message":"APNG right, but that assumes you know where a module is installed","date":"2016-10-13T18:26:10.473Z","type":"message"}
+{"nick":"APNG","message":"creationix, it doesn't","date":"2016-10-13T18:26:18.888Z","type":"message"}
+{"nick":"APNG","message":"1 sec","date":"2016-10-13T18:26:34.520Z","type":"message"}
+{"nick":"APNG","message":"http://www.lua.org/manual/5.3/manual.html#pdf-require","date":"2016-10-13T18:26:40.327Z","type":"message"}
+{"nick":"APNG","message":"Once a loader is found, require calls the loader with two arguments: modname and an extra value dependent on how it got the loader. (If the loader came from a file, this extra value is the file name.)","date":"2016-10-13T18:27:06.309Z","type":"message"}
+{"nick":"creationix","message":"I mean you need the full modname relative to one of the entries in the global package search path","date":"2016-10-13T18:27:12.134Z","type":"message"}
+{"nick":"creationix","message":"oh, interesting","date":"2016-10-13T18:27:40.930Z","type":"message"}
+{"nick":"APNG","message":"i.e. save \"local modname = ... print(modname)\" without quotes to a file, then require that file","date":"2016-10-13T18:27:45.976Z","type":"message"}
+{"nick":"APNG","message":"when I say ... I mean literal ..., not something you're supposed to replace","date":"2016-10-13T18:28:07.652Z","type":"message"}
+{"nick":"creationix","message":"APNG I see","date":"2016-10-13T18:28:11.287Z","type":"message"}
+{"nick":"creationix","message":"is that a lua 5.3 thing?  I don't remember that from before","date":"2016-10-13T18:28:22.141Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T18:28:30.664Z","type":"message"}
+{"nick":"APNG","message":"it's *at least* 5.2+","date":"2016-10-13T18:28:36.383Z","type":"message"}
+{"nick":"APNG","message":"and I think LuaJIT has it too","date":"2016-10-13T18:28:42.836Z","type":"message"}
+{"nick":"APNG","message":"oh","date":"2016-10-13T18:28:52.485Z","type":"message"}
+{"nick":"APNG","message":"in 5.1: Once a loader is found, require calls the loader with a single argument, modname.","date":"2016-10-13T18:28:55.759Z","type":"message"}
+{"nick":"creationix","message":"I wonder if we can backport it somehow","date":"2016-10-13T18:29:29.241Z","type":"message"}
+{"nick":"APNG","message":"hmm this is interesting...","date":"2016-10-13T18:30:06.223Z","type":"message"}
+{"nick":"APNG","message":"1 sec","date":"2016-10-13T18:30:08.287Z","type":"message"}
+{"nick":"creationix","message":"but currently, it looks in package.loaded with a key that I can't control before any loader","date":"2016-10-13T18:30:10.896Z","type":"message"}
+{"nick":"creationix","message":"so unless I patch luajit itself I can't get around this afaik","date":"2016-10-13T18:30:31.204Z","type":"message"}
+{"nick":"APNG","message":"creationix, you can rely on the lua 5.1 behaviour","date":"2016-10-13T18:30:47.803Z","type":"message"}
+{"nick":"APNG","message":"both lua 5.1 and lua 5.3 pass the module name to the loader","date":"2016-10-13T18:31:09.821Z","type":"message"}
+{"nick":"APNG","message":"idk why you'd rely on ppl using the 2nd argument","date":"2016-10-13T18:31:22.968Z","type":"message"}
+{"nick":"APNG","message":"I don't use the 2nd argument and neither should you","date":"2016-10-13T18:31:34.611Z","type":"message"}
+{"nick":"APNG","message":"but eh I can try I guess https://github.com/LuaJIT/LuaJIT/issues/223","date":"2016-10-13T18:37:25.000Z","type":"message"}
+{"nick":"creationix","message":"APNG the problem isn't the loader.  It can get the info it needs from debug","date":"2016-10-13T18:42:31.021Z","type":"message"}
+{"nick":"APNG","message":"creationix, also, assuming standard dot notation, modname:gsub(\"^.-%.[^.]+$\", \"%1\") should return the parent module","date":"2016-10-13T18:45:08.790Z","type":"message"}
+{"nick":"APNG","message":"altho an utility function would probably be better in that case","date":"2016-10-13T18:45:21.680Z","type":"message"}
+{"nick":"creationix","message":"APNG the problem isn't loaders","date":"2016-10-13T18:45:41.716Z","type":"message"}
+{"nick":"APNG","message":"local modutils = require \"modutils\"; require(modutils.parent(modname) .. \".whatever\")","date":"2016-10-13T18:45:46.392Z","type":"message"}
+{"nick":"creationix","message":"the problem is the cache","date":"2016-10-13T18:45:47.587Z","type":"message"}
+{"nick":"APNG","message":"creationix, yes, this solves the cache problem","date":"2016-10-13T18:45:56.554Z","type":"message"}
+{"nick":"APNG","message":"because you're always passing full paths","date":"2016-10-13T18:46:08.402Z","type":"message"}
+{"nick":"APNG","message":"\"modname\" isn't just the last part of the name","date":"2016-10-13T18:46:20.623Z","type":"message"}
+{"nick":"APNG","message":"\"modname\" is the fully qualified name","date":"2016-10-13T18:46:26.387Z","type":"message"}
+{"nick":"APNG","message":"so if you require \"a.b.c.d\", \"modname\" will be \"a.b.c.d\"","date":"2016-10-13T18:46:40.607Z","type":"message"}
+{"nick":"creationix","message":"are you suggesting a resolve() function like squeek502 suggested?","date":"2016-10-13T18:46:48.587Z","type":"message"}
+{"nick":"APNG","message":"creationix, not needed, just \"require(modname .. \"filename\")\"","date":"2016-10-13T18:47:22.425Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T18:47:25.301Z","type":"message"}
+{"nick":"APNG","message":".. \".filename\"","date":"2016-10-13T18:47:28.697Z","type":"message"}
+{"nick":"creationix","message":"but how do you get modname?","date":"2016-10-13T18:47:46.909Z","type":"message"}
+{"nick":"APNG","message":"https://github.com/luvit/luvit/pull/932#issuecomment-253601510","date":"2016-10-13T18:48:13.145Z","type":"message"}
+{"nick":"APNG","message":"it's a vararg","date":"2016-10-13T18:48:24.068Z","type":"message"}
+{"nick":"APNG","message":"creationix, try that example","date":"2016-10-13T18:48:37.834Z","type":"message"}
+{"nick":"APNG","message":"as-is","date":"2016-10-13T18:48:39.467Z","type":"message"}
+{"nick":"APNG","message":"don't attempt to modify it >.>","date":"2016-10-13T18:48:43.242Z","type":"message"}
+{"nick":"creationix","message":"it's a shame loaders can't modify the cache key before matching","date":"2016-10-13T18:51:32.618Z","type":"message"}
+{"nick":"creationix","message":"APNG so that is an option.  I can maybe make it clean enough to work","date":"2016-10-13T18:53:11.315Z","type":"message"}
+{"nick":"creationix","message":"but what about files in the luvi bundle?","date":"2016-10-13T18:53:17.321Z","type":"message"}
+{"nick":"APNG","message":"creationix, cease using debug.* and everything'll work just fine","date":"2016-10-13T18:55:10.829Z","type":"message"}
+{"nick":"creationix","message":"APNG yes, I see how `...` can replace debug.*, but I still see cases it's not enough","date":"2016-10-13T18:56:38.641Z","type":"message"}
+{"nick":"APNG","message":"creationix, I see backwards compat cases if that's what you're asking","date":"2016-10-13T18:57:05.716Z","type":"message"}
+{"nick":"APNG","message":"modname .. \".whatever\" should *always* work","date":"2016-10-13T18:57:33.181Z","type":"message"}
+{"nick":"creationix","message":"I need files in the luvi bundle (inside the zip) to work the same with relative requires as files on disk","date":"2016-10-13T18:57:33.589Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T18:57:45.135Z","type":"message"}
+{"nick":"APNG","message":"modname .. \".whatever\" should work","date":"2016-10-13T18:57:50.491Z","type":"message"}
+{"nick":"creationix","message":"assuming modname has something about the bundle in it and I have a custom loader","date":"2016-10-13T18:58:04.908Z","type":"message"}
+{"nick":"creationix","message":"I still need to prototype it to be sure","date":"2016-10-13T18:58:11.498Z","type":"message"}
+{"nick":"APNG","message":"assuming you have a custom loader","date":"2016-10-13T18:58:15.041Z","type":"message"}
+{"nick":"APNG","message":"and only that","date":"2016-10-13T18:58:17.459Z","type":"message"}
+{"nick":"APNG","message":"a custom loader that provides a virtual filesystem based on the .zip","date":"2016-10-13T18:58:31.736Z","type":"message"}
+{"nick":"creationix","message":"the other problem is the weird ... syntax","date":"2016-10-13T18:58:32.219Z","type":"message"}
+{"nick":"creationix","message":"but I may be willing to live with that","date":"2016-10-13T18:58:37.890Z","type":"message"}
+{"nick":"APNG","message":"the weird vararg syntax?","date":"2016-10-13T18:58:49.276Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T18:58:51.881Z","type":"message"}
+{"nick":"APNG","message":"there's a reason I recommend local modname, modpath = ...","date":"2016-10-13T18:59:01.116Z","type":"message"}
+{"nick":"creationix","message":"yes, I've never seen a language require vararg syntax to do relative required","date":"2016-10-13T18:59:03.092Z","type":"message"}
+{"nick":"APNG","message":"instead of just ... .. \".whatever\"","date":"2016-10-13T18:59:06.649Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T18:59:15.855Z","type":"message"}
+{"nick":"creationix","message":"sure, like I said, I need to test it out","date":"2016-10-13T18:59:22.171Z","type":"message"}
+{"nick":"APNG","message":"lua doesn't let you specify block-level arguments","date":"2016-10-13T18:59:22.372Z","type":"message"}
+{"nick":"creationix","message":"APNG, does lua have any sort of module index feature?","date":"2016-10-13T19:06:05.711Z","type":"message"}
+{"nick":"creationix","message":"like foo/init.lua can be loaded with require 'foo'?","date":"2016-10-13T19:06:14.036Z","type":"message"}
+{"nick":"APNG","message":"creationix, yes","date":"2016-10-13T19:07:04.923Z","type":"message"}
+{"nick":"APNG","message":"I mean","date":"2016-10-13T19:07:08.623Z","type":"message"}
+{"nick":"APNG","message":"that's done by package.path","date":"2016-10-13T19:07:13.064Z","type":"message"}
+{"nick":"creationix","message":"oh right","date":"2016-10-13T19:07:21.637Z","type":"message"}
+{"nick":"APNG","message":"it has entries for \"./?.lua' and \"./?/init.lua\"","date":"2016-10-13T19:07:30.656Z","type":"message"}
+{"nick":"APNG","message":"or w/e","date":"2016-10-13T19:07:46.051Z","type":"message"}
+{"nick":"creationix","message":"hmm, I see './?.lua;/usr/local/share/luajit-2.1.0-beta2/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/share/lua/5.1/?/init.lua'","date":"2016-10-13T19:08:02.636Z","type":"message"}
+{"nick":"APNG","message":"you can also use \"foo.lua\" and \"foo/whatever.lua\" if you don't wanna use \"foo/init.lua\"","date":"2016-10-13T19:08:08.125Z","type":"message"}
+{"nick":"creationix","message":"missing \"./?/init.lua\"","date":"2016-10-13T19:08:19.091Z","type":"message"}
+{"nick":"APNG","message":"you can add it if you need it","date":"2016-10-13T19:08:30.012Z","type":"message"}
+{"nick":"APNG","message":"creationix, huh","date":"2016-10-13T19:09:21.200Z","type":"message"}
+{"nick":"APNG","message":"5.3 includes ./?/init.lua","date":"2016-10-13T19:09:28.307Z","type":"message"}
+{"nick":"APNG","message":"must be a 5.1 thing","date":"2016-10-13T19:09:31.137Z","type":"message"}
+{"nick":"creationix","message":"probably","date":"2016-10-13T19:09:36.537Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T19:09:43.682Z","type":"message"}
+{"nick":"APNG","message":"no it's actually a 5.3 thing","date":"2016-10-13T19:09:51.439Z","type":"message"}
+{"nick":"APNG","message":"lua 5.2 doesn't have ./?/init.lua either","date":"2016-10-13T19:10:02.371Z","type":"message"}
+{"nick":"creationix","message":"it's a shame luajit will never migrate to 5.3","date":"2016-10-13T19:10:10.331Z","type":"message"}
+{"nick":"APNG","message":"meh","date":"2016-10-13T19:10:14.938Z","type":"message"}
+{"nick":"APNG","message":"just add it yourself >.>","date":"2016-10-13T19:10:18.262Z","type":"message"}
+{"nick":"APNG","message":"you don't need to patch luajit for that","date":"2016-10-13T19:10:23.390Z","type":"message"}
+{"nick":"APNG","message":"(package.path = \"./?/init.lua\" .. package.path or w/e)","date":"2016-10-13T19:10:42.050Z","type":"message"}
+{"nick":"creationix","message":"the thing is I support luv in plain luajit, plain lua 5.1, lua 5.2, lua 5.3 and luvi","date":"2016-10-13T19:10:47.311Z","type":"message"}
+{"nick":"creationix","message":"I can customize things in luvi, but not the others","date":"2016-10-13T19:10:54.346Z","type":"message"}
+{"nick":"APNG","message":"you can customize things in any of them, technically","date":"2016-10-13T19:11:25.431Z","type":"message"}
+{"nick":"creationix","message":"so that's yet another line of boilerplate at the top of luv apps","date":"2016-10-13T19:11:34.168Z","type":"message"}
+{"nick":"APNG","message":"you can touch package.path in any of them","date":"2016-10-13T19:11:35.471Z","type":"message"}
+{"nick":"creationix","message":"I can't, the application author has to","date":"2016-10-13T19:11:46.746Z","type":"message"}
+{"nick":"creationix","message":"I just document how","date":"2016-10-13T19:11:52.495Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T19:11:53.645Z","type":"message"}
+{"nick":"APNG","message":"I do it in my modules all the time .-.","date":"2016-10-13T19:11:58.220Z","type":"message"}
+{"nick":"APNG","message":"alternatively you can implement a whole separate global environment for luv modules","date":"2016-10-13T19:12:21.968Z","type":"message"}
+{"nick":"APNG","message":"and provide a luv.require","date":"2016-10-13T19:12:26.965Z","type":"message"}
+{"nick":"APNG","message":"but uh","date":"2016-10-13T19:12:32.984Z","type":"message"}
+{"nick":"creationix","message":"I'd rather not go that route","date":"2016-10-13T19:12:35.177Z","type":"message"}
+{"nick":"APNG","message":"wait that's what you're trying to get away from","date":"2016-10-13T19:12:38.855Z","type":"message"}
+{"nick":"creationix","message":"let's just see how minimal and clean I can make the boilerplate and document it cleanly","date":"2016-10-13T19:12:53.063Z","type":"message"}
+{"nick":"creationix","message":"*clearly","date":"2016-10-13T19:12:58.813Z","type":"message"}
+{"nick":"APNG","message":"but yeah I do it in my modules all the time .-.","date":"2016-10-13T19:13:05.332Z","type":"message"}
+{"nick":"APNG","message":"altho I do full splitting and testing and stuff","date":"2016-10-13T19:13:22.080Z","type":"message"}
+{"nick":"APNG","message":"I don't just blindly append stuff","date":"2016-10-13T19:13:29.451Z","type":"message"}
+{"nick":"creationix","message":"so basically, I'll not support relative requires at all.  Just add a loader for luvi paths and document best-practices for relative requires","date":"2016-10-13T19:13:42.031Z","type":"message"}
+{"nick":"creationix","message":"that might work, we'll see.  I need to also consider how it will interact with lit package layouts","date":"2016-10-13T19:14:26.405Z","type":"message"}
+{"nick":"APNG","message":"creationix, just a few notes: ./* require paths should be a last resort - that's why Lua 5.2 changed the require order","date":"2016-10-13T19:30:13.019Z","type":"message"}
+{"nick":"rgrinberg","reason":"Ping timeout: 248 seconds","date":"2016-10-13T19:30:13.409Z","type":"quit"}
+{"nick":"APNG","message":"IMO you're supposed to set root module path in package.path","date":"2016-10-13T19:30:34.981Z","type":"message"}
+{"nick":"creationix","message":"yes I know that's the lua way","date":"2016-10-13T19:30:46.429Z","type":"message"}
+{"nick":"creationix","message":"but I don't like it.  Though it looks like there is no other way that doesn't go against lua","date":"2016-10-13T19:31:15.561Z","type":"message"}
+{"nick":"APNG","message":"as in package.path = rootmodulepath..\"/?.lua;\" .. rootmodulepath..\"/?/init.lua\" .. package.path","date":"2016-10-13T19:31:16.843Z","type":"message"}
+{"nick":"creationix","message":"APNG right, and I could do that in luvi","date":"2016-10-13T19:31:35.978Z","type":"message"}
+{"nick":"creationix","message":"as well as inject a custom loader to load into the luvi bundle","date":"2016-10-13T19:31:44.258Z","type":"message"}
+{"nick":"creationix","message":"with bundle entries in package.path","date":"2016-10-13T19:31:53.529Z","type":"message"}
+{"nick":"APNG","message":"creationix, I take it your old module system doesn't let me put \"thebin\" and \"config.lua\" in the same folder and require\"config\" from inside the \"thebin\" luvi app?","date":"2016-10-13T19:33:03.492Z","type":"message"}
+{"nick":"creationix","message":"APNG sure it does","date":"2016-10-13T19:33:36.590Z","type":"message"}
+{"nick":"creationix","message":"luvit 2.x loads main using require instead of dofile","date":"2016-10-13T19:33:59.428Z","type":"message"}
+{"nick":"APNG","message":"creationix, no you don't understand","date":"2016-10-13T19:34:19.463Z","type":"message"}
+{"nick":"creationix","message":"luvit foo.lua translates to `require './foo.lua'` essentially","date":"2016-10-13T19:34:20.734Z","type":"message"}
+{"nick":"APNG","message":"\"thebin\" is a packed luvi app","date":"2016-10-13T19:34:24.351Z","type":"message"}
+{"nick":"creationix","message":"I know","date":"2016-10-13T19:34:33.512Z","type":"message"}
+{"nick":"creationix","message":"so is luvit","date":"2016-10-13T19:34:35.460Z","type":"message"}
+{"nick":"APNG","message":"as in, it's a .zip","date":"2016-10-13T19:34:36.692Z","type":"message"}
+{"nick":"APNG","message":"OH","date":"2016-10-13T19:34:42.763Z","type":"message"}
+{"nick":"APNG","message":"ok","date":"2016-10-13T19:34:46.950Z","type":"message"}
+{"nick":"APNG","message":"uh","date":"2016-10-13T19:34:59.135Z","type":"message"}
+{"nick":"APNG","message":"I mean","date":"2016-10-13T19:35:00.412Z","type":"message"}
+{"nick":"APNG","message":"why do you require the main module?","date":"2016-10-13T19:35:30.489Z","type":"message"}
+{"nick":"APNG","message":"do you use the cache?","date":"2016-10-13T19:35:41.735Z","type":"message"}
+{"nick":"creationix","message":"because luvit 2.x doesn't use native require at all","date":"2016-10-13T19:35:51.455Z","type":"message"}
+{"nick":"creationix","message":"it's just a fallback as last resort","date":"2016-10-13T19:35:56.862Z","type":"message"}
+{"nick":"creationix","message":"and doesn't integrate well","date":"2016-10-13T19:36:02.011Z","type":"message"}
+{"nick":"APNG","message":"ok","date":"2016-10-13T19:36:08.983Z","type":"message"}
+{"nick":"APNG","message":"in other words it's stupid, lol","date":"2016-10-13T19:36:13.930Z","type":"message"}
+{"nick":"creationix","message":"that's luvit's require","date":"2016-10-13T19:36:18.054Z","type":"message"}
+{"nick":"creationix","message":"no, I'm just using lua for what it was designed","date":"2016-10-13T19:36:26.647Z","type":"message"}
+{"nick":"creationix","message":"to be embedded in a real system ;)","date":"2016-10-13T19:36:32.407Z","type":"message"}
+{"nick":"APNG","message":"uh sure","date":"2016-10-13T19:36:40.707Z","type":"message"}
+{"nick":"APNG","message":"you're using lua for what it was designed","date":"2016-10-13T19:36:45.850Z","type":"message"}
+{"nick":"creationix","message":"the lua cli tool even says it's just a sample application","date":"2016-10-13T19:36:47.876Z","type":"message"}
+{"nick":"APNG","message":"but you're not using lua how it was designed","date":"2016-10-13T19:36:55.555Z","type":"message"}
+{"nick":"creationix","message":"how many game systems that embed lua use custom require systems?","date":"2016-10-13T19:37:14.044Z","type":"message"}
+{"nick":"creationix","message":"or disable require alltogether?","date":"2016-10-13T19:37:20.364Z","type":"message"}
+{"nick":"APNG","message":"how many game systems that embed lua support require? >.>","date":"2016-10-13T19:37:27.218Z","type":"message"}
+{"nick":"APNG","message":"and as far as anyone other than the creators is concerned, those games don't use lua","date":"2016-10-13T19:38:19.147Z","type":"message"}
+{"nick":"creationix","message":"so here is the confusion","date":"2016-10-13T19:38:41.231Z","type":"message"}
+{"nick":"creationix","message":"lua the scripting platform vs lua the language/vm","date":"2016-10-13T19:38:50.657Z","type":"message"}
+{"nick":"creationix","message":"luvit is using lua the language/vm and happens to export it's own scripting platform that is close to lua.exe","date":"2016-10-13T19:39:10.425Z","type":"message"}
+{"nick":"creationix","message":"it's just close enough to be really confusing","date":"2016-10-13T19:39:22.890Z","type":"message"}
+{"nick":"APNG","message":"lua the language, lua the vm, lua the stdlib, lua the REPL/interpreter","date":"2016-10-13T19:39:24.825Z","type":"message"}
+{"nick":"APNG","message":"you can use the VM without the language by emitting bytecode yourself","date":"2016-10-13T19:40:13.210Z","type":"message"}
+{"nick":"APNG","message":"you can use the language without the VM by using any of the many alternative lua implementations (including luajit)","date":"2016-10-13T19:40:34.377Z","type":"message"}
+{"nick":"creationix","message":"yep, I've done that before too","date":"2016-10-13T19:40:34.616Z","type":"message"}
+{"nick":"APNG","message":"you can use the lua stdlib from a non-lua language *and* vm by emitting bytecode for an alternative lua VM implementation directly","date":"2016-10-13T19:41:29.257Z","type":"message"}
+{"nick":"APNG","message":"and the REPL/interpreter is just the standard interface for the language+VM+stdlib","date":"2016-10-13T19:42:02.971Z","type":"message"}
+{"nick":"rgrinberg","date":"2016-10-13T19:46:49.112Z","type":"join"}
+{"nick":"APNG","message":"creationix, note how they're separate APIs: you depend on the VM if you wanna mess with bytecode, you depend on the REPL/interpreter if you're fiddling with command output and stuff","date":"2016-10-13T19:52:38.954Z","type":"message"}
+{"nick":"APNG","message":"for the language you depend on it if you're writing Lua <insert version here>, and it's statically checked","date":"2016-10-13T19:53:22.981Z","type":"message"}
+{"nick":"APNG","message":"for the stdlib you can actually test it at runtime so it's a bit more flexible (e.g. you might test for table.pack or table.move and fallback to your own impls - or simply disable the features that depend on them altogether)","date":"2016-10-13T19:54:26.203Z","type":"message"}
+{"nick":"APNG","message":"... eh just pay me if you want me to endlessly output these blogpost-quality messages >.>","date":"2016-10-13T19:56:24.715Z","type":"message"}
+{"nick":"APNG","message":"(lol)","date":"2016-10-13T19:56:35.019Z","type":"message"}
+{"nick":"APNG","message":"(I might be slightly bored)","date":"2016-10-13T19:58:01.970Z","type":"message"}
+{"nick":"creationix","message":"APNG thanks for the suggestions.  I'll see if I can make it work","date":"2016-10-13T20:06:13.007Z","type":"message"}
+{"nick":"creationix","message":"I need to get back to other work for a while","date":"2016-10-13T20:06:23.084Z","type":"message"}
+{"nick":"LuaStoned","date":"2016-10-13T23:23:08.935Z","type":"join"}
