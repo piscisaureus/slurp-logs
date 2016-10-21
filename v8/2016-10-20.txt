@@ -19,3 +19,99 @@
 {"nick":"mightyiam","date":"2016-10-20T15:49:44.073Z","type":"join"}
 {"nick":"mightyiam","message":"I'm trying to figure out the v8 version in which the change was introduced where an anonymous function would stringify as 'Function: anon' instead of just 'Function', please?","date":"2016-10-20T15:49:57.237Z","type":"message"}
 {"nick":"mightyiam","message":"It seems no later than v5.1.281, from what I see in node.js","date":"2016-10-20T15:52:07.394Z","type":"message"}
+{"nick":"jwolfe","message":"mightyiam, probably not relevant to your concerns, but functions are going to have yet another string representation in the near future to be compliant with ES7: https://bugs.chromium.org/p/v8/issues/detail?id=4958","date":"2016-10-20T16:02:00.056Z","type":"message"}
+{"nick":"mightyiam","message":"jwolfe, you don't happen to know how I can find that change, though?","date":"2016-10-20T16:02:53.434Z","type":"message"}
+{"nick":"mightyiam","message":"Any pointer?","date":"2016-10-20T16:03:03.042Z","type":"message"}
+{"nick":"mightyiam","message":"Is it this? https://bugs.chromium.org/p/v8/issues/detail?id=3699&can=2&q=3699&colspec=ID%20Type%20Status%20Priority%20Owner%20Summary%20HW%20OS%20Component%20Stars","date":"2016-10-20T16:03:23.467Z","type":"message"}
+{"nick":"mightyiam","message":"Is it this? https://bugs.chromium.org/p/v8/issues/detail?id=3699","date":"2016-10-20T16:03:38.451Z","type":"message"}
+{"nick":"caitp","message":"git blame","date":"2016-10-20T16:03:57.419Z","type":"message"}
+{"nick":"caitp","message":"is a good way to go","date":"2016-10-20T16:03:59.532Z","type":"message"}
+{"nick":"mightyiam","message":"caitp, I don't know which line is responsible for this","date":"2016-10-20T16:05:03.577Z","type":"message"}
+{"nick":"jwolfe","message":"in v8/src/builtins/builtins-function.cc , the function CreateDynamicFunction() is responsible for building the string representation for functions","date":"2016-10-20T16:05:06.828Z","type":"message"}
+{"nick":"mightyiam","message":"We're getting somewhere","date":"2016-10-20T16:05:17.779Z","type":"message"}
+{"nick":"caitp","message":"the old JS implementation used %FunctionNameShouldPrintAsAnonymous() in runtime-function.cc (previously in runtime.cc)","date":"2016-10-20T16:05:34.921Z","type":"message"}
+{"nick":"caitp","message":"it goes back quite a long way","date":"2016-10-20T16:05:48.733Z","type":"message"}
+{"nick":"caitp","message":"very old code","date":"2016-10-20T16:06:00.932Z","type":"message"}
+{"nick":"jwolfe","message":"mightyiam, i joined the project this year, so i don't have any personal experience with the history of this matter.","date":"2016-10-20T16:06:27.764Z","type":"message"}
+{"nick":"caitp","message":"mightyiam, so the question is, why do you ask?","date":"2016-10-20T16:06:55.647Z","type":"message"}
+{"nick":"mightyiam","message":"caitp, this test: https://github.com/danielb2/purdy.js/blob/master/test/purdy.js#L140-L146","date":"2016-10-20T16:07:41.828Z","type":"message"}
+{"nick":"mightyiam","message":"I know what to change it to, like I wrote. I just desire to know the v8 version to check for, when choosing whether it is 'Function' or 'Function: anon'","date":"2016-10-20T16:08:52.543Z","type":"message"}
+{"nick":"caitp","message":"oh fun, Purdy uses the `toString` function on the global object, which may or may not be what it expects it to be","date":"2016-10-20T16:14:58.689Z","type":"message"}
+{"nick":"mightyiam","message":"I'm pretty sure that it is https://github.com/v8/v8/blob/5.1-lkgr/ChangeLog#L1349","date":"2016-10-20T16:17:20.174Z","type":"message"}
+{"nick":"caitp","message":"are you asking about when the inferred naming stuff was added?","date":"2016-10-20T16:18:44.896Z","type":"message"}
+{"nick":"caitp","message":"eg `let anon = function() {}` -> anon.name === \"anon\"","date":"2016-10-20T16:19:11.093Z","type":"message"}
+{"nick":"caitp","message":"if you just need to fix a test, why not just feature test for it","date":"2016-10-20T16:19:42.931Z","type":"message"}
+{"nick":"caitp","message":"or if you want to just make the test work, wrap the anonymous function in parentheses","date":"2016-10-20T16:20:06.283Z","type":"message"}
+{"nick":"caitp","message":"let anon = (function() {}); << will not be named \"anonymous\"","date":"2016-10-20T16:20:28.676Z","type":"message"}
+{"nick":"caitp","message":"er, \"anon\"","date":"2016-10-20T16:20:33.860Z","type":"message"}
+{"nick":"mightyiam","message":"caitp, I just wanna fix a test. Feature testing would be the most correct, I feel","date":"2016-10-20T16:21:02.546Z","type":"message"}
+{"nick":"caitp","message":"like I said, to fix the test, you can just parenthesize the function","date":"2016-10-20T16:21:44.179Z","type":"message"}
+{"nick":"mightyiam","message":"I've realized a moment ago that the 'anon' string that I'm seeing is not hard-coded. I thought it was. I now understand that this is inferred.","date":"2016-10-20T16:21:54.423Z","type":"message"}
+{"nick":"caitp","message":"that avoids the name inference logic in the spec and in v8","date":"2016-10-20T16:21:57.420Z","type":"message"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2010030309]","date":"2016-10-20T16:22:24.986Z","type":"quit"}
+{"nick":"caitp","message":"wait, I might be wrong about that, it seems like there might be a bug in v8 5.5 at least :p","date":"2016-10-20T16:23:11.142Z","type":"message"}
+{"nick":"caitp","message":"sigh, it's so hard to get this stuff right","date":"2016-10-20T16:23:19.829Z","type":"message"}
+{"nick":"mightyiam","message":"I've been using function declarations for function names in debugging. I guess in modern engines there's no need to avoid `const thisFromThat = that => this`","date":"2016-10-20T16:24:12.985Z","type":"message"}
+{"nick":"caitp","message":"hmm, I guess the parenthesized thing doesn't buy you anything","date":"2016-10-20T16:24:43.815Z","type":"message"}
+{"nick":"caitp","message":"maybe something more like `let anon = (f => f)(function(){})`","date":"2016-10-20T16:25:14.971Z","type":"message"}
+{"nick":"mightyiam","message":"Are you figuring out how to check for name inference feature?","date":"2016-10-20T16:27:15.623Z","type":"message"}
+{"nick":"caitp","message":"I'm telling you how you can avoid name inferrence","date":"2016-10-20T16:28:00.997Z","type":"message"}
+{"nick":"caitp","message":"to fix the test","date":"2016-10-20T16:28:13.678Z","type":"message"}
+{"nick":"mightyiam","message":"Feature-testing it sounds better than avoiding it","date":"2016-10-20T16:28:55.628Z","type":"message"}
+{"nick":"mightyiam","message":"And that's easy, it seems","date":"2016-10-20T16:29:03.132Z","type":"message"}
+{"nick":"mightyiam","message":"!`(function () {}).name`","date":"2016-10-20T16:29:55.507Z","type":"message"}
+{"nick":"mightyiam","message":"`!(function () {}).name`","date":"2016-10-20T16:30:07.940Z","type":"message"}
+{"nick":"caitp","message":"no, that wouldn't do it","date":"2016-10-20T16:30:25.984Z","type":"message"}
+{"nick":"mightyiam","message":"`!!(function () {}).name` ?","date":"2016-10-20T16:30:31.440Z","type":"message"}
+{"nick":"caitp","message":"that doesn't invoke inferrence","date":"2016-10-20T16:30:43.173Z","type":"message"}
+{"nick":"caitp","message":"you need an assignment","date":"2016-10-20T16:30:46.869Z","type":"message"}
+{"nick":"mightyiam","message":"`(function foo() {}).name === 'foo'`","date":"2016-10-20T16:31:03.765Z","type":"message"}
+{"nick":"caitp","message":"binding = anonymousfunction << if anonymous function has the same name as binding, inferrence is there","date":"2016-10-20T16:31:14.529Z","type":"message"}
+{"nick":"plutoniix","date":"2016-10-20T16:31:27.365Z","type":"join"}
+{"nick":"caitp","message":"eg `var f = function(){}` << if f.name === \"f\", the name was inferred","date":"2016-10-20T16:31:44.801Z","type":"message"}
+{"nick":"plutoniix","reason":"Quit: Leaving","date":"2016-10-20T16:43:26.122Z","type":"quit"}
+{"nick":"koldbrutality","date":"2016-10-20T16:44:35.732Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-10-20T17:13:20.245Z","type":"quit"}
+{"nick":"hferreiro","reason":"Quit: Connection closed for inactivity","date":"2016-10-20T17:20:21.452Z","type":"quit"}
+{"nick":"plutoniix","date":"2016-10-20T17:22:56.850Z","type":"join"}
+{"nick":"bradleymeck","date":"2016-10-20T18:37:07.975Z","type":"join"}
+{"nick":"plutoniix","reason":"Ping timeout: 256 seconds","date":"2016-10-20T18:39:00.829Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Read error: Connection reset by peer","date":"2016-10-20T18:47:15.211Z","type":"quit"}
+{"nick":"plutoniix","date":"2016-10-20T18:53:40.511Z","type":"join"}
+{"nick":"plutoniix","reason":"Max SendQ exceeded","date":"2016-10-20T18:53:52.490Z","type":"quit"}
+{"nick":"bradleymeck","date":"2016-10-20T18:59:18.554Z","type":"join"}
+{"nick":"jwolfe","message":"i'm getting an error from rietveld about xsrf tokens. I'm trying to post this in a comment: http://pastebin.com/W8bfZ5W3","date":"2016-10-20T18:59:26.460Z","type":"message"}
+{"nick":"jwolfe","message":"i'm at a loss for how to react to this. is rietveld being responsible at security or terrible at security? also how do i work around this nonsense? what's the problem with my comment that i need to change or whatever?","date":"2016-10-20T19:01:26.248Z","type":"message"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2016-10-20T19:02:54.019Z","type":"quit"}
+{"nick":"thefourtheye","date":"2016-10-20T19:06:36.798Z","type":"join"}
+{"nick":"plutoniix","date":"2016-10-20T19:09:04.706Z","type":"join"}
+{"nick":"caitp","message":"jwolfe: when I get those I normally just copy the comment, go back and repost it","date":"2016-10-20T19:14:27.374Z","type":"message"}
+{"nick":"caitp","message":"it is a pain","date":"2016-10-20T19:14:51.130Z","type":"message"}
+{"nick":"caitp","message":"to answer your comment, I sort of glossed over the \"create the source string and just parse it normally\", it's a bit more complicated than that","date":"2016-10-20T19:15:56.359Z","type":"message"}
+{"nick":"jwolfe","message":"the post is consistently getting rejected.","date":"2016-10-20T19:18:34.890Z","type":"message"}
+{"nick":"caitp","message":"I would report it in #chromium, see if any IT people can help","date":"2016-10-20T19:22:50.070Z","type":"message"}
+{"nick":"seventh","reason":"Quit: ...","date":"2016-10-20T19:24:28.654Z","type":"quit"}
+{"nick":"mightyiam","reason":"Quit: Leaving","date":"2016-10-20T19:36:22.380Z","type":"quit"}
+{"nick":"jwolfe","message":"uh. i figured it out. i needed to refresh the page.","date":"2016-10-20T19:59:08.745Z","type":"message"}
+{"nick":"jwolfe","message":"and just going back to it wasn't enough.","date":"2016-10-20T19:59:24.937Z","type":"message"}
+{"nick":"jwolfe","message":"(insert rant here about how buggy tools erode morale and impact productivity)","date":"2016-10-20T20:00:37.746Z","type":"message"}
+{"nick":"caitp","message":"yeah, rietveld is pretty awful","date":"2016-10-20T20:03:00.831Z","type":"message"}
+{"nick":"caitp","message":"at least, the downstream version of it that chromium uses","date":"2016-10-20T20:03:20.458Z","type":"message"}
+{"nick":"caitp","message":"anyways, I've answered your comment twice now, on the CL and here :p","date":"2016-10-20T20:03:54.356Z","type":"message"}
+{"nick":"caitp","message":"you can pick the way you want to do it, but I think it would be a simpler way to go","date":"2016-10-20T20:04:08.036Z","type":"message"}
+{"nick":"caitp","message":"basically just adding a flag to the parser like \"end after the first outer function declaration\" and \"don't add the anonymous binding\"","date":"2016-10-20T20:04:40.360Z","type":"message"}
+{"nick":"caitp","message":"of course, you could  parse the body separately from the parameters too","date":"2016-10-20T20:05:26.595Z","type":"message"}
+{"nick":"caitp","message":"but try to do it without duplicating so much code :x","date":"2016-10-20T20:06:03.117Z","type":"message"}
+{"nick":"bradleymeck","date":"2016-10-20T20:24:06.068Z","type":"join"}
+{"nick":"bradleymeck","reason":"Read error: Connection reset by peer","date":"2016-10-20T20:54:08.222Z","type":"quit"}
+{"nick":"bradleymeck","date":"2016-10-20T21:05:13.115Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2016-10-20T21:17:14.978Z","type":"quit"}
+{"nick":"thefourtheye","reason":"Quit: Connection closed for inactivity","date":"2016-10-20T21:22:04.477Z","type":"quit"}
+{"nick":"bobmcw","reason":"Remote host closed the connection","date":"2016-10-20T21:32:25.399Z","type":"quit"}
+{"nick":"olalonde","date":"2016-10-20T22:33:03.021Z","type":"join"}
+{"nick":"bradleymeck","date":"2016-10-20T22:34:59.067Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2016-10-20T22:35:42.107Z","type":"quit"}
+{"nick":"RT|Chatzilla","date":"2016-10-20T22:45:26.405Z","type":"join"}
+{"nick":"bradleymeck","date":"2016-10-20T23:31:50.641Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2016-10-20T23:31:57.450Z","type":"quit"}
+{"nick":"bradleymeck","date":"2016-10-20T23:46:04.096Z","type":"join"}
