@@ -27,3 +27,61 @@
 {"nick":"mbroadst","date":"2016-10-23T14:08:46.757Z","type":"join"}
 {"nick":"mbroadst","message":"is it possible to poll a fifo character device with libuv?","date":"2016-10-23T15:04:30.765Z","type":"message"}
 {"nick":"luka_","reason":"Ping timeout: 248 seconds","date":"2016-10-23T15:49:57.305Z","type":"quit"}
+{"nick":"rendar","message":"mbroadst: why not?","date":"2016-10-23T16:08:27.645Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: the operating system shuold makes it just as a regular file","date":"2016-10-23T16:08:46.853Z","type":"message"}
+{"nick":"rendar","message":"should make*","date":"2016-10-23T16:08:56.420Z","type":"message"}
+{"nick":"mbroadst","message":"rendar: I'm actually attempting this in node, and trying to trace whether the error is there or in libuv itself","date":"2016-10-23T16:10:13.242Z","type":"message"}
+{"nick":"mbroadst","message":"the problem is that it isn't a regular file right? so e.g. a more inefficient stat-based approach doesn't work since the OS will always indicate that it has a size of 0","date":"2016-10-23T16:10:53.631Z","type":"message"}
+{"nick":"rendar","message":"it's more like a char /dev","date":"2016-10-23T16:11:17.827Z","type":"message"}
+{"nick":"mbroadst","message":"yeah exactly ","date":"2016-10-23T16:11:27.106Z","type":"message"}
+{"nick":"rendar","message":"it may block indefinitely","date":"2016-10-23T16:11:28.356Z","type":"message"}
+{"nick":"rendar","message":"this with regular file won't happen","date":"2016-10-23T16:11:37.448Z","type":"message"}
+{"nick":"mbroadst","message":"so at this point I've just had to make a stream that periodically does a read on the device, which is pretty inefficient","date":"2016-10-23T16:12:44.562Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: unfortunately you can't add a filesystem fd to the epoll subsystem","date":"2016-10-23T16:12:47.955Z","type":"message"}
+{"nick":"mbroadst","message":"but I guess what you're saying is that there just isn't a facility to even poll such a device","date":"2016-10-23T16:12:57.825Z","type":"message"}
+{"nick":"rendar","message":"not for filesystem fds, i mean, epoll() works with socket and pipes, but actaully you can try it","date":"2016-10-23T16:13:27.141Z","type":"message"}
+{"nick":"rendar","message":"try to add the fifo fd, and try to see if you receive poll notifications","date":"2016-10-23T16:13:44.620Z","type":"message"}
+{"nick":"mbroadst","message":"I think you're right about its potential to block indefinitely, which is perhaps the argument for not supporting polling these fds (as you might completely tie up the thread pool in node)","date":"2016-10-23T16:15:33.618Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: exactly","date":"2016-10-23T16:17:04.190Z","type":"message"}
+{"nick":"mbroadst","message":"though in my case I wish they would let me be a little dangerous :)","date":"2016-10-23T16:17:22.618Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: since libuv (and hence node) does i/o operations in files by queueing them into secondary threads","date":"2016-10-23T16:17:35.643Z","type":"message"}
+{"nick":"mbroadst","message":"theoretically if done carefully that should only technically lock up as many threads as I call the polling operation on right?","date":"2016-10-23T16:18:13.648Z","type":"message"}
+{"nick":"rendar","message":"in theory, yes","date":"2016-10-23T16:19:05.206Z","type":"message"}
+{"nick":"rendar","message":"that, or even minus threads than that, if 2 fifo reads are enqueued in the same thread","date":"2016-10-23T16:19:31.229Z","type":"message"}
+{"nick":"mbroadst","message":"I wonder what the argument against supporting that would be then, lack of cancelability?","date":"2016-10-23T16:19:54.600Z","type":"message"}
+{"nick":"mbroadst","message":"we should be able to preempt those threads if a cancel is explicitly called ","date":"2016-10-23T16:20:19.440Z","type":"message"}
+{"nick":"mbroadst","message":"(sorry just brainstorming before I go start opening tickets)","date":"2016-10-23T16:20:44.515Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: nope, its just that when you open(2) a fifo, you pass through filesystem, which has different poll facilities than sockets and pipes.. so epoll() just do not support i/o alerts on fds opened through the filesystem, only Windows support this","date":"2016-10-23T16:21:00.754Z","type":"message"}
+{"nick":"rendar","message":"now the problem is that fifo or mkfifo created stuff, are basically pipes!","date":"2016-10-23T16:21:13.792Z","type":"message"}
+{"nick":"rendar","message":"so epoll() may work with fifos","date":"2016-10-23T16:21:21.675Z","type":"message"}
+{"nick":"rendar","message":"maybe here there is someone who has already tried that before..","date":"2016-10-23T16:21:37.560Z","type":"message"}
+{"nick":"rendar","message":"or you can try it by yourself and share results here","date":"2016-10-23T16:21:48.998Z","type":"message"}
+{"nick":"mbroadst","message":"right, okay so I should go experiment a little bit ","date":"2016-10-23T16:21:52.286Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: its really easy","date":"2016-10-23T16:22:05.441Z","type":"message"}
+{"nick":"mbroadst","message":"I'll put that on the list, I need to finish implementing this very inefficient approach first :)","date":"2016-10-23T16:22:13.144Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: just create an epoll() fd and associate a fifo fd into that, then just see if epoll() waits indefinitely or it returns alerts","date":"2016-10-23T16:22:33.348Z","type":"message"}
+{"nick":"rendar","message":"you can do this in about ~30 lines of code! :)","date":"2016-10-23T16:22:47.258Z","type":"message"}
+{"nick":"mbroadst","message":"yeah, better yet I can probably look at prior art on this","date":"2016-10-23T16:23:49.770Z","type":"message"}
+{"nick":"mbroadst","message":"glib has these \"io channels\" which operate on fifos","date":"2016-10-23T16:24:03.176Z","type":"message"}
+{"nick":"rendar","message":"mbroadst: maybe you can use aio_* polling functions with fifos","date":"2016-10-23T16:24:35.365Z","type":"message"}
+{"nick":"mbroadst","message":"well they operate on anything really, but fifos are supported so they must have some backend","date":"2016-10-23T16:24:53.292Z","type":"message"}
+{"nick":"rendar","message":"look, fifos are really pipes, just try the epoll thing, i'm sure it may work actually..","date":"2016-10-23T16:26:27.255Z","type":"message"}
+{"nick":"mbroadst","message":"I absolutely will, I just need about 10min to finish the other implementation here :)","date":"2016-10-23T16:28:49.394Z","type":"message"}
+{"nick":"rendar","message":":)","date":"2016-10-23T16:29:07.020Z","type":"message"}
+{"nick":"pspi","reason":"Remote host closed the connection","date":"2016-10-23T17:01:27.394Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 256 seconds","date":"2016-10-23T17:09:44.783Z","type":"quit"}
+{"nick":"mbroadst","reason":"Ping timeout: 252 seconds","date":"2016-10-23T17:22:43.912Z","type":"quit"}
+{"nick":"mbroadst","date":"2016-10-23T17:23:11.862Z","type":"join"}
+{"nick":"seishun","date":"2016-10-23T17:26:11.284Z","type":"join"}
+{"nick":"AlsoDirkson","message":"Hey all. I think I'm locking a wrlock-ing a mutex twice. Does anyone have any real brilliant ideas on how to track that down? My usual tools are gdb, valgrind, and clang's sanitizers, but none of them seem to be able to tell me where I previously locked the mutex.","date":"2016-10-23T18:44:59.790Z","type":"message"}
+{"nick":"AlsoDirkson","message":"(The reason I think I'm locking a rwmutex twice is that my program crashes when trying to wrlock a rwlock, and the -only- way I was able to make that happen in my test case was to write lock twice from the same thread without unlocking in between.)","date":"2016-10-23T18:47:30.269Z","type":"message"}
+{"nick":"mbroadst","reason":"Ping timeout: 256 seconds","date":"2016-10-23T19:05:54.796Z","type":"quit"}
+{"nick":"rendar","reason":"Ping timeout: 265 seconds","date":"2016-10-23T19:24:29.640Z","type":"quit"}
+{"nick":"rendar","date":"2016-10-23T19:53:46.488Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 245 seconds","date":"2016-10-23T20:45:53.796Z","type":"quit"}
+{"nick":"mbroadst","date":"2016-10-23T21:37:08.808Z","type":"join"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2016-10-23T21:44:00.792Z","type":"quit"}
+{"nick":"mbroadst","reason":"Ping timeout: 244 seconds","date":"2016-10-23T21:44:28.792Z","type":"quit"}
+{"nick":"indutny","message":"trevnorris: hey mate","date":"2016-10-23T22:20:16.354Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: I know you like perf stuff","date":"2016-10-23T22:20:24.979Z","type":"message"}
+{"nick":"indutny","message":"trevnorris: https://github.com/indutny/heatline","date":"2016-10-23T22:20:26.474Z","type":"message"}
