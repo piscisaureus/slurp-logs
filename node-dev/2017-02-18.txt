@@ -1,0 +1,102 @@
+{"nick":"addaleax","message":"if you want to make sure, build a debug build of Node","date":"2017-02-18T00:00:00.769Z","type":"message"}
+{"nick":"addaleax","message":"it’ll scream at you if you’re doing things that V8 doesn’t allow ;)","date":"2017-02-18T00:00:14.771Z","type":"message"}
+{"nick":"addaleax","message":"Aside: I realize Node is not the browser, but I don’t like the idea of being able to make Node crash from userland… that’s a personal preference, and I’d like to see Node move into that direction. The other C++ people here don’t have a problem with crashing, though. ;)","date":"2017-02-18T00:00:37.260Z","type":"message"}
+{"nick":"kahwee","date":"2017-02-18T00:00:42.417Z","type":"join"}
+{"nick":"TimothyGu","message":"and are those magical macros the only difference between debug builds and release ones? or do they contain things like debug symbols too?","date":"2017-02-18T00:01:43.175Z","type":"message"}
+{"nick":"TimothyGu","message":"magical macros = ones that make V8 report errors more eagerly","date":"2017-02-18T00:02:02.659Z","type":"message"}
+{"nick":"addaleax","message":"yeah, debug builds have all the debug symbols and are not optimized","date":"2017-02-18T00:02:33.740Z","type":"message"}
+{"nick":"addaleax","message":"as in, -g -O0","date":"2017-02-18T00:02:39.704Z","type":"message"}
+{"nick":"addaleax","message":"the V8 macros that are expanded are the DCHECK() ones","date":"2017-02-18T00:03:20.186Z","type":"message"}
+{"nick":"Niantl","date":"2017-02-18T00:03:28.894Z","type":"join"}
+{"nick":"addaleax","message":"Node’s CHECK()s are present in the release builds, too","date":"2017-02-18T00:03:37.223Z","type":"message"}
+{"nick":"TimothyGu","message":"okay","date":"2017-02-18T00:04:06.874Z","type":"message"}
+{"nick":"TimothyGu","message":"one last question, I promise (for now anyway ;). So right now when TwoByteString sees an exception when converting to string, it simply returns (https://github.com/nodejs/node/blob/master/src/util.cc#L43-L45)","date":"2017-02-18T00:05:24.676Z","type":"message"}
+{"nick":"TimothyGu","message":"is there a way to see if theres an exception pending after the call to TwoByteString?","date":"2017-02-18T00:05:48.448Z","type":"message"}
+{"nick":"TimothyGu","message":"TwoByteValue rather","date":"2017-02-18T00:06:13.799Z","type":"message"}
+{"nick":"addaleax","message":"I think you might need a TryCatch for that…","date":"2017-02-18T00:08:43.458Z","type":"message"}
+{"nick":"addaleax","message":"I wrote that code, so I kinda should know","date":"2017-02-18T00:08:57.800Z","type":"message"}
+{"nick":"addaleax","message":"I think in a perfect world dereferencing uninitialized {Utf8,TwoByte}Values would return nullptr, like it is for BufferValue (kinda…)","date":"2017-02-18T00:09:55.383Z","type":"message"}
+{"nick":"TimothyGu","message":":/:/","date":"2017-02-18T00:10:12.074Z","type":"message"}
+{"nick":"addaleax","message":"and I just left it the way it was before for backwards compatibility","date":"2017-02-18T00:10:14.318Z","type":"message"}
+{"nick":"addaleax","message":"which I realize may not have been a good idea","date":"2017-02-18T00:10:25.668Z","type":"message"}
+{"nick":"EV3RYDAYPR0GRESS","date":"2017-02-18T00:10:42.580Z","type":"join"}
+{"nick":"addaleax","message":"I guess this is a kind of “if somebody makes toString() throw, Node has every right to crash” situation…","date":"2017-02-18T00:11:46.364Z","type":"message"}
+{"nick":"addaleax","message":"feel free to see if you can improve the situation, tho","date":"2017-02-18T00:11:59.070Z","type":"message"}
+{"nick":"addaleax","message":"and don’t be shy to ask these questions here :D","date":"2017-02-18T00:12:11.335Z","type":"message"}
+{"nick":"TimothyGu","message":"I was thinking adding an optional parameter like TwoByteValue(Isolate*, Local<Value>, bool*), where the last param is for checking if ToString succeeded","date":"2017-02-18T00:13:41.064Z","type":"message"}
+{"nick":"junex","date":"2017-02-18T00:13:48.575Z","type":"join"}
+{"nick":"TimothyGu","message":"but I'm not sure if that's the preferred style here in Nod.ejs","date":"2017-02-18T00:13:59.267Z","type":"message"}
+{"nick":"addaleax","message":"yeah, it’s either that or making TwoByteValue optionally call Invalidate() if ToString() fails (e.g. through an extra template parameter or 2nd subclass)","date":"2017-02-18T00:15:20.897Z","type":"message"}
+{"nick":"Niantl","reason":"Ping timeout: 240 seconds","date":"2017-02-18T00:15:21.874Z","type":"quit"}
+{"nick":"addaleax","message":"although your suggestion might be the best approach","date":"2017-02-18T00:15:54.372Z","type":"message"}
+{"nick":"Niantl","date":"2017-02-18T00:15:58.540Z","type":"join"}
+{"nick":"addaleax","message":"in the end “preferred style here in Node.js” is kind of defined by getting to know what bnoordhuis likes to see and what he doesn’t like :P","date":"2017-02-18T00:16:41.184Z","type":"message"}
+{"nick":"TimothyGu","message":"okay lol","date":"2017-02-18T00:17:07.581Z","type":"message"}
+{"nick":"TimothyGu","message":"imo doing this through templates sounds like an overkill, but OTOH does adding an optional parameter constitute an ABI break in C++?","date":"2017-02-18T00:18:04.372Z","type":"message"}
+{"nick":"addaleax","message":"nope, in util.h you can mess with things any way you want ;)","date":"2017-02-18T00:18:45.797Z","type":"message"}
+{"nick":"addaleax","message":"all the headers with NODE_WANT_INTERNALS guards aren’t part of our official API","date":"2017-02-18T00:19:02.481Z","type":"message"}
+{"nick":"TimothyGu","message":"okay, good :)","date":"2017-02-18T00:19:10.515Z","type":"message"}
+{"nick":"TimothyGu","message":"before Node I really only had actual coding experiences with C, which is a lot simpler when it comes to this kind of things","date":"2017-02-18T00:19:39.166Z","type":"message"}
+{"nick":"TimothyGu","message":"well, native-code level experiences","date":"2017-02-18T00:19:57.460Z","type":"message"}
+{"nick":"Niantl","reason":"Ping timeout: 260 seconds","date":"2017-02-18T00:21:59.525Z","type":"quit"}
+{"nick":"addaleax","message":"I get that… sometimes I feel like I’m the only person who actually likes C++ ;)","date":"2017-02-18T00:22:03.926Z","type":"message"}
+{"nick":"Niantl","date":"2017-02-18T00:22:23.810Z","type":"join"}
+{"nick":"TimothyGu","message":"it's cool, it was a lot better than what I expected, which is a fairly low bar considering the only things I knew about C++ were derived from <https://www-users.cs.york.ac.uk/~susan/joke/cpp.htm>","date":"2017-02-18T00:23:48.465Z","type":"message"}
+{"nick":"chalker_","reason":"Ping timeout: 240 seconds","date":"2017-02-18T00:24:58.681Z","type":"quit"}
+{"nick":"addaleax","message":"that is a bit too real :P","date":"2017-02-18T00:29:57.540Z","type":"message"}
+{"nick":"TimothyGu","message":"lol","date":"2017-02-18T00:31:34.735Z","type":"message"}
+{"nick":"Niantl","reason":"Ping timeout: 240 seconds","date":"2017-02-18T00:45:41.841Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-02-18T00:51:56.839Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T00:51:56.999Z","type":"part"}
+{"nick":"BridgeAR","date":"2017-02-18T00:57:59.517Z","type":"join"}
+{"nick":"BridgeAR","reason":"Read error: No route to host","date":"2017-02-18T01:02:42.938Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-02-18T01:12:00.744Z","type":"quit"}
+{"nick":"BridgeAR","date":"2017-02-18T01:17:31.798Z","type":"join"}
+{"nick":"jasnell","reason":"Read error: Connection reset by peer","date":"2017-02-18T01:23:38.190Z","type":"quit"}
+{"nick":"addaleax","reason":"Quit: ChatZilla 0.9.93 [Firefox 51.0.1/20170201180315]","date":"2017-02-18T01:27:37.753Z","type":"quit"}
+{"nick":"hayes","reason":"Ping timeout: 245 seconds","date":"2017-02-18T01:41:12.690Z","type":"quit"}
+{"nick":"KnownSyntax","reason":"Ping timeout: 245 seconds","date":"2017-02-18T01:46:37.739Z","type":"quit"}
+{"nick":"hayes","date":"2017-02-18T01:47:13.448Z","type":"join"}
+{"nick":"KnownSyntax","date":"2017-02-18T01:48:46.925Z","type":"join"}
+{"nick":"BridgeAR","reason":"Ping timeout: 240 seconds","date":"2017-02-18T01:49:41.766Z","type":"quit"}
+{"nick":"KnownSyntax","reason":"Ping timeout: 240 seconds","date":"2017-02-18T01:55:38.764Z","type":"quit"}
+{"nick":"KnownSyntax","date":"2017-02-18T01:57:57.932Z","type":"join"}
+{"nick":"kahwee","reason":"Remote host closed the connection","date":"2017-02-18T02:16:48.188Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-02-18T02:38:01.843Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T02:38:02.003Z","type":"part"}
+{"nick":"junex","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2017-02-18T02:43:28.099Z","type":"quit"}
+{"nick":"k\\t","date":"2017-02-18T02:47:56.470Z","type":"join"}
+{"nick":"k\\t","reason":"\"Leaving\"","date":"2017-02-18T02:48:37.921Z","type":"part"}
+{"nick":"notarseniy","reason":"Remote host closed the connection","date":"2017-02-18T02:52:49.016Z","type":"quit"}
+{"nick":"troykelly","reason":"Quit: Farewell. So long.","date":"2017-02-18T03:00:01.683Z","type":"quit"}
+{"nick":"EV3RYDAYPR0GRESS","reason":"Ping timeout: 240 seconds","date":"2017-02-18T05:23:41.887Z","type":"quit"}
+{"nick":"junex","date":"2017-02-18T05:30:00.846Z","type":"join"}
+{"nick":"chalker_","date":"2017-02-18T05:30:45.640Z","type":"join"}
+{"nick":"not-an-aardvark","date":"2017-02-18T05:38:08.004Z","type":"join"}
+{"nick":"Trott","message":"For anyone following my test/parallel/test-domain-with-abort-on-uncaught-exception.js issue with bated breath: Not having the problem on my home laptop. Chalking this one up to some sort of enterprise nonsense on my work laptop.","date":"2017-02-18T06:01:31.223Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-02-18T06:03:28.416Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T06:03:28.576Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-02-18T06:03:50.578Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T06:03:50.769Z","type":"part"}
+{"nick":"lpin","date":"2017-02-18T06:18:20.207Z","type":"join"}
+{"nick":"lpin","reason":"Ping timeout: 240 seconds","date":"2017-02-18T06:22:41.772Z","type":"quit"}
+{"nick":"lpin","date":"2017-02-18T06:30:11.858Z","type":"join"}
+{"nick":"Tech","date":"2017-02-18T06:41:11.806Z","type":"join"}
+{"nick":"troykelly","date":"2017-02-18T06:42:15.920Z","type":"join"}
+{"nick":"Tech","reason":"Quit: Leaving","date":"2017-02-18T06:54:09.392Z","type":"quit"}
+{"nick":"troykelly","reason":"Quit: Farewell. So long. My battery has died...","date":"2017-02-18T06:56:14.955Z","type":"quit"}
+{"nick":"troykelly","date":"2017-02-18T06:57:01.290Z","type":"join"}
+{"nick":"troykelly","reason":"Client Quit","date":"2017-02-18T06:59:49.883Z","type":"quit"}
+{"nick":"troykelly","date":"2017-02-18T07:00:19.478Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:07:21.791Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:07:21.951Z","type":"part"}
+{"nick":"troykelly_","date":"2017-02-18T07:16:26.720Z","type":"join"}
+{"nick":"troykelly","reason":"Ping timeout: 240 seconds","date":"2017-02-18T07:18:38.866Z","type":"quit"}
+{"nick":"troykelly_","reason":"Quit: Farewell. So long.","date":"2017-02-18T07:34:11.920Z","type":"quit"}
+{"nick":"chalker_","reason":"Ping timeout: 240 seconds","date":"2017-02-18T07:38:21.510Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:41:23.867Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:41:24.026Z","type":"part"}
+{"nick":"BridgeAR","date":"2017-02-18T07:42:27.418Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:42:43.869Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-02-18T07:42:44.028Z","type":"part"}
+{"nick":"BridgeAR","reason":"Read error: Connection reset by peer","date":"2017-02-18T07:53:45.722Z","type":"quit"}
