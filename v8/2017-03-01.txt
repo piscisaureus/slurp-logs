@@ -65,3 +65,50 @@
 {"nick":"gsathya","message":"caitp: previously, CreateResolvingFunctions was in js, so it was expensive to call out to it from PromiseResolveThenableJob","date":"2017-03-01T15:59:10.794Z","type":"message"}
 {"nick":"gsathya","message":"but we can change it now","date":"2017-03-01T15:59:15.184Z","type":"message"}
 {"nick":"gsathya","message":"there's no observable behvaior","date":"2017-03-01T15:59:35.245Z","type":"message"}
+{"nick":"caitp","message":"btw, this comes up at the moment due to porting some promise-use code to C++ to shrink the snapshot, which has grown a bit too big","date":"2017-03-01T16:00:14.906Z","type":"message"}
+{"nick":"caitp","message":"another alternative is to avoid inlining so many Promise calls, in invoke them as stubs instead","date":"2017-03-01T16:00:34.997Z","type":"message"}
+{"nick":"gsathya","message":"caitp: https://bugs.chromium.org/p/v8/issues/detail?id=5737#c6","date":"2017-03-01T16:01:44.059Z","type":"message"}
+{"nick":"gsathya","message":"RegExp builtins are 5x the size of promise builtins","date":"2017-03-01T16:02:05.916Z","type":"message"}
+{"nick":"caitp","message":"sure, but we should still try to shrink this down","date":"2017-03-01T16:02:40.738Z","type":"message"}
+{"nick":"caitp","message":"like, maybe PromiseResolveClosure can inline InternalResolvePromise, but AsyncFunctionAwait* probably shouldn't","date":"2017-03-01T16:03:13.906Z","type":"message"}
+{"nick":"gsathya","message":"agreed","date":"2017-03-01T16:03:47.833Z","type":"message"}
+{"nick":"gsathya","message":"i'm more comfortable with async builtins calling out to promise builtin stubs","date":"2017-03-01T16:04:15.841Z","type":"message"}
+{"nick":"caitp","message":"and now there's an entire other set of Async*Await methods lined up to enter the codebase, it would probably be better if Uncaught and Caught were the same function","date":"2017-03-01T16:04:20.990Z","type":"message"}
+{"nick":"caitp","message":"lots of room for improvement","date":"2017-03-01T16:04:34.991Z","type":"message"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-01T16:05:03.453Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by machenbach@chromium.org: open","date":"2017-03-01T16:06:32.955Z","type":"message"}
+{"nick":"unixpickle","date":"2017-03-01T16:26:25.729Z","type":"join"}
+{"nick":"caitp","message":"we could also shrink Promise builtins code size massively by not allocating a separate fixed array for each component of a Promise","date":"2017-03-01T17:11:56.325Z","type":"message"}
+{"nick":"caitp","message":"could just allocate a single fixed array, a multiple of the number of elements needed, and fill the other fields with the hole when they can't be used","date":"2017-03-01T17:12:38.042Z","type":"message"}
+{"nick":"caitp","message":"then you'd still get the fast case for 0 or 1 callbacks, and much smaller code for InternalPerformPromiseThen","date":"2017-03-01T17:13:22.652Z","type":"message"}
+{"nick":"caitp","message":"not to mention a smaller heap graph to traverse","date":"2017-03-01T17:13:57.829Z","type":"message"}
+{"nick":"bradleymeck","date":"2017-03-01T17:59:03.518Z","type":"join"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-01T18:13:20.407Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: closed (http://build.chromium.org/p/client.v8/builders/V8%20Linux64%20ASAN/builds/18928 from a5af7fe9ee388a636675f4a6872b1d34fa7d1a7a)","date":"2017-03-01T18:41:39.570Z","type":"message"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-03-01T19:23:25.802Z","type":"quit"}
+{"nick":"caitp","message":"with some combination of flags, or maybe regardless of flags, all user-supplied JS code seems to have a code with kind=BUILTIN, which doesn't seem to make any sense","date":"2017-03-01T19:33:07.516Z","type":"message"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by bmeurer@google.com: open (Flake?)","date":"2017-03-01T19:46:04.862Z","type":"message"}
+{"nick":"aklein","message":"caitp: isn't that just because the code gets set to the CompileLazy builtin?","date":"2017-03-01T19:47:33.998Z","type":"message"}
+{"nick":"caitp","message":"I think it would have its proper entry set after being invoked","date":"2017-03-01T19:47:59.678Z","type":"message"}
+{"nick":"caitp","message":"it may well be that, but it just seems to make printing the code misleading","date":"2017-03-01T19:50:53.210Z","type":"message"}
+{"nick":"unixpickle","date":"2017-03-01T19:51:21.210Z","type":"join"}
+{"nick":"gsathya","message":"caitp: did you try changing AsyncFromSync builtins to call out to promise builtins stubs? ","date":"2017-03-01T20:31:39.612Z","type":"message"}
+{"nick":"gsathya","message":"we can have some of the promise builtins be both TFS and TFJ stubs","date":"2017-03-01T20:32:28.294Z","type":"message"}
+{"nick":"caitp","message":"not yet, but we will see","date":"2017-03-01T20:32:35.065Z","type":"message"}
+{"nick":"gsathya","message":"it might be better to do just that, rather than reimplementing all this in c++ again","date":"2017-03-01T20:33:35.790Z","type":"message"}
+{"nick":"caitp","message":"another thing I could do is just change the C++ builtins to call the TFJ natives instead of reimplementing in C++","date":"2017-03-01T20:35:17.806Z","type":"message"}
+{"nick":"caitp","message":"lots of options, feel free to leave comments on the CL about it","date":"2017-03-01T20:35:43.707Z","type":"message"}
+{"nick":"caitp","message":"or on the bug","date":"2017-03-01T20:35:53.137Z","type":"message"}
+{"nick":"sxa","reason":"Ping timeout: 264 seconds","date":"2017-03-01T21:02:11.261Z","type":"quit"}
+{"nick":"sxa","date":"2017-03-01T21:08:55.130Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-01T21:20:50.573Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-03-01T21:54:16.537Z","type":"join"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-01T22:04:46.955Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-01T22:24:59.021Z","type":"quit"}
+{"nick":"RT|Chatzilla","date":"2017-03-01T22:48:09.854Z","type":"join"}
+{"nick":"sxa","reason":"Ping timeout: 258 seconds","date":"2017-03-01T23:23:58.226Z","type":"quit"}
+{"nick":"unixpickle","date":"2017-03-01T23:29:23.759Z","type":"join"}
+{"nick":"sxa","date":"2017-03-01T23:29:38.325Z","type":"join"}
+{"nick":"joyee","date":"2017-03-01T23:30:41.420Z","type":"join"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-01T23:40:05.043Z","type":"quit"}
+{"nick":"unixpickle","date":"2017-03-01T23:53:11.303Z","type":"join"}
