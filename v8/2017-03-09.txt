@@ -69,3 +69,57 @@
 {"nick":"unixpickle","date":"2017-03-09T14:45:02.731Z","type":"join"}
 {"nick":"bradleymeck","date":"2017-03-09T14:52:00.486Z","type":"join"}
 {"nick":"joyee","reason":"Remote host closed the connection","date":"2017-03-09T15:08:33.610Z","type":"quit"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2010030309]","date":"2017-03-09T16:27:26.333Z","type":"quit"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-09T16:41:13.259Z","type":"quit"}
+{"nick":"rwlbuis_","date":"2017-03-09T16:51:44.218Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-09T16:53:16.607Z","type":"quit"}
+{"nick":"unixpickle","date":"2017-03-09T16:59:51.188Z","type":"join"}
+{"nick":"bradleymeck","date":"2017-03-09T17:00:22.298Z","type":"join"}
+{"nick":"unixpickle","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-09T17:27:29.447Z","type":"quit"}
+{"nick":"Guest59","reason":"Quit: My Mac has gone to sleep. ZZZzzz…","date":"2017-03-09T17:31:44.392Z","type":"quit"}
+{"nick":"Guest59","date":"2017-03-09T17:33:06.152Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-09T18:16:22.703Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-03-09T18:27:09.554Z","type":"join"}
+{"nick":"jwolfe","message":"aklein: that's similar, but not exactly the issue i was having.","date":"2017-03-09T19:49:39.050Z","type":"message"}
+{"nick":"jwolfe","message":"and here's the next link in the everything-is-broken chain: setting v8_use_snapshot=false appears to do nothing. it still makes a snapshot during the build step, and the snapshot initialization code i was trying to debug doesn't run at runtime.","date":"2017-03-09T19:50:29.482Z","type":"message"}
+{"nick":"jwolfe","message":"i can give up on trying to debug the snapshot code, but it seems like that option's existence implies that it's supposed to work.","date":"2017-03-09T19:51:02.421Z","type":"message"}
+{"nick":"caitp","message":"jwolfe: it looks like if v8_use_snapshot is false, and external startup data isn't configured, it generates an \"empty\" snapshot","date":"2017-03-09T19:54:52.133Z","type":"message"}
+{"nick":"caitp","message":"which could be the build steps you're seeing?","date":"2017-03-09T19:55:09.410Z","type":"message"}
+{"nick":"jwolfe","message":"caitp: i put a CHECK(false) in bootstrapper.cc Genesis::InitializeGlobal(), and it was hit during the build step: ACTION //:run_mksnapshot(//build/toolchain/linux:clang_x64)","date":"2017-03-09T19:57:34.828Z","type":"message"}
+{"nick":"caitp","message":"I think that should still be run each time you create a context in a nosnap build, though","date":"2017-03-09T19:59:14.829Z","type":"message"}
+{"nick":"caitp","message":"at least that's how it used to work","date":"2017-03-09T19:59:18.347Z","type":"message"}
+{"nick":"jwolfe","message":"caitp: when i set a breakpoint in that function, it did not trigger at runtime. so unless something is independently broken with breakpoints in certain places in the code at certain phases of running a program, i believe that function is not running at runtime.","date":"2017-03-09T20:00:08.890Z","type":"message"}
+{"nick":"caitp","message":"hmm","date":"2017-03-09T20:00:18.782Z","type":"message"}
+{"nick":"caitp","message":"might want to look at the gn args for some of the nosnap bots","date":"2017-03-09T20:00:27.758Z","type":"message"}
+{"nick":"caitp","message":"I think there are some in the config list","date":"2017-03-09T20:00:33.297Z","type":"message"}
+{"nick":"jwolfe","message":"what is the config list?","date":"2017-03-09T20:00:55.141Z","type":"message"}
+{"nick":"jwolfe","message":"build/config/** doesn't have any snapshot settings that i can find.","date":"2017-03-09T20:02:08.703Z","type":"message"}
+{"nick":"caitp","message":"'V8 Linux - nosnap builder' generates: is_component_build = false, is_debug = false, target_cpu = \"x86\", use_goma = true, v8_test_isolation_mode = \"prepare\", v8_use_snapshot = false","date":"2017-03-09T20:02:36.960Z","type":"message"}
+{"nick":"caitp","message":"and, the config list is in infra/mb/mb_config.pyl","date":"2017-03-09T20:03:09.966Z","type":"message"}
+{"nick":"jwolfe","message":"ok, maybe it's time i learn what a component build is","date":"2017-03-09T20:05:07.437Z","type":"message"}
+{"nick":"caitp","message":"it's what you'd expect, use of .so/dlls","date":"2017-03-09T20:06:15.787Z","type":"message"}
+{"nick":"caitp","message":"rather than static linkage","date":"2017-03-09T20:06:31.061Z","type":"message"}
+{"nick":"jwolfe","message":"caitp: after removing target_cpu=\"x68\" and use_goma=true, i get the same behavior as i was getting before. (i removed those two options because i don't think i can use them at all on my machine.)","date":"2017-03-09T20:21:39.576Z","type":"message"}
+{"nick":"caitp","message":"yeah, I know","date":"2017-03-09T20:22:13.440Z","type":"message"}
+{"nick":"caitp","message":"the test isolation mode shouldn't matter for you","date":"2017-03-09T20:22:26.788Z","type":"message"}
+{"nick":"caitp","message":"I dunno what's going on with nosnap in gn if that's happening","date":"2017-03-09T20:22:44.499Z","type":"message"}
+{"nick":"caitp","message":"try doing a gyp build, maybe it will work properly? otherwise maybe yang knows","date":"2017-03-09T20:22:57.618Z","type":"message"}
+{"nick":"caitp","message":"but again, if you need to debug something in snapshot creation, you can always just debug mksnapshot","date":"2017-03-09T20:23:20.966Z","type":"message"}
+{"nick":"caitp","message":"rather than d8","date":"2017-03-09T20:23:24.296Z","type":"message"}
+{"nick":"jwolfe","message":"right. that would be the \"giving up\" option, which is realistically the right way forward at this point.","date":"2017-03-09T20:24:12.331Z","type":"message"}
+{"nick":"caitp","message":"give up or not, I think it's worth filing a bug about the nosnap gn build","date":"2017-03-09T20:35:46.421Z","type":"message"}
+{"nick":"caitp","message":"best case they will explain how it's not actually broken, worst case it will get fixed","date":"2017-03-09T20:36:12.437Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-09T22:10:35.003Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-03-09T22:15:51.534Z","type":"join"}
+{"nick":"unixpickle","date":"2017-03-09T22:24:01.113Z","type":"join"}
+{"nick":"RT|Chatzilla","date":"2017-03-09T22:48:45.987Z","type":"join"}
+{"nick":"joyee","date":"2017-03-09T22:51:06.466Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-03-09T22:53:03.344Z","type":"quit"}
+{"nick":"joyee","reason":"Ping timeout: 240 seconds","date":"2017-03-09T22:55:36.424Z","type":"quit"}
+{"nick":"joyee","date":"2017-03-09T23:16:24.390Z","type":"join"}
+{"nick":"joyee","reason":"Read error: Connection reset by peer","date":"2017-03-09T23:18:43.906Z","type":"quit"}
+{"nick":"joyee","date":"2017-03-09T23:19:14.468Z","type":"join"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-03-09T23:27:17.350Z","type":"quit"}
+{"nick":"joyee","date":"2017-03-09T23:30:09.187Z","type":"join"}
+{"nick":"joyee","reason":"Read error: Connection reset by peer","date":"2017-03-09T23:50:10.009Z","type":"quit"}
+{"nick":"joyee","date":"2017-03-09T23:50:39.729Z","type":"join"}
