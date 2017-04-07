@@ -1,0 +1,100 @@
+{"nick":"caiolima_","message":"Jumping into the Promise cancelation as well. I tweeted with caitp last week and she presented me a point about \"what happens with an await expression if a promise is canceled?\". She convinced me that it has a big potential to break the new async code that is coming soon.","date":"2017-04-07T00:12:26.580Z","type":"message"}
+{"nick":"Bakkot","date":"2017-04-07T00:16:38.808Z","type":"join"}
+{"nick":"ljharb","message":"caiolima_: presumably it'd be the same thing as if you awaited `new Promise(() => {})` (a promise that never settles)","date":"2017-04-07T00:17:35.952Z","type":"message"}
+{"nick":"ljharb","message":"caiolima_: ie, the async function (and the resulting promise from it) would simply never settle either","date":"2017-04-07T00:17:46.455Z","type":"message"}
+{"nick":"Bakkot","reason":"Client Quit","date":"2017-04-07T00:17:49.060Z","type":"quit"}
+{"nick":"caitp","message":"ljharb: I think that could potentially break apps","date":"2017-04-07T00:18:47.921Z","type":"message"}
+{"nick":"caitp","message":"like, if a Promise from some web service API was cancelled by non-user controlled JS, sites could break","date":"2017-04-07T00:19:11.632Z","type":"message"}
+{"nick":"Bakkot","date":"2017-04-07T00:20:15.352Z","type":"join"}
+{"nick":"caiolima_","message":"ljharb: hum...it sounds buggy to me. this case looks like a fancy a \"while(true) {}\" IMHO.","date":"2017-04-07T00:21:12.529Z","type":"message"}
+{"nick":"Bakkot","reason":"Client Quit","date":"2017-04-07T00:22:15.099Z","type":"quit"}
+{"nick":"Bakkot","date":"2017-04-07T00:23:36.112Z","type":"join"}
+{"nick":"caiolima_","message":"I need to get more context about that, but one idea I had in mind is to use a new \"CancellablePromise\" and then let user use it to trigger promises that they want to cancel. in that case, we could throw when the an awaited promise is canceled.","date":"2017-04-07T00:24:47.166Z","type":"message"}
+{"nick":"caiolima_","message":"btw, \"promising canceling\" sounds cruel to me. It is rude break a promise =(","date":"2017-04-07T00:25:46.856Z","type":"message"}
+{"nick":"Bakkot","reason":"Client Quit","date":"2017-04-07T00:26:01.112Z","type":"quit"}
+{"nick":"Bakkot","date":"2017-04-07T00:28:10.611Z","type":"join"}
+{"nick":"ljharb","message":"caitp: wait - can \"not the creator of the promise\" cancel them in this new proposal?","date":"2017-04-07T00:38:03.183Z","type":"message"}
+{"nick":"ljharb","message":"caiolima_: the creator of the promise can always give you a forever-pending promise and you have no control over it.","date":"2017-04-07T00:38:21.098Z","type":"message"}
+{"nick":"ljharb","message":"caiolima_: so the *creator* could always cancel, and the consumer would just never see a rejection or resolution, and that'd be ok","date":"2017-04-07T00:38:32.327Z","type":"message"}
+{"nick":"ljharb","message":"but if someone who didn't create the promise could cause its state to change, then that's not ok","date":"2017-04-07T00:38:49.361Z","type":"message"}
+{"nick":"caitp","message":"I don't see how that's okay if critical code is blocking on that promise being resolved","date":"2017-04-07T00:38:57.869Z","type":"message"}
+{"nick":"caitp","message":"you'd need to interrupt it to prevent it from blocking forever","date":"2017-04-07T00:39:16.453Z","type":"message"}
+{"nick":"caitp","message":"or at least make it possible to","date":"2017-04-07T00:39:25.733Z","type":"message"}
+{"nick":"ljharb","message":"caitp: it's ok because it's already possible","date":"2017-04-07T00:43:26.637Z","type":"message"}
+{"nick":"ljharb","message":"if i'm giving you the promise, you can't prevent me from giving you `new Promise(() => {})`","date":"2017-04-07T00:43:36.089Z","type":"message"}
+{"nick":"ljharb","message":"awaiting that is identical to sticking `.then` or `.catch` on said forever-pending promise","date":"2017-04-07T00:43:55.262Z","type":"message"}
+{"nick":"caitp","message":"yes, but people tend to not rely on things that can actually do that","date":"2017-04-07T00:45:04.030Z","type":"message"}
+{"nick":"caitp","message":"but people might actually rely on things that can be cancelled","date":"2017-04-07T00:45:11.763Z","type":"message"}
+{"nick":"ljharb","message":"and they will thus tend to not doing that anymore.","date":"2017-04-07T00:45:19.687Z","type":"message"}
+{"nick":"ljharb","message":"i agree that relying on a cancellable operation, without a means to hook into said cancellation, is dangerous - and if `fetch` starts being that, then relying on it without a cancellation hook will become dangerous","date":"2017-04-07T00:45:59.711Z","type":"message"}
+{"nick":"ljharb","message":"but that's not \"not ok\", that's just a hazard that fetch will be opting into","date":"2017-04-07T00:46:11.582Z","type":"message"}
+{"nick":"caitp","message":"I think it's an important cross-cutting thing, working with await needs to be a thing","date":"2017-04-07T00:54:01.400Z","type":"message"}
+{"nick":"Bakkot","reason":"Quit: death","date":"2017-04-07T00:54:53.029Z","type":"quit"}
+{"nick":"caiolima_","message":"ljharb: what do you mean when you refer the creator of the promise?","date":"2017-04-07T00:56:07.315Z","type":"message"}
+{"nick":"Bakkot","date":"2017-04-07T00:56:13.800Z","type":"join"}
+{"nick":"ljharb","message":"caitp: working with await is a good thing; but awaiting a forever-pending promise already waits forever.","date":"2017-04-07T00:56:29.180Z","type":"message"}
+{"nick":"ljharb","message":"so that can't be a blocker here.","date":"2017-04-07T00:56:33.028Z","type":"message"}
+{"nick":"ljharb","message":"caiolima_: i mean, whoever did `new Promise` or `Promise.resolve` or `Promise.reject`","date":"2017-04-07T00:56:41.974Z","type":"message"}
+{"nick":"caitp","message":"cancelation is a form of resolution","date":"2017-04-07T00:56:57.629Z","type":"message"}
+{"nick":"caitp","message":"so no, I don't think s","date":"2017-04-07T00:57:10.255Z","type":"message"}
+{"nick":"ljharb","message":"it depends on if you view cancelation as a third state, or as a special form of rejection","date":"2017-04-07T00:57:34.172Z","type":"message"}
+{"nick":"ljharb","message":"in the former case, everything's fine - it's just invisible to people only using then/catch to subscribe. in the latter case, .catch would catch it","date":"2017-04-07T00:57:54.023Z","type":"message"}
+{"nick":"caitp","message":"its a non-pending state, period","date":"2017-04-07T00:58:02.044Z","type":"message"}
+{"nick":"ljharb","message":"(ofc, Promise#finally would absolutely react to rejections)","date":"2017-04-07T00:58:03.840Z","type":"message"}
+{"nick":"ljharb","message":"yes","date":"2017-04-07T00:58:06.040Z","type":"message"}
+{"nick":"ljharb","message":"but prior to \"finally\", promises do not give you a guarantee of notification when a promise stops being pending","date":"2017-04-07T00:58:21.414Z","type":"message"}
+{"nick":"ljharb","message":"so \"a non-pending state\" isn't something that you can be sure you'll ever get","date":"2017-04-07T00:58:30.086Z","type":"message"}
+{"nick":"ljharb","message":"* notified of","date":"2017-04-07T00:58:35.361Z","type":"message"}
+{"nick":"ljharb","message":"however, `finally` *would* have that guarantee - it would fire whenever the promise became non-pending, period","date":"2017-04-07T00:58:49.936Z","type":"message"}
+{"nick":"caitp","message":"with apis that people actually consume, you can be sure","date":"2017-04-07T00:59:04.227Z","type":"message"}
+{"nick":"ljharb","message":"i totally get that people's expectation will be that then+catch guarantees them \"non-pending\", but that expectation is already wrong","date":"2017-04-07T01:00:57.693Z","type":"message"}
+{"nick":"ljharb","message":"that's why i think \"finally\" is so important to add; because finally's semantics *are* \"guaranteed non-pending\"","date":"2017-04-07T01:01:10.248Z","type":"message"}
+{"nick":"caitp","message":"I don't think I agree with that line of thinking, this would make it very easy to break await-users","date":"2017-04-07T01:04:59.038Z","type":"message"}
+{"nick":"caiolima_","message":"we need to be sure to take the users expectation as intuitive as possible. Await is a really new thing, but the way I've used it was always considering a resolution, whatever it is. mainly because it's there to make async code more synchronous-like reading style.","date":"2017-04-07T01:08:44.592Z","type":"message"}
+{"nick":"caitp","message":"also re \"but prior to \"finally\", promises do not give you a guarantee of notification when a promise stops being pending\", I think it was always possible to get notified when the Promise was settled with await, regardless of \"finally\"","date":"2017-04-07T01:29:59.278Z","type":"message"}
+{"nick":"caitp","message":"fulfill -> try block, reject -> catch block","date":"2017-04-07T01:30:32.352Z","type":"message"}
+{"nick":"not-an-aardvark","date":"2017-04-07T01:42:17.513Z","type":"join"}
+{"nick":"rbuckton","message":"caitp, sorry to chime in so late on the discussion, as I was pulled away. There are currently two possibilities for an await when an async operation is cancelled: 1. The operation never completes, and the `await` remains in a forever pending state. 2. Cancellation results in promise rejection, and an exception is thrown at the `await`.","date":"2017-04-07T01:44:21.519Z","type":"message"}
+{"nick":"caitp","message":"right, and I think option 1 is not workable","date":"2017-04-07T01:44:52.009Z","type":"message"}
+{"nick":"caitp","message":"option 2 isn't that great either, but it's workable","date":"2017-04-07T01:44:58.024Z","type":"message"}
+{"nick":"rbuckton","message":"There are two additional options to consider: 3. The async operation chooses to resolve in a clean state (useful for a cancellation token that is primarily used only to stop a long-running operation). 4. A new state is added to Promise to specifically track cancellation.","date":"2017-04-07T01:46:17.545Z","type":"message"}
+{"nick":"rbuckton","message":"In the .NET framework, you have [4] available when working directly with Tasks, but an `await` on a cancelled promise results in [2].","date":"2017-04-07T01:47:02.663Z","type":"message"}
+{"nick":"rbuckton","message":"Then again, the .NET framework uses cooperative cancellation between Tasks (Promises) and cancellation tokens, allowing for a tighter coupling between the two than something like what I support in the 'prex' library.","date":"2017-04-07T01:48:42.181Z","type":"message"}
+{"nick":"caitp","message":"yeah, I've thought about option 3, but it seems problematic because it doesn't really allow for handling of the cancellation, and doesn't allow overriding the resulting value","date":"2017-04-07T01:48:43.649Z","type":"message"}
+{"nick":"caitp","message":"and even stranger for async generators","date":"2017-04-07T01:50:20.501Z","type":"message"}
+{"nick":"rbuckton","message":"In .NET you handle cancellation in one of two ways: Direct interaction with the Task via ContinueWith (similar to 'Promise#then'), or by catching an exception. From a syntax perspective, there's no third rail for cancellation.","date":"2017-04-07T01:50:21.566Z","type":"message"}
+{"nick":"rbuckton","message":"As it stands with the 'prex' implementation, options 1-3 are all available to the developer as a choice. I can observe a cancellation signal with `token.register` and choose to either `resolve()`, `reject()`, or do nothing. I can make it easier to trigger rejections in an async function through `token.throwIfCancellationRequested()`, which throws a specific `CancelError` exception.","date":"2017-04-07T01:52:49.858Z","type":"message"}
+{"nick":"rbuckton","message":"That approach is similar to .NET Tasks and cancellation, which as worked well in .NET with async/await for a number of years now.","date":"2017-04-07T01:53:35.482Z","type":"message"}
+{"nick":"caitp","message":"the thing with async functions is, the Task interface isn't exposed to the caller","date":"2017-04-07T02:01:18.145Z","type":"message"}
+{"nick":"caitp","message":"they can't get at it","date":"2017-04-07T02:01:22.343Z","type":"message"}
+{"nick":"caitp","message":"I think the simplest thing to interact with would be to reject with a cancellation token, so that no third prong needs to be added","date":"2017-04-07T02:02:58.407Z","type":"message"}
+{"nick":"caitp","message":"not an ideal api, but fits better with async/await","date":"2017-04-07T02:03:07.458Z","type":"message"}
+{"nick":"rbuckton","message":"I'm not sure I understand what you mean by \"reject with a cancellation token\"","date":"2017-04-07T02:16:48.182Z","type":"message"}
+{"nick":"rbuckton","message":"Do you mean to say that if my asynchronous operation receives a cancellation signal, I should reject the operation's Promise with the token, rather than something derived from Error?","date":"2017-04-07T02:17:39.497Z","type":"message"}
+{"nick":"bterlson","message":"2 seems like the only option","date":"2017-04-07T03:04:18.275Z","type":"message"}
+{"nick":"bterlson","message":"I am not sure about deriving from Error","date":"2017-04-07T03:05:12.187Z","type":"message"}
+{"nick":"bradleymeck","date":"2017-04-07T03:05:24.991Z","type":"join"}
+{"nick":"bterlson","message":"it's not an error","date":"2017-04-07T03:05:37.258Z","type":"message"}
+{"nick":"bradleymeck","reason":"Ping timeout: 256 seconds","date":"2017-04-07T03:09:58.920Z","type":"quit"}
+{"nick":"Domenic","message":"rbuckton: we're not really interested in something host-agnostic anymore. We tried that in TC39 and failed, so that effort is over.","date":"2017-04-07T03:13:35.185Z","type":"message"}
+{"nick":"Domenic","message":"Similarly we're not interested in good ergonomics (e.g. trying to treat a cancelation as a non-error) anymore. We tried that in TC39 and it failed.","date":"2017-04-07T03:14:03.006Z","type":"message"}
+{"nick":"Domenic","message":"bterlson: I think the editing downsides outweigh the benefits of every step being linkable in a way that survives across revisions, yeah.","date":"2017-04-07T03:15:22.073Z","type":"message"}
+{"nick":"ljharb","message":"Domenic: so the whatwg cancellation stuff, is there a tldr somewhere? (like, is it \"third state\"; how does one catch cancellations, with API if not with syntax; if a cancellation is a rejection, how does one identify that a rejection reason is a cancellation; etc)","date":"2017-04-07T03:27:20.837Z","type":"message"}
+{"nick":"Domenic","message":"The PR is as good as you're gonna get. Not my proposal so not going to spend time educating people on it; still trying to stay uninvolved, except that streams will have to use it.","date":"2017-04-07T03:27:51.754Z","type":"message"}
+{"nick":"rbuckton","message":"bterlson, it seems bad form to throw/catch something that is not an Error, as you cannot guarantee stack information.","date":"2017-04-07T03:43:00.405Z","type":"message"}
+{"nick":"gskachkov_","date":"2017-04-07T04:17:40.994Z","type":"join"}
+{"nick":"gskachkov_","reason":"Client Quit","date":"2017-04-07T04:18:25.208Z","type":"quit"}
+{"nick":"jmdyck","reason":"Quit: Leaving.","date":"2017-04-07T04:34:34.120Z","type":"quit"}
+{"nick":"gskachkov_","date":"2017-04-07T04:40:43.287Z","type":"join"}
+{"nick":"gskachkov_","reason":"Quit: gskachkov_","date":"2017-04-07T04:51:45.769Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-04-07T05:06:28.675Z","type":"join"}
+{"nick":"bradleymeck","reason":"Ping timeout: 268 seconds","date":"2017-04-07T05:12:25.475Z","type":"quit"}
+{"nick":"gskachkov_","date":"2017-04-07T06:31:42.614Z","type":"join"}
+{"nick":"gskachkov_","reason":"Quit: gskachkov_","date":"2017-04-07T07:32:14.235Z","type":"quit"}
+{"nick":"gskachkov_","date":"2017-04-07T07:33:59.168Z","type":"join"}
+{"nick":"annevk","message":"Nothing like a thread about how to name stuff to get everyone to contribute","date":"2017-04-07T07:51:40.311Z","type":"message"}
+{"nick":"ljharb","message":"can't store your bike unless it's under the right color","date":"2017-04-07T07:53:58.776Z","type":"message"}
+{"nick":"annevk","message":"rbuckton: I'd love a more elaborate version of your last sentence here","date":"2017-04-07T07:58:07.888Z","type":"message"}
+{"nick":"annevk","message":"rbuckton: it sounds intriguing","date":"2017-04-07T07:58:18.445Z","type":"message"}
+{"nick":"annevk","message":"But yeah, the current TL;DR is that cancelation will reject the promise with some TBD exception","date":"2017-04-07T07:58:58.152Z","type":"message"}
+{"nick":"ljharb","message":"annevk: ok so it'd still trigger .catch and all the normal things?","date":"2017-04-07T07:59:52.815Z","type":"message"}
