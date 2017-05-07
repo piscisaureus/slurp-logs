@@ -1,0 +1,85 @@
+{"nick":"stepho","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2017-05-07T00:02:16.263Z","type":"quit"}
+{"nick":"qard","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2017-05-07T00:08:44.628Z","type":"quit"}
+{"nick":"simcop2387","date":"2017-05-07T00:16:16.056Z","type":"join"}
+{"nick":"simcop2387","message":"So i've got a weird situation.  I'm trying to get node to run inside a sandbox i've built (linux namespaces + seccomp) and I'm getting a really weird error from node 7.10 when running in it.  https://perlbot.pl/pastebin/oyeleb  the file /tmp/blahblah has just literally just the contents \"1\" in it.","date":"2017-05-07T00:17:57.637Z","type":"message"}
+{"nick":"simcop2387","message":"this is something internal to node, it's saying 'use strict;' inside of vm.js isn't valid syntax","date":"2017-05-07T00:18:53.886Z","type":"message"}
+{"nick":"simcop2387","message":"likely i've somehow got something not loading in the sandbox right but i'm not sure where to look","date":"2017-05-07T00:19:07.603Z","type":"message"}
+{"nick":"indutny","message":"simcop2387: looks like you have `use script` instead of `'use script'`","date":"2017-05-07T00:25:58.376Z","type":"message"}
+{"nick":"indutny","message":"ah wait","date":"2017-05-07T00:26:03.288Z","type":"message"}
+{"nick":"indutny","message":"is it just 1s in the file?","date":"2017-05-07T00:26:09.773Z","type":"message"}
+{"nick":"simcop2387","message":"literally just a 1","date":"2017-05-07T00:26:19.777Z","type":"message"}
+{"nick":"simcop2387","message":"no other bytes","date":"2017-05-07T00:26:27.319Z","type":"message"}
+{"nick":"simcop2387","message":"i think... wait let me check something","date":"2017-05-07T00:27:21.874Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2017-05-07T00:27:32.728Z","type":"message"}
+{"nick":"indutny","message":"I can't see how it could be added to it","date":"2017-05-07T00:27:37.921Z","type":"message"}
+{"nick":"simcop2387","message":"ok yea there's something in my pipeline adding it.  not sure where yet.  i knew it'd be my fault.","date":"2017-05-07T00:29:12.810Z","type":"message"}
+{"nick":"simcop2387","message":"yep i found it.  i've been dealing with setting up containers, seccomp, and everything else all day so i missed it :)","date":"2017-05-07T00:30:32.732Z","type":"message"}
+{"nick":"indutny","message":"np","date":"2017-05-07T00:32:00.497Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2017-05-07T00:32:01.454Z","type":"message"}
+{"nick":"simcop2387","message":"now to figure out why the seccomp rules have it hang at some point instead of exiting.","date":"2017-05-07T00:34:57.667Z","type":"message"}
+{"nick":"simcop2387","message":"looks like it's the resource limits.  node doesn't like getting ENOMEM on gigantic mmap calls it does","date":"2017-05-07T00:43:56.527Z","type":"message"}
+{"nick":"yn5","reason":"Quit: Connection closed for inactivity","date":"2017-05-07T00:44:21.804Z","type":"quit"}
+{"nick":"indutny","message":"simcop2387: you may want to fiddle with v8's heap options","date":"2017-05-07T00:58:09.647Z","type":"message"}
+{"nick":"indutny","message":"if you want to constrain it to low memory limits","date":"2017-05-07T00:58:19.680Z","type":"message"}
+{"nick":"indutny","message":"however, be prepared for performance loss","date":"2017-05-07T00:58:28.619Z","type":"message"}
+{"nick":"simcop2387","message":"yea i've got to read over them.  since it'll never run anything big (it's literally stuff from a pastebin or irc) i'd love to get it to use <500mb of ram (it's trying to alloate about 1.5G it looks like)","date":"2017-05-07T00:59:00.623Z","type":"message"}
+{"nick":"simcop2387","message":"any pointers at what to look at?","date":"2017-05-07T00:59:32.294Z","type":"message"}
+{"nick":"indutny","message":"node --v8-options","date":"2017-05-07T01:06:05.597Z","type":"message"}
+{"nick":"indutny","message":"--min_semi_space_size","date":"2017-05-07T01:06:20.505Z","type":"message"}
+{"nick":"indutny","message":"--max_semi_space_size","date":"2017-05-07T01:06:24.408Z","type":"message"}
+{"nick":"indutny","message":" --max_old_space_size","date":"2017-05-07T01:06:30.319Z","type":"message"}
+{"nick":"indutny","message":"--initial_old_space_size","date":"2017-05-07T01:06:35.758Z","type":"message"}
+{"nick":"indutny","message":"something like this","date":"2017-05-07T01:07:12.683Z","type":"message"}
+{"nick":"simcop2387","message":"yea i've set those all to 64mb, but there's still a 512mb mmap it does after starting up.  not sure why","date":"2017-05-07T01:08:47.388Z","type":"message"}
+{"nick":"simcop2387","message":"though i seem to have gotten rid of the 1gb allocation it'd do later now once i set those.  so it's still better","date":"2017-05-07T01:09:15.108Z","type":"message"}
+{"nick":"indutny","message":"one sec","date":"2017-05-07T01:09:23.249Z","type":"message"}
+{"nick":"simcop2387","message":"https://perlbot.pl/pastebin/zgylar # if you're curious or it helps, line 23","date":"2017-05-07T01:11:16.300Z","type":"message"}
+{"nick":"indutny","message":"SetResourceConstraints","date":"2017-05-07T01:13:57.484Z","type":"message"}
+{"nick":"indutny","message":"looks like kMaximalCodeRangeSize","date":"2017-05-07T01:14:35.429Z","type":"message"}
+{"nick":"simcop2387","message":"ok i'll take a look at those","date":"2017-05-07T01:14:55.753Z","type":"message"}
+{"nick":"indutny","message":"simcop2387: is patching node an option for you?","date":"2017-05-07T01:15:25.899Z","type":"message"}
+{"nick":"simcop2387","message":"totally fine if i have to build a custom node for this.  it's not a normal setup","date":"2017-05-07T01:15:28.136Z","type":"message"}
+{"nick":"indutny","message":"yep","date":"2017-05-07T01:15:58.403Z","type":"message"}
+{"nick":"simcop2387","message":"once i have this with a sane (for the task) memory limit i'm gonna enable running js through node on https://perlbot.pl/","date":"2017-05-07T01:16:01.038Z","type":"message"}
+{"nick":"indutny","message":"you can try to call SetResourceConstraints","date":"2017-05-07T01:16:08.207Z","type":"message"}
+{"nick":"indutny","message":"not sure at each step, though","date":"2017-05-07T01:16:15.326Z","type":"message"}
+{"nick":"indutny","message":"probably after Isolate::New","date":"2017-05-07T01:16:45.062Z","type":"message"}
+{"nick":"indutny","message":"ah","date":"2017-05-07T01:17:08.411Z","type":"message"}
+{"nick":"indutny","message":"easier","date":"2017-05-07T01:17:09.288Z","type":"message"}
+{"nick":"indutny","message":"Isolate::New accepts params","date":"2017-05-07T01:17:21.511Z","type":"message"}
+{"nick":"simcop2387","message":"i think i'm just gonna patch it in the v8 globals.h to be lower by default, unless you think that won't work?","date":"2017-05-07T01:17:35.387Z","type":"message"}
+{"nick":"indutny","message":"see Isolate::CreateParams","date":"2017-05-07T01:17:40.224Z","type":"message"}
+{"nick":"indutny","message":"no no","date":"2017-05-07T01:17:56.898Z","type":"message"}
+{"nick":"indutny","message":"don't do it","date":"2017-05-07T01:17:58.021Z","type":"message"}
+{"nick":"indutny","message":"it is way way easier","date":"2017-05-07T01:17:59.042Z","type":"message"}
+{"nick":"indutny","message":"just patch `Start` function in node.cc","date":"2017-05-07T01:18:21.579Z","type":"message"}
+{"nick":"indutny","message":"there is `  params.array_buffer_allocator = &allocator;` line","date":"2017-05-07T01:18:36.250Z","type":"message"}
+{"nick":"indutny","message":"you can add something like","date":"2017-05-07T01:18:44.009Z","type":"message"}
+{"nick":"indutny","message":"params.constraints.set_code_range_size(64)","date":"2017-05-07T01:19:06.141Z","type":"message"}
+{"nick":"indutny","message":"this in MBs","date":"2017-05-07T01:19:09.565Z","type":"message"}
+{"nick":"indutny","message":"this way other heap parameters may be configured","date":"2017-05-07T01:19:27.714Z","type":"message"}
+{"nick":"indutny","message":"without any CLI flags","date":"2017-05-07T01:19:30.368Z","type":"message"}
+{"nick":"simcop2387","message":"ok","date":"2017-05-07T01:19:34.197Z","type":"message"}
+{"nick":"olalonde","date":"2017-05-07T01:34:24.645Z","type":"join"}
+{"nick":"alrra","reason":"Quit: Connection closed for inactivity","date":"2017-05-07T01:41:27.130Z","type":"quit"}
+{"nick":"simcop2387","message":"indutny: yep that looks like it got it, awesome.","date":"2017-05-07T01:45:18.579Z","type":"message"}
+{"nick":"Artur_Vieira","reason":"Ping timeout: 260 seconds","date":"2017-05-07T02:03:50.587Z","type":"quit"}
+{"nick":"indutny","message":"simcop2387: cool!","date":"2017-05-07T02:05:06.839Z","type":"message"}
+{"nick":"simcop2387","message":"indutny: until i put it into the sandbox, it's actually doing a getrlimit(RLIMIT_STACK, ...) to get the max stack size and then trying to allocate it all at once.","date":"2017-05-07T02:05:09.264Z","type":"message"}
+{"nick":"simcop2387","message":"i think i can fix it by adjusting my limits.  nothing ever tried to allocate all of the memory it's allowed to allocate for the stack before","date":"2017-05-07T02:06:07.457Z","type":"message"}
+{"nick":"Artur_","date":"2017-05-07T02:15:47.775Z","type":"join"}
+{"nick":"chalker_","reason":"Ping timeout: 240 seconds","date":"2017-05-07T03:33:51.506Z","type":"quit"}
+{"nick":"refack1","reason":"Ping timeout: 258 seconds","date":"2017-05-07T03:34:08.790Z","type":"quit"}
+{"nick":"Artur_","reason":"Ping timeout: 260 seconds","date":"2017-05-07T03:38:55.544Z","type":"quit"}
+{"nick":"joshontheweb","date":"2017-05-07T03:49:13.839Z","type":"join"}
+{"nick":"lanceball","reason":"Excess Flood","date":"2017-05-07T05:25:31.862Z","type":"quit"}
+{"nick":"lanceball","date":"2017-05-07T05:26:45.467Z","type":"join"}
+{"nick":"benjamingr_","reason":"Quit: Connection closed for inactivity","date":"2017-05-07T05:47:11.200Z","type":"quit"}
+{"nick":"joshontheweb","reason":"Quit: Computer has gone to sleep.","date":"2017-05-07T05:55:04.572Z","type":"quit"}
+{"nick":"Artur_Vieira","date":"2017-05-07T05:57:05.542Z","type":"join"}
+{"nick":"lpin","date":"2017-05-07T06:16:27.375Z","type":"join"}
+{"nick":"alrra","date":"2017-05-07T06:27:01.486Z","type":"join"}
+{"nick":"Artur_Vieira","message":"Hi folks, anyone around for a quick question? I am building using 'make -j4', was wondering if there was a faster way. What would be a safe ceiling if I'm working with 6GB of RAM.","date":"2017-05-07T07:09:59.714Z","type":"message"}
+{"nick":"Artur_Vieira","message":"I am running a linux box for the build environment, it has 4 cores and 6gb assigned to it.","date":"2017-05-07T07:16:09.263Z","type":"message"}
+{"nick":"benjamingr_","date":"2017-05-07T07:23:20.204Z","type":"join"}
+{"nick":"olalonde","reason":"Quit: Connection closed for inactivity","date":"2017-05-07T07:44:03.846Z","type":"quit"}
