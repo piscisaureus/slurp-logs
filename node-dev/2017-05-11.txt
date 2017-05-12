@@ -251,3 +251,304 @@
 {"nick":"Fishrock123","message":"for Windows Console's, your out of luck for reasons beyond our control","date":"2017-05-11T15:59:39.316Z","type":"message"}
 {"nick":"refack","message":"I can dig and PR libuv","date":"2017-05-11T15:59:52.382Z","type":"message"}
 {"nick":"addaleax","message":"refack: are you using process.stdout.write() or console.log() for that?","date":"2017-05-11T15:59:58.753Z","type":"message"}
+{"nick":"Fishrock123","message":"how will that help","date":"2017-05-11T16:00:01.033Z","type":"message"}
+{"nick":"refack","message":"we can add WaitOnSingleObject","date":"2017-05-11T16:00:02.471Z","type":"message"}
+{"nick":"refack","message":"on the pipe","date":"2017-05-11T16:00:14.849Z","type":"message"}
+{"nick":"refack","message":"addaleax: when I need synchromisity process.stdout.write() obv","date":"2017-05-11T16:01:01.168Z","type":"message"}
+{"nick":"addaleax","message":"refack: why “obv”?","date":"2017-05-11T16:01:11.321Z","type":"message"}
+{"nick":"Fishrock123","message":"there is no difference between stdout.write() and console for (a)synchronousity","date":"2017-05-11T16:01:33.691Z","type":"message"}
+{"nick":"refack","message":"Actualy I donno, maybe some one fiddled with console","date":"2017-05-11T16:01:42.769Z","type":"message"}
+{"nick":"addaleax","message":"I could see console using a fs.SyncWriteStream for logging its output … that should make everything a bit easier anyway","date":"2017-05-11T16:02:46.492Z","type":"message"}
+{"nick":"Fishrock123","message":"please don't make them more different D:","date":"2017-05-11T16:03:04.633Z","type":"message"}
+{"nick":"addaleax","message":"more different?","date":"2017-05-11T16:03:11.405Z","type":"message"}
+{"nick":"Fishrock123","message":"or rather","date":"2017-05-11T16:03:18.830Z","type":"message"}
+{"nick":"Fishrock123","message":"please don't make it so that list of differences needs to be exapnded further","date":"2017-05-11T16:03:32.470Z","type":"message"}
+{"nick":"addaleax","message":"between what?","date":"2017-05-11T16:03:38.832Z","type":"message"}
+{"nick":"refack","message":" process.stdout.write() and console.log() ?","date":"2017-05-11T16:04:01.536Z","type":"message"}
+{"nick":"Fishrock123","message":"I am not looking forward to explaining yet more edgecases with logging to stdout","date":"2017-05-11T16:04:34.323Z","type":"message"}
+{"nick":"refack","message":"I agree, sync blocking writes should be opt-in, or a different API endpoint","date":"2017-05-11T16:05:19.150Z","type":"message"}
+{"nick":"octetcloud","message":"because console.log is sync to file, there are horror stories about it in production, the fix being to open another stream to log from in production. but cloud changes that, docker and others require logs to go to stdout, but that's OK since pipes aren't sync on Linux.","date":"2017-05-11T16:05:33.958Z","type":"message"}
+{"nick":"octetcloud","message":"but if pipes become sync, we'll be stuck without a workaround","date":"2017-05-11T16:05:45.353Z","type":"message"}
+{"nick":"Fishrock123","message":"they are opt-in if you want them everywhere already","date":"2017-05-11T16:06:03.759Z","type":"message"}
+{"nick":"Fishrock123","message":"you will not be stuck without a workaround regardless except for windows consoles","date":"2017-05-11T16:06:33.578Z","type":"message"}
+{"nick":"Fishrock123","message":"you'll still be able to set the behavior on the handle if you so desire","date":"2017-05-11T16:06:45.887Z","type":"message"}
+{"nick":"octetcloud","message":"true, using an undocumented private API, but it will still be possible. maybe we should make the API public","date":"2017-05-11T16:07:34.177Z","type":"message"}
+{"nick":"Fishrock123","message":"probably by this point","date":"2017-05-11T16:07:53.456Z","type":"message"}
+{"nick":"Fishrock123","message":"although really, you're more likely to run into problems than not using it but we can give docs wanrings I guess","date":"2017-05-11T16:08:27.521Z","type":"message"}
+{"nick":"octetcloud","message":"we're stuck between the tweet: \"node, broken by default in production\" and \"node: broken by default when I call process.exit\". a dilemma.","date":"2017-05-11T16:08:46.150Z","type":"message"}
+{"nick":"Fishrock123","message":"which is why we should really attempt to flush on process.exit","date":"2017-05-11T16:09:46.240Z","type":"message"}
+{"nick":"refack","message":"Just asking, can we have two handles on the std***s one blocking and one non? Or two pipes to the one handle","date":"2017-05-11T16:10:27.467Z","type":"message"}
+{"nick":"octetcloud","message":"we could do that, its reasonable. then we'd need a `process._exit()` as we reinvent the distinction C has always had (exit() flushes stdout/err, _exit() does not)","date":"2017-05-11T16:10:47.949Z","type":"message"}
+{"nick":"Fishrock123","message":"refack: they are separate handles","date":"2017-05-11T16:11:09.638Z","type":"message"}
+{"nick":"addaleax","message":"octetcloud: fun fact, we have process.reallyExit :P","date":"2017-05-11T16:11:10.321Z","type":"message"}
+{"nick":"refack","message":"I don't mean stdout/stderr, I mean have to handles to stdout, one blocking one non. Or have two pipes to fd[1]?","date":"2017-05-11T16:12:09.421Z","type":"message"}
+{"nick":"Fishrock123","message":"maybe we should rename that to _exit","date":"2017-05-11T16:12:09.604Z","type":"message"}
+{"nick":"octetcloud","message":"It skips the atexit handlers, right? and beforeExit event?","date":"2017-05-11T16:12:13.868Z","type":"message"}
+{"nick":"addaleax","message":"I think so, yes","date":"2017-05-11T16:12:25.695Z","type":"message"}
+{"nick":"Fishrock123","message":"beforeExit doesn't get emitted for either","date":"2017-05-11T16:12:37.584Z","type":"message"}
+{"nick":"Fishrock123","message":"refack: both of those are possible I think","date":"2017-05-11T16:12:55.240Z","type":"message"}
+{"nick":"addaleax","message":"octetcloud: .reallyExit is just a exit(3) binding","date":"2017-05-11T16:13:23.524Z","type":"message"}
+{"nick":"refack","message":"so add a process._stdoutSync","date":"2017-05-11T16:13:36.512Z","type":"message"}
+{"nick":"refack","message":"or process._stdoutSyncBlocking","date":"2017-05-11T16:13:55.746Z","type":"message"}
+{"nick":"octetcloud","message":"the thing is, we already have a drain I/O exit.... it's `process.exitCode = blah; server.close()`, its just that people using node for scripting and hoping to avoid having to deal with asynchronicity find it painful, or just don't know about it","date":"2017-05-11T16:13:56.815Z","type":"message"}
+{"nick":"_KryDos_","reason":"Ping timeout: 240 seconds","date":"2017-05-11T16:14:06.020Z","type":"quit"}
+{"nick":"addaleax","message":"octetcloud: that potentially does a lot more than just flushing I/O","date":"2017-05-11T16:14:40.417Z","type":"message"}
+{"nick":"addaleax","message":"err, just flushing stdio","date":"2017-05-11T16:14:46.633Z","type":"message"}
+{"nick":"octetcloud","message":"I know, it allows everything to shut down gracefully. But people want to cherry pick only stdio. Anyhow, we know the web of problems, how do we move forward?","date":"2017-05-11T16:16:00.755Z","type":"message"}
+{"nick":"addaleax","message":"go to libuv, implement uv_flush_stdio_and_only_stdio_synchronously()","date":"2017-05-11T16:17:03.185Z","type":"message"}
+{"nick":"octetcloud","message":"I'm OK with all of process.stdout/err being sync by default, or async by default, and having more visible high-level APIs to switch to the opposite behaviour","date":"2017-05-11T16:17:24.660Z","type":"message"}
+{"nick":"addaleax","message":"I could do the libuv bits once I have the time, but I’m not making any guarantees on when that is","date":"2017-05-11T16:17:47.664Z","type":"message"}
+{"nick":"octetcloud","message":"if process.exit doesn't exit, but waits to flush, it still has to stop most of  the loop... otherwise more js can run, and more things can get written to stdio, so you'd want process.exit() to still by sync, but for uv to switch into some kind of sync mode until its all written?","date":"2017-05-11T16:18:47.821Z","type":"message"}
+{"nick":"gamelaster","message":"Fishrock123: So one Env and Isolate. Now I load  file by passing path to argv, so how to load it another way? With Script::Compile and Run?","date":"2017-05-11T16:18:59.822Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:19:47.851Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:19:48.035Z","type":"part"}
+{"nick":"Fishrock123","message":"uv_flush_stdio_and_only_stdio_synchronously() -- i tried to do this and it was rejected","date":"2017-05-11T16:20:03.690Z","type":"message"}
+{"nick":"addaleax","message":"Fishrock123: why? :/","date":"2017-05-11T16:20:09.750Z","type":"message"}
+{"nick":"octetcloud","message":"Fishrock123: PR ref?","date":"2017-05-11T16:20:21.029Z","type":"message"}
+{"nick":"Fishrock123","message":"https://github.com/libuv/libuv/pull/876","date":"2017-05-11T16:20:43.553Z","type":"message"}
+{"nick":"addaleax","message":"ugh … that’s not cool.","date":"2017-05-11T16:24:23.481Z","type":"message"}
+{"nick":"addaleax","message":"Ben brought up a solution that sounds like it would work, though … have you looked into that?","date":"2017-05-11T16:24:35.840Z","type":"message"}
+{"nick":"addaleax","message":"it might mean having to support an extra C++ write queue, but that doesn’t sound soooo terribly bad…","date":"2017-05-11T16:26:23.242Z","type":"message"}
+{"nick":"Fishrock123","message":"Beyond me, I left that up to him at the time","date":"2017-05-11T16:26:51.481Z","type":"message"}
+{"nick":"Fishrock123","message":"I probably have the C++ knowledge to give it a try now, but I don't have the time, unfortunately","date":"2017-05-11T16:27:40.208Z","type":"message"}
+{"nick":"addaleax","message":"mind if I try to tackle that? ;)","date":"2017-05-11T16:27:50.473Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:30:36.362Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:30:36.545Z","type":"part"}
+{"nick":"Fishrock123","message":"addaleax: sure, again not sure if/when I'd get to it anyways","date":"2017-05-11T16:31:34.827Z","type":"message"}
+{"nick":"refack","message":"addaleax: you look into https://github.com/libuv/libuv/pull/876#issuecomment-221517082 ?","date":"2017-05-11T16:48:08.888Z","type":"message"}
+{"nick":"refack","message":"I'll look into https://github.com/libuv/libuv/pull/876#issuecomment-221523368","date":"2017-05-11T16:48:24.865Z","type":"message"}
+{"nick":"addaleax","message":"refack: yes","date":"2017-05-11T16:48:26.981Z","type":"message"}
+{"nick":"refack","message":"find if we can have uv_try_write for pipes on Windows","date":"2017-05-11T16:48:58.274Z","type":"message"}
+{"nick":"addaleax","message":"refack: worst case it stays the way it is on Windows right now. but if you can fix that, sure, awesome.","date":"2017-05-11T16:49:12.989Z","type":"message"}
+{"nick":"refack","message":":+1:","date":"2017-05-11T16:49:44.069Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:50:02.035Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T16:50:02.219Z","type":"part"}
+{"nick":"addaleax","message":"mylesborins: you can just leave the branch, you are like the 4th person this month to whom that happened :P","date":"2017-05-11T16:50:45.003Z","type":"message"}
+{"nick":"mylesborins","message":"sigh","date":"2017-05-11T16:50:53.452Z","type":"message"}
+{"nick":"mylesborins","message":"I'm a hot mess addaleax","date":"2017-05-11T16:50:59.257Z","type":"message"}
+{"nick":"mylesborins","message":":S","date":"2017-05-11T16:51:00.415Z","type":"message"}
+{"nick":"addaleax","message":"mylesborins: you’re doing just fine :) is there anything you need?","date":"2017-05-11T16:51:52.822Z","type":"message"}
+{"nick":"mylesborins","message":"a couple days of rest","date":"2017-05-11T16:55:43.739Z","type":"message"}
+{"nick":"mylesborins","message":"I want to be hoooom","date":"2017-05-11T16:55:51.216Z","type":"message"}
+{"nick":"thefourtheye","message":"Ha ha ha, this reminds me of Joey's tantrums in F.R.I.E.N.D.S :D","date":"2017-05-11T16:57:15.008Z","type":"message"}
+{"nick":"refack","message":"@mylesborins: You in TLV?","date":"2017-05-11T16:57:17.485Z","type":"message"}
+{"nick":"mylesborins","message":"mhmm","date":"2017-05-11T16:58:10.690Z","type":"message"}
+{"nick":"refack","message":":cry: last week was two years since I've been there.","date":"2017-05-11T16:58:16.721Z","type":"message"}
+{"nick":"refack","message":"I'm jelli","date":"2017-05-11T16:58:48.562Z","type":"message"}
+{"nick":"refack","message":"addaleax: can you give a look at https://github.com/nodejs/node/pull/12607, does it need to be treated as \"breaking\"? Or can I land it?","date":"2017-05-11T17:06:11.281Z","type":"message"}
+{"nick":"addaleax","message":"refack: jasnell tagged it semver-major. I’ll take a look, but generally if you’re in doubt about its status, ping @nodejs/ctc","date":"2017-05-11T17:07:32.657Z","type":"message"}
+{"nick":"vsemozhetbyt","date":"2017-05-11T17:08:57.505Z","type":"join"}
+{"nick":"refack","message":"I'm escaliting slowlt, asked him, now you, then ping CTC :)","date":"2017-05-11T17:09:40.730Z","type":"message"}
+{"nick":"refack","message":"*slowly","date":"2017-05-11T17:09:46.874Z","type":"message"}
+{"nick":"bradleymeck","date":"2017-05-11T17:11:31.569Z","type":"join"}
+{"nick":"Artur_Vieira","date":"2017-05-11T17:11:34.498Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T17:12:04.405Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T17:12:04.588Z","type":"part"}
+{"nick":"vsemozhetbyt","message":"I've found a bug in the eslint-plugin-markdown v1.0.0-beta.4 (current version in the Node.js master) and another bug in the v1.0.0-beta.6 (so we cannot update now). If anybody from eslint team has a time, please, address: https://github.com/eslint/eslint-plugin-markdown/issues/69. For now, we have a slightly dysfunctional doc linting.","date":"2017-05-11T17:13:41.908Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 260 seconds","date":"2017-05-11T17:16:13.850Z","type":"quit"}
+{"nick":"_KryDos_","date":"2017-05-11T17:20:15.479Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T17:20:19.417Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T17:20:19.564Z","type":"part"}
+{"nick":"seishun","date":"2017-05-11T17:29:57.051Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 272 seconds","date":"2017-05-11T17:36:19.470Z","type":"quit"}
+{"nick":"refack","message":"offf, I broke 12607...","date":"2017-05-11T17:37:37.181Z","type":"message"}
+{"nick":"refack","message":"Waiting for OP to fix","date":"2017-05-11T17:37:47.084Z","type":"message"}
+{"nick":"seishun","date":"2017-05-11T17:46:24.802Z","type":"join"}
+{"nick":"joyee","date":"2017-05-11T17:48:03.912Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 258 seconds","date":"2017-05-11T17:54:41.717Z","type":"quit"}
+{"nick":"srl295","date":"2017-05-11T18:03:30.615Z","type":"join"}
+{"nick":"srl295","action":"is working on updating icu4c-data ( aka full-icu ) to work with latest ICU 59.1 landed in master…   'npm i full-icu' will fail till i fix it  (PSA)","date":"2017-05-11T18:04:46.000Z","type":"action"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2017-05-11T18:04:51.198Z","type":"quit"}
+{"nick":"srl295","message":"(if you are on node master)","date":"2017-05-11T18:04:56.459Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:09:56.674Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:09:56.858Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:10:20.423Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:10:20.606Z","type":"part"}
+{"nick":"vsemozhetbyt","reason":"Quit: Page closed","date":"2017-05-11T18:14:08.782Z","type":"quit"}
+{"nick":"chalker_","date":"2017-05-11T18:25:40.899Z","type":"join"}
+{"nick":"pankaj","date":"2017-05-11T18:25:46.885Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:26:18.925Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T18:26:19.108Z","type":"part"}
+{"nick":"pankaj","message":"How to delete a file synchronuously in node.js. I know that '.unlink' function is for asynchronuous version but what for asynchruous?","date":"2017-05-11T18:26:51.426Z","type":"message"}
+{"nick":"seishun","date":"2017-05-11T18:27:28.555Z","type":"join"}
+{"nick":"srl295","message":"pankaj: may be a good Q for #Node.js  — but I think you want https://nodejs.org/api/fs.html#fs_fs_unlinksync_path","date":"2017-05-11T18:28:20.427Z","type":"message"}
+{"nick":"srl295","action":"has updated the backing for `full-icu` to support ICU master","date":"2017-05-11T18:29:13.078Z","type":"action"}
+{"nick":"pankaj","message":"srl295: The documentation for node.js has always been complex.","date":"2017-05-11T18:29:35.360Z","type":"message"}
+{"nick":"pankaj","message":"srl295: I am so dumb. I didn't know that unlinkSync was also present for use.","date":"2017-05-11T18:33:36.317Z","type":"message"}
+{"nick":"orkan_","date":"2017-05-11T18:33:52.476Z","type":"join"}
+{"nick":"orkan__","reason":"Ping timeout: 245 seconds","date":"2017-05-11T18:37:24.499Z","type":"quit"}
+{"nick":"pankaj","reason":"Ping timeout: 260 seconds","date":"2017-05-11T18:56:04.873Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2017-05-11T19:05:24.930Z","type":"quit"}
+{"nick":"addaleax","message":"refack: what does fs.fstatSync(1) give in a windows repl?","date":"2017-05-11T19:07:23.515Z","type":"message"}
+{"nick":"Fishrock123","date":"2017-05-11T19:08:57.341Z","type":"join"}
+{"nick":"plasticle","reason":"Quit: WeeChat 1.6","date":"2017-05-11T19:11:05.425Z","type":"quit"}
+{"nick":"evanlucas","message":"is the async-hooks/test-tcpwrap test failure on CI pretty well known?","date":"2017-05-11T19:12:52.285Z","type":"message"}
+{"nick":"plasticle","date":"2017-05-11T19:18:38.969Z","type":"join"}
+{"nick":"Artur_Vieira","reason":"Quit: Bye!","date":"2017-05-11T19:23:25.031Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:27:57.529Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:27:57.713Z","type":"part"}
+{"nick":"cjihrig","message":"force pushing","date":"2017-05-11T19:28:18.518Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:29:08.243Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:29:08.426Z","type":"part"}
+{"nick":"cjihrig","message":"done. sorry. left out metadata","date":"2017-05-11T19:29:21.112Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:37:12.361Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:37:12.544Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:38:16.935Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T19:38:17.119Z","type":"part"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-05-11T19:40:00.549Z","type":"quit"}
+{"nick":"joyee","date":"2017-05-11T19:50:15.913Z","type":"join"}
+{"nick":"Fishrock123","message":"mattloring: I'm not convinced that the resource from a promise event should be the promise itself, fwiw","date":"2017-05-11T19:54:13.504Z","type":"message"}
+{"nick":"Fishrock123","message":"the promise could be attached to the resource object tho","date":"2017-05-11T19:54:31.198Z","type":"message"}
+{"nick":"joyee","reason":"Ping timeout: 240 seconds","date":"2017-05-11T19:54:35.934Z","type":"quit"}
+{"nick":"marcoalbarelli","date":"2017-05-11T19:55:54.084Z","type":"join"}
+{"nick":"refack","message":"addaleax: Error: EISDIR: illegal operation on a directory, fstat","date":"2017-05-11T19:56:01.912Z","type":"message"}
+{"nick":"tellnes","reason":"Ping timeout: 264 seconds","date":"2017-05-11T19:56:10.751Z","type":"quit"}
+{"nick":"marcoalbarelli","message":"hi all","date":"2017-05-11T19:57:07.169Z","type":"message"}
+{"nick":"refack","message":"IMHO that's the wrong error","date":"2017-05-11T19:57:08.615Z","type":"message"}
+{"nick":"Fishrock123","message":"marcoalbarelli: heya","date":"2017-05-11T19:57:18.055Z","type":"message"}
+{"nick":"marcoalbarelli","message":"today I had this insane urge to start contributing and I've been pointed to the http2 development","date":"2017-05-11T19:58:44.026Z","type":"message"}
+{"nick":"marcoalbarelli","message":"I read the contributing headstarts, forked the http2 repo and built it","date":"2017-05-11T19:59:16.671Z","type":"message"}
+{"nick":"marcoalbarelli","message":"is it normal that make test fails on a standard ubuntu 16.04 box?","date":"2017-05-11T19:59:45.048Z","type":"message"}
+{"nick":"marcoalbarelli","message":"there's *a lot* of stuff I need to catch up to","date":"2017-05-11T20:00:27.567Z","type":"message"}
+{"nick":"marcoalbarelli","message":"and it's really likely I overlooked something","date":"2017-05-11T20:00:47.038Z","type":"message"}
+{"nick":"marcoalbarelli","message":"this is the first project of this scale and complexity I'm trying to contribute to, so I'll need some guidance :)","date":"2017-05-11T20:01:40.506Z","type":"message"}
+{"nick":"addaleax","message":"marcoalbarelli: for the http2 repo that might be normal, yes","date":"2017-05-11T20:02:11.487Z","type":"message"}
+{"nick":"addaleax","message":"look through the issues there and see if you find something that matches your errors, otherwise maybe open a new issue with those","date":"2017-05-11T20:02:34.445Z","type":"message"}
+{"nick":"marcoalbarelli","message":"ok, thx","date":"2017-05-11T20:02:59.649Z","type":"message"}
+{"nick":"tellnes","date":"2017-05-11T20:04:15.497Z","type":"join"}
+{"nick":"joyee","date":"2017-05-11T20:07:59.935Z","type":"join"}
+{"nick":"marcoalbarelli","message":"and here is another example of why I love programming","date":"2017-05-11T20:08:32.980Z","type":"message"}
+{"nick":"marcoalbarelli","message":"re-built the project, ran make test afterwards, not a bit has been changed in the source","date":"2017-05-11T20:09:05.698Z","type":"message"}
+{"nick":"marcoalbarelli","message":"now tests are green","date":"2017-05-11T20:09:13.397Z","type":"message"}
+{"nick":"addaleax","message":"we do have flaky tests :P which one failed?","date":"2017-05-11T20:09:23.242Z","type":"message"}
+{"nick":"Artur_Vieira","date":"2017-05-11T20:14:03.637Z","type":"join"}
+{"nick":"Artur_Vieira","reason":"Client Quit","date":"2017-05-11T20:14:13.671Z","type":"quit"}
+{"nick":"Artur_Vieira","date":"2017-05-11T20:14:59.414Z","type":"join"}
+{"nick":"pankaj","date":"2017-05-11T20:16:08.506Z","type":"join"}
+{"nick":"marcoalbarelli","message":"ah, no way to tell: too bak into the scroll history :)","date":"2017-05-11T20:17:09.786Z","type":"message"}
+{"nick":"pankaj","message":"I am passing 'utf8' encoding as second parameter to .createreadstream but still I am getting data in hexadecimal. Is the attribute deprecated. Or if not then what is going wrong with it?","date":"2017-05-11T20:17:57.566Z","type":"message"}
+{"nick":"addaleax","message":"pankaj: can you post an example? the argument should work that way","date":"2017-05-11T20:19:20.884Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: OK. I am pasting at dpaste","date":"2017-05-11T20:19:44.248Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: http://dpaste.com/0PKD01G","date":"2017-05-11T20:20:47.277Z","type":"message"}
+{"nick":"addaleax","message":"that seems to work fine … what Node.js version are you using?","date":"2017-05-11T20:21:59.309Z","type":"message"}
+{"nick":"refack","message":"addaleax: does it makes sense that since parallel/test-async-wrap-getasyncid is almost all run sync, the tcp server will not finish the `listen` before the process exits?","date":"2017-05-11T20:22:11.054Z","type":"message"}
+{"nick":"Artur_Vieira","reason":"Quit: Bye!","date":"2017-05-11T20:22:38.123Z","type":"quit"}
+{"nick":"addaleax","message":"refack: shouldn’t the listening alone keep the process alive?","date":"2017-05-11T20:22:44.312Z","type":"message"}
+{"nick":"refack","message":"I assume so, but it seem to flake","date":"2017-05-11T20:23:00.968Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: 0.10.48","date":"2017-05-11T20:23:26.512Z","type":"message"}
+{"nick":"addaleax","message":"pankaj: you should use *at least* Node v4.x, everything before that is not supported anymore … see https://nodejs.org/","date":"2017-05-11T20:24:01.618Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: Am I using very old version of Nodejs,. What is current version?","date":"2017-05-11T20:25:06.506Z","type":"message"}
+{"nick":"addaleax","message":"7.10.0, see https://nodejs.org/","date":"2017-05-11T20:25:27.786Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: I trusted the scripts on certain websites and thought that I was using latest version of Nodejs. I am so dumb.","date":"2017-05-11T20:26:56.724Z","type":"message"}
+{"nick":"marcoalbarelli","message":"ah, got it","date":"2017-05-11T20:27:23.448Z","type":"message"}
+{"nick":"marcoalbarelli","message":"tests are green i run with `make test` without specifying a -j","date":"2017-05-11T20:28:07.354Z","type":"message"}
+{"nick":"marcoalbarelli","message":"if I set the jobs to 4 an error appears","date":"2017-05-11T20:28:18.658Z","type":"message"}
+{"nick":"addaleax","message":"marcoalbarelli: would still be good to know which error that is ;)","date":"2017-05-11T20:28:32.774Z","type":"message"}
+{"nick":"marcoalbarelli","message":"yeah, sure :D","date":"2017-05-11T20:29:04.860Z","type":"message"}
+{"nick":"marcoalbarelli","message":"AssertionError: 'EAI_AGAIN' === 'ENOTFOUND'","date":"2017-05-11T20:29:37.256Z","type":"message"}
+{"nick":"addaleax","message":"which test file is that coming from?","date":"2017-05-11T20:29:54.733Z","type":"message"}
+{"nick":"marcoalbarelli","message":"parallel/test-net-better-error-messages-port-hostname","date":"2017-05-11T20:30:04.755Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: Please can you help me installing this new package. I tried googling many tips for this purpose.","date":"2017-05-11T20:30:41.486Z","type":"message"}
+{"nick":"addaleax","message":"marcoalbarelli: that has been fixed now I think, it’s just the http2 repo that has an outdated version of the test","date":"2017-05-11T20:30:59.968Z","type":"message"}
+{"nick":"marcoalbarelli","message":"ok, no big deal then","date":"2017-05-11T20:31:33.526Z","type":"message"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-05-11T20:31:37.717Z","type":"quit"}
+{"nick":"mscdex","message":"looks like there's a module perf regression in master recently :(","date":"2017-05-11T20:32:01.466Z","type":"message"}
+{"nick":"marcoalbarelli","message":"where can I find some explanation on which tests cover which area?","date":"2017-05-11T20:32:30.980Z","type":"message"}
+{"nick":"marcoalbarelli","message":"I expected a lot more tests on the cpp side","date":"2017-05-11T20:32:46.129Z","type":"message"}
+{"nick":"marcoalbarelli","message":"which means I didn't actually get the picture","date":"2017-05-11T20:33:14.843Z","type":"message"}
+{"nick":"addaleax","message":"marcoalbarelli: node exposes almost all of its code to JS, so it doesn’t need that :)","date":"2017-05-11T20:33:25.339Z","type":"message"}
+{"nick":"addaleax","message":"pankaj: what OS are you using?","date":"2017-05-11T20:33:38.095Z","type":"message"}
+{"nick":"marcoalbarelli","message":"mmh, ok. So if I were to actually help in implementing the http2 module, would I be writing tests in js and implementation in cpp?","date":"2017-05-11T20:34:29.419Z","type":"message"}
+{"nick":"marcoalbarelli","message":"I know it's a noob question , sry :P","date":"2017-05-11T20:34:45.219Z","type":"message"}
+{"nick":"pankaj","message":"Linux-mint x64","date":"2017-05-11T20:35:12.304Z","type":"message"}
+{"nick":"addaleax","message":"marcoalbarelli: some parts of the http2 implementation are also in js, too :) but, yes, all http2 tests are js","date":"2017-05-11T20:35:34.575Z","type":"message"}
+{"nick":"marcoalbarelli","message":"ok, I'll dive into RTFMing some more","date":"2017-05-11T20:37:51.789Z","type":"message"}
+{"nick":"marcoalbarelli","message":"looks like I'll have to do a lot of that ...","date":"2017-05-11T20:38:09.491Z","type":"message"}
+{"nick":"marcoalbarelli","message":"thanks for now and goodnight","date":"2017-05-11T20:39:03.836Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: Hello","date":"2017-05-11T20:39:12.089Z","type":"message"}
+{"nick":"addaleax","message":"pankaj: sorry, you might need to ask that question somebody else or google it","date":"2017-05-11T20:39:46.922Z","type":"message"}
+{"nick":"joyee","date":"2017-05-11T20:39:48.255Z","type":"join"}
+{"nick":"pankaj","message":"OK","date":"2017-05-11T20:40:07.239Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: Just want to know what is the current PPA that I should use.","date":"2017-05-11T20:42:31.665Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-05-11T20:42:44.397Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T20:42:44.579Z","type":"part"}
+{"nick":"marcoalbarelli","message":"pankaj: try to look up `nvm`","date":"2017-05-11T20:43:43.859Z","type":"message"}
+{"nick":"ljharb","message":"pankaj: #node.js, but http://nvm.sh","date":"2017-05-11T20:44:24.658Z","type":"message"}
+{"nick":"pankaj","message":"martoalbarelli: I know npm but what is nvm?","date":"2017-05-11T20:44:26.989Z","type":"message"}
+{"nick":"ljharb","message":"pankaj: it's best not to use apt to install node.","date":"2017-05-11T20:44:30.783Z","type":"message"}
+{"nick":"ljharb","message":"(if you *insist* on using apt, only use the nodesource PPAs, but don't use apt)","date":"2017-05-11T20:44:48.240Z","type":"message"}
+{"nick":"srl295","message":"pankaj: see nvm's website above ^","date":"2017-05-11T20:44:50.174Z","type":"message"}
+{"nick":"pankaj","message":"srl295: OK. Got it.","date":"2017-05-11T20:45:32.014Z","type":"message"}
+{"nick":"gamelaster","message":"How I can disable the interactive mode (stdin) ?","date":"2017-05-11T20:50:58.057Z","type":"message"}
+{"nick":"marcoalbarelli","date":"2017-05-11T20:52:25.318Z","type":"part"}
+{"nick":"refack","message":"gamelaster: it's one of the old issue with the node as dll. I think you need to pipe an empy file to stdin","date":"2017-05-11T20:54:37.452Z","type":"message"}
+{"nick":"gamelaster","message":"refack: hmm, okay, thank you for info","date":"2017-05-11T20:55:24.025Z","type":"message"}
+{"nick":"refack","message":"https://github.com/nodejs/roadmap/issues/9","date":"2017-05-11T20:57:37.528Z","type":"message"}
+{"nick":"gamelaster","reason":"Ping timeout: 240 seconds","date":"2017-05-11T21:15:17.222Z","type":"quit"}
+{"nick":"pankaj","message":"addaleax: I have installed nvm. And by its help also node (version 5.0). Can somebody tell the command to install nodejs. It is demanding the version. How to specify that?","date":"2017-05-11T21:16:09.260Z","type":"message"}
+{"nick":"addaleax","date":"2017-05-11T21:16:23.395Z","type":"part"}
+{"nick":"addaleax","date":"2017-05-11T21:16:31.813Z","type":"join"}
+{"nick":"addaleax","message":"pankaj: `nvm install 7` should work","date":"2017-05-11T21:16:39.425Z","type":"message"}
+{"nick":"pankaj","message":"addaleax:v7.10.0 is already installed.Now using node v7.10.0 (npm v4.2.0)","date":"2017-05-11T21:18:24.305Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: How do i execute my files with this latest version of node.","date":"2017-05-11T21:18:56.610Z","type":"message"}
+{"nick":"addaleax","message":"pankaj: once you’re in a shell with nvm installed, `node <filename>` should do just fine","date":"2017-05-11T21:19:14.193Z","type":"message"}
+{"nick":"addaleax","message":"I know we tried this already but can you try to join #node.js again?","date":"2017-05-11T21:19:37.389Z","type":"message"}
+{"nick":"addaleax","message":"this is really not the place for this :)","date":"2017-05-11T21:19:43.405Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: OK. Thanks very much.","date":"2017-05-11T21:19:58.710Z","type":"message"}
+{"nick":"pankaj","message":"addaleax: Last message. Thanks very much for supporting. The program is running fine now. Thanks for telling about nvm.","date":"2017-05-11T21:23:36.937Z","type":"message"}
+{"nick":"addaleax","message":"glad to hear that :)","date":"2017-05-11T21:23:46.834Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 260 seconds","date":"2017-05-11T21:26:20.982Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-05-11T21:26:41.167Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T21:26:41.167Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T21:27:13.383Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T21:27:13.567Z","type":"part"}
+{"nick":"_KryDos_","reason":"Ping timeout: 260 seconds","date":"2017-05-11T21:27:44.438Z","type":"quit"}
+{"nick":"seishun","date":"2017-05-11T21:28:23.685Z","type":"join"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2017-05-11T21:31:15.391Z","type":"quit"}
+{"nick":"alrra","reason":"Quit: Connection closed for inactivity","date":"2017-05-11T21:31:19.671Z","type":"quit"}
+{"nick":"Fishrock123","date":"2017-05-11T21:59:47.976Z","type":"join"}
+{"nick":"pankaj","reason":"Ping timeout: 240 seconds","date":"2017-05-11T21:59:56.959Z","type":"quit"}
+{"nick":"Artur_Vieira","date":"2017-05-11T22:01:07.056Z","type":"join"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-05-11T22:02:44.559Z","type":"quit"}
+{"nick":"not-an-aardvark","date":"2017-05-11T22:05:38.391Z","type":"join"}
+{"nick":"Artur_Vieira","reason":"Quit: Bye!","date":"2017-05-11T22:08:02.502Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:08:33.788Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:08:33.971Z","type":"part"}
+{"nick":"chalker_","reason":"Ping timeout: 240 seconds","date":"2017-05-11T22:11:46.829Z","type":"quit"}
+{"nick":"Artur_Vieira","date":"2017-05-11T22:12:30.007Z","type":"join"}
+{"nick":"joyee","date":"2017-05-11T22:12:59.819Z","type":"join"}
+{"nick":"pankaj","date":"2017-05-11T22:17:37.437Z","type":"join"}
+{"nick":"joyee","reason":"Ping timeout: 260 seconds","date":"2017-05-11T22:17:48.798Z","type":"quit"}
+{"nick":"seishun","reason":"Read error: Connection reset by peer","date":"2017-05-11T22:22:25.421Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:25:09.976Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:25:10.159Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:25:28.246Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T22:25:28.430Z","type":"part"}
+{"nick":"octetcloud","reason":"Ping timeout: 260 seconds","date":"2017-05-11T22:32:59.324Z","type":"quit"}
+{"nick":"pankaj","reason":"Ping timeout: 268 seconds","date":"2017-05-11T22:39:09.255Z","type":"quit"}
+{"nick":"Artur_Vieira","reason":"Quit: Bye!","date":"2017-05-11T22:42:11.381Z","type":"quit"}
+{"nick":"Artur_Vieira","date":"2017-05-11T22:49:27.388Z","type":"join"}
+{"nick":"pankaj","date":"2017-05-11T22:53:43.420Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-05-11T23:02:20.730Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2017-05-11T23:05:24.601Z","type":"quit"}
+{"nick":"Fishrock123","date":"2017-05-11T23:06:05.465Z","type":"join"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2017-05-11T23:06:11.612Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:11:22.303Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:11:22.526Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:21:31.737Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:21:31.921Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:21:49.894Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-05-11T23:21:50.078Z","type":"part"}
+{"nick":"Fishrock123","date":"2017-05-11T23:24:10.723Z","type":"join"}
+{"nick":"al-damiri","reason":"Quit: Connection closed for inactivity","date":"2017-05-11T23:30:04.438Z","type":"quit"}
+{"nick":"refack","reason":"Read error: Connection reset by peer","date":"2017-05-11T23:30:04.621Z","type":"quit"}
+{"nick":"refack","date":"2017-05-11T23:30:57.247Z","type":"join"}
+{"nick":"addaleax","reason":"Quit: ChatZilla 0.9.93 [Firefox 53.0/20170418123106]","date":"2017-05-11T23:31:29.207Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2017-05-11T23:34:35.520Z","type":"quit"}
+{"nick":"robinak","new_nick":"robink","date":"2017-05-11T23:39:42.154Z","type":"nick"}
+{"nick":"joyee","date":"2017-05-11T23:39:47.253Z","type":"join"}
+{"nick":"joyee","reason":"Ping timeout: 240 seconds","date":"2017-05-11T23:43:58.205Z","type":"quit"}
+{"nick":"refack","message":"Quastion: node-stress-single-test runs a single test sequantialy? so it doesn't simulate /parallal/ behaviur? right?","date":"2017-05-11T23:48:04.404Z","type":"message"}
+{"nick":"ezequiel1","date":"2017-05-11T23:55:46.788Z","type":"join"}
+{"nick":"not-an-aardvark","message":"refack: correct","date":"2017-05-11T23:56:32.865Z","type":"message"}
+{"nick":"Trott","message":"refack: It can be coaxed into simulating that behavior though.","date":"2017-05-11T23:59:49.116Z","type":"message"}
