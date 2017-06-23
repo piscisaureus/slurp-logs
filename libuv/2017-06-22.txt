@@ -19,3 +19,84 @@
 {"nick":"mylesborins","date":"2017-06-22T10:25:41.708Z","type":"join"}
 {"nick":"genio","date":"2017-06-22T12:04:07.083Z","type":"part"}
 {"nick":"rendar","reason":"Ping timeout: 246 seconds","date":"2017-06-22T14:40:40.374Z","type":"quit"}
+{"nick":"Jacob843","reason":"Ping timeout: 276 seconds","date":"2017-06-22T16:22:51.854Z","type":"quit"}
+{"nick":"Jacob843","date":"2017-06-22T16:26:06.813Z","type":"join"}
+{"nick":"rendar","date":"2017-06-22T16:47:48.662Z","type":"join"}
+{"nick":"jfe","date":"2017-06-22T18:10:18.264Z","type":"join"}
+{"nick":"jfe","message":"hi all. i have a problem with libuv v1.x on ubuntu 14.04. the uv__handle_init() macro call in uv_timer_init() is overwriting heap-allocated data.","date":"2017-06-22T18:33:45.303Z","type":"message"}
+{"nick":"jfe","message":"brb","date":"2017-06-22T18:35:38.569Z","type":"message"}
+{"nick":"jfe","reason":"Quit: ERC (IRC client for Emacs 25.1.1)","date":"2017-06-22T18:35:41.123Z","type":"quit"}
+{"nick":"jfe","date":"2017-06-22T18:36:05.966Z","type":"join"}
+{"nick":"jfe","message":"back","date":"2017-06-22T18:36:09.138Z","type":"message"}
+{"nick":"jfe","message":"the libuv binary has opcodes that read data offset from %rdi into %rdi: 0x00007ffff7bcaa5a <+26>:\tmov    0x18(%rdi),%rdx","date":"2017-06-22T18:38:08.311Z","type":"message"}
+{"nick":"jfe","message":"this happens to be the address of a heap-allocated string that was allocated before calling uv_timer_init.","date":"2017-06-22T18:38:56.949Z","type":"message"}
+{"nick":"jfe","message":"three opcodes later, the start of the string is overwritten: 0x00007ffff7bcaa66 <+38>:\tmov    %rax,(%rdx)","date":"2017-06-22T18:39:35.118Z","type":"message"}
+{"nick":"jfe","message":"this is on ubuntu 14.04, using gcc 4.8.4, libuv v1.x from github.","date":"2017-06-22T18:40:33.820Z","type":"message"}
+{"nick":"daurnimator","reason":"Ping timeout: 258 seconds","date":"2017-06-22T18:44:56.262Z","type":"quit"}
+{"nick":"daurnimator","date":"2017-06-22T18:46:15.569Z","type":"join"}
+{"nick":"jfe","message":"here's a paste: https://pastebin.com/Ns2hxtU4","date":"2017-06-22T18:46:50.632Z","type":"message"}
+{"nick":"jfe","message":"could this be a compiler bug?","date":"2017-06-22T18:58:57.821Z","type":"message"}
+{"nick":"indutny","message":"jfe: does it happen in debug build too?","date":"2017-06-22T19:04:30.785Z","type":"message"}
+{"nick":"indutny","message":"also, give a try to valgrind","date":"2017-06-22T19:04:35.352Z","type":"message"}
+{"nick":"jfe","message":"indutny: that's a good question. i'm pretty sure i'm using a debug build.","date":"2017-06-22T19:05:28.343Z","type":"message"}
+{"nick":"jfe","message":"will double-check, though","date":"2017-06-22T19:05:38.174Z","type":"message"}
+{"nick":"jfe","message":"i seem to be using the default. i'll try building a debug version and see what happens.","date":"2017-06-22T19:06:53.157Z","type":"message"}
+{"nick":"jfe","message":"so i built with autotools. does anyone know how to build the debug version using that method?","date":"2017-06-22T19:09:08.221Z","type":"message"}
+{"nick":"jfe","message":"according to the README, \"[GYP] is best used for integration into other projects.\" could this be a cause for the issue i'm seeing?","date":"2017-06-22T19:09:44.732Z","type":"message"}
+{"nick":"jfe","message":"okay, so i built using GYP and both debug and release builds show this behavior.","date":"2017-06-22T19:32:02.684Z","type":"message"}
+{"nick":"jfe","message":"yep, the uv__handle_init() macro is mucking with things.","date":"2017-06-22T19:37:42.055Z","type":"message"}
+{"nick":"indutny","message":"sorry, was afk","date":"2017-06-22T19:38:35.411Z","type":"message"}
+{"nick":"indutny","message":"I think the best bet would be to run it through valgrind","date":"2017-06-22T19:38:57.429Z","type":"message"}
+{"nick":"indutny","message":"it will show you what exactly gone wrong","date":"2017-06-22T19:39:04.355Z","type":"message"}
+{"nick":"indutny","message":"I'd be very surprised if there is a bug in uv__handle_init(), tbh","date":"2017-06-22T19:39:31.237Z","type":"message"}
+{"nick":"indutny","message":"this function hasn't changed in awhile","date":"2017-06-22T19:39:32.281Z","type":"message"}
+{"nick":"indutny","message":"and it is used in so many places","date":"2017-06-22T19:39:34.560Z","type":"message"}
+{"nick":"jfe","message":"no problem, i appreciate any help.","date":"2017-06-22T19:40:27.065Z","type":"message"}
+{"nick":"jfe","message":"i'll try valgrind now and see. i'm sure i'm doing something wonky.","date":"2017-06-22T19:40:38.888Z","type":"message"}
+{"nick":"jfe","message":"wow, yep.","date":"2017-06-22T19:41:50.825Z","type":"message"}
+{"nick":"jfe","message":"so, i have a timer callback that free()s the timer passed to it. valgrind is saying that isn't right.","date":"2017-06-22T19:44:40.418Z","type":"message"}
+{"nick":"jfe","message":"i.e. void recv(uv_timer_t *timer) { free(timer); }","date":"2017-06-22T19:45:40.297Z","type":"message"}
+{"nick":"jfe","message":"the timer is setup this way: uv_timer_t *timer = malloc(sizeof *timer); /* ... */ uv_timer_start(timer, (uv_timer_cb) recv, 0, 0);","date":"2017-06-22T19:46:33.801Z","type":"message"}
+{"nick":"jfe","message":"is there something else i need to do to clean up the timer?","date":"2017-06-22T19:47:36.479Z","type":"message"}
+{"nick":"indutny","message":"uv_close()?","date":"2017-06-22T19:52:32.431Z","type":"message"}
+{"nick":"indutny","message":"on timer","date":"2017-06-22T19:52:49.761Z","type":"message"}
+{"nick":"indutny","message":"and in close_cb the timer can be freed","date":"2017-06-22T19:52:58.505Z","type":"message"}
+{"nick":"jfe","message":"ahh.","date":"2017-06-22T19:53:37.832Z","type":"message"}
+{"nick":"jfe","message":"does uv_close() need to be called after uv_timer_init() has been called, or only once the timer has been started with uv_timer_start()?","date":"2017-06-22T19:55:12.129Z","type":"message"}
+{"nick":"jfe","message":"calling uv_close() fixed it!","date":"2017-06-22T19:58:30.837Z","type":"message"}
+{"nick":"jfe","message":"thanks a lot. now i need to scour my project to see where else i fail to do this :)","date":"2017-06-22T20:04:51.771Z","type":"message"}
+{"nick":"indutny","message":"no problem","date":"2017-06-22T20:05:13.828Z","type":"message"}
+{"nick":"indutny","message":":)","date":"2017-06-22T20:05:15.063Z","type":"message"}
+{"nick":"indutny","message":"valgrind is your best friend now :D","date":"2017-06-22T20:05:30.812Z","type":"message"}
+{"nick":"indutny","message":"it is mine, FWIW","date":"2017-06-22T20:05:38.871Z","type":"message"}
+{"nick":"jfe","message":"does uv_close() need to be called on most objects (e.g. signal handlers)?","date":"2017-06-22T20:07:05.084Z","type":"message"}
+{"nick":"jfe","message":"i'm getting similar errors from valgrind about free()ing uv_signal_t's","date":"2017-06-22T20:07:24.635Z","type":"message"}
+{"nick":"indutny","message":"yeah","date":"2017-06-22T20:08:05.248Z","type":"message"}
+{"nick":"indutny","message":"everything that is a handle needs to be closed after _init","date":"2017-06-22T20:08:13.634Z","type":"message"}
+{"nick":"jfe","message":"i noticed that if i call uv_fs_event_stop(event); uv_close((uv_handle_t*) event, callback); i get the following assertion from libuv:","date":"2017-06-22T20:16:45.557Z","type":"message"}
+{"nick":"jfe","message":"../src/unix/core.c:108: uv_close: Assertion `!(((handle)->flags & (UV_CLOSING | UV_CLOSED)) != 0)' failed.","date":"2017-06-22T20:16:54.689Z","type":"message"}
+{"nick":"jfe","message":"i wasn't calling uv_fs_event_stop() before and didn't have this problem.","date":"2017-06-22T20:17:15.153Z","type":"message"}
+{"nick":"jfe","message":"ugh nevermind, my fault :)","date":"2017-06-22T20:18:24.065Z","type":"message"}
+{"nick":"MoZu4k_","date":"2017-06-22T20:40:31.082Z","type":"join"}
+{"nick":"MoZu4k_","reason":"Client Quit","date":"2017-06-22T20:40:44.682Z","type":"quit"}
+{"nick":"bloop","date":"2017-06-22T20:51:56.444Z","type":"join"}
+{"nick":"bloop","reason":"\"Leaving\"","date":"2017-06-22T20:52:23.616Z","type":"part"}
+{"nick":"Ovod","date":"2017-06-22T21:03:45.993Z","type":"join"}
+{"nick":"Ovod","message":"Hello","date":"2017-06-22T21:03:49.067Z","type":"message"}
+{"nick":"Ovod","message":"I'm trying to build libuv on Windows, but I'm getting syntax error in gyt pythoon scripts. Haven't ever worked with gyt, should I get some special version of Pythoon for it?","date":"2017-06-22T21:07:50.464Z","type":"message"}
+{"nick":"Ovod","message":"Output example: http://text-share.com/view/593866f4","date":"2017-06-22T21:08:01.311Z","type":"message"}
+{"nick":"Ovod","message":"Could anybody help me with it please? :)","date":"2017-06-22T21:08:54.127Z","type":"message"}
+{"nick":"indutny","message":"looking","date":"2017-06-22T21:11:07.586Z","type":"message"}
+{"nick":"indutny","message":"what python version do you have?","date":"2017-06-22T21:11:18.738Z","type":"message"}
+{"nick":"indutny","message":"AFAIK, libuv needs 2.7","date":"2017-06-22T21:11:44.558Z","type":"message"}
+{"nick":"indutny","message":"Ovod: see https://github.com/libuv/libuv#windows","date":"2017-06-22T21:11:53.851Z","type":"message"}
+{"nick":"Ovod","message":"3.something","date":"2017-06-22T21:12:10.125Z","type":"message"}
+{"nick":"Ovod","message":"Will try using 2.7, thanks","date":"2017-06-22T21:12:19.963Z","type":"message"}
+{"nick":"indutny","message":"yeah, readme claims that it works only on 2.6 or 2.7","date":"2017-06-22T21:12:21.614Z","type":"message"}
+{"nick":"indutny","message":"np","date":"2017-06-22T21:12:22.210Z","type":"message"}
+{"nick":"jfe","reason":"Ping timeout: 240 seconds","date":"2017-06-22T21:14:05.501Z","type":"quit"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2017-06-22T21:22:26.252Z","type":"quit"}
+{"nick":"Ovod","reason":"Quit: Page closed","date":"2017-06-22T21:46:59.914Z","type":"quit"}
+{"nick":"julianduque","reason":"Quit: leaving","date":"2017-06-22T22:11:47.311Z","type":"quit"}
+{"nick":"jfe","date":"2017-06-22T22:51:55.094Z","type":"join"}
+{"nick":"jfe","reason":"Ping timeout: 260 seconds","date":"2017-06-22T23:19:03.194Z","type":"quit"}
