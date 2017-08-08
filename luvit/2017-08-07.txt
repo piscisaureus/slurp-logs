@@ -2,3 +2,193 @@
 {"nick":"creationix","message":"SinisterRectus: neat, hadn't seen yours","date":"2017-08-07T15:58:21.647Z","type":"message"}
 {"nick":"creationix","message":"SinisterRectus: do you know how I could use the xchacha20 encryption on a coro-net stream?  I'm still trying to figure this out","date":"2017-08-07T15:59:13.762Z","type":"message"}
 {"nick":"creationix","message":"the protocol I'm implementing sends the first message in plain-text since it contains the crypto nonce, but then everything after that is encrypted.","date":"2017-08-07T15:59:54.493Z","type":"message"}
+{"nick":"creationix","message":"The key is obtained through a side channel","date":"2017-08-07T16:00:00.968Z","type":"message"}
+{"nick":"SinisterRectus","message":"creationix: i use it for decoding and encrypting/decrypting audio data for discord, but i just read a raw udp socket. i haven't tried using coro-* yet, but i plan to try in the near future","date":"2017-08-07T16:33:58.992Z","type":"message"}
+{"nick":"SinisterRectus","message":"well, decoding is something different","date":"2017-08-07T16:34:10.641Z","type":"message"}
+{"nick":"SinisterRectus","message":"write to udp* rather","date":"2017-08-07T16:35:18.551Z","type":"message"}
+{"nick":"SinisterRectus","message":"i don't read yet","date":"2017-08-07T16:35:21.399Z","type":"message"}
+{"nick":"SinisterRectus","message":"one thing that kind of bums me out is (l)uv only accepts lua strings, so if you want to move data between an ffi function and a (l)uv function, you have to eventually ffi.string it","date":"2017-08-07T16:37:03.699Z","type":"message"}
+{"nick":"SinisterRectus","message":"i assume there is no way to skip that step without also using an ffi binding for uv","date":"2017-08-07T16:39:35.005Z","type":"message"}
+{"nick":"SinisterRectus","message":"unless you can pass cdata to C from lua","date":"2017-08-07T16:40:47.744Z","type":"message"}
+{"nick":"creationix","message":"I can modify luv to accept ffi cdata","date":"2017-08-07T17:00:11.949Z","type":"message"}
+{"nick":"creationix","message":"I thought I had this already, but I guess not","date":"2017-08-07T17:00:19.595Z","type":"message"}
+{"nick":"creationix","message":"the problem is knowing the length","date":"2017-08-07T17:00:27.102Z","type":"message"}
+{"nick":"creationix","message":"a plain \"uint8[?]\" from ffi doesn't embed it's length as far as I know","date":"2017-08-07T17:00:45.537Z","type":"message"}
+{"nick":"creationix","message":"I think it supports luvit buffers, let me see...","date":"2017-08-07T17:01:19.432Z","type":"message"}
+{"nick":"creationix","message":"hmm, maybe not https://github.com/luvit/luv/blob/master/src/stream.c#L168-L178","date":"2017-08-07T17:02:39.590Z","type":"message"}
+{"nick":"creationix","message":"yep, string only https://github.com/luvit/luv/blob/master/src/stream.c#L21","date":"2017-08-07T17:03:29.276Z","type":"message"}
+{"nick":"creationix","message":"it was my duktap bindings that supported cdata and strings  https://github.com/creationix/seaduk/blob/master/src/duv/stream.c#L62-L76","date":"2017-08-07T17:04:33.747Z","type":"message"}
+{"nick":"creationix","message":"*duktape","date":"2017-08-07T17:04:37.504Z","type":"message"}
+{"nick":"creationix","message":"that works because duktape has a native \"buffer\" type with length embedded https://github.com/creationix/seaduk/blob/1c740975fdd932ec1c92e48c58dcdd004ec355f2/src/duv/utils.c#L272-L279","date":"2017-08-07T17:05:26.057Z","type":"message"}
+{"nick":"creationix","message":"looks like ffi.sizeof(ctype) supports getting the length.  Maybe I can use that from luv somehow","date":"2017-08-07T17:07:37.841Z","type":"message"}
+{"nick":"SinisterRectus","message":"hmm","date":"2017-08-07T17:34:31.027Z","type":"message"}
+{"nick":"SinisterRectus","message":"oh that's neat","date":"2017-08-07T17:35:45.486Z","type":"message"}
+{"nick":"SinisterRectus","message":"> ffi = require 'ffi'","date":"2017-08-07T17:35:54.236Z","type":"message"}
+{"nick":"SinisterRectus","message":"> arr = ffi.new(\"uint8_t[?]\", 4)","date":"2017-08-07T17:35:54.424Z","type":"message"}
+{"nick":"SinisterRectus","message":"> ffi.sizeof(arr)","date":"2017-08-07T17:35:54.478Z","type":"message"}
+{"nick":"SinisterRectus","message":"4","date":"2017-08-07T17:35:54.479Z","type":"message"}
+{"nick":"SkyRocknRoll","date":"2017-08-07T17:36:33.924Z","type":"join"}
+{"nick":"creationix","message":"so I think it can be done.  Just a question of how to access that from C","date":"2017-08-07T17:36:51.814Z","type":"message"}
+{"nick":"creationix","message":"I don't want to have to eval a lua string just to get the length","date":"2017-08-07T17:36:59.770Z","type":"message"}
+{"nick":"creationix","message":"I could cache a reference to ffi.sizeof the function and call it I guess","date":"2017-08-07T17:37:20.372Z","type":"message"}
+{"nick":"creationix","message":"still, I wonder if luajit has an internal C function I can call directly","date":"2017-08-07T17:37:34.922Z","type":"message"}
+{"nick":"creationix","message":"looks like a private function https://github.com/LuaJIT/LuaJIT/blob/master/src/lib_ffi.c#L591-L611","date":"2017-08-07T17:38:54.411Z","type":"message"}
+{"nick":"creationix","message":"it's `_lj_cf_ffi_sizeof` in the luvit binary","date":"2017-08-07T17:40:12.546Z","type":"message"}
+{"nick":"SinisterRectus","message":"so there's no c api for the ffi","date":"2017-08-07T17:41:07.726Z","type":"message"}
+{"nick":"creationix","message":"not a supported one at least","date":"2017-08-07T17:41:21.346Z","type":"message"}
+{"nick":"creationix","message":"there is nothing technically stopping us from calling the internal functions","date":"2017-08-07T17:41:30.052Z","type":"message"}
+{"nick":"creationix","message":"it just might change at any time","date":"2017-08-07T17:41:38.604Z","type":"message"}
+{"nick":"SinisterRectus","message":"true","date":"2017-08-07T17:41:40.145Z","type":"message"}
+{"nick":"creationix","message":"luajit development is pretty slow and for luvi at least, we statically include luajit","date":"2017-08-07T17:41:58.975Z","type":"message"}
+{"nick":"creationix","message":"but for luv published to luarocks, luajit 2.0.x vs 2.1.x are both used a lot","date":"2017-08-07T17:42:24.075Z","type":"message"}
+{"nick":"creationix","message":"and luaffi on PUC lua is probably different too","date":"2017-08-07T17:42:35.074Z","type":"message"}
+{"nick":"SinisterRectus","message":"well. all luv functions that accept strings also accept a table of strings, right? or is that only a few of them","date":"2017-08-07T17:43:12.305Z","type":"message"}
+{"nick":"creationix","message":"not all, just ones where libuv accepts an array of buffers","date":"2017-08-07T17:43:32.123Z","type":"message"}
+{"nick":"creationix","message":"(using the writev primitives at the syscall level)","date":"2017-08-07T17:43:42.002Z","type":"message"}
+{"nick":"SinisterRectus","message":"ah. i was thinking what if they also accepted {cdata, len, cdata, len ...}","date":"2017-08-07T17:43:59.538Z","type":"message"}
+{"nick":"SinisterRectus","message":"kind of hard to deal with that though","date":"2017-08-07T17:44:18.035Z","type":"message"}
+{"nick":"SinisterRectus","message":"requires a few assumptions","date":"2017-08-07T17:44:23.200Z","type":"message"}
+{"nick":"creationix","message":"we could do that, just define a convention and document it","date":"2017-08-07T17:44:32.737Z","type":"message"}
+{"nick":"creationix","message":"I really like passing in the cdata directly now that I know it does store the length somewhere","date":"2017-08-07T17:44:51.835Z","type":"message"}
+{"nick":"creationix","message":"just a question of how to best support that","date":"2017-08-07T17:44:57.964Z","type":"message"}
+{"nick":"SinisterRectus","message":"i assume the overheard of creating a {cdata, len} tuple would be less than making a lua string especially for large strings","date":"2017-08-07T17:45:08.620Z","type":"message"}
+{"nick":"creationix","message":"perhaps, it's hard to tell","date":"2017-08-07T17:45:27.970Z","type":"message"}
+{"nick":"creationix","message":"you're probably right for large strings.  The interning needs to hash the string","date":"2017-08-07T17:45:38.137Z","type":"message"}
+{"nick":"SinisterRectus","message":"i agree, passing cdata alone would be great","date":"2017-08-07T17:46:00.660Z","type":"message"}
+{"nick":"SinisterRectus","message":"raises the question about returning cdata though :/","date":"2017-08-07T17:47:01.663Z","type":"message"}
+{"nick":"SinisterRectus","message":"would be nice if one could avoid lua strings entirely for streams","date":"2017-08-07T17:47:21.190Z","type":"message"}
+{"nick":"SinisterRectus","message":"i think that complexity is why i never brought this up before","date":"2017-08-07T17:47:52.071Z","type":"message"}
+{"nick":"SinisterRectus","message":"you'd basically need two luv apis in that case","date":"2017-08-07T17:48:15.609Z","type":"message"}
+{"nick":"creationix","message":"yeah, it would break enough things that assume string APIs","date":"2017-08-07T17:48:28.090Z","type":"message"}
+{"nick":"creationix","message":"maybe adding cdata versions of certain libuv APIs would be a good way to do it","date":"2017-08-07T17:48:49.610Z","type":"message"}
+{"nick":"creationix","message":"but how do you create cdata from C?","date":"2017-08-07T17:49:14.867Z","type":"message"}
+{"nick":"SinisterRectus","message":"i know a binding exists https://github.com/pguillory/luajit-libuv i just never looked into it because luv is too convenient","date":"2017-08-07T17:49:27.340Z","type":"message"}
+{"nick":"creationix","message":"well, that's different","date":"2017-08-07T17:49:44.822Z","type":"message"}
+{"nick":"creationix","message":"luajit ffi is *really* slow with callbacks as far as I know","date":"2017-08-07T17:49:57.475Z","type":"message"}
+{"nick":"creationix","message":"and when I started this, the ffi didn't support callbacks at all","date":"2017-08-07T17:50:06.504Z","type":"message"}
+{"nick":"SinisterRectus","message":"ah","date":"2017-08-07T17:50:10.361Z","type":"message"}
+{"nick":"creationix","message":"but since then, luajit added callback support to it's ffi and libuv added some convenience functions needed to write pure ffi bindings","date":"2017-08-07T17:50:27.154Z","type":"message"}
+{"nick":"creationix","message":"it might be fun to prototype and see how it actually performs","date":"2017-08-07T17:50:47.859Z","type":"message"}
+{"nick":"SinisterRectus","message":"latest commit 3 years ago","date":"2017-08-07T17:51:00.400Z","type":"message"}
+{"nick":"creationix","message":"There is also this point that daurnimator brought up https://github.com/daurnimator/luasodium/issues/1#issuecomment-320497706","date":"2017-08-07T17:51:16.327Z","type":"message"}
+{"nick":"SinisterRectus","message":"oh i agree entirely","date":"2017-08-07T17:51:51.530Z","type":"message"}
+{"nick":"creationix","message":"technically luajit ffi is amazing, but it does have it's downsides for sure","date":"2017-08-07T17:53:32.299Z","type":"message"}
+{"nick":"SinisterRectus","message":"if i had the time, i would write pure bindings for all the C that i used, but it was just too easy to write ffi bindings for the subset of libopus and libsodium that i needed","date":"2017-08-07T17:53:38.125Z","type":"message"}
+{"nick":"creationix","message":"in some ways ffi bindings are more portable.  They are just lua","date":"2017-08-07T17:54:12.347Z","type":"message"}
+{"nick":"creationix","message":"I don't have to distribute binaries for each platform or have people compile C code on their machine","date":"2017-08-07T17:54:25.253Z","type":"message"}
+{"nick":"SinisterRectus","message":"true, but you still need the C libraries","date":"2017-08-07T17:54:45.217Z","type":"message"}
+{"nick":"creationix","message":"but especially when you get down to low-level system stuff, ffi authors just guess magic numbers","date":"2017-08-07T17:54:46.603Z","type":"message"}
+{"nick":"creationix","message":"the goal with luvi is to include all C libraries needed at that layer","date":"2017-08-07T17:55:03.342Z","type":"message"}
+{"nick":"creationix","message":"I wanted a build system where you could check the C libraries and versions you wanted and it would generate a custom luvi for you","date":"2017-08-07T17:55:22.894Z","type":"message"}
+{"nick":"SinisterRectus","message":"i don't expect luvi will ever include libopus and libsodium then","date":"2017-08-07T17:55:33.681Z","type":"message"}
+{"nick":"creationix","message":"so your package.lua could declare your C deps and your lua deps.","date":"2017-08-07T17:55:39.389Z","type":"message"}
+{"nick":"creationix","message":"libsodium maybe, especially if I end up using luvit at work","date":"2017-08-07T17:55:59.171Z","type":"message"}
+{"nick":"SinisterRectus","message":"how does luarocks handle C deps, i've never actually looked into it","date":"2017-08-07T17:56:06.608Z","type":"message"}
+{"nick":"creationix","message":"we're node and go at the moment, but luvit could work really well","date":"2017-08-07T17:56:12.120Z","type":"message"}
+{"nick":"creationix","message":"luarocks has several make-like backends it supports","date":"2017-08-07T17:56:26.693Z","type":"message"}
+{"nick":"creationix","message":"luv, for example compiles using cmake on luarocks","date":"2017-08-07T17:56:34.153Z","type":"message"}
+{"nick":"SinisterRectus","message":"but lit only supports lua","date":"2017-08-07T17:56:50.003Z","type":"message"}
+{"nick":"creationix","message":"the user has to have a c compiler and cmake installed before they can install luv via luarocks","date":"2017-08-07T17:56:51.032Z","type":"message"}
+{"nick":"creationix","message":"yeah, lit doesn't try to solve the compile-on-demand use case.  It does have support for pre-built binaries though","date":"2017-08-07T17:57:15.705Z","type":"message"}
+{"nick":"SinisterRectus","message":"sure","date":"2017-08-07T17:57:29.825Z","type":"message"}
+{"nick":"creationix","message":"for example https://github.com/creationix/lit-tweetnacl","date":"2017-08-07T17:57:34.618Z","type":"message"}
+{"nick":"SinisterRectus","message":" main = \"$OS-$ARCH/luatweetnacl.so\",","date":"2017-08-07T17:58:03.107Z","type":"message"}
+{"nick":"creationix","message":"that one embeds a C bindings to tweetnacl","date":"2017-08-07T17:58:05.233Z","type":"message"}
+{"nick":"SinisterRectus","message":"why is it main","date":"2017-08-07T17:58:15.348Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/creationix/lit-tweetnacl/blob/master/package.lua#L13","date":"2017-08-07T17:58:23.215Z","type":"message"}
+{"nick":"creationix","message":"it includes all arches when publishing the package, but when installing it as a dependency, it only includes the native version","date":"2017-08-07T17:58:42.785Z","type":"message"}
+{"nick":"SinisterRectus","message":"interesting","date":"2017-08-07T17:58:59.841Z","type":"message"}
+{"nick":"creationix","message":"the path convention is up to the author","date":"2017-08-07T17:59:01.360Z","type":"message"}
+{"nick":"creationix","message":"lit just provides the variables in the files section","date":"2017-08-07T17:59:10.547Z","type":"message"}
+{"nick":"creationix","message":"they match the ffi.os and ffi.arch variables in luajit","date":"2017-08-07T17:59:33.126Z","type":"message"}
+{"nick":"creationix","message":"and luvit's require will extract the libraries to a temp folder if they are embedded in the zip so it can dlopen them","date":"2017-08-07T18:00:11.272Z","type":"message"}
+{"nick":"SinisterRectus","message":"can it resolve a windows .dll vs a linux .so","date":"2017-08-07T18:00:52.843Z","type":"message"}
+{"nick":"creationix","message":"here is one using ffi bindings https://github.com/creationix/lit-blake2b/blob/master/init.lua","date":"2017-08-07T18:00:53.029Z","type":"message"}
+{"nick":"SinisterRectus","message":"oh haha","date":"2017-08-07T18:01:10.097Z","type":"message"}
+{"nick":"creationix","message":"the `module.action` helper extracts any arbitrary resource from the zip to a real file on the temp folder so you can do something with it","date":"2017-08-07T18:01:25.538Z","type":"message"}
+{"nick":"creationix","message":"https://github.com/creationix/lit-blake2b/blob/master/init.lua#L12","date":"2017-08-07T18:01:29.203Z","type":"message"}
+{"nick":"creationix","message":"the path resolving is up to the module author, lit merely provides the variables","date":"2017-08-07T18:01:53.568Z","type":"message"}
+{"nick":"creationix","message":"and luvit's require system provides tools to extract to temp folders","date":"2017-08-07T18:02:09.515Z","type":"message"}
+{"nick":"SinisterRectus","message":"how is module:load and module:action defined... is that in the metatable for module","date":"2017-08-07T18:02:42.937Z","type":"message"}
+{"nick":"creationix","message":"the only issue I've hit with this is it's not fine-grained enough.  armv6 and armv7  are the same to ffi.arch","date":"2017-08-07T18:02:53.683Z","type":"message"}
+{"nick":"creationix","message":"ffi.os is just \"Linux\" for both glibc and musl","date":"2017-08-07T18:03:08.112Z","type":"message"}
+{"nick":"creationix","message":"that's a custom global from luvit's require, not lua's global `module`","date":"2017-08-07T18:03:32.050Z","type":"message"}
+{"nick":"SinisterRectus","message":"yes of course","date":"2017-08-07T18:03:43.683Z","type":"message"}
+{"nick":"SinisterRectus","message":"i just learned that it has a metatable though","date":"2017-08-07T18:03:54.285Z","type":"message"}
+{"nick":"SinisterRectus","message":"i knew the table existed","date":"2017-08-07T18:03:59.112Z","type":"message"}
+{"nick":"creationix","message":"yeah, there are some interesting helpers in there","date":"2017-08-07T18:04:11.079Z","type":"message"}
+{"nick":"SinisterRectus","message":"so it could be possible to unload a module","date":"2017-08-07T18:05:00.381Z","type":"message"}
+{"nick":"creationix","message":"maybe, not sure","date":"2017-08-07T18:05:17.935Z","type":"message"}
+{"nick":"creationix","message":"it's not a use case I tried to support","date":"2017-08-07T18:05:28.184Z","type":"message"}
+{"nick":"creationix","message":"we had a lot of issues when npm and node tried to support that","date":"2017-08-07T18:05:39.598Z","type":"message"}
+{"nick":"SinisterRectus","message":"require.cache is exposed in node though","date":"2017-08-07T18:06:26.084Z","type":"message"}
+{"nick":"creationix","message":"yep, and they regretted it ever since","date":"2017-08-07T18:07:12.655Z","type":"message"}
+{"nick":"SinisterRectus","message":"ah","date":"2017-08-07T18:07:15.387Z","type":"message"}
+{"nick":"SinisterRectus","message":"because i was messing with hot (un)loading code and i ran into not being able to unload a required module so i either had to use luvit-loader and package.loaded or manually loadstring the code","date":"2017-08-07T18:08:21.206Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2017-08-07T18:08:47.248Z","type":"message"}
+{"nick":"SinisterRectus","message":"anyway, re: cdata, it's not super important to me that cdata args be supported if cdata cannot be returned in the same api","date":"2017-08-07T18:10:55.987Z","type":"message"}
+{"nick":"creationix","message":"yeah, I think new cdata APIs on top might be the easiest path there","date":"2017-08-07T18:11:28.600Z","type":"message"}
+{"nick":"creationix","message":"`stream:writeC(cdata, [callback])` or something","date":"2017-08-07T18:12:15.460Z","type":"message"}
+{"nick":"SinisterRectus","message":"aye","date":"2017-08-07T18:12:21.662Z","type":"message"}
+{"nick":"creationix","message":"`stream:readStartC(callback)`...","date":"2017-08-07T18:12:39.635Z","type":"message"}
+{"nick":"SinisterRectus","message":"likewise","date":"2017-08-07T18:12:49.506Z","type":"message"}
+{"nick":"creationix","message":"doing just a couple functions in stream will get you 95% for network stuff","date":"2017-08-07T18:13:01.284Z","type":"message"}
+{"nick":"creationix","message":"read and write","date":"2017-08-07T18:13:09.352Z","type":"message"}
+{"nick":"creationix","message":"dgram might need it's own since it's not a stream","date":"2017-08-07T18:13:38.616Z","type":"message"}
+{"nick":"creationix","message":"then the fs stuff, macros could help there","date":"2017-08-07T18:13:45.640Z","type":"message"}
+{"nick":"creationix","message":"the other option is add an option to read function and make write function accept cdata","date":"2017-08-07T18:14:17.894Z","type":"message"}
+{"nick":"creationix","message":"or set a per-object option","date":"2017-08-07T18:14:31.123Z","type":"message"}
+{"nick":"SinisterRectus","message":"all of which would be useless for non-luajit lua (or lua without a copy of the ffi)","date":"2017-08-07T18:18:30.095Z","type":"message"}
+{"nick":"creationix","message":"yep, it would need ifdef","date":"2017-08-07T18:18:40.851Z","type":"message"}
+{"nick":"creationix","message":"maybe just a convention of {cdata, length} instead of string","date":"2017-08-07T18:19:26.670Z","type":"message"}
+{"nick":"creationix","message":"could even allow {string, length, offset} for slicing of strings","date":"2017-08-07T18:19:41.805Z","type":"message"}
+{"nick":"creationix","message":"just need to make it unambigious from vector of values","date":"2017-08-07T18:19:53.311Z","type":"message"}
+{"nick":"creationix","message":"different options","date":"2017-08-07T18:20:20.482Z","type":"message"}
+{"nick":"creationix","message":"at a minimum, I'd like luvit's pretty printer to show cdata better","date":"2017-08-07T18:20:30.797Z","type":"message"}
+{"nick":"SinisterRectus","message":"now my mind is wandering over all the options. what about a built-in buffer userdatum","date":"2017-08-07T18:20:43.806Z","type":"message"}
+{"nick":"creationix","message":"maybe if it's `uint8_t` show it like node buffers","date":"2017-08-07T18:20:46.785Z","type":"message"}
+{"nick":"creationix","message":"yeah, luvit has a built-in buffer","date":"2017-08-07T18:21:01.783Z","type":"message"}
+{"nick":"creationix","message":"it's just a table with ffi cdata and explicit length in lua","date":"2017-08-07T18:21:09.803Z","type":"message"}
+{"nick":"SinisterRectus","message":"i mean built into luv as lua userdata","date":"2017-08-07T18:21:16.360Z","type":"message"}
+{"nick":"creationix","message":"and a metatable with node Buffer-like methods","date":"2017-08-07T18:21:23.581Z","type":"message"}
+{"nick":"creationix","message":"yeah, we could do that","date":"2017-08-07T18:21:36.964Z","type":"message"}
+{"nick":"creationix","message":"have a utility for converting ffi cdata to it","date":"2017-08-07T18:21:54.305Z","type":"message"}
+{"nick":"SinisterRectus","message":"type() would be 'userdata' instead of 'cdata' so it would be portable across all luas","date":"2017-08-07T18:21:57.072Z","type":"message"}
+{"nick":"creationix","message":"then luv functions wouldn't have to support cdata","date":"2017-08-07T18:22:06.129Z","type":"message"}
+{"nick":"SinisterRectus","message":"tostring() could return a lua string","date":"2017-08-07T18:22:38.348Z","type":"message"}
+{"nick":"SinisterRectus","message":"but you could pass the userdata around and manipulate it as userdata","date":"2017-08-07T18:22:50.597Z","type":"message"}
+{"nick":"creationix","message":"yep","date":"2017-08-07T18:22:59.609Z","type":"message"}
+{"nick":"creationix","message":"and we could even make it resizable if we wanted","date":"2017-08-07T18:23:08.036Z","type":"message"}
+{"nick":"creationix","message":"just needs a layer of indirection in the C struct so realloc works","date":"2017-08-07T18:23:22.791Z","type":"message"}
+{"nick":"creationix","message":"sure such libraries already exist for lua","date":"2017-08-07T18:23:44.802Z","type":"message"}
+{"nick":"SinisterRectus","message":"yeah. i'm liking the buffer userdata idea best.","date":"2017-08-07T18:24:26.486Z","type":"message"}
+{"nick":"creationix","message":"supposedly auxlib has buffers, trying to find it","date":"2017-08-07T18:25:03.353Z","type":"message"}
+{"nick":"creationix","message":"See the `luaL_Buffer` type here https://www.lua.org/manual/5.2/manual.html","date":"2017-08-07T18:26:00.051Z","type":"message"}
+{"nick":"SinisterRectus","message":"oh. hmm.","date":"2017-08-07T18:26:32.044Z","type":"message"}
+{"nick":"creationix","message":"yep, 5.1 has it too https://www.lua.org/manual/5.1/manual.html#luaL_Buffer","date":"2017-08-07T18:27:05.765Z","type":"message"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2017-08-07T18:27:39.249Z","type":"quit"}
+{"nick":"creationix","message":"it's not quite what I want, but may be useful","date":"2017-08-07T18:28:13.762Z","type":"message"}
+{"nick":"creationix","message":"seems an optimization for building large strings our of  many small strings","date":"2017-08-07T18:28:26.937Z","type":"message"}
+{"nick":"SinisterRectus","message":"hmm. the original issue is that ffi bindings like my libsodium binding returns cdata and to use this with luv, i have to make a lua string before passing it.","date":"2017-08-07T18:30:21.639Z","type":"message"}
+{"nick":"creationix","message":"if we made our own and didn't want it resizable, a simple VLA struct as userdata would work great","date":"2017-08-07T18:30:26.577Z","type":"message"}
+{"nick":"creationix","message":"https://www.irccloud.com/pastebin/JEnXfjE8/","date":"2017-08-07T18:30:32.411Z","type":"message"}
+{"nick":"SinisterRectus","message":"would a buffer userdata solve this, or is that just moving the issue somewhere else","date":"2017-08-07T18:30:42.762Z","type":"message"}
+{"nick":"creationix","message":"right, you would have to convert your cdata to one of these instead of converting to a string","date":"2017-08-07T18:31:04.798Z","type":"message"}
+{"nick":"creationix","message":"should be faster, especially if we can avoid a copy","date":"2017-08-07T18:31:13.468Z","type":"message"}
+{"nick":"SinisterRectus","message":"uv.new_buffer(cdata)","date":"2017-08-07T18:31:36.766Z","type":"message"}
+{"nick":"SinisterRectus","message":"uv.new_buffer(cdata, len)","date":"2017-08-07T18:31:46.196Z","type":"message"}
+{"nick":"creationix","message":"yep, something like that","date":"2017-08-07T18:31:56.674Z","type":"message"}
+{"nick":"SinisterRectus","message":"you'd have to account for different types, though","date":"2017-08-07T18:32:12.470Z","type":"message"}
+{"nick":"creationix","message":"do you think resizable is desired?  I guess it could be added later","date":"2017-08-07T18:32:16.979Z","type":"message"}
+{"nick":"SinisterRectus","message":"a buffer only makes sense if the cdata is an array or pointer i guess","date":"2017-08-07T18:32:44.470Z","type":"message"}
+{"nick":"SinisterRectus","message":"i've never resized a buffer in my brief dealings with them","date":"2017-08-07T18:32:57.130Z","type":"message"}
+{"nick":"creationix","message":"https://www.irccloud.com/pastebin/dwWCrXOZ/","date":"2017-08-07T18:33:07.734Z","type":"message"}
+{"nick":"creationix","message":"though having the indirection also allows pointing to existing c memory","date":"2017-08-07T18:33:39.664Z","type":"message"}
+{"nick":"creationix","message":"we just need to keep the GC for the cdata alive","date":"2017-08-07T18:33:49.863Z","type":"message"}
+{"nick":"creationix","message":"copying to a fixed luv buffer is easiest","date":"2017-08-07T18:34:15.138Z","type":"message"}
+{"nick":"creationix","message":"and still cheaper than interning as a lua string","date":"2017-08-07T18:34:18.845Z","type":"message"}
+{"nick":"creationix","message":"but copy is always expensive for high-traffic network stuff","date":"2017-08-07T18:34:31.741Z","type":"message"}
+{"nick":"SinisterRectus","message":"as long as strings can be avoided, i'm happy. it hurts to have to use lua strings for udp reading/writing encoding/decoding encrypting/decrypting an audio stream","date":"2017-08-07T18:37:40.543Z","type":"message"}
+{"nick":"SinisterRectus","message":"i have to head out now though. let me know if you have any amazing revelations","date":"2017-08-07T18:38:40.626Z","type":"message"}
+{"nick":"creationix","message":"ok","date":"2017-08-07T18:38:56.040Z","type":"message"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2017-08-07T18:40:59.059Z","type":"quit"}
