@@ -6,3 +6,44 @@
 {"nick":"mmicko","reason":"\"Leaving\"","date":"2017-08-08T07:18:17.433Z","type":"part"}
 {"nick":"rendar","date":"2017-08-08T07:41:17.062Z","type":"join"}
 {"nick":"creationix_","date":"2017-08-08T07:57:43.946Z","type":"join"}
+{"nick":"CapsAdmin","date":"2017-08-08T08:01:06.253Z","type":"join"}
+{"nick":"jacksonpan","date":"2017-08-08T08:20:31.647Z","type":"join"}
+{"nick":"jacksonpan","reason":"Ping timeout: 276 seconds","date":"2017-08-08T12:53:40.633Z","type":"quit"}
+{"nick":"SinisterRectus","message":"creationix: i learned that libuv has a buffer type, can this be exposed instead of a custom type? http://docs.libuv.org/en/v1.x/misc.html#c.uv_buf_t","date":"2017-08-08T13:40:06.931Z","type":"message"}
+{"nick":"creationix","message":"sure, it's got the pointer indirection, but that's not too expensive","date":"2017-08-08T13:40:35.394Z","type":"message"}
+{"nick":"creationix","message":"and allows for resizing or pointing to existing chunks of memory","date":"2017-08-08T13:40:48.356Z","type":"message"}
+{"nick":"creationix","message":"(but again, if you want to point to your cdata instances, you'll need to ensure they don't get garbage collected before the userdata pointing to them does or bad things will happen)","date":"2017-08-08T13:41:52.669Z","type":"message"}
+{"nick":"SinisterRectus","message":"hmm","date":"2017-08-08T13:42:59.541Z","type":"message"}
+{"nick":"creationix","message":"copy be default it probably sanest for now","date":"2017-08-08T13:43:11.149Z","type":"message"}
+{"nick":"SinisterRectus","message":"i think the luajit docs warn against that too","date":"2017-08-08T13:43:37.654Z","type":"message"}
+{"nick":"creationix","message":"also I just realized the indirection can't be helped if I'll have to convert everything to this format to pass to libuv functions anyway","date":"2017-08-08T13:43:39.879Z","type":"message"}
+{"nick":"SinisterRectus","message":"\"All explicitly (ffi.new(), ffi.cast() etc.) or implicitly (accessors) created cdata objects are garbage collected. You need to ensure to retain valid references to cdata objects somewhere on a Lua stack, an upvalue or in a Lua table while they are still in use.\"","date":"2017-08-08T13:45:40.827Z","type":"message"}
+{"nick":"creationix","message":"but using the built-in buffer type in luv is a great idea","date":"2017-08-08T13:50:25.187Z","type":"message"}
+{"nick":"creationix","message":"it even fits the project's scope","date":"2017-08-08T13:50:31.035Z","type":"message"}
+{"nick":"creationix","message":"going through the source, `uv_buf_t` is only used in stream.c, udp.c, and fs.c.  Which makes sense, those are the parts that deal with binary data","date":"2017-08-08T13:56:51.169Z","type":"message"}
+{"nick":"SinisterRectus","message":"yep","date":"2017-08-08T13:57:02.491Z","type":"message"}
+{"nick":"creationix","message":"it shouldn't be too hard to add a new buffer type to luv and support it in all those","date":"2017-08-08T13:57:06.123Z","type":"message"}
+{"nick":"creationix","message":"we can almost even return it by default if we allow `tostring` on the buffer","date":"2017-08-08T13:57:29.567Z","type":"message"}
+{"nick":"creationix","message":"I just worry about people using colon methods on the strings","date":"2017-08-08T13:57:48.133Z","type":"message"}
+{"nick":"creationix","message":"`data:match(...)` will fail if data isn't a string","date":"2017-08-08T13:57:57.499Z","type":"message"}
+{"nick":"creationix","message":"but `string.match(data, ...)` might work if the string function tries to `tostring` the value","date":"2017-08-08T13:58:16.564Z","type":"message"}
+{"nick":"SinisterRectus","message":"unless you set the metatable.__index to string","date":"2017-08-08T13:58:20.007Z","type":"message"}
+{"nick":"creationix","message":"true, we could do that, but seems wonky","date":"2017-08-08T13:58:36.259Z","type":"message"}
+{"nick":"creationix","message":"also I'm not sure the string functions coerce their inputs.  Lua isn't as coerce happy as JS","date":"2017-08-08T13:58:50.724Z","type":"message"}
+{"nick":"SinisterRectus","message":"would that work out of the box though. i wouldn't expect lua to coerce it to a string","date":"2017-08-08T13:58:52.961Z","type":"message"}
+{"nick":"SinisterRectus","message":"haha","date":"2017-08-08T13:58:56.691Z","type":"message"}
+{"nick":"creationix","message":"well, we definitely at least want a `:tostring` on the buffer","date":"2017-08-08T13:59:57.165Z","type":"message"}
+{"nick":"SinisterRectus","message":"for sure","date":"2017-08-08T14:00:11.547Z","type":"message"}
+{"nick":"creationix","message":"or rather, the `__tostring` metamethod","date":"2017-08-08T14:00:35.853Z","type":"message"}
+{"nick":"SinisterRectus","message":"yes that","date":"2017-08-08T14:00:45.068Z","type":"message"}
+{"nick":"SinisterRectus","message":"what about dereferencing it","date":"2017-08-08T14:02:17.376Z","type":"message"}
+{"nick":"SinisterRectus","message":"or indexing","date":"2017-08-08T14:02:41.770Z","type":"message"}
+{"nick":"SinisterRectus","message":"whichever is the appropriate term","date":"2017-08-08T14:02:45.730Z","type":"message"}
+{"nick":"creationix","message":"might be slow, hmm","date":"2017-08-08T14:27:14.139Z","type":"message"}
+{"nick":"creationix","message":"__index and __newindex would be the lua hooks","date":"2017-08-08T14:27:29.571Z","type":"message"}
+{"nick":"creationix","message":"that's one thing I like about uint8_t cdata, indexing is very fast","date":"2017-08-08T14:28:01.016Z","type":"message"}
+{"nick":"jacksonpan","date":"2017-08-08T14:39:58.464Z","type":"join"}
+{"nick":"SkyRocknRoll","date":"2017-08-08T15:16:29.645Z","type":"join"}
+{"nick":"SkyRocknRoll_","date":"2017-08-08T15:25:51.704Z","type":"join"}
+{"nick":"SkyRocknRoll","reason":"Ping timeout: 268 seconds","date":"2017-08-08T15:26:50.631Z","type":"quit"}
+{"nick":"jacksonpan","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2017-08-08T15:54:28.803Z","type":"quit"}
