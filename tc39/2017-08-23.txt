@@ -1,0 +1,101 @@
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2017-08-23T00:03:41.385Z","type":"quit"}
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2017-08-23T00:30:44.674Z","type":"quit"}
+{"nick":"jridgewell","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2017-08-23T01:05:06.571Z","type":"quit"}
+{"nick":"ljharb","message":"can someone run eshost and tell me what `Function.prototype.toString.call(new Proxy(() => {}, {}))` does? i would expect it to be the same as `Function.prototype.toString.call(() => {})`, but it seems like it throws (due to failing the brand check)","date":"2017-08-23T01:09:06.223Z","type":"message"}
+{"nick":"ljharb","message":"also, the exception i get has \"Proxy.toString\" in its stack trace which seems problematic","date":"2017-08-23T01:09:17.285Z","type":"message"}
+{"nick":"Domenic","message":"stack traces, /shrug","date":"2017-08-23T01:12:32.684Z","type":"message"}
+{"nick":"ljharb","message":"lol, fair","date":"2017-08-23T01:13:10.995Z","type":"message"}
+{"nick":"ljharb","message":"it just means an isProxy function is even easier to build","date":"2017-08-23T01:13:18.388Z","type":"message"}
+{"nick":"Bakkot","message":"safari gives `function ProxyObject() { [native code] }`","date":"2017-08-23T01:13:20.729Z","type":"message"}
+{"nick":"ljharb","message":"lol","date":"2017-08-23T01:13:26.304Z","type":"message"}
+{"nick":"Bakkot","message":"brand check in F.p.toString should probably just be [[Call]] instead of [[ECMAScriptCode]]","date":"2017-08-23T01:13:40.780Z","type":"message"}
+{"nick":"ljharb","message":"if brand-checks aren't forwarded tho, then it basically means that an isProxy function is trivial to build for any built-in type, and i was under the impression it was really important that that not be the case","date":"2017-08-23T01:13:54.030Z","type":"message"}
+{"nick":"Bakkot","message":"proxys copy over call and construct, but not [[ECMAScriptCode]]","date":"2017-08-23T01:13:56.402Z","type":"message"}
+{"nick":"ljharb","message":"right, i agree it should be [[Call]] in that particular method","date":"2017-08-23T01:14:08.848Z","type":"message"}
+{"nick":"Bakkot","message":"though that might then require further IsHTMLDDA special casing","date":"2017-08-23T01:14:21.462Z","type":"message"}
+{"nick":"ljharb","message":"(or, it should copy over that slot too)","date":"2017-08-23T01:14:22.256Z","type":"message"}
+{"nick":"Bakkot","message":"isArray doesn't forward brand checks but special cases array proxies","date":"2017-08-23T01:15:31.822Z","type":"message"}
+{"nick":"Bakkot","message":"but Map and Set brand checks will fail on proxies, yeah","date":"2017-08-23T01:15:40.045Z","type":"message"}
+{"nick":"Bakkot","message":"this came up with private fields too, and the decision was that proxies should not forward private fields. so it will be possible to make new types which are not proxyable.","date":"2017-08-23T01:17:15.042Z","type":"message"}
+{"nick":"Bakkot","message":"apparently this is OK?","date":"2017-08-23T01:17:17.690Z","type":"message"}
+{"nick":"bterlson","message":"most things will still work on the proxy won't it?","date":"2017-08-23T01:17:54.431Z","type":"message"}
+{"nick":"Bakkot","message":"define \"most things\"?","date":"2017-08-23T01:18:07.024Z","type":"message"}
+{"nick":"Bakkot","message":"things which perform brand checks, including all private field accesses, will not. other things will.","date":"2017-08-23T01:18:24.968Z","type":"message"}
+{"nick":"bterlson","message":"this.#x still works doesn't it?","date":"2017-08-23T01:19:47.415Z","type":"message"}
+{"nick":"Bakkot","message":"no.","date":"2017-08-23T01:21:28.209Z","type":"message"}
+{"nick":"bterlson","message":"oh right, this is still proxied","date":"2017-08-23T01:22:21.430Z","type":"message"}
+{"nick":"bterlson","message":"gah","date":"2017-08-23T01:22:24.769Z","type":"message"}
+{"nick":"bterlson","message":"delete proxies","date":"2017-08-23T01:22:28.064Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: very builtin has internal slots tho.","date":"2017-08-23T01:22:36.184Z","type":"message"}
+{"nick":"ljharb","message":"*every","date":"2017-08-23T01:22:37.721Z","type":"message"}
+{"nick":"ljharb","message":"so if you want to proxy something and make it invisible, you have to also explicitly hide away every possibly brand-checking method","date":"2017-08-23T01:23:03.513Z","type":"message"}
+{"nick":"Bakkot","message":"s/'something'/a builtin/, sure","date":"2017-08-23T01:23:14.726Z","type":"message"}
+{"nick":"ljharb","message":"well, a builtin or something with private fields","date":"2017-08-23T01:23:32.431Z","type":"message"}
+{"nick":"Bakkot","message":"indeed.","date":"2017-08-23T01:23:36.682Z","type":"message"}
+{"nick":"Bakkot","message":"apparently this is ok!","date":"2017-08-23T01:23:55.329Z","type":"message"}
+{"nick":"Bakkot","message":"it actually makes a lot of sense for private fields if you think about the WeakMap model.","date":"2017-08-23T01:24:45.667Z","type":"message"}
+{"nick":"ljharb","message":"i'm not denying it makes sense","date":"2017-08-23T01:25:11.202Z","type":"message"}
+{"nick":"ljharb","message":"but it seems like it makes proxies mostly useless","date":"2017-08-23T01:25:19.418Z","type":"message"}
+{"nick":"Bakkot","message":"eh, I don't think the majority use case is proxying builtins.","date":"2017-08-23T01:25:35.915Z","type":"message"}
+{"nick":"ljharb","message":"what's the majority use case of proxies?","date":"2017-08-23T01:25:46.739Z","type":"message"}
+{"nick":"Bakkot","message":"though I do think it would be nice to be able to transparently proxy functions.","date":"2017-08-23T01:25:51.008Z","type":"message"}
+{"nick":"bterlson","message":"Bakkot: library idea: proxy that unwraps the receiver for method invocations on it","date":"2017-08-23T01:25:52.459Z","type":"message"}
+{"nick":"ljharb","message":"(also, is any use case of Proxy \"majority\" tho)","date":"2017-08-23T01:26:01.197Z","type":"message"}
+{"nick":"Bakkot","message":"whatever markm is doing is the majority use case, and he doesn't seem to mind the above semantics","date":"2017-08-23T01:26:29.254Z","type":"message"}
+{"nick":"Bakkot","message":"so!","date":"2017-08-23T01:26:30.407Z","type":"message"}
+{"nick":"ljharb","message":"lol","date":"2017-08-23T01:26:32.426Z","type":"message"}
+{"nick":"ljharb","message":"lol so basically this means my `is-callable` package, to make it return true for a Proxy that has `[[Call]]`, has to also have an `isProxy` function, so that when `typeof` is function i can early-return true. sigh","date":"2017-08-23T01:27:03.824Z","type":"message"}
+{"nick":"Bakkot","message":"your package also doesn't handle document.all correctly, looks like","date":"2017-08-23T01:27:50.096Z","type":"message"}
+{"nick":"ljharb","message":"surely not, nothing i have handles it","date":"2017-08-23T01:28:32.298Z","type":"message"}
+{"nick":"ljharb","message":"but ofc now that it's in the spec, and not just some browser whackery, i have to actually handle it all over the place","date":"2017-08-23T01:28:49.296Z","type":"message"}
+{"nick":"Bakkot","message":"well, it's only partly in the spec...","date":"2017-08-23T01:29:00.199Z","type":"message"}
+{"nick":"ljharb","message":"ᕕ( ᐛ )ᕗ whee","date":"2017-08-23T01:29:06.256Z","type":"message"}
+{"nick":"Bakkot","message":"the spec doesn't make any mention of it being callable, but it is!","date":"2017-08-23T01:29:13.547Z","type":"message"}
+{"nick":"Bakkot","message":"it is just some browser whackery though. non-browser hosts are normatively prohibted from making it.","date":"2017-08-23T01:30:03.483Z","type":"message"}
+{"nick":"Bakkot","message":"well, actually, not exactly normatively.","date":"2017-08-23T01:30:36.873Z","type":"message"}
+{"nick":"Bakkot","message":"it's a \"should\" in a NOTE.","date":"2017-08-23T01:30:41.330Z","type":"message"}
+{"nick":"ljharb","message":"depending on your interpretation of annex b :-p","date":"2017-08-23T01:30:47.242Z","type":"message"}
+{"nick":"bradleymeck","date":"2017-08-23T01:47:34.887Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2017-08-23T01:47:44.232Z","type":"quit"}
+{"nick":"caridy","reason":"Read error: Connection reset by peer","date":"2017-08-23T02:54:27.468Z","type":"quit"}
+{"nick":"caridy","date":"2017-08-23T02:55:01.462Z","type":"join"}
+{"nick":"adema","reason":"Ping timeout: 264 seconds","date":"2017-08-23T03:43:34.261Z","type":"quit"}
+{"nick":"adema","date":"2017-08-23T03:47:53.913Z","type":"join"}
+{"nick":"jmdyck1","reason":"Quit: Leaving.","date":"2017-08-23T04:14:48.790Z","type":"quit"}
+{"nick":"STRML","reason":"*.net *.split","date":"2017-08-23T05:02:05.306Z","type":"quit"}
+{"nick":"wha121[m]","reason":"*.net *.split","date":"2017-08-23T05:02:06.243Z","type":"quit"}
+{"nick":"samth","reason":"*.net *.split","date":"2017-08-23T05:05:02.664Z","type":"quit"}
+{"nick":"mathiasbynens","reason":"*.net *.split","date":"2017-08-23T05:05:02.664Z","type":"quit"}
+{"nick":"dherman","reason":"*.net *.split","date":"2017-08-23T05:05:02.664Z","type":"quit"}
+{"nick":"maggiepint","reason":"*.net *.split","date":"2017-08-23T05:05:02.664Z","type":"quit"}
+{"nick":"aklein","reason":"*.net *.split","date":"2017-08-23T05:05:02.665Z","type":"quit"}
+{"nick":"Domenic","reason":"*.net *.split","date":"2017-08-23T05:05:02.665Z","type":"quit"}
+{"nick":"aklein","date":"2017-08-23T05:05:02.665Z","type":"join"}
+{"nick":"mathiasbynens","date":"2017-08-23T05:05:02.667Z","type":"join"}
+{"nick":"Domenic","date":"2017-08-23T05:05:02.667Z","type":"join"}
+{"nick":"wha121[m]","date":"2017-08-23T05:05:02.667Z","type":"join"}
+{"nick":"maggiepint","date":"2017-08-23T05:05:02.668Z","type":"join"}
+{"nick":"samth","date":"2017-08-23T05:05:02.668Z","type":"join"}
+{"nick":"dherman","date":"2017-08-23T05:05:02.668Z","type":"join"}
+{"nick":"STRML","date":"2017-08-23T05:05:02.668Z","type":"join"}
+{"nick":"bterlson!sid23757@gateway/web/irccloud.com/x-piswwexnoehlnxmj","topic":"ECMA TC39 | https://github.com/tc39 | +v's are your friendly neighborhood delegates! | Logs: http://logs.libuv.org/tc39/latest","date":"2017-08-23T05:05:11.627Z","type":"topic"}
+{"nick":"gskachkov","reason":"Quit: gskachkov","date":"2017-08-23T05:26:40.529Z","type":"quit"}
+{"nick":"Domenic","message":"No. I have the one true majority use case for proxies.","date":"2017-08-23T05:27:05.944Z","type":"message"}
+{"nick":"Domenic","message":"Let me show you my codes.","date":"2017-08-23T05:27:10.240Z","type":"message"}
+{"nick":"Domenic","message":"https://github.com/jsdom/webidl2js/blob/ccae0c1f39195b395c1891e7f45b3f3c4a1be8cd/lib/constructs/interface.js#L425","date":"2017-08-23T05:28:09.718Z","type":"message"}
+{"nick":"Domenic","message":"https://github.com/jsdom/webidl2js/blob/ccae0c1f39195b395c1891e7f45b3f3c4a1be8cd/test/__snapshots__/test.js.snap#L1025","date":"2017-08-23T05:28:34.468Z","type":"message"}
+{"nick":"ljharb","message":"Domenic: is that basically to emulate \"weird\" DOM behavior?","date":"2017-08-23T05:28:46.929Z","type":"message"}
+{"nick":"Domenic","message":"yes :D","date":"2017-08-23T05:28:51.428Z","type":"message"}
+{"nick":"ljharb","message":"lol","date":"2017-08-23T05:28:54.088Z","type":"message"}
+{"nick":"Domenic","message":"It's so amazing","date":"2017-08-23T05:28:57.357Z","type":"message"}
+{"nick":"ljharb","message":"fair enough","date":"2017-08-23T05:28:58.128Z","type":"message"}
+{"nick":"Domenic","message":"TimothyGu is my hero","date":"2017-08-23T05:29:01.123Z","type":"message"}
+{"nick":"Domenic","message":"(he submitted the PR to implement this)","date":"2017-08-23T05:29:17.345Z","type":"message"}
+{"nick":"ljharb","message":"jsdom isn't meant to run in browsers tho, right?","date":"2017-08-23T05:29:22.466Z","type":"message"}
+{"nick":"ljharb","message":"so your proxies are purely adding functionality, instead of trying to encapsulate/hide it?","date":"2017-08-23T05:29:40.981Z","type":"message"}
+{"nick":"ljharb","message":"that sounds like a nice way to avoid all this internal slot stuff :-p","date":"2017-08-23T05:30:14.517Z","type":"message"}
+{"nick":"ljharb","message":"hm, i guess you need that if you want to provide the data attr stuff, too","date":"2017-08-23T05:31:51.138Z","type":"message"}
+{"nick":"howdoi","date":"2017-08-23T06:08:25.912Z","type":"join"}
+{"nick":"Domenic","message":"Yes, you need it for many things","date":"2017-08-23T06:11:09.685Z","type":"message"}
+{"nick":"Domenic","message":"And jsdom does run in browsers, although I'm not sure I'd recommend it","date":"2017-08-23T06:11:18.734Z","type":"message"}
+{"nick":"ljharb","message":"gotcha","date":"2017-08-23T06:14:21.856Z","type":"message"}
