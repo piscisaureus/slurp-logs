@@ -6,3 +6,87 @@
 {"nick":"Soni","reason":"Ping timeout: 260 seconds","date":"2017-09-06T07:27:57.699Z","type":"quit"}
 {"nick":"Soni","date":"2017-09-06T07:29:49.372Z","type":"join"}
 {"nick":"SkyRocknRoll","reason":"Read error: Connection reset by peer","date":"2017-09-06T14:15:55.328Z","type":"quit"}
+{"nick":"rphillips","message":"squeek502_: responded to that github issue again","date":"2017-09-06T16:00:42.053Z","type":"message"}
+{"nick":"squeek502_","message":"rphillips, ive tested with spawning 3 different ways: coro-spawn, plain luv, and plain libuv, all 3 exhibit the same inconsistent reads when spawning luvit as a child process","date":"2017-09-06T16:02:51.529Z","type":"message"}
+{"nick":"rphillips","message":"so I had to implement a drain in the rackspace agent","date":"2017-09-06T16:04:44.199Z","type":"message"}
+{"nick":"rphillips","message":"https://github.com/virgo-agent-toolkit/rackspace-monitoring-agent/blob/master/check/base.lua#L476","date":"2017-09-06T16:05:24.676Z","type":"message"}
+{"nick":"rphillips","message":"it reads all of stdio/stderr, and waits for the exit","date":"2017-09-06T16:05:36.396Z","type":"message"}
+{"nick":"rphillips","message":"because the exit can come before everything is read","date":"2017-09-06T16:05:49.087Z","type":"message"}
+{"nick":"creationix","message":"I've seen exit come before EOF on the two streams all the time, but I thought the coro stuff worked around that by waiting for all three events before exiting (shild exit, stderr end, stdout end)","date":"2017-09-06T16:06:28.763Z","type":"message"}
+{"nick":"rphillips","message":"does the coro stuff do that?","date":"2017-09-06T16:06:54.125Z","type":"message"}
+{"nick":"rphillips","message":"the underlying libuv process handle shouldn't be closed until everything is read","date":"2017-09-06T16:08:06.371Z","type":"message"}
+{"nick":"rphillips","message":"if it is, then it'll truncate the output","date":"2017-09-06T16:08:20.980Z","type":"message"}
+{"nick":"creationix","message":"I'm talking about this https://github.com/luvit/lit/blob/master/libs/exec.lua#L36-L50","date":"2017-09-06T16:09:18.937Z","type":"message"}
+{"nick":"creationix","message":"if you only wait for the exit event, you can miss stream events","date":"2017-09-06T16:09:34.795Z","type":"message"}
+{"nick":"creationix","message":"is it closing the libuv handle early somewhere internally?","date":"2017-09-06T16:09:54.640Z","type":"message"}
+{"nick":"squeek502_","message":"im not sure","date":"2017-09-06T16:10:10.196Z","type":"message"}
+{"nick":"creationix","message":"wait exit doesn't do anything to the handle https://github.com/luvit/lit/blob/master/deps/coro-spawn.lua#L63-L70","date":"2017-09-06T16:10:40.303Z","type":"message"}
+{"nick":"creationix","message":"I don't see coro-spawn ever touch the `handle`","date":"2017-09-06T16:11:32.601Z","type":"message"}
+{"nick":"creationix","message":"maybe coro-channel?","date":"2017-09-06T16:11:55.061Z","type":"message"}
+{"nick":"squeek502_","message":"well, ive mostly been testing with the code in this comment, which just uses luv directly: https://github.com/luvit/lit/issues/222#issuecomment-327079520","date":"2017-09-06T16:12:38.904Z","type":"message"}
+{"nick":"squeek502_","message":"and i get the same inconsistent output from the child process","date":"2017-09-06T16:13:36.471Z","type":"message"}
+{"nick":"squeek502_","message":"it doesnt touch the handle, just prints in the various callbacks","date":"2017-09-06T16:14:03.395Z","type":"message"}
+{"nick":"squeek502_","message":"i dont have much evidence to suggest that its a bug within the lit libs","date":"2017-09-06T16:15:07.103Z","type":"message"}
+{"nick":"creationix","action":"looks closer at the gist","date":"2017-09-06T16:15:13.952Z","type":"action"}
+{"nick":"rphillips","message":"testing it out","date":"2017-09-06T16:15:14.193Z","type":"message"}
+{"nick":"rphillips","message":"hmm. works on linux","date":"2017-09-06T16:16:30.081Z","type":"message"}
+{"nick":"squeek502_","message":"ah yeah ive been meaning to check that","date":"2017-09-06T16:16:58.132Z","type":"message"}
+{"nick":"squeek502_","message":"'works' meaning what in this case?","date":"2017-09-06T16:17:19.011Z","type":"message"}
+{"nick":"rphillips","message":"https://gist.github.com/rphillips/72ac30c72339d373a0e829e4b0d83822","date":"2017-09-06T16:17:47.669Z","type":"message"}
+{"nick":"rphillips","message":"consistently prints the gist ^","date":"2017-09-06T16:17:55.143Z","type":"message"}
+{"nick":"squeek502_","message":"very strange...","date":"2017-09-06T16:18:07.729Z","type":"message"}
+{"nick":"creationix","message":"so, it writes to stderr, then starts the cleanup routine which closes all handles.  We should probably wait will the write call finishes before closing the handles","date":"2017-09-06T16:18:54.448Z","type":"message"}
+{"nick":"creationix","message":"which is tricky because that's not a coroutine I believe","date":"2017-09-06T16:19:34.907Z","type":"message"}
+{"nick":"squeek502_","message":"yeah but its still weird because its still specific to spawning a child process","date":"2017-09-06T16:19:48.421Z","type":"message"}
+{"nick":"squeek502_","message":"the stderr works fine on windows when just doing luvit plain.lua","date":"2017-09-06T16:19:58.308Z","type":"message"}
+{"nick":"creationix","message":"sure, some race conditions only happen in certain situations","date":"2017-09-06T16:20:21.107Z","type":"message"}
+{"nick":"creationix","message":"also child processes have pipes while normal processes tend to have TTYs","date":"2017-09-06T16:20:53.282Z","type":"message"}
+{"nick":"squeek502_","message":"true","date":"2017-09-06T16:20:59.914Z","type":"message"}
+{"nick":"creationix","message":"I believe libuv makes stderr sync sometimes for this very reason (truncating error messages on exit)","date":"2017-09-06T16:21:10.410Z","type":"message"}
+{"nick":"creationix","message":"it was a big problem in the early node days","date":"2017-09-06T16:21:15.227Z","type":"message"}
+{"nick":"creationix","message":"Something like this maybe:","date":"2017-09-06T16:25:00.260Z","type":"message"}
+{"nick":"creationix","message":"https://www.irccloud.com/pastebin/RvAAItBE/","date":"2017-09-06T16:25:12.986Z","type":"message"}
+{"nick":"creationix","message":"we don't want to keep the event loop open longer than needed.  A plain `uv.run()` may run forever.   Just loop long enough to know the callback is done.","date":"2017-09-06T16:26:04.433Z","type":"message"}
+{"nick":"squeek502_","message":"yeah makes sense","date":"2017-09-06T16:26:35.021Z","type":"message"}
+{"nick":"creationix","message":"that code is untested and I havn't been writing lua in a couple months, so beware","date":"2017-09-06T16:26:57.110Z","type":"message"}
+{"nick":"creationix","message":"but I think it should work in theory","date":"2017-09-06T16:27:06.680Z","type":"message"}
+{"nick":"creationix","message":"actually, we should probably always flush stderr on exit.  does that sound safe?","date":"2017-09-06T16:28:56.097Z","type":"message"}
+{"nick":"rphillips","message":"whichever file handles are setup should probably be flushed","date":"2017-09-06T16:30:04.062Z","type":"message"}
+{"nick":"creationix","message":"so try to flush everything that's a stream?","date":"2017-09-06T16:31:24.069Z","type":"message"}
+{"nick":"creationix","message":"only problem is, if there is an active writer, the event loop will never close","date":"2017-09-06T16:31:39.333Z","type":"message"}
+{"nick":"creationix","message":"unless starting the flush prevent new writes from starting","date":"2017-09-06T16:31:53.670Z","type":"message"}
+{"nick":"creationix","message":"I wonder if libuv prevents `uv_write` calls after `uv_shutdown` on a stream","date":"2017-09-06T16:32:50.036Z","type":"message"}
+{"nick":"creationix","message":"if it does, that's a great idea","date":"2017-09-06T16:33:04.801Z","type":"message"}
+{"nick":"creationix","message":"what does shutdown map to in luv?  it's not `end` like in node  I remember","date":"2017-09-06T16:34:12.581Z","type":"message"}
+{"nick":"creationix","message":"hmm, it's `shutdown`.  I was clever with that one ;)","date":"2017-09-06T16:34:49.576Z","type":"message"}
+{"nick":"squeek502_","message":"made some minor fixes to your code and it seems to work: https://hastebin.com/zejiwulofe.lua","date":"2017-09-06T16:36:29.190Z","type":"message"}
+{"nick":"creationix","message":"try this one too, it replaces the existing walk loop:","date":"2017-09-06T16:38:07.054Z","type":"message"}
+{"nick":"creationix","message":"https://www.irccloud.com/pastebin/8WsiKKa3/","date":"2017-09-06T16:38:14.807Z","type":"message"}
+{"nick":"creationix","message":"passes all tests locally","date":"2017-09-06T16:40:03.413Z","type":"message"}
+{"nick":"squeek502_","message":"yeah that works too, commented out the previous flush","date":"2017-09-06T16:40:33.627Z","type":"message"}
+{"nick":"creationix","message":"sweet, I think the second one is better since it flushes any streams","date":"2017-09-06T16:40:51.591Z","type":"message"}
+{"nick":"creationix","message":"rphillips: rfr https://github.com/luvit/luvit/pull/1007","date":"2017-09-06T16:50:36.651Z","type":"message"}
+{"nick":"SkyRocknRoll","date":"2017-09-06T16:56:27.628Z","type":"join"}
+{"nick":"squeek502_","message":"creationix, here's a PR to fix the appveyor.yml: https://github.com/luvit/luvit/pull/1008","date":"2017-09-06T17:08:19.931Z","type":"message"}
+{"nick":"creationix","message":"thanks","date":"2017-09-06T17:08:53.743Z","type":"message"}
+{"nick":"creationix","message":"I guess they got stricter about what's allowed","date":"2017-09-06T17:09:02.357Z","type":"message"}
+{"nick":"rendar","reason":"Quit: std::lower_bound + std::less_equal *works* with a vector without duplicates!","date":"2017-09-06T18:06:11.744Z","type":"quit"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2017-09-06T18:37:57.352Z","type":"quit"}
+{"nick":"SkyRocknRoll","date":"2017-09-06T18:39:09.035Z","type":"join"}
+{"nick":"Andols","date":"2017-09-06T19:59:21.496Z","type":"join"}
+{"nick":"SkyRocknRoll","reason":"Remote host closed the connection","date":"2017-09-06T20:46:10.532Z","type":"quit"}
+{"nick":"DarkGod","date":"2017-09-06T21:45:59.965Z","type":"join"}
+{"nick":"Andols","date":"2017-09-06T22:26:53.330Z","type":"quit"}
+{"nick":"Fusl","reason":"Excess Flood","date":"2017-09-06T22:30:32.615Z","type":"quit"}
+{"nick":"Fusl","date":"2017-09-06T22:33:52.497Z","type":"join"}
+{"nick":"DarkGod","reason":"Quit: Leaving","date":"2017-09-06T23:17:42.670Z","type":"quit"}
+{"nick":"travis-ci","date":"2017-09-06T23:27:38.642Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2992 (flush-streams-on-exit - c7d2a32 : Tim Caswell): The build has errored.","date":"2017-09-06T23:27:39.639Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/commit/c7d2a32f3514","date":"2017-09-06T23:27:39.786Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/272568431","date":"2017-09-06T23:27:39.786Z","type":"message"}
+{"nick":"travis-ci","date":"2017-09-06T23:27:39.787Z","type":"part"}
+{"nick":"travis-ci","date":"2017-09-06T23:38:15.473Z","type":"join"}
+{"nick":"travis-ci","message":"luvit/luvit#2995 (flush-streams-on-exit - 84218f2 : Tim Caswell): The build has errored.","date":"2017-09-06T23:38:16.473Z","type":"message"}
+{"nick":"travis-ci","message":"Change view : https://github.com/luvit/luvit/compare/c7d2a32f3514...84218f2c4142","date":"2017-09-06T23:38:16.620Z","type":"message"}
+{"nick":"travis-ci","message":"Build details : https://travis-ci.org/luvit/luvit/builds/272568859","date":"2017-09-06T23:38:16.620Z","type":"message"}
+{"nick":"travis-ci","date":"2017-09-06T23:38:16.620Z","type":"part"}
