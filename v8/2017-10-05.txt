@@ -20,3 +20,40 @@
 {"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by buildbot@chromium.org: closed (https://build.chromium.org/p/client.v8/builders/V8%20Win32%20-%20debug/builds/11124 from c7e84f521644e273d669268dba90d5244bb90ecc)","date":"2017-10-05T13:45:55.639Z","type":"message"}
 {"nick":"bradleymeck","date":"2017-10-05T13:54:46.643Z","type":"join"}
 {"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by ulan@google.com: open (ulan is looking at GC test failures)","date":"2017-10-05T14:02:04.622Z","type":"message"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2010030309]","date":"2017-10-05T16:44:48.530Z","type":"quit"}
+{"nick":"Bakkot","message":"aklein (or whoever): any pointers on tracking down the failure in https://build.chromium.org/p/client.v8/builders/V8%20Linux64%20GC%20Stress%20-%20custom%20snapshot/builds/15355 ? I can't reproduce locally and can't for the life of me figure out how my change could have caused it","date":"2017-10-05T18:11:40.814Z","type":"message"}
+{"nick":"aklein","message":"Bakkot: what did you do to try to repro locally?","date":"2017-10-05T18:46:39.644Z","type":"message"}
+{"nick":"aklein","message":"you can use tools/dev/v8gen.py to create a build configuration exactly matching the bot","date":"2017-10-05T18:47:21.998Z","type":"message"}
+{"nick":"aklein","message":"v8gen.py -m client.v8 -b 'V8 Linux64 GC Stress - custom snapshot'","date":"2017-10-05T18:47:47.446Z","type":"message"}
+{"nick":"aklein","message":"and then build from there and run the test with the flags in the failure","date":"2017-10-05T18:48:08.291Z","type":"message"}
+{"nick":"aklein","message":"I also don't know off the top of my head why these would be related, but the blamelists for the failure (and the fact that it went away with the revert) does seem pretty clear","date":"2017-10-05T18:48:38.070Z","type":"message"}
+{"nick":"caitp","message":"Bakkot: not clear how it would affect wasm, but the change to Reparenter::VisitTryCatchStatement is semantically different from before","date":"2017-10-05T19:07:27.501Z","type":"message"}
+{"nick":"Bakkot","message":"aklein: built it with the gn args it lists (except not 'use_goma'), ran it with the command it lists","date":"2017-10-05T19:08:32.844Z","type":"message"}
+{"nick":"Bakkot","message":"will try with v8gen","date":"2017-10-05T19:08:38.850Z","type":"message"}
+{"nick":"aklein","message":"huh, that should be the same...","date":"2017-10-05T19:08:47.565Z","type":"message"}
+{"nick":"aklein","message":"I guess you can compare the gn args v8gen creates","date":"2017-10-05T19:09:08.375Z","type":"message"}
+{"nick":"aklein","message":"Bakkot: I can try reproing this afternoon","date":"2017-10-05T19:09:14.711Z","type":"message"}
+{"nick":"Bakkot","message":"caitp: how so? Keeping in mind that stmt->scope() was previously never null","date":"2017-10-05T19:09:36.666Z","type":"message"}
+{"nick":"caitp","message":"one, the order in which the try statements are visited, and 2, the fact that they are conditionally not visited, so you're potentially not reparenting stuff which needs to be, I think","date":"2017-10-05T19:10:34.411Z","type":"message"}
+{"nick":"caitp","message":"it may not actuallly break anything, I'd have to look at it closer to see, but it caught my eye as a potential breakage","date":"2017-10-05T19:11:31.318Z","type":"message"}
+{"nick":"Bakkot","message":"ah, they're only not visited if the scope is omitted entirely, which only happens if you don't have a binding; it works out I think. I have a test for it, at any rate. probably not the cause of this particular one.","date":"2017-10-05T19:15:05.507Z","type":"message"}
+{"nick":"caitp","message":"shouldn't it be more like: `Visit(stmt->try_block(); if (stmt->scope()) stmt->sope()->ReplaceOuterScope(scope_);` to semantically match + add the new behaviour?","date":"2017-10-05T19:27:03.402Z","type":"message"}
+{"nick":"caitp","message":"+ a closing paren in to close the Visit() call","date":"2017-10-05T19:27:20.768Z","type":"message"}
+{"nick":"Bakkot","message":"That's what it is, except with an additional else block, no? do you just mean that the else block shouldn't be there?","date":"2017-10-05T19:30:28.487Z","type":"message"}
+{"nick":"Bakkot","message":"else block is there because if the catch scope is missing then the catch block scope is the one which needs reparenting, instead of the catch scope","date":"2017-10-05T19:32:08.796Z","type":"message"}
+{"nick":"aklein","message":"Bakkot: I can repro the failure","date":"2017-10-05T21:24:00.606Z","type":"message"}
+{"nick":"aklein","message":"but still no clue why it happens","date":"2017-10-05T21:24:21.965Z","type":"message"}
+{"nick":"aklein","message":"the fact that it involves a try/catch is definitely suspicious, though","date":"2017-10-05T21:24:30.462Z","type":"message"}
+{"nick":"Bakkot","message":"aklein: thanks for confirming the repro, at least! what was your process?","date":"2017-10-05T21:29:30.179Z","type":"message"}
+{"nick":"aklein","message":"Bakkot: I added `v8_embed_script = \"test/mjsunit/mjsunit.js\"` to my usual x64 debug configuration","date":"2017-10-05T21:30:01.821Z","type":"message"}
+{"nick":"Bakkot","message":"v8gen doesn't work for me, incidentally - I get \"V8 Linux64 GC Stress - custom snapshot does not exist in infra/mb/mb_config.pyl for client.v8\"","date":"2017-10-05T21:30:02.290Z","type":"message"}
+{"nick":"aklein","message":"yeah, I noticed that v8gen doesn't know about this bot :/","date":"2017-10-05T21:30:12.279Z","type":"message"}
+{"nick":"aklein","message":"and then built d8","date":"2017-10-05T21:30:20.295Z","type":"message"}
+{"nick":"aklein","message":"and ran it with the commandline I saw here: https://build.chromium.org/p/client.v8/builders/V8%20Linux64%20GC%20Stress%20-%20custom%20snapshot/builds/15355/steps/Mjsunit/logs/trap-location","date":"2017-10-05T21:30:31.383Z","type":"message"}
+{"nick":"aklein","message":"(the v8_embed_script is also from the gn args I found there)","date":"2017-10-05T21:30:43.057Z","type":"message"}
+{"nick":"Bakkot","message":"yeah, ok, that's what I did too. I guess I probably need to try it on a linux machine.","date":"2017-10-05T21:31:02.625Z","type":"message"}
+{"nick":"aklein","message":"I'm a little surprised this depends on the OS, but then, it seems like it's hitting some weird edge condition, given it depends on the startup snapshot","date":"2017-10-05T21:32:11.311Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit:  ","date":"2017-10-05T21:37:08.300Z","type":"quit"}
+{"nick":"aklein","message":"Bakkot: seems like the minimal set of flags is --expose-wasm --gc-interval=500 --stress-compaction","date":"2017-10-05T21:38:53.675Z","type":"message"}
+{"nick":"Bakkot","message":"great, thanks.","date":"2017-10-05T21:42:53.425Z","type":"message"}
+{"nick":"RT|Chatzilla","date":"2017-10-05T22:50:39.262Z","type":"join"}
