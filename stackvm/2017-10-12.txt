@@ -1,0 +1,82 @@
+{"nick":"phated","reason":"Remote host closed the connection","date":"2017-10-12T00:08:17.682Z","type":"quit"}
+{"nick":"dguttman89","date":"2017-10-12T02:16:23.899Z","type":"join"}
+{"nick":"contrahax","date":"2017-10-12T05:02:40.913Z","type":"join"}
+{"nick":"mikolalysenko","message":"i was thinking today and realized that eventemitters are kind of bullshit","date":"2017-10-12T06:50:09.551Z","type":"message"}
+{"nick":"mikolalysenko","message":"like they're almost never the right solution where they get applied, you're almost always better off just using a callback","date":"2017-10-12T06:50:28.120Z","type":"message"}
+{"nick":"mikolalysenko","message":"and there's so many ways they can go wrong and fuck you up","date":"2017-10-12T06:50:38.930Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example you have this race condition where when you create an emitter you might drop the first few messages if a listener gets added asynchronously","date":"2017-10-12T06:51:15.330Z","type":"message"}
+{"nick":"mikolalysenko","message":"also dispatching from an event emitter is way slower than just calling a function","date":"2017-10-12T06:51:34.223Z","type":"message"}
+{"nick":"mikolalysenko","message":"and event emitters get used for all kinds of stuff that shouldn't be an event emitter","date":"2017-10-12T06:51:53.754Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, I don't think http or stream should have been based on event emitters","date":"2017-10-12T06:52:12.302Z","type":"message"}
+{"nick":"mikolalysenko","message":"like when are you ever gonna have more than one object listening on a stream or writing into it?","date":"2017-10-12T06:52:42.995Z","type":"message"}
+{"nick":"mikolalysenko","message":"same deal with http.  once something writes to the response object, it pretty much owns it","date":"2017-10-12T06:52:55.336Z","type":"message"}
+{"nick":"substack","message":"EventEmitters make it easier to pass objects around with the construction happening elsewhere","date":"2017-10-12T06:53:25.558Z","type":"message"}
+{"nick":"mikolalysenko","message":"and another small thing that sucks with event emitters is you can't get type completion from tools like flow or typescript","date":"2017-10-12T06:53:26.775Z","type":"message"}
+{"nick":"mikolalysenko","message":"substack: i agree, but I think I know a better pattern","date":"2017-10-12T06:53:38.589Z","type":"message"}
+{"nick":"mikolalysenko","message":"what you do is have an object where you first construct it, then have a second method called 'start' or whatever where you pass in an object full of callbacks","date":"2017-10-12T06:53:59.857Z","type":"message"}
+{"nick":"mikolalysenko","message":"http already pretty much works like this anyway.  the listen() method is what starts the server","date":"2017-10-12T06:54:16.209Z","type":"message"}
+{"nick":"substack","message":"a lot of this stuff is based on convention. bucking interface tradition only makes it harder for people to use it","date":"2017-10-12T06:54:45.078Z","type":"message"}
+{"nick":"mikolalysenko","message":"in my ideal world, http would not be an event emitter and instead that listen() method would start the server and take all the config callbacks","date":"2017-10-12T06:54:46.544Z","type":"message"}
+{"nick":"substack","message":"I've used APIs like that and they kind of suck","date":"2017-10-12T06:55:00.842Z","type":"message"}
+{"nick":"mikolalysenko","message":"can you give an example","date":"2017-10-12T06:55:12.604Z","type":"message"}
+{"nick":"substack","message":"can't remember the name, but there was an http lib that worked the way you describe","date":"2017-10-12T06:55:37.972Z","type":"message"}
+{"nick":"mikolalysenko","message":"but like http is a good example of a thing that isn't really an event emitter","date":"2017-10-12T06:57:17.235Z","type":"message"}
+{"nick":"mikolalysenko","message":"you can't have 2 emitters write an http response to the same request","date":"2017-10-12T06:57:26.667Z","type":"message"}
+{"nick":"mikolalysenko","message":"event emitters are ok when used appropriately.  if you have multiple things that need to subscribe to the same event","date":"2017-10-12T06:57:49.191Z","type":"message"}
+{"nick":"mikolalysenko","message":"the problem is they are way over used in node's core apis","date":"2017-10-12T06:58:03.423Z","type":"message"}
+{"nick":"substack","message":"you can have one that listens for events and writes to a lot","date":"2017-10-12T06:58:15.444Z","type":"message"}
+{"nick":"substack","message":"*log","date":"2017-10-12T06:58:17.529Z","type":"message"}
+{"nick":"mikolalysenko","message":"or you could just make a logging http server that shims the main server and forwards all requests to the child callbacks","date":"2017-10-12T06:58:44.108Z","type":"message"}
+{"nick":"mikolalysenko","message":"same idea with streams, you would just pipe through a logging stream","date":"2017-10-12T07:00:15.377Z","type":"message"}
+{"nick":"substack","message":"pull streams is like that","date":"2017-10-12T07:00:31.226Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, and it is better than streams for exactly that reason","date":"2017-10-12T07:00:44.475Z","type":"message"}
+{"nick":"substack","message":"sure it's better in one sense, but much worse because of the lack of interop and how it bucks a lot of convention","date":"2017-10-12T07:01:21.952Z","type":"message"}
+{"nick":"mikolalysenko","message":"i understand that things are the way they are now and i am not advocating changing it","date":"2017-10-12T07:01:22.253Z","type":"message"}
+{"nick":"mikolalysenko","message":"oh i agree","date":"2017-10-12T07:01:27.963Z","type":"message"}
+{"nick":"mikolalysenko","message":"breaking http is a dumb idea","date":"2017-10-12T07:01:40.075Z","type":"message"}
+{"nick":"mikolalysenko","message":"with the benefit of hindsight it seems like maybe this api was badly designed","date":"2017-10-12T07:02:12.601Z","type":"message"}
+{"nick":"mikolalysenko","message":"and personally it sort of helps clarify some stuff that had been bothering me about my own code","date":"2017-10-12T07:02:34.026Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, i never really liked the way game-shell worked and looking back on it i think at least part of the problem is the event emitter syndrome","date":"2017-10-12T07:03:30.928Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is import to make sure that all callbacks are registered before the protocol is initiated","date":"2017-10-12T07:04:29.774Z","type":"message"}
+{"nick":"mikolalysenko","message":"so i am kind of leaning toward using this: construct -> configure & start pattern","date":"2017-10-12T07:04:53.309Z","type":"message"}
+{"nick":"mikolalysenko","message":"oh and another thing that sucks with event emitters:  controlling order of execution is bonkers","date":"2017-10-12T07:05:44.249Z","type":"message"}
+{"nick":"mikolalysenko","message":"this is also related to problems i have with middleware","date":"2017-10-12T07:05:53.724Z","type":"message"}
+{"nick":"mikolalysenko","message":"like it's the same reason i think express/react's middleware sucks","date":"2017-10-12T07:06:18.424Z","type":"message"}
+{"nick":"substack","message":"http is kind of a bad idea so ¯\\_(ツ)_/¯","date":"2017-10-12T07:08:54.310Z","type":"message"}
+{"nick":"mikolalysenko","message":"so learn from it and do better next time","date":"2017-10-12T07:09:18.590Z","type":"message"}
+{"nick":"mikolalysenko","message":"like i can't even think of one good example of using event emitters in an api where it doesn't feel like a mistake","date":"2017-10-12T07:10:43.344Z","type":"message"}
+{"nick":"substack","message":"I think event emitters make sense for stateless data where you don't necessarily care about prior events","date":"2017-10-12T07:10:57.814Z","type":"message"}
+{"nick":"substack","message":"but I also haven't been bitten by using event emitters any times I can remember","date":"2017-10-12T07:12:03.449Z","type":"message"}
+{"nick":"mikolalysenko","message":"that's the thing.  most common uses of event emitters just configure it once at construction and don't touch it","date":"2017-10-12T07:12:45.468Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is fine, but the api allows you to do a lot more than that","date":"2017-10-12T07:12:57.282Z","type":"message"}
+{"nick":"mikolalysenko","message":"and that extra stuff is really bloated, complicated and useless","date":"2017-10-12T07:13:05.581Z","type":"message"}
+{"nick":"mikolalysenko","message":"and more likely to break if you use it","date":"2017-10-12T07:13:11.501Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, if you have a 'ready' event you need to catch, you better configure that method in the main callback","date":"2017-10-12T07:13:30.250Z","type":"message"}
+{"nick":"mikolalysenko","message":"(by maincallback i mean in the same time quantum where the event emitter was constructed)","date":"2017-10-12T07:14:13.105Z","type":"message"}
+{"nick":"substack","message":"the same tick","date":"2017-10-12T07:15:22.510Z","type":"message"}
+{"nick":"mikolalysenko","message":"yeah, you know what i mean","date":"2017-10-12T07:15:37.058Z","type":"message"}
+{"nick":"mikolalysenko","message":"most people use emitters that way and it works","date":"2017-10-12T07:16:00.378Z","type":"message"}
+{"nick":"mikolalysenko","message":"but the api is designed around these weird ideas that you might want to not do that, and it makes it really complicated","date":"2017-10-12T07:16:19.367Z","type":"message"}
+{"nick":"mikolalysenko","message":"the general point i'm making is you want to register all handlers and configure the object before you start processing events","date":"2017-10-12T07:16:52.780Z","type":"message"}
+{"nick":"mikolalysenko","message":"and that's the first issue.  the second is that multiple handlers doesn't make much sense for most applications of event emitter","date":"2017-10-12T07:17:34.997Z","type":"message"}
+{"nick":"mikolalysenko","message":"it's like event emitters are this way over engineered mess that only creates new opportunities for things to go wrong","date":"2017-10-12T07:19:26.442Z","type":"message"}
+{"nick":"mikolalysenko","message":"simpler approach: hook some callbacks before you start","date":"2017-10-12T07:19:52.668Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, fs works this way and imo it is a better api","date":"2017-10-12T07:20:39.938Z","type":"message"}
+{"nick":"mikolalysenko","message":"one place where you get forced into using event emitter like apis is from framework hell","date":"2017-10-12T07:22:58.391Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, in the DOM you have to use addEventListener() because objects are constructed externally","date":"2017-10-12T07:23:30.379Z","type":"message"}
+{"nick":"mikolalysenko","message":"in a more ideal world your code would be the one constructing all the objects you are going to use","date":"2017-10-12T07:23:57.767Z","type":"message"}
+{"nick":"mikolalysenko","message":"which is how things like react work, and also another reason why they're nicer to work with you","date":"2017-10-12T07:24:12.797Z","type":"message"}
+{"nick":"substack","message":"it's nice to have a redux-style event emitter bus with things like react at the same time","date":"2017-10-12T07:25:16.753Z","type":"message"}
+{"nick":"mikolalysenko","message":"but redux isn't really like an event emitter","date":"2017-10-12T07:25:46.234Z","type":"message"}
+{"nick":"substack","message":"for messy problems like UIs where distant elements need to listen and sent messages to each other","date":"2017-10-12T07:25:48.829Z","type":"message"}
+{"nick":"mikolalysenko","message":"it is basically a stream processor","date":"2017-10-12T07:26:10.134Z","type":"message"}
+{"nick":"mikolalysenko","message":"i would say redux is more about getting out of the event emitter paradigm","date":"2017-10-12T07:26:25.552Z","type":"message"}
+{"nick":"mikolalysenko","message":"you get actions from a known set of possibilities and then recursively call reducers/functions to compute the next state","date":"2017-10-12T07:26:46.141Z","type":"message"}
+{"nick":"substack","message":"I think that idea is more simply and concisely implemented with event emitters","date":"2017-10-12T07:27:20.680Z","type":"message"}
+{"nick":"substack","message":"like how choo does it","date":"2017-10-12T07:27:24.315Z","type":"message"}
+{"nick":"serapath","reason":"Quit: Connection closed for inactivity","date":"2017-10-12T07:27:41.736Z","type":"quit"}
+{"nick":"substack","message":"that's also what I've done with regl a few times and it's pretty nice","date":"2017-10-12T07:27:45.578Z","type":"message"}
+{"nick":"substack","message":"particularly when you might have props set from the outside multiple times and you need to re-bind or re-load things","date":"2017-10-12T07:28:25.781Z","type":"message"}
+{"nick":"mikolalysenko","message":"i can sort imagine what a choo without emitters might look like, it could be event smaller","date":"2017-10-12T07:34:28.968Z","type":"message"}
+{"nick":"mikolalysenko","message":"for example, could kill the middleware in app.use and instead a middleware is just a higher order function;  ie `app.use(log()); app.use(myStore());` becomes:  `app.use(log(myStore()));`","date":"2017-10-12T07:35:30.031Z","type":"message"}
+{"nick":"mikolalysenko","message":"wow that was a lot of typos","date":"2017-10-12T07:38:55.101Z","type":"message"}
