@@ -1,0 +1,88 @@
+{"nick":"cakoose","message":"Re: the mathiasbynens.be article — I agree that async/await has a more strict call/return structure, but the structure of promises is pretty good as well.  In the article’s example: while the promise doesn’t contain a reference to `a` itself, it does contain a reference to the `() => c()` closure.  If the stack trace includes that line of code (which is lexically inside `a`), it’s still very useful for debugging.  You don’t necessarily need to","date":"2017-11-02T00:02:27.026Z","type":"message"}
+{"nick":"cakoose","message":"capture+store the stack trace at every call.","date":"2017-11-02T00:02:27.584Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-11-02T00:03:53.455Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T00:03:53.649Z","type":"part"}
+{"nick":"BridgeAR","date":"2017-11-02T00:08:09.566Z","type":"join"}
+{"nick":"Trott","message":"refack: git bisect again and this time it indicated https://github.com/nodejs/node/commit/e567402aba903f7d828d428f1f5738bbf884636c as the source of the trouble. That is considerably more believable.  And I've reproduced multiple times in CI. (Immediately prior commit comes up clean, that one produces problems.) I'll post info in the issue tracker.","date":"2017-11-02T00:10:50.117Z","type":"message"}
+{"nick":"nodejs-gh","date":"2017-11-02T00:16:13.873Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T00:16:14.065Z","type":"part"}
+{"nick":"gsathya","message":"cakoose: Node should be able to give you the current function that throws (if that's what you mean)","date":"2017-11-02T00:18:22.513Z","type":"message"}
+{"nick":"peteley","date":"2017-11-02T00:19:55.375Z","type":"join"}
+{"nick":"cakoose","message":"gsathya: Yeah.  More broadly, if I can determine the current promise/async object, I can look at it’s “then” pointer and include that function in the stack trace as well.  That information might help the developer figure out how the exception was caused.","date":"2017-11-02T00:20:25.152Z","type":"message"}
+{"nick":"gibfahn","reason":"Quit: Connection closed for inactivity","date":"2017-11-02T00:20:30.656Z","type":"quit"}
+{"nick":"refack","message":"Trott, looks promising, the test uses crypto to generate the async error.","date":"2017-11-02T00:21:28.508Z","type":"message"}
+{"nick":"gsathya","message":"cakoose: What is a \"then\" pointer? Is it the callback passed to .then or the function that calls .then?","date":"2017-11-02T00:22:28.656Z","type":"message"}
+{"nick":"cakoose","message":"The callback passed to .then (I hope).","date":"2017-11-02T00:22:53.526Z","type":"message"}
+{"nick":"Trott","message":"refack: I'm done for now, have to go do something else, so nothing more from me any time soon today. I'd love to see this get fixed before Code + Learn next week.","date":"2017-11-02T00:22:54.596Z","type":"message"}
+{"nick":"gsathya","message":"If it's the callback then yes, you should get that as part of the stacktrace because it's all on the stack","date":"2017-11-02T00:23:28.289Z","type":"message"}
+{"nick":"BridgeAR","reason":"Quit: Leaving.","date":"2017-11-02T00:24:27.181Z","type":"quit"}
+{"nick":"cakoose","message":"gsathya: While I agree that “the function that calls .then” would allow providing a more typical stack trace, “the callback passed to .then” is still more useful than nothing.","date":"2017-11-02T00:24:28.347Z","type":"message"}
+{"nick":"cakoose","message":"gsathya: Thanks for the confirmation; will try and dive into the code when I have more time.","date":"2017-11-02T00:25:01.596Z","type":"message"}
+{"nick":"gsathya","message":"cakoose: https://gist.github.com/gsathya/b32b8173aa39843e0ce1f948671f2e32","date":"2017-11-02T00:26:24.084Z","type":"message"}
+{"nick":"gsathya","message":"Trott: \\o","date":"2017-11-02T00:27:36.196Z","type":"message"}
+{"nick":"joepie91","reason":"Ping timeout: 246 seconds","date":"2017-11-02T00:33:12.853Z","type":"quit"}
+{"nick":"cakoose","message":"gsathya: I think your Gist makes sense to me, but just to make sure I’m not missing something: was there something specific you wanted to show me?","date":"2017-11-02T00:43:44.411Z","type":"message"}
+{"nick":"gsathya","message":"cakoose: That the callback passed to .then does show up on the stack trace","date":"2017-11-02T00:44:59.074Z","type":"message"}
+{"nick":"cakoose","message":"gsathya: Ah, I see. The case I was focusing on is when the stuff before that throws an exception.","date":"2017-11-02T00:46:41.545Z","type":"message"}
+{"nick":"cakoose","message":"gsathya: (Though as I mentioned to refack, I’m pretty new to Node, so I might be missing something important.)","date":"2017-11-02T00:47:29.102Z","type":"message"}
+{"nick":"cakoose","message":"gsathya: https://gist.github.com/cakoose/558fe25faf504354a4eff24766ab62aa","date":"2017-11-02T00:51:38.712Z","type":"message"}
+{"nick":"cakoose","message":"I thought that maybe, in Node or V8, you could inspect the state of various objects on the stack to figure out the `.then` chain and include that in the stacktrace as well.","date":"2017-11-02T00:53:17.311Z","type":"message"}
+{"nick":"joepie91","date":"2017-11-02T01:01:10.498Z","type":"join"}
+{"nick":"maclover7","message":"joyee: am I okay to start sending lerna PRs to nodejs/automation?","date":"2017-11-02T01:40:15.679Z","type":"message"}
+{"nick":"maclover7","message":"also, would you be able to enable travis on the repo?","date":"2017-11-02T01:40:25.830Z","type":"message"}
+{"nick":"nikhil","reason":"Quit: Connection closed for inactivity","date":"2017-11-02T01:59:34.288Z","type":"quit"}
+{"nick":"gsathya","message":"cakoose: In that example '() => d()' never runs because the previous promise is rejected","date":"2017-11-02T02:05:40.612Z","type":"message"}
+{"nick":"joyee","reason":"Remote host closed the connection","date":"2017-11-02T02:07:16.687Z","type":"quit"}
+{"nick":"joyee","date":"2017-11-02T02:07:34.495Z","type":"join"}
+{"nick":"cakoose","message":"gsathya: Yes, it never runs, but it is the thing that would run next.  And including it in the stack trace would help pinpoint where the exception ocurred.","date":"2017-11-02T02:08:26.745Z","type":"message"}
+{"nick":"JamesMGreene","date":"2017-11-02T02:09:31.995Z","type":"join"}
+{"nick":"joyee","message":"maclover7: Hmm, should we put the code in the nodejs/automation repo tho?","date":"2017-11-02T02:10:29.260Z","type":"message"}
+{"nick":"joyee","message":"Right now everyone in the automation team has write access, and people have indicated they would want to keep the list short for the code in https://github.com/nodejs/automation/issues/8","date":"2017-11-02T02:11:27.932Z","type":"message"}
+{"nick":"cakoose","message":"gsathya: Even “standard” stack traces sort of do the same thing.  Each stack frame stores the return address, which can be seen as the address of the code that will execute next, rather than the code that called you.  This viewpoint makes even more sense when you think of tail call optimization, where your caller is no longer on the stack.","date":"2017-11-02T02:11:38.840Z","type":"message"}
+{"nick":"cakoose","reason":"Quit: cakoose","date":"2017-11-02T02:29:39.243Z","type":"quit"}
+{"nick":"cakoose","date":"2017-11-02T02:42:44.677Z","type":"join"}
+{"nick":"cakoose","reason":"Client Quit","date":"2017-11-02T02:47:02.243Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-11-02T02:54:15.497Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T02:54:15.652Z","type":"part"}
+{"nick":"JamesMGreene","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2017-11-02T03:00:06.280Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:07:40.462Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:07:40.770Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:16:45.533Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:16:45.661Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:19:25.484Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:19:25.639Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:20:02.601Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T03:20:02.756Z","type":"part"}
+{"nick":"srl295","reason":"Quit: Connection closed for inactivity","date":"2017-11-02T03:30:06.156Z","type":"quit"}
+{"nick":"aqrln","date":"2017-11-02T04:25:08.456Z","type":"join"}
+{"nick":"aqrln","reason":"Ping timeout: 248 seconds","date":"2017-11-02T04:29:21.464Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:44:38.330Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:44:38.479Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:45:38.308Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:45:38.460Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:56:38.477Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T04:56:38.627Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:34:56.079Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:34:56.234Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:36:04.254Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:36:04.446Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:38:23.485Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:38:23.640Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:39:22.958Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T05:39:23.113Z","type":"part"}
+{"nick":"cakoose","date":"2017-11-02T05:42:27.256Z","type":"join"}
+{"nick":"qard","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2017-11-02T06:08:52.025Z","type":"quit"}
+{"nick":"pk26","date":"2017-11-02T06:12:08.971Z","type":"join"}
+{"nick":"lpin","date":"2017-11-02T06:33:03.597Z","type":"join"}
+{"nick":"BridgeAR","date":"2017-11-02T06:37:04.090Z","type":"join"}
+{"nick":"cakoose","reason":"Quit: cakoose","date":"2017-11-02T06:45:38.052Z","type":"quit"}
+{"nick":"cakoose","date":"2017-11-02T06:48:58.803Z","type":"join"}
+{"nick":"pk26","reason":"Quit: Page closed","date":"2017-11-02T06:49:57.332Z","type":"quit"}
+{"nick":"cakoose","reason":"Client Quit","date":"2017-11-02T06:51:50.906Z","type":"quit"}
+{"nick":"cakoose","date":"2017-11-02T06:52:56.625Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T06:54:59.595Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-11-02T06:54:59.750Z","type":"part"}
+{"nick":"BridgeAR","reason":"Quit: Leaving.","date":"2017-11-02T07:23:20.118Z","type":"quit"}
+{"nick":"cakoose","reason":"Quit: cakoose","date":"2017-11-02T07:25:28.747Z","type":"quit"}
+{"nick":"cakoose","date":"2017-11-02T07:28:37.384Z","type":"join"}
+{"nick":"gibfahn","date":"2017-11-02T07:30:35.575Z","type":"join"}
