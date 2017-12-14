@@ -1,0 +1,80 @@
+{"nick":"marthinal","reason":"Quit: This computer has gone to sleep","date":"2017-12-14T00:08:56.058Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-12-14T00:48:48.491Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T01:01:21.173Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T01:01:21.280Z","type":"part"}
+{"nick":"apapirovski","date":"2017-12-14T02:29:16.416Z","type":"join"}
+{"nick":"mylesborins","reason":"*.net *.split","date":"2017-12-14T02:32:41.212Z","type":"quit"}
+{"nick":"sergiocrisostomo","reason":"*.net *.split","date":"2017-12-14T02:32:41.740Z","type":"quit"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2017-12-14T02:33:58.678Z","type":"quit"}
+{"nick":"mylesborins","date":"2017-12-14T02:36:25.771Z","type":"join"}
+{"nick":"sergiocrisostomo","date":"2017-12-14T02:36:25.839Z","type":"join"}
+{"nick":"bradleymeck","message":"TimothyGu: that issue can be fixed, it isn't really a limitation just a bu","date":"2017-12-14T02:41:25.665Z","type":"message"}
+{"nick":"bradleymeck","message":"g","date":"2017-12-14T02:41:26.592Z","type":"message"}
+{"nick":"TimothyGu","message":"bradleymeck: I called for ways to fix that in the ticket; no one commented about it","date":"2017-12-14T02:42:05.380Z","type":"message"}
+{"nick":"bradleymeck","message":"i didn't see it / i've been in and out of surgery for past couple months so :shrug:","date":"2017-12-14T02:42:31.533Z","type":"message"}
+{"nick":"TimothyGu","message":"in fact addaleax, benjamingr, and Qard said they prefer lexical scoped variables in REPL to be overwritable","date":"2017-12-14T02:43:00.435Z","type":"message"}
+{"nick":"TimothyGu","message":"bradleymeck: awh I hope it went well.","date":"2017-12-14T02:43:17.165Z","type":"message"}
+{"nick":"bradleymeck","message":"we can make that work too","date":"2017-12-14T02:43:34.569Z","type":"message"}
+{"nick":"bradleymeck","message":"but they should become global properties, thats weird","date":"2017-12-14T02:43:46.582Z","type":"message"}
+{"nick":"bradleymeck","message":"though I might suggest we move to v8::CompileFunctionInContext and just check for `return` statement usage","date":"2017-12-14T02:44:44.020Z","type":"message"}
+{"nick":"TimothyGu","message":"also the transform basically changes all the const/let's in the transformed text to global assignment","date":"2017-12-14T02:44:49.653Z","type":"message"}
+{"nick":"bradleymeck","message":"yes, thats basically what I'm going to undo","date":"2017-12-14T02:45:02.197Z","type":"message"}
+{"nick":"bradleymeck","message":"I can fix it with `with` or v8::CompileFunctionInContext","date":"2017-12-14T02:45:13.172Z","type":"message"}
+{"nick":"bradleymeck","message":"`with` however causes problems with `\"use strict\"`","date":"2017-12-14T02:45:38.916Z","type":"message"}
+{"nick":"TimothyGu","message":"can you elaborate? take `const x = await 0` how would you transform that to with","date":"2017-12-14T02:45:53.391Z","type":"message"}
+{"nick":"bradleymeck","message":"TimothyGu: ~ same as https://github.com/nodejs/node/pull/17285#issuecomment-351533959","date":"2017-12-14T02:46:42.538Z","type":"message"}
+{"nick":"bradleymeck","message":"though using the C++ API will be better and avoid a call to `eval`","date":"2017-12-14T02:46:58.051Z","type":"message"}
+{"nick":"TimothyGu","message":"bradleymeck: you do realize that the C++ API is literally the same thing as adding (function () { and }) thru JS right?","date":"2017-12-14T02:48:42.532Z","type":"message"}
+{"nick":"TimothyGu","message":"and how would you treat const x = 0 \\r x = await 0?","date":"2017-12-14T02:49:38.099Z","type":"message"}
+{"nick":"TimothyGu","message":"maybe I'm just not understanding the with thing fully","date":"2017-12-14T02:50:15.883Z","type":"message"}
+{"nick":"bradleymeck","message":"x = await 0 is an error since I'll have made a const binding on the env record by that point","date":"2017-12-14T02:51:18.622Z","type":"message"}
+{"nick":"bradleymeck","message":"the C++ API isn't exactly the same since it does have lexical variable injection","date":"2017-12-14T02:51:36.116Z","type":"message"}
+{"nick":"bradleymeck","message":"you could `let x = await 0` and it would work fine under the rules i'm trying to gather in https://github.com/bmeck/js-repl-goal","date":"2017-12-14T02:52:20.527Z","type":"message"}
+{"nick":"bradleymeck","message":"but if you  just assign to an immutable binding, that should fail","date":"2017-12-14T02:52:37.345Z","type":"message"}
+{"nick":"bradleymeck","message":"why would it not fail if you declared it const?","date":"2017-12-14T02:52:46.482Z","type":"message"}
+{"nick":"bradleymeck","message":"redeclare it","date":"2017-12-14T02:52:53.842Z","type":"message"}
+{"nick":"TimothyGu","message":"because when the first statement executes x will be a const","date":"2017-12-14T02:53:46.666Z","type":"message"}
+{"nick":"bradleymeck","message":"and so the binding is declared immutable","date":"2017-12-14T02:54:05.200Z","type":"message"}
+{"nick":"TimothyGu","message":"yeah","date":"2017-12-14T02:54:09.385Z","type":"message"}
+{"nick":"bradleymeck","message":"so, x = 0 on subsequent lines should fail","date":"2017-12-14T02:54:21.286Z","type":"message"}
+{"nick":"TimothyGu","message":"but the transform that's going to be active for the second statement will translate the assignment to a Object.defineProperty","date":"2017-12-14T02:54:41.520Z","type":"message"}
+{"nick":"TimothyGu","message":"I'm talking about the transform you made in https://github.com/nodejs/node/pull/17285#issuecomment-351533959","date":"2017-12-14T02:54:50.757Z","type":"message"}
+{"nick":"bradleymeck","message":"const would not have a get/set, it is a value type non-live binding","date":"2017-12-14T02:55:19.005Z","type":"message"}
+{"nick":"bradleymeck","message":"it would be a different descriptor type, with `{value, writable: false, configurable: true}`","date":"2017-12-14T02:55:45.524Z","type":"message"}
+{"nick":"bradleymeck","message":"we could also implement it with get/set if we want a better custom error like \"REPL variable was declared `const`, you can redefine the variable using `let` or `var`\"","date":"2017-12-14T02:56:50.690Z","type":"message"}
+{"nick":"bradleymeck","message":"that might even be preferable?","date":"2017-12-14T02:57:11.267Z","type":"message"}
+{"nick":"TimothyGu","message":"So what you are saying is that we should either have all const (await or not) be immutable bindings, or all const be mutable?","date":"2017-12-14T02:58:26.405Z","type":"message"}
+{"nick":"bradleymeck","message":"neither of those really","date":"2017-12-14T03:02:33.666Z","type":"message"}
+{"nick":"bradleymeck","message":"i'm saying const bindings should always be immutable yes, but I am saying you can replace the binding with a new one (mutable or immutable)","date":"2017-12-14T03:02:59.377Z","type":"message"}
+{"nick":"bradleymeck","message":"I'm still gathering exact use case details, but at the very least globals should not be created","date":"2017-12-14T03:04:15.135Z","type":"message"}
+{"nick":"bradleymeck","message":"it gets really strange, `const x = 1;` makes a mutable global and never does lexical stuff, but `const x = 1; const x = 2;` is a syntax error, which acts like it was a real binding","date":"2017-12-14T03:05:46.267Z","type":"message"}
+{"nick":"TimothyGu","message":"in any case - patch welcome","date":"2017-12-14T03:08:20.231Z","type":"message"}
+{"nick":"bradleymeck","message":"sorry, `const x = 1;` does make a lexical binding, `const x = 1; await 0` is the global","date":"2017-12-14T03:08:32.723Z","type":"message"}
+{"nick":"bradleymeck","message":"yup, will PR once I finish checking stuff","date":"2017-12-14T03:08:52.624Z","type":"message"}
+{"nick":"d10n-work","reason":"Quit: Connection closed for inactivity","date":"2017-12-14T03:34:33.068Z","type":"quit"}
+{"nick":"apapirovski","reason":"Quit: Leaving...","date":"2017-12-14T03:35:42.395Z","type":"quit"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2017-12-14T04:13:40.013Z","type":"quit"}
+{"nick":"BridgeAR","date":"2017-12-14T04:27:16.238Z","type":"join"}
+{"nick":"not-an-aardvark","date":"2017-12-14T04:38:29.485Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T04:42:36.856Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T04:42:37.043Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-14T04:46:55.382Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T04:46:55.530Z","type":"part"}
+{"nick":"dave0x6d","reason":"Quit: Connection closed for inactivity","date":"2017-12-14T05:04:26.727Z","type":"quit"}
+{"nick":"dave0x6d","date":"2017-12-14T05:32:17.136Z","type":"join"}
+{"nick":"floatleft","reason":"Read error: Connection reset by peer","date":"2017-12-14T05:35:50.337Z","type":"quit"}
+{"nick":"floatleft","date":"2017-12-14T05:36:02.556Z","type":"join"}
+{"nick":"howdoi","date":"2017-12-14T06:03:44.131Z","type":"join"}
+{"nick":"sgimeno","reason":"Ping timeout: 255 seconds","date":"2017-12-14T06:17:53.123Z","type":"quit"}
+{"nick":"sgimeno","date":"2017-12-14T06:18:37.809Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T06:26:03.165Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T06:26:03.165Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-14T06:26:22.197Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-14T06:26:22.424Z","type":"part"}
+{"nick":"BridgeAR","reason":"Quit: Leaving.","date":"2017-12-14T06:38:40.644Z","type":"quit"}
+{"nick":"not-an-aardvark","reason":"Quit: Connection closed for inactivity","date":"2017-12-14T06:57:58.315Z","type":"quit"}
+{"nick":"marthinal","date":"2017-12-14T07:26:17.276Z","type":"join"}
+{"nick":"marthinal","reason":"Client Quit","date":"2017-12-14T07:28:10.597Z","type":"quit"}
+{"nick":"marthinal","date":"2017-12-14T07:30:41.563Z","type":"join"}
+{"nick":"marthinal","reason":"Quit: This computer has gone to sleep","date":"2017-12-14T07:50:08.566Z","type":"quit"}
+{"nick":"DavidCai","date":"2017-12-14T07:56:13.013Z","type":"join"}
