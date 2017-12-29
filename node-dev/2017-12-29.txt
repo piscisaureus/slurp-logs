@@ -1,0 +1,148 @@
+{"nick":"mmarchini","date":"2017-12-29T00:48:22.610Z","type":"join"}
+{"nick":"doodadjs","reason":"Quit: Leaving","date":"2017-12-29T00:52:39.077Z","type":"quit"}
+{"nick":"TimothyGu","message":"devsnek: Node.js is not thread safe","date":"2017-12-29T00:55:51.381Z","type":"message"}
+{"nick":"aqrln","date":"2017-12-29T00:56:10.480Z","type":"join"}
+{"nick":"TimothyGu","message":"devsnek: idk about your exact use case but for general multithreading addaleax is probably the person to talk to","date":"2017-12-29T00:56:48.766Z","type":"message"}
+{"nick":"devsnek","message":"i'm very aware that it isn't","date":"2017-12-29T00:57:42.968Z","type":"message"}
+{"nick":"devsnek","message":"its just weird that i would see node stuff in stack traces for things that aren't attached to node","date":"2017-12-29T00:57:59.267Z","type":"message"}
+{"nick":"devsnek","message":"which is why i asked","date":"2017-12-29T00:58:03.019Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: i've created a new isolate in a new thread, locked it, etc (code runs without issues in it), however when i try to allocate really big arrays in it i get sigabrt and the fail is from the assert in NodePlatform::ForIsolate","date":"2017-12-29T01:01:57.602Z","type":"message"}
+{"nick":"aqrln","reason":"Ping timeout: 240 seconds","date":"2017-12-29T01:02:05.537Z","type":"quit"}
+{"nick":"devsnek","message":"https://hastebin.com/ohivoyusoh.txt","date":"2017-12-29T01:02:42.107Z","type":"message"}
+{"nick":"devsnek","message":"for the trace","date":"2017-12-29T01:02:49.208Z","type":"message"}
+{"nick":"devsnek","message":"if it was truly an allocation issue wouldn't it go through v8::internal::V8::FatalProcessOutOfMemory and never make it to node's platform stuff?","date":"2017-12-29T01:04:28.416Z","type":"message"}
+{"nick":"William_Salame","reason":"Ping timeout: 268 seconds","date":"2017-12-29T01:07:19.628Z","type":"quit"}
+{"nick":"TimothyGu","message":"devsnek: looks like the platform for some reason isn't aware of the isolate... you might want to try setting some breakpoints on NodePlatform::RegisterIsolate() and NodePlatform::UnregisterIsolate()","date":"2017-12-29T01:08:06.586Z","type":"message"}
+{"nick":"TimothyGu","message":"and possibly NodePlatform::Shutdown()","date":"2017-12-29T01:08:23.287Z","type":"message"}
+{"nick":"devsnek","message":"er","date":"2017-12-29T01:11:03.045Z","type":"message"}
+{"nick":"devsnek","message":"don't i want it to not be aware of the isolate","date":"2017-12-29T01:11:08.797Z","type":"message"}
+{"nick":"devsnek","message":"how would it even know","date":"2017-12-29T01:11:14.546Z","type":"message"}
+{"nick":"devsnek","message":"i don't want node to touch my isolates","date":"2017-12-29T01:11:32.057Z","type":"message"}
+{"nick":"TimothyGu","message":"Ah so you are initializing your own Isolates","date":"2017-12-29T01:11:49.124Z","type":"message"}
+{"nick":"devsnek","message":"yea","date":"2017-12-29T01:12:08.767Z","type":"message"}
+{"nick":"devsnek","message":"i'm not using node's apis at all","date":"2017-12-29T01:12:13.167Z","type":"message"}
+{"nick":"TimothyGu","message":"that's the problem, because the design in V8 these days is that Isolates have to be associated with a process-wide Platform","date":"2017-12-29T01:12:17.802Z","type":"message"}
+{"nick":"devsnek","message":"ic","date":"2017-12-29T01:12:34.589Z","type":"message"}
+{"nick":"devsnek","message":"so then a proper fix would be","date":"2017-12-29T01:12:54.663Z","type":"message"}
+{"nick":"TimothyGu","message":"You might want to check out https://github.com/nodejs/node/issues/17859#issue-284418016","date":"2017-12-29T01:12:56.396Z","type":"message"}
+{"nick":"devsnek","message":"hmm","date":"2017-12-29T01:13:43.879Z","type":"message"}
+{"nick":"devsnek","message":"it looks like what really needs to happen then is node needs to keep track of which isolates it created?","date":"2017-12-29T01:13:56.156Z","type":"message"}
+{"nick":"TimothyGu","message":"not only it, but also the Isolates anyone else created","date":"2017-12-29T01:14:15.886Z","type":"message"}
+{"nick":"devsnek","message":"well isn't the current issue that node is trying to do something with my isolate","date":"2017-12-29T01:14:37.818Z","type":"message"}
+{"nick":"devsnek","message":"and then failing cuz its in a different thread by the look of it","date":"2017-12-29T01:14:58.468Z","type":"message"}
+{"nick":"TimothyGu","message":"Node doesn't really want anything to do with your Isolate, but V8 looks at the Isolate and then calls some callbacks registered in Node.js' Platform","date":"2017-12-29T01:15:24.799Z","type":"message"}
+{"nick":"TimothyGu","message":"and Node.js has to provide a Platform for anything to work at all","date":"2017-12-29T01:15:47.465Z","type":"message"}
+{"nick":"TimothyGu","message":"So the question now is: what do you want? Do you want to manage the Platform by yourself and leave Node.js out of it, or do you want to continue using Node.js' Platform but just register your own Isolate against it?","date":"2017-12-29T01:16:55.293Z","type":"message"}
+{"nick":"TimothyGu","message":"to do the former there are some CreatePlatform() APIs available in node.h. To do the latter, I don't think there is a way right now","date":"2017-12-29T01:17:31.586Z","type":"message"}
+{"nick":"devsnek","message":"but isn't platform a singleton","date":"2017-12-29T01:17:46.199Z","type":"message"}
+{"nick":"TimothyGu","message":"Yes","date":"2017-12-29T01:17:53.737Z","type":"message"}
+{"nick":"devsnek","message":"so what would CreatePlatform do","date":"2017-12-29T01:18:03.698Z","type":"message"}
+{"nick":"TimothyGu","message":"it transfers the control of the platform to you, and Node.js uses the platform you created rather than creating one on its own","date":"2017-12-29T01:18:27.286Z","type":"message"}
+{"nick":"TimothyGu","message":"that's the method I believe embedders like Electron use, which may not be the most applicable to you","date":"2017-12-29T01:18:54.394Z","type":"message"}
+{"nick":"devsnek","message":"that sounds like it might break things node wants to do","date":"2017-12-29T01:18:55.079Z","type":"message"}
+{"nick":"TimothyGu","message":"possibly, idk :)","date":"2017-12-29T01:19:32.247Z","type":"message"}
+{"nick":"devsnek","message":":(","date":"2017-12-29T01:20:01.819Z","type":"message"}
+{"nick":"devsnek","message":"i'll look at what napa does","date":"2017-12-29T01:20:20.449Z","type":"message"}
+{"nick":"devsnek","message":"ugh the terms napa uses make reading the source so hard","date":"2017-12-29T01:21:10.248Z","type":"message"}
+{"nick":"devsnek","message":"whats all this thread stuff in node's source","date":"2017-12-29T01:24:28.356Z","type":"message"}
+{"nick":"TimothyGu","message":"in what files?","date":"2017-12-29T01:25:16.318Z","type":"message"}
+{"nick":"aqrln","date":"2017-12-29T01:25:19.429Z","type":"join"}
+{"nick":"devsnek","message":"node.cc","date":"2017-12-29T01:25:54.361Z","type":"message"}
+{"nick":"TimothyGu","message":"Ah","date":"2017-12-29T01:26:33.025Z","type":"message"}
+{"nick":"TimothyGu","message":"V8 uses Platform to run tasks in background threads","date":"2017-12-29T01:26:47.353Z","type":"message"}
+{"nick":"TimothyGu","message":"tasks like WebAssembly compilation","date":"2017-12-29T01:26:54.965Z","type":"message"}
+{"nick":"TimothyGu","message":"so the Platform has to have some worker threads","date":"2017-12-29T01:27:06.484Z","type":"message"}
+{"nick":"devsnek","message":"wouldn't that be below node's code though","date":"2017-12-29T01:27:14.991Z","type":"message"}
+{"nick":"TimothyGu","message":"Not since https://github.com/nodejs/node/pull/14001","date":"2017-12-29T01:27:49.786Z","type":"message"}
+{"nick":"TimothyGu","message":"that PR integrats Platform with Node.js","date":"2017-12-29T01:27:59.602Z","type":"message"}
+{"nick":"TimothyGu","message":"so we control how many threads Platform has, etc.","date":"2017-12-29T01:28:27.442Z","type":"message"}
+{"nick":"devsnek","message":"maybe we can just rewrite all of v8 but with better thread support","date":"2017-12-29T01:29:16.347Z","type":"message"}
+{"nick":"devsnek","message":":^)","date":"2017-12-29T01:29:21.989Z","type":"message"}
+{"nick":"TimothyGu","message":"no one is stopping you :)","date":"2017-12-29T01:29:32.939Z","type":"message"}
+{"nick":"devsnek","message":"my skills are stopping me","date":"2017-12-29T01:29:55.287Z","type":"message"}
+{"nick":"aqrln","reason":"Ping timeout: 265 seconds","date":"2017-12-29T01:30:28.485Z","type":"quit"}
+{"nick":"TimothyGu","message":"there's also https://github.com/fibjs/fibjs, which uses true coroutines (i.e., calling into the same Isolate from different threads). but most of the documentation is either in Chinese or in half-broken English","date":"2017-12-29T01:31:18.165Z","type":"message"}
+{"nick":"devsnek","message":"napajs and fibjs are on my \"unstable\" list","date":"2017-12-29T01:38:16.035Z","type":"message"}
+{"nick":"devsnek","message":"although now mine is too","date":"2017-12-29T01:38:26.621Z","type":"message"}
+{"nick":"devsnek","message":":(","date":"2017-12-29T01:38:28.217Z","type":"message"}
+{"nick":"TimothyGu","message":"if that's \"unstable\" https://webkit.org/blog/7846/concurrent-javascript-it-can-work/ is just flat-out crazy","date":"2017-12-29T01:39:47.430Z","type":"message"}
+{"nick":"devsnek","message":"they're unstable cuz they're built on v8","date":"2017-12-29T01:40:01.237Z","type":"message"}
+{"nick":"devsnek","message":"threading and v8 don't go well together","date":"2017-12-29T01:40:12.224Z","type":"message"}
+{"nick":"devsnek","message":"i think if someone wrote a js engine that was designed for threading it would work fine","date":"2017-12-29T01:40:23.274Z","type":"message"}
+{"nick":"TimothyGu","message":"can you elaborate? it usually does threading fine provided sufficient locking no?","date":"2017-12-29T01:40:33.317Z","type":"message"}
+{"nick":"devsnek","message":"v8's threading works","date":"2017-12-29T01:40:54.466Z","type":"message"}
+{"nick":"devsnek","message":"but its terrible","date":"2017-12-29T01:40:56.213Z","type":"message"}
+{"nick":"devsnek","message":"you can't share any values or resources between the threads","date":"2017-12-29T01:41:06.675Z","type":"message"}
+{"nick":"TimothyGu","message":"that's what the blog post is about","date":"2017-12-29T01:41:31.389Z","type":"message"}
+{"nick":"devsnek","message":"i know","date":"2017-12-29T01:41:36.069Z","type":"message"}
+{"nick":"devsnek","message":"i've read it","date":"2017-12-29T01:41:39.327Z","type":"message"}
+{"nick":"TimothyGu","message":"well JS wasn't designed to be concurrent language, period. there isn't much implementations can do about it (unless you are Apple)","date":"2017-12-29T01:42:14.715Z","type":"message"}
+{"nick":"TimothyGu","message":"not like this is a V8-only restriction","date":"2017-12-29T01:42:26.481Z","type":"message"}
+{"nick":"devsnek","message":"is there anything stopping webkit's thread besides the engines themselves","date":"2017-12-29T01:43:13.141Z","type":"message"}
+{"nick":"aqrln","date":"2017-12-29T01:43:25.522Z","type":"join"}
+{"nick":"TimothyGu","message":"the spec is not written with threading in mind","date":"2017-12-29T01:44:08.975Z","type":"message"}
+{"nick":"devsnek","message":"ya but","date":"2017-12-29T01:44:25.587Z","type":"message"}
+{"nick":"devsnek","message":"is there stuff in the spec that breaks the idea of threading?","date":"2017-12-29T01:44:40.311Z","type":"message"}
+{"nick":"TimothyGu","message":"https://tc39.github.io/ecma262/#sec-memory-model","date":"2017-12-29T01:46:05.950Z","type":"message"}
+{"nick":"TimothyGu","message":"so, no, there isn't. but the requirements of the spec on determinism is so stringent it's very difficult to have threading","date":"2017-12-29T01:47:04.102Z","type":"message"}
+{"nick":"aqrln","reason":"Ping timeout: 252 seconds","date":"2017-12-29T01:47:50.465Z","type":"quit"}
+{"nick":"devsnek","message":"well anyway","date":"2017-12-29T01:48:23.651Z","type":"message"}
+{"nick":"devsnek","message":"this CreatePlatform","date":"2017-12-29T01:48:30.321Z","type":"message"}
+{"nick":"devsnek","message":"can i just pretend to use it like a normal v8 platform","date":"2017-12-29T01:48:39.322Z","type":"message"}
+{"nick":"TimothyGu","message":"yes","date":"2017-12-29T01:49:30.241Z","type":"message"}
+{"nick":"devsnek","message":"oh you guys actually patched v8 to take the type","date":"2017-12-29T01:50:37.857Z","type":"message"}
+{"nick":"devsnek","message":":/","date":"2017-12-29T01:50:42.263Z","type":"message"}
+{"nick":"TimothyGu","message":"no we didn't. v8::Platform is a virtual class","date":"2017-12-29T01:50:53.982Z","type":"message"}
+{"nick":"TimothyGu","message":"(it's public)","date":"2017-12-29T01:51:02.713Z","type":"message"}
+{"nick":"aqrln","date":"2017-12-29T01:58:00.231Z","type":"join"}
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2017-12-29T01:58:03.260Z","type":"quit"}
+{"nick":"bradleymeck","message":"devsnek: depends on what you mean","date":"2017-12-29T02:03:32.256Z","type":"message"}
+{"nick":"bradleymeck","message":"the webkit post is not viable due to various reference leaks with prototypes","date":"2017-12-29T02:03:55.063Z","type":"message"}
+{"nick":"bradleymeck","message":"their locking mechanism in that post did not account for mutable prototypes very well","date":"2017-12-29T02:04:12.518Z","type":"message"}
+{"nick":"bradleymeck","action":"digs about","date":"2017-12-29T02:04:19.544Z","type":"action"}
+{"nick":"bradleymeck","message":"devsnek: https://twitter.com/bradleymeck/status/903256367284322306","date":"2017-12-29T02:04:57.047Z","type":"message"}
+{"nick":"bradleymeck","message":"i forgot about the global taining problem too","date":"2017-12-29T02:05:54.032Z","type":"message"}
+{"nick":"TimothyGu","message":"devsnek: sounds like https://github.com/nodejs/node/issues/17859#issuecomment-354387055 is exactly your issue","date":"2017-12-29T02:09:22.101Z","type":"message"}
+{"nick":"devsnek","message":"hmm","date":"2017-12-29T02:11:01.634Z","type":"message"}
+{"nick":"devsnek","message":"i wonder what his code looks like","date":"2017-12-29T02:11:44.483Z","type":"message"}
+{"nick":"devsnek","message":"doesn't appear to be public","date":"2017-12-29T02:11:59.709Z","type":"message"}
+{"nick":"TimothyGu","message":"is yours? ;)","date":"2017-12-29T02:13:21.760Z","type":"message"}
+{"nick":"devsnek","message":"yes","date":"2017-12-29T02:13:27.158Z","type":"message"}
+{"nick":"devsnek","message":"its also on npm","date":"2017-12-29T02:13:31.809Z","type":"message"}
+{"nick":"TimothyGu","message":"ah","date":"2017-12-29T02:13:39.850Z","type":"message"}
+{"nick":"devsnek","message":"and it works pretty well until you try to stress the gc","date":"2017-12-29T02:13:41.503Z","type":"message"}
+{"nick":"TimothyGu","message":"https://github.com/devsnek/threads heh","date":"2017-12-29T02:14:04.090Z","type":"message"}
+{"nick":"devsnek","message":"yep","date":"2017-12-29T02:14:33.644Z","type":"message"}
+{"nick":"devsnek","message":"actually that reminds me","date":"2017-12-29T02:15:23.431Z","type":"message"}
+{"nick":"devsnek","message":"i can get an array up to like ~64m elements of some integers before i make the gc upset in node","date":"2017-12-29T02:15:53.164Z","type":"message"}
+{"nick":"devsnek","message":"if i do the same test in a new isolate it hits a wall around 26m","date":"2017-12-29T02:16:13.304Z","type":"message"}
+{"nick":"TimothyGu","message":"well GC is going to happen eventually","date":"2017-12-29T02:20:38.816Z","type":"message"}
+{"nick":"TimothyGu","message":"big arrays just make it run sooner","date":"2017-12-29T02:21:00.609Z","type":"message"}
+{"nick":"TimothyGu","message":"the platform issue applies to all GC runs","date":"2017-12-29T02:21:28.154Z","type":"message"}
+{"nick":"devsnek","message":"ya i'm just curious why it hits an allocation limit so much sooner in a new isoalte","date":"2017-12-29T02:21:35.959Z","type":"message"}
+{"nick":"devsnek","message":"64m elements vs 26m elements is a big difference","date":"2017-12-29T02:21:51.095Z","type":"message"}
+{"nick":"BridgeAR","reason":"Quit: Leaving.","date":"2017-12-29T02:22:14.035Z","type":"quit"}
+{"nick":"mmarchini","reason":"Remote host closed the connection","date":"2017-12-29T02:25:52.717Z","type":"quit"}
+{"nick":"doodadjs","date":"2017-12-29T02:26:36.823Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit:  ","date":"2017-12-29T02:41:15.754Z","type":"quit"}
+{"nick":"bradleymeck","date":"2017-12-29T03:51:58.189Z","type":"join"}
+{"nick":"bradleymeck","reason":"Client Quit","date":"2017-12-29T03:53:32.991Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:30:44.432Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:30:44.499Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:57:35.473Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:57:35.546Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:57:56.225Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T04:57:56.293Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:00:01.230Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:00:01.336Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:13:42.184Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:13:42.264Z","type":"part"}
+{"nick":"sreepurna","date":"2017-12-29T05:16:31.957Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:34:32.899Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:34:33.004Z","type":"part"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:35:14.786Z","type":"join"}
+{"nick":"nodejs-gh","date":"2017-12-29T05:35:14.854Z","type":"part"}
+{"nick":"aqrln","reason":"Ping timeout: 260 seconds","date":"2017-12-29T06:03:16.259Z","type":"quit"}
+{"nick":"aqrln","date":"2017-12-29T06:11:44.429Z","type":"join"}
+{"nick":"lpin","date":"2017-12-29T06:49:44.014Z","type":"join"}
+{"nick":"marthinal","date":"2017-12-29T07:20:34.850Z","type":"join"}
