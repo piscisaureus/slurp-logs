@@ -98,3 +98,184 @@
 {"nick":"littledan","message":"Bakkot: Am I right from the above discussion that you're very concerned about the TypeError issue? Do you not find the arguments in https://github.com/tc39/proposal-static-class-features#static-private-access-on-subclasses convincing?","date":"2018-01-02T15:16:08.263Z","type":"message"}
 {"nick":"bradleymeck","date":"2018-01-02T15:18:31.826Z","type":"join"}
 {"nick":"littledan","message":"Domenic: On the other hand, would you be OK with the alternative Bakkot is proposing, of installing private static methods on subclasses and skipping static private fields? I get the ordering issue but it seems sort of like the weakest use case so far.","date":"2018-01-02T15:18:42.564Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: right now, i only use the constructor name, and would enforce that via linter if possible - if a keyword like `class.` or `static.` existed, i'd use that insead","date":"2018-01-02T16:09:47.967Z","type":"message"}
+{"nick":"Bakkot","message":"littledan: \"Do you not find the arguments in https://github.com/tc39/proposal-static-class-features#static-private-access-on-subclasses convincing?\" No. I'll comment in Domenic's thread explaining why.","date":"2018-01-02T16:38:44.377Z","type":"message"}
+{"nick":"Bakkot","message":"ljharb: that's surprising to me in that it doesn't work that well with subclassing: if I have `class Base { static opts = {}; }`, I'd want `class Derived extends Base { static opts = {} }` to use Derived's opts, rather than Base's.","date":"2018-01-02T16:40:16.054Z","type":"message"}
+{"nick":"littledan","message":"Bakkot: Using ad-hoc polymorphism like this seems pretty closely related to something being public, doesn't it?","date":"2018-01-02T16:46:22.930Z","type":"message"}
+{"nick":"littledan","message":"sorry, ad-hoc polymorphism isn't the right word, but still, polymorphism","date":"2018-01-02T16:47:07.702Z","type":"message"}
+{"nick":"Bakkot","message":"commented","date":"2018-01-02T16:48:24.336Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-01-02T17:07:05.794Z","type":"quit"}
+{"nick":"Bakkot","message":"littledan: Yes, you'd only want (and only get) polymorphism over public fields and methods. but you might want to *use* that polymorphism from private methods, especially if you're using the 'extract method' refactoring the way Domenic describes.","date":"2018-01-02T17:08:35.521Z","type":"message"}
+{"nick":"Bakkot","message":"left a comment explanding on that: https://github.com/tc39/proposal-static-class-features/issues/4#issuecomment-354818186","date":"2018-01-02T17:11:33.304Z","type":"message"}
+{"nick":"bradleymeck","date":"2018-01-02T17:17:32.345Z","type":"join"}
+{"nick":"Domenic","message":"littledan: no, I don't yet see any compelling reason to add machinery for Bakkot's use case, and I also am sad about removing private static fields as I think they're nice for code grouping.","date":"2018-01-02T17:28:15.715Z","type":"message"}
+{"nick":"Domenic","message":"In other words this \"you might want polymorphism\" case seems extraordinarily hypothetical, especailly for private statics, but even for statics in general.","date":"2018-01-02T17:29:34.008Z","type":"message"}
+{"nick":"Domenic","message":"I don't believe any other language supports that, and I don't think we should be adding machinery to JS or restricting JS features to support it.","date":"2018-01-02T17:29:51.989Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-01-02T17:45:15.871Z","type":"quit"}
+{"nick":"littledan","message":"I'm not so convinced by the \"code grouping\" requirement. There's lots of things that we don't allow grouped, e.g., class declarations in the top level of a class (you could do this through static private fields but it would look weird)","date":"2018-01-02T17:53:06.069Z","type":"message"}
+{"nick":"littledan","message":"The reason that supporting private static methods on subclasses isn't all that ad-hoc is that it's actually sort of analogous to instance private methods--it's installed on all the objects that it would've otherwise be found on the prototype chain","date":"2018-01-02T17:54:01.705Z","type":"message"}
+{"nick":"bradleymeck","date":"2018-01-02T18:02:43.533Z","type":"join"}
+{"nick":"Domenic","message":"Classes are all about grouping data and behavior. If you're saying this is a type of data I cannot group, that's frustrating.","date":"2018-01-02T18:07:32.140Z","type":"message"}
+{"nick":"Domenic","message":"Why is that reason not also applicable to static private fields?","date":"2018-01-02T18:08:05.171Z","type":"message"}
+{"nick":"dilijev","date":"2018-01-02T18:19:09.507Z","type":"join"}
+{"nick":"ljharb","message":"Bakkot: it would; `static` there would refer to `Derived`.","date":"2018-01-02T18:21:21.161Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: the keyword would be nothing more than an immutable way to reference the current lexical `class`","date":"2018-01-02T18:22:12.870Z","type":"message"}
+{"nick":"littledan","message":"Domenic: I really think of classes grouping data and behavior in support of instances; maybe that distinction of \"what's in support of instances\" is a little unclear, but it seems clear that factory functions like the ones you used in your static private use case does have to do with  instances","date":"2018-01-02T18:28:55.561Z","type":"message"}
+{"nick":"Domenic","message":"Sure, and so would any interesting constants that they use","date":"2018-01-02T18:29:18.285Z","type":"message"}
+{"nick":"littledan","message":"yeah, i can see that","date":"2018-01-02T18:29:35.754Z","type":"message"}
+{"nick":"littledan","message":"so, another point on the spectrum is to combine these two things: support static private methods defined on subclasses, while static private fields just on the class","date":"2018-01-02T18:30:04.246Z","type":"message"}
+{"nick":"littledan","message":"again, this would be sort of parallel with what we have for instance private: methods defined on all instances, but fields defined individually on just one of them","date":"2018-01-02T18:30:24.609Z","type":"message"}
+{"nick":"Domenic","message":"If it's parallel, maybe it makes sense, but I didn't realize that we did that bifurcation for private fields","date":"2018-01-02T18:31:04.603Z","type":"message"}
+{"nick":"littledan","message":"well, we had to for private methods, since there's no private prototype chain","date":"2018-01-02T18:31:16.920Z","type":"message"}
+{"nick":"Domenic","message":"I mean, we didn't have to, they could just be actually private, not accessible to subclasses (\"protected\")","date":"2018-01-02T18:31:38.412Z","type":"message"}
+{"nick":"littledan","message":"I presented private methods in July, you can find the slides here: https://docs.google.com/presentation/d/1hiti-3Upn-v5ez9OCJb3UOXH6ksdFAEWWJyoqe13mAc/edit#slide=id.p","date":"2018-01-02T18:31:57.777Z","type":"message"}
+{"nick":"littledan","message":"they are actually private","date":"2018-01-02T18:32:05.788Z","type":"message"}
+{"nick":"Domenic","message":"Will re-read after this meeting","date":"2018-01-02T18:32:08.655Z","type":"message"}
+{"nick":"littledan","message":"the key decision was whether we should \"type check the receiver\" of private methods","date":"2018-01-02T18:32:30.265Z","type":"message"}
+{"nick":"littledan","message":"or make the more like lexically scoped functions with funny syntax","date":"2018-01-02T18:32:41.079Z","type":"message"}
+{"nick":"littledan","message":"we decided on type checking","date":"2018-01-02T18:32:45.793Z","type":"message"}
+{"nick":"littledan","message":"Bug thread: https://github.com/tc39/proposal-private-methods/issues/1","date":"2018-01-02T18:33:18.297Z","type":"message"}
+{"nick":"littledan","message":"OK, have a good meeting, talk to you later","date":"2018-01-02T18:34:22.139Z","type":"message"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2018-01-02T19:19:21.952Z","type":"quit"}
+{"nick":"Domenic","message":"littledan: so the slides don't explain why (apparently) private methods get copied to subclasses","date":"2018-01-02T19:20:21.959Z","type":"message"}
+{"nick":"floatleft","date":"2018-01-02T19:28:16.979Z","type":"join"}
+{"nick":"annevk","message":"That’s incompatible with platform objects, right?","date":"2018-01-02T20:46:38.426Z","type":"message"}
+{"nick":"annevk","message":"In that a userland subclass does not have access to any private state","date":"2018-01-02T20:47:33.660Z","type":"message"}
+{"nick":"Domenic","message":"Yeah I don't really understand; does this mean that if we tried to self-host platform objects, we couldn't use private methods, because they'd get copied on to any user-defined subclasses?","date":"2018-01-02T20:54:02.930Z","type":"message"}
+{"nick":"ljharb","message":"ooh, interesting point","date":"2018-01-02T21:04:08.615Z","type":"message"}
+{"nick":"ljharb","message":"actually yeah, if `class extends` means i can runtime-determine the existence of a static private method on a given `class`, then that breaks hard-privacy.","date":"2018-01-02T21:04:35.559Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot ^ thoughts?","date":"2018-01-02T21:04:49.291Z","type":"message"}
+{"nick":"Domenic","message":"I think I'm just not understanding; people say private is really private but then supposedly subclasses also have access which sounds more like protected.","date":"2018-01-02T21:07:38.713Z","type":"message"}
+{"nick":"floatleft","reason":"Ping timeout: 255 seconds","date":"2018-01-02T21:18:13.978Z","type":"quit"}
+{"nick":"ljharb","message":"it seems like if private static methods are copied, then i could write something like `function hasFooPrivate(TargetClass) { class Sub extends TargetClass { static foo() { return this.#foo(); } } try { Sub.foo(); return true; } catch { return false; } }` without `TargetClass` explicitly exposing that it has a \"#foo() {}\". if so, that breaks hard privacy, so it's a nonstarter - am i missing something?","date":"2018-01-02T21:20:13.084Z","type":"message"}
+{"nick":"floatleft","date":"2018-01-02T21:21:04.216Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit:  ","date":"2018-01-02T22:13:30.616Z","type":"quit"}
+{"nick":"floatleft","reason":"Read error: Connection reset by peer","date":"2018-01-02T22:23:54.206Z","type":"quit"}
+{"nick":"floatleft","date":"2018-01-02T22:24:46.997Z","type":"join"}
+{"nick":"floatleft","reason":"Ping timeout: 248 seconds","date":"2018-01-02T22:29:20.067Z","type":"quit"}
+{"nick":"floatleft","date":"2018-01-02T22:30:29.047Z","type":"join"}
+{"nick":"littledan","message":"Domenic: I'm not sure what you mean. They're copied on, but the names aren't accessible in subclasses","date":"2018-01-02T22:59:44.988Z","type":"message"}
+{"nick":"Domenic","message":"Then I don't understand what copied on means.","date":"2018-01-02T22:59:55.833Z","type":"message"}
+{"nick":"littledan","message":"it's just like when a superclass defines a private field: subclass instances have the field, but they can't access it","date":"2018-01-02T23:00:16.418Z","type":"message"}
+{"nick":"ljharb","message":"ahhh right ok","date":"2018-01-02T23:00:29.773Z","type":"message"}
+{"nick":"Domenic","message":"That analogy doesn't help me at all.","date":"2018-01-02T23:00:39.215Z","type":"message"}
+{"nick":"littledan","message":"here, the private method method is callable *by things in the superclass body*, but that's it","date":"2018-01-02T23:00:45.079Z","type":"message"}
+{"nick":"littledan","message":"that's what copying means","date":"2018-01-02T23:00:47.489Z","type":"message"}
+{"nick":"littledan","message":"an object \"having a private method\" means that calling it, from the scope where the name is visible, doesn't throw a TypeError","date":"2018-01-02T23:01:02.157Z","type":"message"}
+{"nick":"littledan","message":"it doesn't affect the scope where the name is visible (which is still lexical, possibly modulo decorators)","date":"2018-01-02T23:01:19.984Z","type":"message"}
+{"nick":"Domenic","message":"OK, yeah, it's much less confusing to say that the brand check is loosened, than to say that the method is copied there","date":"2018-01-02T23:01:23.092Z","type":"message"}
+{"nick":"littledan","message":"oh, sure, but \"brand\" is ambiguous, that's why I've been avoiding that terminology","date":"2018-01-02T23:01:40.918Z","type":"message"}
+{"nick":"littledan","message":"but, yes, you could say each private method has a \"brand\", and subclass instances are branded","date":"2018-01-02T23:01:58.657Z","type":"message"}
+{"nick":"Domenic","message":"Well, replacing it with completely undefined terminology isn't much better ;)","date":"2018-01-02T23:02:01.403Z","type":"message"}
+{"nick":"littledan","message":"heh it's defined in my head--it makes sense if you have the whole private methods spec in mind :)","date":"2018-01-02T23:02:21.774Z","type":"message"}
+{"nick":"Domenic","message":"Branding subclass constructors with their superclass brands seems reasonable from that perspective","date":"2018-01-02T23:02:36.784Z","type":"message"}
+{"nick":"littledan","message":"so, the idea with this alternate proposal is that subclass constructors would also get the static private method \"brand\"","date":"2018-01-02T23:02:37.200Z","type":"message"}
+{"nick":"littledan","message":"OK!","date":"2018-01-02T23:02:49.104Z","type":"message"}
+{"nick":"Domenic","message":"Does this extend to fields?","date":"2018-01-02T23:02:57.808Z","type":"message"}
+{"nick":"littledan","message":"I don't think so--fields are mutable","date":"2018-01-02T23:03:05.238Z","type":"message"}
+{"nick":"littledan","message":"so we can't just \"extend a brand\", we have to say what the value is","date":"2018-01-02T23:03:15.967Z","type":"message"}
+{"nick":"Domenic","message":"They are also mutable for instance","date":"2018-01-02T23:03:18.033Z","type":"message"}
+{"nick":"littledan","message":"yes, but we don't have this issue of several things having the same brand","date":"2018-01-02T23:03:36.736Z","type":"message"}
+{"nick":"Domenic","message":"What several things?","date":"2018-01-02T23:03:47.337Z","type":"message"}
+{"nick":"littledan","message":"in spec mechanics, think of it like a desugaring that we give an internal slot to the objects with the private field or private method","date":"2018-01-02T23:04:00.325Z","type":"message"}
+{"nick":"littledan","message":"for private fields, the value of the internal slot is the value of the field, and it's mutable","date":"2018-01-02T23:04:12.846Z","type":"message"}
+{"nick":"littledan","message":"for private methods, it's just a sentinel","date":"2018-01-02T23:04:22.509Z","type":"message"}
+{"nick":"Domenic","message":"Why?","date":"2018-01-02T23:04:35.098Z","type":"message"}
+{"nick":"littledan","message":"we can give as many things as we want the private method brand because there's nothing to it","date":"2018-01-02T23:04:35.487Z","type":"message"}
+{"nick":"Domenic","message":"Why not use the method model for fields too?","date":"2018-01-02T23:05:04.091Z","type":"message"}
+{"nick":"littledan","message":"I'm not sure what that would mean; where would you store the value?","date":"2018-01-02T23:05:16.014Z","type":"message"}
+{"nick":"Domenic","message":"In a separate internal slot I guess, but access to it is guarded by the sentinel?","date":"2018-01-02T23:05:31.146Z","type":"message"}
+{"nick":"littledan","message":"ultimately, for static public fields, you have this property where a Set creates a new own property","date":"2018-01-02T23:05:35.327Z","type":"message"}
+{"nick":"littledan","message":"and a Get will read up the prototype chain","date":"2018-01-02T23:05:41.068Z","type":"message"}
+{"nick":"Domenic","message":"I'm interested in the private instance <-> private static symmetry at the moment.","date":"2018-01-02T23:06:00.488Z","type":"message"}
+{"nick":"littledan","message":"I'm not sure what we want to do for static private fields--we could do a bunch of work to replicate that, but as bakkot points out, the existing semantics are weird anyway","date":"2018-01-02T23:06:06.081Z","type":"message"}
+{"nick":"Domenic","message":"as well as the method <-> field symmetry","date":"2018-01-02T23:06:07.570Z","type":"message"}
+{"nick":"Domenic","message":"I'm less interested in the public <-> private symmetry at the moment.","date":"2018-01-02T23:06:20.447Z","type":"message"}
+{"nick":"littledan","message":"well ,my idea for being symmetric with private instance fields is to throw a TypeError when accessing a static private field from a subclass","date":"2018-01-02T23:06:34.375Z","type":"message"}
+{"nick":"littledan","message":"another possibility is to have it be like an accessor that gets at the superclass private field","date":"2018-01-02T23:06:53.536Z","type":"message"}
+{"nick":"littledan","message":"or another is to have it be an own private field that's initialized the same way as the superclass private field","date":"2018-01-02T23:07:09.479Z","type":"message"}
+{"nick":"littledan","message":"do you like one of these? or do you have another idea of what the semantics should be?","date":"2018-01-02T23:07:28.431Z","type":"message"}
+{"nick":"Domenic","message":"I think the accessor was where I was heading. But I am confused now what is symmetric with what, hmm...","date":"2018-01-02T23:07:29.997Z","type":"message"}
+{"nick":"Domenic","message":"Trying to formulate a question.","date":"2018-01-02T23:07:49.106Z","type":"message"}
+{"nick":"littledan","message":"I don't really think any of these are really more symmetric than any other. They're just complicated edge case semantics. My intuition is to pick the simplest one (if we include this feature)","date":"2018-01-02T23:08:24.800Z","type":"message"}
+{"nick":"littledan","message":"however, others have intuitions that are different; I'm not sure what others think since most discussion so far has been about methods","date":"2018-01-02T23:08:57.062Z","type":"message"}
+{"nick":"Domenic","message":"I guess I am still confused why we're extending the brand for methods but not for instances. The answer I got was about spec mechanics but that was unsatisfying. The accessor strategy seems more symmetric, if I understand it.","date":"2018-01-02T23:09:14.138Z","type":"message"}
+{"nick":"Domenic","message":"s/instances/fields/","date":"2018-01-02T23:09:24.491Z","type":"message"}
+{"nick":"littledan","message":"the reason is, there's no good semantics for what Get and Set should do on inherited static fields","date":"2018-01-02T23:09:53.599Z","type":"message"}
+{"nick":"littledan","message":"to put it another way","date":"2018-01-02T23:10:13.221Z","type":"message"}
+{"nick":"littledan","message":"both treating it like a new field and the same as the superclass are not parallel to other things","date":"2018-01-02T23:10:36.925Z","type":"message"}
+{"nick":"littledan","message":"you need more than a brand, you need a storage cell. Where should this be?","date":"2018-01-02T23:11:30.553Z","type":"message"}
+{"nick":"Domenic","message":"It seems to me that you're making Call be able to work inside subclasses (by extending the brand), but not extending the same courtesy to Get/Set.","date":"2018-01-02T23:11:58.206Z","type":"message"}
+{"nick":"Domenic","message":"(maybe Invoke instead of Call)","date":"2018-01-02T23:12:10.892Z","type":"message"}
+{"nick":"littledan","message":"no, you can just get a static method","date":"2018-01-02T23:12:12.580Z","type":"message"}
+{"nick":"Domenic","message":"I mean for fields","date":"2018-01-02T23:12:24.202Z","type":"message"}
+{"nick":"littledan","message":"the thing about static methods is they're immutable and always set to the initial value","date":"2018-01-02T23:12:25.928Z","type":"message"}
+{"nick":"littledan","message":"this makes it possible to think about it as a brand rather than an internal slot","date":"2018-01-02T23:12:51.838Z","type":"message"}
+{"nick":"Domenic","message":"I don't think this immutable vs. mutable thing should impact it. I understand it does at some spec mechanics level but from a programmer experience perspective it seems irrelevant.","date":"2018-01-02T23:12:58.710Z","type":"message"}
+{"nick":"littledan","message":"I'm not sure what you want the semantics to be","date":"2018-01-02T23:13:11.054Z","type":"message"}
+{"nick":"Domenic","message":"Time for example code, I think","date":"2018-01-02T23:13:23.091Z","type":"message"}
+{"nick":"littledan","message":"I think any particular choice of semantics will have an imperfect programmer experience","date":"2018-01-02T23:13:29.488Z","type":"message"}
+{"nick":"littledan","message":"it's hard for me to think of examples where you really want to take advantage of mutable static private fields...","date":"2018-01-02T23:14:01.962Z","type":"message"}
+{"nick":"littledan","message":"all the static private field examples I was thinking of are immutable","date":"2018-01-02T23:14:14.080Z","type":"message"}
+{"nick":"littledan","message":"the mutable examples feel like bad design that I wouldn't want to advocate for","date":"2018-01-02T23:14:33.594Z","type":"message"}
+{"nick":"Domenic","message":"https://www.irccloud.com/pastebin/Z1QxhG2o/private-static.js","date":"2018-01-02T23:15:12.121Z","type":"message"}
+{"nick":"littledan","message":"To expose the issue, you'd need to write to the static private field","date":"2018-01-02T23:15:34.857Z","type":"message"}
+{"nick":"Domenic","message":"From what I understand, with the design you're proposing where we extend the brand but only for methods, x will succeed but y will fail","date":"2018-01-02T23:15:36.075Z","type":"message"}
+{"nick":"littledan","message":"yes","date":"2018-01-02T23:15:47.803Z","type":"message"}
+{"nick":"Domenic","message":"OK. That bugs me.","date":"2018-01-02T23:15:54.214Z","type":"message"}
+{"nick":"littledan","message":"OK, what do you want to happen when you write to the static private field?","date":"2018-01-02T23:16:05.197Z","type":"message"}
+{"nick":"Domenic","message":"I see.","date":"2018-01-02T23:16:17.070Z","type":"message"}
+{"nick":"littledan","message":"Bakkot's original solution, of re-running the static field initializers in subclasses, is one way to solve it, but I don't like it for other reasons","date":"2018-01-02T23:16:27.138Z","type":"message"}
+{"nick":"littledan","message":"I don't like re-running the static field initializers because it makes subclassing into a factory for stateful objects, which just doesn't seem all that natural","date":"2018-01-02T23:16:48.334Z","type":"message"}
+{"nick":"Domenic","message":"So for public static it'd modify A.publicProp I guess","date":"2018-01-02T23:16:58.310Z","type":"message"}
+{"nick":"Domenic","message":"Extending that to private static feels a bit bad but I'm not sure why?","date":"2018-01-02T23:18:16.735Z","type":"message"}
+{"nick":"littledan","message":"for public static, if you do B.publicProp++, A.publicPro would be 5 and B.publicProp would be 6","date":"2018-01-02T23:18:21.277Z","type":"message"}
+{"nick":"Domenic","message":"Wait it would","date":"2018-01-02T23:18:27.408Z","type":"message"}
+{"nick":"littledan","message":"err I should check","date":"2018-01-02T23:18:33.674Z","type":"message"}
+{"nick":"Domenic","message":"Whaaaaa","date":"2018-01-02T23:18:33.750Z","type":"message"}
+{"nick":"Domenic","message":"That seems like it'd require running the initializers twice","date":"2018-01-02T23:18:45.020Z","type":"message"}
+{"nick":"littledan","message":"no, this is just how Set on prototype chains works","date":"2018-01-02T23:19:38.908Z","type":"message"}
+{"nick":"littledan","message":"let x = { a: 1 }; let y = { __proto__: x }; y.a++; then x.a is 1 and y.a is 2","date":"2018-01-02T23:20:07.785Z","type":"message"}
+{"nick":"littledan","message":"so, this was a core argument of Bakkot's for why we should do Something Different for public static fields, to shield programmers from this source of craziness","date":"2018-01-02T23:20:47.989Z","type":"message"}
+{"nick":"Domenic","message":"Well, I appreciate you catching me up; it's increasingly clear this is well-trodden ground","date":"2018-01-02T23:21:51.620Z","type":"message"}
+{"nick":"littledan","message":"well, I think much of the committee is where you're coming from; this is probably good to include in a presentation","date":"2018-01-02T23:22:30.462Z","type":"message"}
+{"nick":"littledan","message":"so this is really helpful for me","date":"2018-01-02T23:22:51.753Z","type":"message"}
+{"nick":"littledan","message":"given all this--do you have an idea of what to do for private static fields?","date":"2018-01-02T23:23:03.276Z","type":"message"}
+{"nick":"littledan","message":"actually replicating the weirdness that is ordinary properties and prototype chains seems out of the question to me","date":"2018-01-02T23:23:30.138Z","type":"message"}
+{"nick":"Domenic","message":"I would like to have them, but it seems like keeping them symmetric on any dimension is not very possible, so something simple seems nice. E.g. lexically-scoped variable sugar, or just the existing proposal with type checks. \"Like an accessor\" sounds kind of intriguing, maybe with a throwing \"setter\"?","date":"2018-01-02T23:24:47.528Z","type":"message"}
+{"nick":"littledan","message":"I have a feeling we won't end up doing lexically scoped variable sugar, just since it'd be strange to have this one corner be without any checks when the other three do have checks","date":"2018-01-02T23:25:45.548Z","type":"message"}
+{"nick":"littledan","message":"(we could do this for private methods, but rejected it)","date":"2018-01-02T23:25:57.737Z","type":"message"}
+{"nick":"Domenic","message":"I think the case is stronger for static, but I don't insist, by any means.","date":"2018-01-02T23:26:20.682Z","type":"message"}
+{"nick":"Domenic","message":"i.e. for private static both methods and fields","date":"2018-01-02T23:26:35.064Z","type":"message"}
+{"nick":"littledan","message":"having a getter with a throwing setter is an option, though it's pretty complicated in the specification and implementation","date":"2018-01-02T23:26:38.216Z","type":"message"}
+{"nick":"littledan","message":"(for subclasses, it'd throw; in the base class, it would just set it)","date":"2018-01-02T23:27:11.615Z","type":"message"}
+{"nick":"Domenic","message":"I might present those two options to the committee? \"Here's a simple version with a small sharp edge; here's a complicated version that smooths that over. I'm pretty sure nobody's going to hit this sharp edge, but it's an option...\"","date":"2018-01-02T23:27:50.297Z","type":"message"}
+{"nick":"ljharb","message":"isn't the hazard not just assignment tho, but mutation?","date":"2018-01-02T23:28:00.101Z","type":"message"}
+{"nick":"Domenic","message":"You could even evolve to the accessor-esque version in the future if people run into the TypeError too much?","date":"2018-01-02T23:28:02.530Z","type":"message"}
+{"nick":"ljharb","message":"iow `this.#somethingStatic.foo++`?","date":"2018-01-02T23:28:13.531Z","type":"message"}
+{"nick":"littledan","message":"ljharb: Well, I'm assuming we're treating that as \"not a hazard\"","date":"2018-01-02T23:28:36.026Z","type":"message"}
+{"nick":"littledan","message":"this is a case of me disagreeing with Bakkot and sort of putting my foot down","date":"2018-01-02T23:28:43.815Z","type":"message"}
+{"nick":"littledan","message":"I wrote an explanation why in the static class features explainer","date":"2018-01-02T23:28:57.642Z","type":"message"}
+{"nick":"ljharb","message":"i'm fine treating it as not a hazard; i consider it such for public fields too (because it's so historic and well-known)","date":"2018-01-02T23:29:02.185Z","type":"message"}
+{"nick":"littledan","message":"yep, it's definitely there for public fields to the same extent as private fields","date":"2018-01-02T23:29:23.999Z","type":"message"}
+{"nick":"littledan","message":"Domenic: That's a reasonable phrasing--we'll start with throwing on reads and writes, knowing that this is \"fixable\" with the getter-in-subclasses semantic change","date":"2018-01-02T23:30:03.679Z","type":"message"}
+{"nick":"littledan","message":"With a mess of decorators you could implement the getter in subclasses, but I don't know if that's worth considering...","date":"2018-01-02T23:30:58.462Z","type":"message"}
+{"nick":"littledan","message":"Domenic: After the last meeting, where I presented various options to the committee and it led to some kind of indecision, I'm thinking to start with a particular preferred option, along with some other backpocket alternatives to switch to, rather than leaving the discussion totally open","date":"2018-01-02T23:32:45.240Z","type":"message"}
+{"nick":"Domenic","message":"+1","date":"2018-01-02T23:32:55.510Z","type":"message"}
+{"nick":"Domenic","message":"Spend some time honing the arguments","date":"2018-01-02T23:33:10.404Z","type":"message"}
+{"nick":"littledan","message":"yeah","date":"2018-01-02T23:33:32.414Z","type":"message"}
+{"nick":"Domenic","message":"Ideally you want it to go like my yield -> yield await presentation did, where by the end everyone was like \"yes, you convinced us, we agree, no questions\"","date":"2018-01-02T23:33:44.978Z","type":"message"}
+{"nick":"littledan","message":"yes, that would be great","date":"2018-01-02T23:36:45.710Z","type":"message"}
+{"nick":"not-an-aardvark","date":"2018-01-02T23:39:16.458Z","type":"join"}
+{"nick":"littledan","message":"does anyone else here have any thoughts on these issues?","date":"2018-01-02T23:43:18.589Z","type":"message"}
+{"nick":"littledan","message":"BTW you can't use private fields for another reason: they won't work cross-realm","date":"2018-01-02T23:43:37.252Z","type":"message"}
+{"nick":"Domenic","message":"All the cross-realm cases would be \"friend\" cases anyway, which will need decorators, which could probably make them work cross-realm","date":"2018-01-02T23:50:04.084Z","type":"message"}
+{"nick":"Bakkot","message":"Domenic: fwiw the polymorphism use case isn't hypothetical; I expecting subclasses to overwrite","date":"2018-01-02T23:53:55.962Z","type":"message"}
+{"nick":"Bakkot","message":"er","date":"2018-01-02T23:53:59.185Z","type":"message"}
+{"nick":"Bakkot","message":"*I have written code expecting subclasses to overwrite static methods","date":"2018-01-02T23:54:10.800Z","type":"message"}
+{"nick":"Domenic","message":"Private ones, though?","date":"2018-01-02T23:54:29.427Z","type":"message"}
+{"nick":"Bakkot","message":"I'm not ever expecting subclasses to overwrite private methods, of course","date":"2018-01-02T23:54:59.169Z","type":"message"}
+{"nick":"Bakkot","message":"but it seems reasonable that I might want to put some of the code which is expecting overwritten static methods in static private methods","date":"2018-01-02T23:55:31.076Z","type":"message"}
+{"nick":"Bakkot","message":"in the same way you might want to put any other shared code in static private methods","date":"2018-01-02T23:55:58.788Z","type":"message"}
+{"nick":"not-an-aardvark","message":"littledan: thanks for the link earlier, I had forgotten that `[[GetPrototypeOf]]` would be observable on proxies","date":"2018-01-02T23:56:54.911Z","type":"message"}
+{"nick":"littledan","message":"Domenic: The cases here are static private methods, which are not overwritable, calling overwritable public static methods","date":"2018-01-02T23:57:32.055Z","type":"message"}
