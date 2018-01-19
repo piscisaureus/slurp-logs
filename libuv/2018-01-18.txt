@@ -70,3 +70,141 @@
 {"nick":"joocain2_","reason":"Remote host closed the connection","date":"2018-01-18T13:53:34.385Z","type":"quit"}
 {"nick":"joocain2","date":"2018-01-18T13:54:01.991Z","type":"join"}
 {"nick":"benjamingr_","date":"2018-01-18T14:40:08.749Z","type":"join"}
+{"nick":"vtjnash","date":"2018-01-18T16:23:51.488Z","type":"join"}
+{"nick":"sgimeno","message":"vtjnash, hi","date":"2018-01-18T16:28:41.188Z","type":"message"}
+{"nick":"sgimeno","message":"thanks for the comment","date":"2018-01-18T16:28:51.464Z","type":"message"}
+{"nick":"vtjnash","message":"Hi. Figured I should try to hop on here too :)","date":"2018-01-18T16:29:00.900Z","type":"message"}
+{"nick":"vtjnash","message":"You're welcome","date":"2018-01-18T16:29:06.522Z","type":"message"}
+{"nick":"sgimeno","message":"I had already tried something similar to your patch but broke the tests badly","date":"2018-01-18T16:29:12.479Z","type":"message"}
+{"nick":"sgimeno","message":"it seems the writable argument is important","date":"2018-01-18T16:29:23.617Z","type":"message"}
+{"nick":"sgimeno","message":"stdio[0] must always be writable","date":"2018-01-18T16:29:37.906Z","type":"message"}
+{"nick":"sgimeno","message":"and the others readable","date":"2018-01-18T16:29:48.419Z","type":"message"}
+{"nick":"sgimeno","message":"(at least that's what some tests expect)","date":"2018-01-18T16:30:02.035Z","type":"message"}
+{"nick":"vtjnash","message":"That's true, but shouldn't the client be responsible for that?","date":"2018-01-18T16:30:13.223Z","type":"message"}
+{"nick":"sgimeno","message":"I *think* so, but we should probably ask Ben :)","date":"2018-01-18T16:31:20.150Z","type":"message"}
+{"nick":"vtjnash","message":"Seems like it might be tricky though to change, since libuv has always been ignoring this flag on unix","date":"2018-01-18T16:31:25.481Z","type":"message"}
+{"nick":"sgimeno","message":"what about keeping the ipc check","date":"2018-01-18T16:31:53.735Z","type":"message"}
+{"nick":"vtjnash","message":"(And partially ignoring it on Windows – have a different PR against libuv-master that changes that)","date":"2018-01-18T16:32:34.332Z","type":"message"}
+{"nick":"vtjnash","message":"Sure, the ipc check makes sense. It could even update the flags for stdin/stdout/stderr to \"make sense\"","date":"2018-01-18T16:33:01.725Z","type":"message"}
+{"nick":"sgimeno","message":"let me see what node does...","date":"2018-01-18T16:33:30.427Z","type":"message"}
+{"nick":"vtjnash","message":"The failing test looked like it cared about stdio[4], so I wasn't sure what libuv was expecting it to do (seems to expect it has opened a bidir pipe)","date":"2018-01-18T16:33:58.223Z","type":"message"}
+{"nick":"vtjnash","message":"So I was simply extrapolating from there to assume it might be setting CREATE|READ|WRITE|IPC already","date":"2018-01-18T16:34:36.190Z","type":"message"}
+{"nick":"sgimeno","message":"not really","date":"2018-01-18T16:34:47.284Z","type":"message"}
+{"nick":"sgimeno","message":"if it's 'pipe' is: CREATE|READ|WRITE","date":"2018-01-18T16:35:03.669Z","type":"message"}
+{"nick":"sgimeno","message":"if it's 'ipc' is CREATE|READ|WRITE|IPC","date":"2018-01-18T16:35:16.630Z","type":"message"}
+{"nick":"vtjnash","message":"So checking `IPC` and checking `READ|WRITE` should give the same result?","date":"2018-01-18T16:35:47.634Z","type":"message"}
+{"nick":"sgimeno","message":"wrt READABLE and WRITABLE I think so","date":"2018-01-18T16:36:20.767Z","type":"message"}
+{"nick":"vtjnash","message":"k","date":"2018-01-18T16:36:29.020Z","type":"message"}
+{"nick":"vtjnash","message":"Alternatively, libuv could also just unconditionally set the flags to `READ|WRITE`","date":"2018-01-18T16:36:58.470Z","type":"message"}
+{"nick":"sgimeno","message":"yes, after making the socketpair we already have a duplex channel","date":"2018-01-18T16:38:08.291Z","type":"message"}
+{"nick":"sgimeno","message":"still windows and unix have different semantics wrt the PIPE flags","date":"2018-01-18T16:38:47.389Z","type":"message"}
+{"nick":"vtjnash","message":"Right. In the Julia project, we avoid using CREATE and just create and pass the pipe handle explicitly in order to control this","date":"2018-01-18T16:38:48.987Z","type":"message"}
+{"nick":"vtjnash","message":"Would be easy to make Windows always open a duplex pipe too","date":"2018-01-18T16:39:05.285Z","type":"message"}
+{"nick":"vtjnash","message":"(although also would be a breaking change)","date":"2018-01-18T16:39:12.345Z","type":"message"}
+{"nick":"sgimeno","message":"whatever, we should be consistent","date":"2018-01-18T16:39:25.539Z","type":"message"}
+{"nick":"vtjnash","message":"Yeah, that should help make testing easier too","date":"2018-01-18T16:40:38.798Z","type":"message"}
+{"nick":"sgimeno","message":"To avoid a breaking change I think the way forward should be unix to be more like windows","date":"2018-01-18T16:40:52.221Z","type":"message"}
+{"nick":"sgimeno","message":"so, handling the flags","date":"2018-01-18T16:41:00.847Z","type":"message"}
+{"nick":"vtjnash","message":"To be self-serving, that's part of my goal for https://github.com/libuv/libuv/pull/1498 :)","date":"2018-01-18T16:41:05.485Z","type":"message"}
+{"nick":"sgimeno","message":"yes, I was looking into that earlier as I remembered it was touching some of this code","date":"2018-01-18T16:41:44.286Z","type":"message"}
+{"nick":"sgimeno","message":"this https://pastebin.com/Xb4vQzy2","date":"2018-01-18T16:42:33.478Z","type":"message"}
+{"nick":"sgimeno","message":"vtjnash, that patch works for me","date":"2018-01-18T16:42:52.767Z","type":"message"}
+{"nick":"vtjnash","message":"It doesn't specifically address this (e.g. I'm still always using uv_socketpair), but it does provide `uv_pipe` as a separately tested API. I think that would make it easier to just add a conditional in the CREATE logic","date":"2018-01-18T16:43:42.236Z","type":"message"}
+{"nick":"sgimeno","message":"passes the tests both in libuv and nodejs (with the nodejs patch for the read stream fix)","date":"2018-01-18T16:43:57.112Z","type":"message"}
+{"nick":"vtjnash","message":"Seems like the `if (writable) branch should have similar logic?","date":"2018-01-18T16:44:21.597Z","type":"message"}
+{"nick":"vtjnash","message":"maybe like https://pastebin.com/KWukTAy5?","date":"2018-01-18T16:45:39.331Z","type":"message"}
+{"nick":"sgimeno","message":"probably, tbh I'd like to understand why it is like it is now","date":"2018-01-18T16:46:34.254Z","type":"message"}
+{"nick":"sgimeno","message":"I'm going to check your version","date":"2018-01-18T16:46:41.331Z","type":"message"}
+{"nick":"sgimeno","message":"still, removing the ipc if is ok?","date":"2018-01-18T16:47:14.847Z","type":"message"}
+{"nick":"vtjnash","message":"It's the same, just adding the `readable` flag to the `writable` branch","date":"2018-01-18T16:47:16.230Z","type":"message"}
+{"nick":"vtjnash","message":"Ah, right, I forgot to put that back","date":"2018-01-18T16:47:37.920Z","type":"message"}
+{"nick":"sgimeno","message":"could someone use CREATE|PIPE?","date":"2018-01-18T16:47:39.953Z","type":"message"}
+{"nick":"vtjnash","message":"Not sure what it would be supposed to do, but probably","date":"2018-01-18T16:48:12.327Z","type":"message"}
+{"nick":"sgimeno","message":"libuv tests pass","date":"2018-01-18T16:50:01.119Z","type":"message"}
+{"nick":"sgimeno","message":"with this patch: https://pastebin.com/AgAvyunA (I've added the ipc check to your patch)","date":"2018-01-18T16:51:36.362Z","type":"message"}
+{"nick":"sgimeno","message":"and nodejs tests also pass (except for one I don't really understand)","date":"2018-01-18T16:55:15.920Z","type":"message"}
+{"nick":"sgimeno","message":"vtjnash, would you open a PR and see what others think?","date":"2018-01-18T16:59:37.401Z","type":"message"}
+{"nick":"sgimeno","message":"or I can do it myself what you prefer","date":"2018-01-18T17:01:06.518Z","type":"message"}
+{"nick":"vtjnash","message":"Sorry, I think I got this backwards in my head","date":"2018-01-18T17:08:08.751Z","type":"message"}
+{"nick":"vtjnash","message":"A READ pipe should have the `write` flag set","date":"2018-01-18T17:08:20.802Z","type":"message"}
+{"nick":"vtjnash","message":"and vice versa","date":"2018-01-18T17:08:40.307Z","type":"message"}
+{"nick":"sgimeno","message":"oh yeat, it's from the child process POV","date":"2018-01-18T17:09:09.921Z","type":"message"}
+{"nick":"vtjnash","message":"right","date":"2018-01-18T17:09:18.948Z","type":"message"}
+{"nick":"sgimeno","message":"I'll update the patch ","date":"2018-01-18T17:09:46.863Z","type":"message"}
+{"nick":"vtjnash","message":"Maybe the simple version will work now?","date":"2018-01-18T17:10:00.371Z","type":"message"}
+{"nick":"sgimeno","message":"good idea","date":"2018-01-18T17:10:34.859Z","type":"message"}
+{"nick":"sgimeno","message":"keeping the ipc check, right?","date":"2018-01-18T17:11:25.023Z","type":"message"}
+{"nick":"vtjnash","message":"I think drop that too – That should make it most nearly identical to the Windows code","date":"2018-01-18T17:11:49.799Z","type":"message"}
+{"nick":"sgimeno","message":"still fails","date":"2018-01-18T17:14:53.476Z","type":"message"}
+{"nick":"sgimeno","message":"to be sure we're in the same page","date":"2018-01-18T17:15:00.039Z","type":"message"}
+{"nick":"sgimeno","message":"https://pastebin.com/H37rU5UE","date":"2018-01-18T17:15:28.705Z","type":"message"}
+{"nick":"sgimeno","message":"oh my bad","date":"2018-01-18T17:16:47.316Z","type":"message"}
+{"nick":"sgimeno","message":"typo","date":"2018-01-18T17:16:48.445Z","type":"message"}
+{"nick":"vtjnash","message":"ah, yep, I see it now","date":"2018-01-18T17:17:00.766Z","type":"message"}
+{"nick":"vtjnash","message":"It's too bad that we have some many similarly named constants, but doesn't seem like there's anything that could have been done about it :/","date":"2018-01-18T17:17:47.515Z","type":"message"}
+{"nick":"sgimeno","message":"haha yeah","date":"2018-01-18T17:18:19.773Z","type":"message"}
+{"nick":"sgimeno","message":"tests pass","date":"2018-01-18T17:19:15.696Z","type":"message"}
+{"nick":"sgimeno","message":"with the simpler patch","date":"2018-01-18T17:19:25.962Z","type":"message"}
+{"nick":"sgimeno","message":":D","date":"2018-01-18T17:19:27.748Z","type":"message"}
+{"nick":"sgimeno","message":"what if somene just CREATE and IPC?","date":"2018-01-18T17:19:48.186Z","type":"message"}
+{"nick":"sgimeno","message":"checking how it goes with nodejs, I guess fine because they CREATE READ WRITE IPC","date":"2018-01-18T17:21:41.094Z","type":"message"}
+{"nick":"vtjnash","message":"yeah, if they ask to create a pipe without read or write permissions, too bad, you get what you asked for","date":"2018-01-18T17:31:16.721Z","type":"message"}
+{"nick":"vtjnash","message":"That's what you get on windows anyways","date":"2018-01-18T17:31:30.644Z","type":"message"}
+{"nick":"sgimeno","message":"makes sense to me","date":"2018-01-18T17:32:42.646Z","type":"message"}
+{"nick":"vtjnash","message":"Also, while I have you, do you know what's the status of the branch merge for updating `master`?","date":"2018-01-18T17:32:45.267Z","type":"message"}
+{"nick":"sgimeno","message":"please open a PR :D","date":"2018-01-18T17:32:50.740Z","type":"message"}
+{"nick":"sgimeno","message":"I'm waiting on Ben to weight in. I added a couple of commits to fix the windows issues ","date":"2018-01-18T17:33:25.611Z","type":"message"}
+{"nick":"sgimeno","message":"I think with those commits should be ready to go","date":"2018-01-18T17:33:47.100Z","type":"message"}
+{"nick":"vtjnash","message":"There's the one that's open now, so I was assuming that would merge first, then a new one would be needed to update again?","date":"2018-01-18T17:34:05.172Z","type":"message"}
+{"nick":"sgimeno","message":"I'm referring to the one opened yes. Sure, unless someone opens a new one with latest libuv I guess","date":"2018-01-18T17:34:53.562Z","type":"message"}
+{"nick":"sgimeno","message":"latest v1.x","date":"2018-01-18T17:35:15.969Z","type":"message"}
+{"nick":"vtjnash","message":"yes","date":"2018-01-18T17:35:41.074Z","type":"message"}
+{"nick":"vtjnash","message":"Can I ask you about updates on my others PRs too? I see you approved \"thread: support for affinity and detach\", is there anything else I need to do?","date":"2018-01-18T17:38:45.116Z","type":"message"}
+{"nick":"sgimeno","message":"I don't think so. But I was waiting for Ben's approval as he had already reviewed it","date":"2018-01-18T17:39:37.413Z","type":"message"}
+{"nick":"vtjnash","message":"OK","date":"2018-01-18T17:39:49.014Z","type":"message"}
+{"nick":"sgimeno","message":"I know you have the uv_pipe one, but I'll need time for that. It wasn't easy for me the first pass :/","date":"2018-01-18T17:42:33.238Z","type":"message"}
+{"nick":"vtjnash","message":"That one is now at least easier for me to carry as a patch","date":"2018-01-18T17:43:17.130Z","type":"message"}
+{"nick":"vtjnash","message":"The other difficult one was \"handle writes larger than 2GB\"","date":"2018-01-18T17:43:49.505Z","type":"message"}
+{"nick":"vtjnash","message":"It seemed like some of the buildbots don't support the conditions required to test that one","date":"2018-01-18T17:44:32.730Z","type":"message"}
+{"nick":"sgimeno","message":"mmm, I remember that, let me see","date":"2018-01-18T17:45:51.946Z","type":"message"}
+{"nick":"sgimeno","message":"It seems there are some comments to be addressed?","date":"2018-01-18T17:49:19.016Z","type":"message"}
+{"nick":"vtjnash","message":"some style concerns – the more pressing issue was that it can't be tested","date":"2018-01-18T17:50:13.008Z","type":"message"}
+{"nick":"sgimeno","message":"are all of the because of timeouts?","date":"2018-01-18T17:52:13.866Z","type":"message"}
+{"nick":"vtjnash","message":"The timeout is long enough it passes even on old, slow, virtualized machines","date":"2018-01-18T17:52:35.752Z","type":"message"}
+{"nick":"vtjnash","message":"The failures are due to being unable to create a 2GB allocation","date":"2018-01-18T17:53:00.675Z","type":"message"}
+{"nick":"vtjnash","message":"So I wasn't sure if I should just give up and instead just document that libuv can't do this","date":"2018-01-18T17:53:28.869Z","type":"message"}
+{"nick":"vtjnash","message":"Or only test on 64-bit machines + with writev amplification","date":"2018-01-18T17:54:00.915Z","type":"message"}
+{"nick":"sgimeno","message":"If it's a buildbot issue we could skip the tests on those","date":"2018-01-18T17:54:59.751Z","type":"message"}
+{"nick":"sgimeno","message":"I'm going to run the branch again to see the errors","date":"2018-01-18T17:55:14.546Z","type":"message"}
+{"nick":"vtjnash","message":"Are the logs really completely gone? Seems like a short window to see them vs. the effort of rerunning them","date":"2018-01-18T17:55:55.032Z","type":"message"}
+{"nick":"sgimeno","message":"yes, it's a node build group policy issue, they run the jobs more frequently so they need to cleanup fast I think","date":"2018-01-18T17:56:35.110Z","type":"message"}
+{"nick":"sgimeno","message":"https://ci.nodejs.org/view/libuv/job/libuv-test-commit/677/","date":"2018-01-18T17:56:54.800Z","type":"message"}
+{"nick":"vtjnash","message":"Are log files really that big?","date":"2018-01-18T17:56:57.974Z","type":"message"}
+{"nick":"sgimeno","message":"I don't know /","date":"2018-01-18T17:57:16.151Z","type":"message"}
+{"nick":"sgimeno","message":"but there are LOTS of bots","date":"2018-01-18T17:57:46.629Z","type":"message"}
+{"nick":"sgimeno","message":"vtjnash, is this the problem? https://ci.nodejs.org/job/libuv-test-commit-linux/713/nodes=debian8-64/console","date":"2018-01-18T18:01:58.375Z","type":"message"}
+{"nick":"vtjnash","message":"Actually, that one I haven't been able to quite figure out","date":"2018-01-18T18:03:30.184Z","type":"message"}
+{"nick":"vtjnash","message":"The ones that fail to allocate the memory just segfault","date":"2018-01-18T18:04:14.460Z","type":"message"}
+{"nick":"sgimeno","message":"do you remember on which build bots?","date":"2018-01-18T18:07:53.292Z","type":"message"}
+{"nick":"vtjnash","message":"no idea","date":"2018-01-18T18:08:09.542Z","type":"message"}
+{"nick":"sgimeno","message":"3 I've looked , all fail with the ping pong test","date":"2018-01-18T18:08:34.312Z","type":"message"}
+{"nick":"vtjnash","message":"Yeah, without the old logs, it's hard to work on this","date":"2018-01-18T18:10:05.469Z","type":"message"}
+{"nick":"sgimeno","message":"freebsd seems to just timeout","date":"2018-01-18T18:10:20.170Z","type":"message"}
+{"nick":"sgimeno","message":"the results don't seem that bad","date":"2018-01-18T18:12:00.511Z","type":"message"}
+{"nick":"sgimeno","message":"it seems it's either the timeout or the nread == UV_EOF assertions","date":"2018-01-18T18:12:21.471Z","type":"message"}
+{"nick":"vtjnash","message":"hm, interesting, it seems unusual to see all 3 timeout","date":"2018-01-18T18:13:20.664Z","type":"message"}
+{"nick":"vtjnash","message":"Perhaps it would be better to not run this test at all on 32-bit? I'm doing some crazy shenanigans to try to make that work","date":"2018-01-18T18:14:44.035Z","type":"message"}
+{"nick":"sgimeno","message":"I *think* that could work","date":"2018-01-18T18:16:34.204Z","type":"message"}
+{"nick":"vtjnash","message":"Allocating 2 GB is UB in the C standard / compilers anyways","date":"2018-01-18T18:17:22.621Z","type":"message"}
+{"nick":"benjamingr_","reason":"Quit: Connection closed for inactivity","date":"2018-01-18T19:09:31.258Z","type":"quit"}
+{"nick":"qard","date":"2018-01-18T19:16:26.738Z","type":"join"}
+{"nick":"qard","reason":"Ping timeout: 276 seconds","date":"2018-01-18T19:21:12.182Z","type":"quit"}
+{"nick":"qard","date":"2018-01-18T19:43:59.482Z","type":"join"}
+{"nick":"qard_","date":"2018-01-18T19:44:48.813Z","type":"join"}
+{"nick":"qard_","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-01-18T21:55:16.981Z","type":"quit"}
+{"nick":"qard_","date":"2018-01-18T22:36:15.474Z","type":"join"}
+{"nick":"vtjnash","reason":"Remote host closed the connection","date":"2018-01-18T23:11:02.242Z","type":"quit"}
+{"nick":"qard","reason":"Quit: qard","date":"2018-01-18T23:15:07.410Z","type":"quit"}
+{"nick":"AtumT_","date":"2018-01-18T23:31:40.741Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 248 seconds","date":"2018-01-18T23:34:57.439Z","type":"quit"}
+{"nick":"listenmore","reason":"Ping timeout: 256 seconds","date":"2018-01-18T23:58:18.784Z","type":"quit"}
