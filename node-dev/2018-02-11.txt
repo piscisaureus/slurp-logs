@@ -83,3 +83,106 @@
 {"nick":"nodejs-gh","date":"2018-02-11T15:34:48.211Z","type":"part"}
 {"nick":"bradleymeck","date":"2018-02-11T15:43:09.276Z","type":"join"}
 {"nick":"bradleymeck","reason":"Client Quit","date":"2018-02-11T15:45:16.028Z","type":"quit"}
+{"nick":"killagu","reason":"Ping timeout: 260 seconds","date":"2018-02-11T16:02:04.929Z","type":"quit"}
+{"nick":"killagu","date":"2018-02-11T16:09:26.600Z","type":"join"}
+{"nick":"bradleymeck","date":"2018-02-11T16:18:04.300Z","type":"join"}
+{"nick":"killagu","reason":"Ping timeout: 260 seconds","date":"2018-02-11T16:18:59.926Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T16:24:49.255Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T16:24:49.323Z","type":"part"}
+{"nick":"sgimeno_","message":"hi addaleax, i've been looking into options.stdio on child process api and how it uses the libuv api. In the case of the 'pipe' option it seems well established that (always from the parent POV) stdin ends up being a writable stream. My question is: in the case of stdout, stderr, should they be only readable? also, what about for fd's greater than 2?","date":"2018-02-11T16:26:11.768Z","type":"message"}
+{"nick":"addaleax","message":"sgimeno_: I’m not exactly sure … I think libuv doesn’t actually use pipes but rather socketpairs on UNIX, right?  I those cases they are full duplexes anyway … not sure about Windows, but if the situation is similar there, I see no reason to not make them fully R/W?","date":"2018-02-11T16:27:32.611Z","type":"message"}
+{"nick":"sgimeno_","message":"addaleax: yes, on unix they're full duplex but you can control that via flags","date":"2018-02-11T16:28:21.630Z","type":"message"}
+{"nick":"sgimeno_","message":"http://docs.libuv.org/en/v1.x/process.html#c.uv_stdio_flags","date":"2018-02-11T16:29:00.329Z","type":"message"}
+{"nick":"addaleax","message":"hm yea … for fds > 2, I’m not sure what other options there are besides a full duplex; it’s not like Node could know how the API consumer will use a 'pipe' stream","date":"2018-02-11T16:29:48.189Z","type":"message"}
+{"nick":"sgimeno_","message":"yeah that was my thinking","date":"2018-02-11T16:30:22.209Z","type":"message"}
+{"nick":"sgimeno_","message":"I'm looking into this so we can reapply this https://github.com/libuv/libuv/pull/1655 that had to be reverted because of issues on node js","date":"2018-02-11T16:32:01.721Z","type":"message"}
+{"nick":"nodejs-gh","date":"2018-02-11T16:32:40.946Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T16:32:41.025Z","type":"part"}
+{"nick":"addaleax","message":"sgimeno_: I’m not sure, how does turning stdio into readonly/writeonly help with that?","date":"2018-02-11T16:33:30.404Z","type":"message"}
+{"nick":"sgimeno_","message":"iris there were tests that were failing with `EPIPE` because of tighter checks on the writable readable flags","date":"2018-02-11T16:34:31.288Z","type":"message"}
+{"nick":"sgimeno_","message":"iirc","date":"2018-02-11T16:34:39.601Z","type":"message"}
+{"nick":"sgimeno_","message":"see: https://github.com/libuv/libuv/pull/1655#issuecomment-358673030 and following comments","date":"2018-02-11T16:35:33.872Z","type":"message"}
+{"nick":"sgimeno_","message":"and i was thinking of doing something like this https://github.com/santigimeno/node/commit/04018b837ebbbfcf75a445ddfc18f88ba2059abb","date":"2018-02-11T16:37:08.059Z","type":"message"}
+{"nick":"addaleax","message":"sgimeno_: yeah, I saw that. but that would technically be a breaking change, no?","date":"2018-02-11T16:37:55.442Z","type":"message"}
+{"nick":"addaleax","message":"why not make all streams full duplexes, both from Node’s and from libuv’s perspective?","date":"2018-02-11T16:38:10.522Z","type":"message"}
+{"nick":"addaleax","message":"(I’m going to be slow to respond for a bit)","date":"2018-02-11T16:38:37.766Z","type":"message"}
+{"nick":"BridgeAR","date":"2018-02-11T16:38:39.690Z","type":"join"}
+{"nick":"sgimeno_","message":"i don't know. stdin seems to be documented as writable and stdout/stderr readable this would enforce that","date":"2018-02-11T16:39:39.931Z","type":"message"}
+{"nick":"sgimeno_","message":"at the moment only stdin seems to enforce that","date":"2018-02-11T16:40:05.668Z","type":"message"}
+{"nick":"sgimeno_","message":"of course making all of them full duplex would work straightforward but wouldn't that be also a breaking change?","date":"2018-02-11T16:40:57.141Z","type":"message"}
+{"nick":"sgimeno_","message":"from the libuv perspective I would not modify the API, I would just make sure that the uv_sdtio_flags are really handled on the unix side (apparently they're used on windows)","date":"2018-02-11T16:44:20.595Z","type":"message"}
+{"nick":"addaleax","message":"sgimeno_: it would at worst make things work that didn't before, right?","date":"2018-02-11T16:44:56.550Z","type":"message"}
+{"nick":"sgimeno_","message":"(I mean the READABLE_PIPE, WRITBLE_PIPE flags)","date":"2018-02-11T16:45:07.893Z","type":"message"}
+{"nick":"addaleax","message":"Like, it's what I would go with for now, and we can always adjust later as a semver-major change","date":"2018-02-11T16:45:40.323Z","type":"message"}
+{"nick":"BridgeAR","reason":"Remote host closed the connection","date":"2018-02-11T16:49:16.056Z","type":"quit"}
+{"nick":"ChALkeR","date":"2018-02-11T17:02:50.109Z","type":"join"}
+{"nick":"sgimeno_","message":"addaleax: yeah, I think I see what you mean. So you would create every pipe as full duplex for now, right?","date":"2018-02-11T17:04:50.118Z","type":"message"}
+{"nick":"sgimeno_","message":"(as it is now)","date":"2018-02-11T17:05:00.404Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-02-11T17:20:40.902Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T17:25:39.606Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T17:25:39.714Z","type":"part"}
+{"nick":"bradleymeck","date":"2018-02-11T17:26:45.239Z","type":"join"}
+{"nick":"not-an-aardvark","date":"2018-02-11T17:27:00.228Z","type":"join"}
+{"nick":"BridgeAR","date":"2018-02-11T17:31:25.712Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 256 seconds","date":"2018-02-11T17:33:58.692Z","type":"quit"}
+{"nick":"sgimeno_","reason":"Ping timeout: 260 seconds","date":"2018-02-11T17:51:44.995Z","type":"quit"}
+{"nick":"seishun","date":"2018-02-11T17:59:49.230Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T18:19:41.743Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T18:19:41.850Z","type":"part"}
+{"nick":"weswigham-droid1","date":"2018-02-11T18:26:20.003Z","type":"join"}
+{"nick":"weswigham-droid2","date":"2018-02-11T18:28:19.804Z","type":"join"}
+{"nick":"weswigham-droid","reason":"Ping timeout: 268 seconds","date":"2018-02-11T18:28:54.605Z","type":"quit"}
+{"nick":"weswigham-droid1","reason":"Ping timeout: 260 seconds","date":"2018-02-11T18:30:59.982Z","type":"quit"}
+{"nick":"BridgeAR","reason":"Ping timeout: 252 seconds","date":"2018-02-11T18:33:40.750Z","type":"quit"}
+{"nick":"BridgeAR","date":"2018-02-11T18:41:28.398Z","type":"join"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-02-11T19:16:47.848Z","type":"quit"}
+{"nick":"BridgeAR","reason":"Ping timeout: 248 seconds","date":"2018-02-11T19:28:02.026Z","type":"quit"}
+{"nick":"dave0x6d","date":"2018-02-11T19:28:08.609Z","type":"join"}
+{"nick":"BridgeAR","date":"2018-02-11T19:41:01.995Z","type":"join"}
+{"nick":"BridgeAR","reason":"Ping timeout: 248 seconds","date":"2018-02-11T19:46:08.116Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T19:55:12.128Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T19:55:12.233Z","type":"part"}
+{"nick":"BridgeAR","date":"2018-02-11T20:09:41.763Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T20:13:15.939Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T20:13:16.046Z","type":"part"}
+{"nick":"BridgeAR","reason":"Ping timeout: 276 seconds","date":"2018-02-11T20:23:26.821Z","type":"quit"}
+{"nick":"egsp","date":"2018-02-11T20:39:56.150Z","type":"join"}
+{"nick":"ChALkeR","reason":"Remote host closed the connection","date":"2018-02-11T20:48:40.295Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T21:03:50.205Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T21:03:50.273Z","type":"part"}
+{"nick":"BridgeAR","date":"2018-02-11T21:06:14.267Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 260 seconds","date":"2018-02-11T21:07:19.972Z","type":"quit"}
+{"nick":"weswigham-droid2","reason":"Read error: Connection reset by peer","date":"2018-02-11T21:41:27.013Z","type":"quit"}
+{"nick":"BridgeAR","reason":"Remote host closed the connection","date":"2018-02-11T21:41:30.202Z","type":"quit"}
+{"nick":"weswigham-droid","date":"2018-02-11T21:41:39.432Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-02-11T21:42:29.334Z","type":"quit"}
+{"nick":"weswigham-droid1","date":"2018-02-11T21:43:06.123Z","type":"join"}
+{"nick":"weswigham-droid","reason":"Ping timeout: 256 seconds","date":"2018-02-11T21:46:15.356Z","type":"quit"}
+{"nick":"weswigham-droid","date":"2018-02-11T21:57:34.939Z","type":"join"}
+{"nick":"weswigham-droid","reason":"Read error: Connection reset by peer","date":"2018-02-11T21:57:50.448Z","type":"quit"}
+{"nick":"weswigham-droid","date":"2018-02-11T21:58:03.859Z","type":"join"}
+{"nick":"weswigham-droid2","date":"2018-02-11T21:58:36.006Z","type":"join"}
+{"nick":"weswigham-droid1","reason":"Ping timeout: 264 seconds","date":"2018-02-11T21:59:45.270Z","type":"quit"}
+{"nick":"weswigham-droid","reason":"Ping timeout: 255 seconds","date":"2018-02-11T22:02:14.896Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:13:46.454Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:13:46.562Z","type":"part"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:29:17.282Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:29:17.350Z","type":"part"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:29:25.833Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:29:25.986Z","type":"part"}
+{"nick":"weswigham-droid2","reason":"Read error: Connection reset by peer","date":"2018-02-11T22:37:10.461Z","type":"quit"}
+{"nick":"weswigham-droid","date":"2018-02-11T22:37:21.934Z","type":"join"}
+{"nick":"weswigham-droid1","date":"2018-02-11T22:38:09.195Z","type":"join"}
+{"nick":"weswigham-droid","reason":"Read error: Connection reset by peer","date":"2018-02-11T22:38:10.556Z","type":"quit"}
+{"nick":"weswigham-droid","date":"2018-02-11T22:38:29.957Z","type":"join"}
+{"nick":"weswigham-droid1","reason":"Ping timeout: 248 seconds","date":"2018-02-11T22:42:39.936Z","type":"quit"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:45:05.879Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T22:45:05.947Z","type":"part"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 248 seconds","date":"2018-02-11T23:08:15.953Z","type":"quit"}
+{"nick":"qard","date":"2018-02-11T23:17:39.690Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T23:22:34.660Z","type":"join"}
+{"nick":"nodejs-gh","date":"2018-02-11T23:22:34.765Z","type":"part"}
+{"nick":"gabrielschulhof","date":"2018-02-11T23:40:19.400Z","type":"join"}
+{"nick":"qard","reason":"Quit: qard","date":"2018-02-11T23:45:25.987Z","type":"quit"}
+{"nick":"weswigham-droid1","date":"2018-02-11T23:45:26.588Z","type":"join"}
+{"nick":"weswigham-droid","reason":"Ping timeout: 248 seconds","date":"2018-02-11T23:48:48.042Z","type":"quit"}
