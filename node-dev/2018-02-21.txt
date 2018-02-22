@@ -115,3 +115,178 @@
 {"nick":"qard","date":"2018-02-21T15:59:11.487Z","type":"join"}
 {"nick":"Fishrock123","message":"uv_stream_t to BOB","date":"2018-02-21T15:59:22.167Z","type":"message"}
 {"nick":"addaleax","message":"I don’t really see how it maps in the first place … you can’t really call libuv streams pull based","date":"2018-02-21T15:59:59.125Z","type":"message"}
+{"nick":"addaleax","message":"but you can express one API in terms of the other anyway","date":"2018-02-21T16:00:13.568Z","type":"message"}
+{"nick":"Fishrock123","message":"I'm not calling libuv streams pull based :)","date":"2018-02-21T16:00:52.514Z","type":"message"}
+{"nick":"addaleax","message":"The JS layer for StreamBase streams does that “conversion” if you want to call it that","date":"2018-02-21T16:00:59.276Z","type":"message"}
+{"nick":"addaleax","message":"like, calling .readStart() when _read() is called and .readStop() once the stream’s buffer is full","date":"2018-02-21T16:01:21.597Z","type":"message"}
+{"nick":"Fishrock123","message":"is... there a reason that StreamBase _isn't_ pull based?","date":"2018-02-21T16:01:36.020Z","type":"message"}
+{"nick":"Fishrock123","message":"I mean besides \"it was just written this way\"","date":"2018-02-21T16:02:34.882Z","type":"message"}
+{"nick":"Fishrock123","message":"I guess: do you think it would be simpler to just do the conversion at the ends where we talk to libuv?","date":"2018-02-21T16:03:10.985Z","type":"message"}
+{"nick":"BridgeAR","date":"2018-02-21T16:03:30.364Z","type":"join"}
+{"nick":"addaleax","message":"Well, libuv streams aren’t, and there is no C++ version of the buffering mechanisms that are required for push streams → streams3","date":"2018-02-21T16:03:34.014Z","type":"message"}
+{"nick":"Fishrock123","message":"You just said the kernel buffers if we don't read though...?","date":"2018-02-21T16:04:25.675Z","type":"message"}
+{"nick":"Fishrock123","message":"(I mean, provided we don't need to know the size of that, I guess.)","date":"2018-02-21T16:04:43.088Z","type":"message"}
+{"nick":"addaleax","message":"So you’re suggesting to always call `uv_read_stop()` after reading data?","date":"2018-02-21T16:05:22.867Z","type":"message"}
+{"nick":"addaleax","message":"idk if that comes with a perf hit or not","date":"2018-02-21T16:05:28.348Z","type":"message"}
+{"nick":"Fishrock123","message":"it seems like the easiest solution to my naive understanding, yes","date":"2018-02-21T16:05:48.917Z","type":"message"}
+{"nick":"addaleax","message":"How would we know when to emit the `readable` event or its equivalent?","date":"2018-02-21T16:06:20.369Z","type":"message"}
+{"nick":"Fishrock123","message":"this doesn't have a readable event","date":"2018-02-21T16:07:30.494Z","type":"message"}
+{"nick":"qard_","date":"2018-02-21T16:08:04.580Z","type":"join"}
+{"nick":"Fishrock123","message":"usually you'd start a data pull and the end source would handle that management, not the stream protocol","date":"2018-02-21T16:08:07.939Z","type":"message"}
+{"nick":"addaleax","message":"So … there’s always a pull in flight if the consumer is able to read data fast enough?","date":"2018-02-21T16:09:39.973Z","type":"message"}
+{"nick":"Fishrock123","message":"yes","date":"2018-02-21T16:10:00.099Z","type":"message"}
+{"nick":"Fishrock123","message":"notwithstanding timeouts of course","date":"2018-02-21T16:10:09.000Z","type":"message"}
+{"nick":"Fishrock123","message":"which do make things a bit more complex but you can still propagate a timeout close","date":"2018-02-21T16:10:57.469Z","type":"message"}
+{"nick":"addaleax","message":"I’m not sure how timeouts relate to streams mechanism itself, but that seems like a question for another time :D","date":"2018-02-21T16:11:27.598Z","type":"message"}
+{"nick":"Fishrock123","message":"they only relate to stream closure propogation","date":"2018-02-21T16:12:20.123Z","type":"message"}
+{"nick":"addaleax","message":"Idk. I guess you could call libuv streams and StreamBase pull-based if you just always call ReadStop() after having received data","date":"2018-02-21T16:12:23.373Z","type":"message"}
+{"nick":"Fishrock123","message":"I wouldn't","date":"2018-02-21T16:12:47.868Z","type":"message"}
+{"nick":"Fishrock123","message":"if uv_read_stop is not acceptable, IMO doing a buffered c++ \"passthrough\" that does the conversion still seems simpler (and probably more performant) to me than running multiple streaming mechanisms throughout the codebase that also happen to have \"push/pull\" mode interchangability?","date":"2018-02-21T16:13:30.426Z","type":"message"}
+{"nick":"Fishrock123","message":"I mean maybe I'm wrong... idk, I'll find out I guess","date":"2018-02-21T16:14:09.754Z","type":"message"}
+{"nick":"addaleax","message":"That sounds like it boils down to moving the buffering mechanism from streams3 into C++ land","date":"2018-02-21T16:15:11.953Z","type":"message"}
+{"nick":"addaleax","message":"And, like, yeah, that works and kinda makes sense, but we’re going to have to keep one in JS anyway because streams3 isn’t going away, right?","date":"2018-02-21T16:15:35.124Z","type":"message"}
+{"nick":"Fishrock123","message":"the public api isn't","date":"2018-02-21T16:16:09.391Z","type":"message"}
+{"nick":"Fishrock123","message":"but we don't need to feed it more than one chunk at a time from the internals so... it can just stay in streams3 as far as I am aware","date":"2018-02-21T16:16:36.335Z","type":"message"}
+{"nick":"Fishrock123","message":"it does boil down to moving the buffering mechanism out of the protocol and into the endpoints (or transforms)","date":"2018-02-21T16:17:16.359Z","type":"message"}
+{"nick":"Fishrock123","message":"or... a lot of it anyways","date":"2018-02-21T16:17:25.796Z","type":"message"}
+{"nick":"Fishrock123","message":"which so far is definitely faster in JS","date":"2018-02-21T16:17:37.806Z","type":"message"}
+{"nick":"addaleax","message":"which is why I definitely like to see this work being done for the JS side ;)","date":"2018-02-21T16:18:44.388Z","type":"message"}
+{"nick":"addaleax","message":"idk, how closely have you watched the StreamBase changes of the last months?","date":"2018-02-21T16:19:25.533Z","type":"message"}
+{"nick":"addaleax","message":"it’s quite a bit more defined now how exactly data is passed to JS","date":"2018-02-21T16:19:41.860Z","type":"message"}
+{"nick":"addaleax","message":"building a buffering mechanism into that part sounds doable","date":"2018-02-21T16:19:57.671Z","type":"message"}
+{"nick":"Fishrock123","message":"little? I don't really have the time to keep up with much outside my bubbles, as it were","date":"2018-02-21T16:20:37.406Z","type":"message"}
+{"nick":"juggernaut451","date":"2018-02-21T16:21:35.159Z","type":"join"}
+{"nick":"addaleax","message":"Fishrock123: EmitToJSStreamListener … it’s kinda like a `.on('data')` listener for `StreamBase`s. if we want to do the translation to a pull stream, I’d suggest to do it there, instead of refactoring the whole `StreamBase` API itself","date":"2018-02-21T16:24:17.450Z","type":"message"}
+{"nick":"addaleax","message":"like, you don’t really want to have to re-write the TLS impl for this","date":"2018-02-21T16:24:28.863Z","type":"message"}
+{"nick":"Fishrock123","message":"StreamBase is not public, right?","date":"2018-02-21T16:24:52.367Z","type":"message"}
+{"nick":"addaleax","message":"it’s not","date":"2018-02-21T16:24:55.356Z","type":"message"}
+{"nick":"addaleax","message":"we can do with it whatever we want","date":"2018-02-21T16:25:16.682Z","type":"message"}
+{"nick":"Fishrock123","message":"I mean, I _was_ hoping to have a path to having the C++ internals understandable in the same way as the JS ones","date":"2018-02-21T16:26:35.383Z","type":"message"}
+{"nick":"Fishrock123","message":"I think James wants that too, esp since nghttp is pull based","date":"2018-02-21T16:26:50.454Z","type":"message"}
+{"nick":"addaleax","message":"Fishrock123: i’m very very very biased as the author of those changes of the past months, but I’d say the C++ StreamBase API is a lot more understandable than the JS API right now","date":"2018-02-21T16:27:20.998Z","type":"message"}
+{"nick":"Fishrock123","message":"if they are different, it will still be a black box to some extent","date":"2018-02-21T16:27:31.180Z","type":"message"}
+{"nick":"Fishrock123","message":"hmm","date":"2018-02-21T16:27:32.376Z","type":"message"}
+{"nick":"BridgeAR","reason":"Ping timeout: 256 seconds","date":"2018-02-21T16:27:55.426Z","type":"quit"}
+{"nick":"Fishrock123","message":"I'll try to find some time to read through it but don't know when that might be","date":"2018-02-21T16:27:57.376Z","type":"message"}
+{"nick":"Fishrock123","message":"though I think the point still goes, having a different whole model will always be somewhat confusing","date":"2018-02-21T16:28:40.984Z","type":"message"}
+{"nick":"addaleax","message":"that’s fair","date":"2018-02-21T16:29:22.875Z","type":"message"}
+{"nick":"BridgeAR","date":"2018-02-21T16:29:51.524Z","type":"join"}
+{"nick":"addaleax","message":"but probably unavoidable as long as libuv streams are push-based?","date":"2018-02-21T16:29:52.982Z","type":"message"}
+{"nick":"Fishrock123","message":"eh they'll need to bump to 2.0 at some point","date":"2018-02-21T16:30:11.849Z","type":"message"}
+{"nick":"Fishrock123","message":"maybe we can make a push for that somehow","date":"2018-02-21T16:30:20.960Z","type":"message"}
+{"nick":"addaleax","message":"has the API changed there?","date":"2018-02-21T16:30:38.551Z","type":"message"}
+{"nick":"Fishrock123","message":"no","date":"2018-02-21T16:31:05.499Z","type":"message"}
+{"nick":"Fishrock123","message":"but it's not like 2.0 is going to ship soon anyways","date":"2018-02-21T16:31:20.909Z","type":"message"}
+{"nick":"addaleax","message":"I think cjihrig_ said he wanted to do it before Node 10 or so","date":"2018-02-21T16:31:55.046Z","type":"message"}
+{"nick":"Fishrock123","message":"oh eh","date":"2018-02-21T16:32:00.419Z","type":"message"}
+{"nick":"addaleax","message":"idk. at least for unices the kernel APIs are better suited for pull streams, that’s true","date":"2018-02-21T16:32:51.602Z","type":"message"}
+{"nick":"addaleax","message":"so if you want to bring dual-mode streams to libuv … that would be a compelling reason to try and switch StreamBase itself over ;)","date":"2018-02-21T16:35:49.778Z","type":"message"}
+{"nick":"Fishrock123","message":"https://msdn.microsoft.com/en-us/library/windows/desktop/ms741688(v=vs.85).aspx looks like a pull?","date":"2018-02-21T16:38:46.200Z","type":"message"}
+{"nick":"Fishrock123","message":"libuv doesn't even set lpCompletionRoutine","date":"2018-02-21T16:39:31.439Z","type":"message"}
+{"nick":"addaleax","message":"Fishrock123: the actual write/read operations are almost always pull-based because they were made with sync I/O in mind, so pulling is more natural there anyway","date":"2018-02-21T16:42:41.371Z","type":"message"}
+{"nick":"addaleax","message":"and on unices it’s that select() or its equivalents provide a kind of 'readable' event","date":"2018-02-21T16:43:17.589Z","type":"message"}
+{"nick":"john51","reason":"Remote host closed the connection","date":"2018-02-21T16:45:25.926Z","type":"quit"}
+{"nick":"john51","date":"2018-02-21T16:49:26.685Z","type":"join"}
+{"nick":"ChALkeR","message":"Ummm","date":"2018-02-21T17:00:42.181Z","type":"message"}
+{"nick":"ChALkeR","message":"Is there a browser version of zoom?","date":"2018-02-21T17:00:56.296Z","type":"message"}
+{"nick":"ChALkeR","message":"It asks me to download and install some binary","date":"2018-02-21T17:01:04.653Z","type":"message"}
+{"nick":"thefourtheye","message":"I think so. https://zoom.us/join","date":"2018-02-21T17:01:14.432Z","type":"message"}
+{"nick":"ChALkeR","message":"Both Chrome and Firefox redirect me to https://zoom.us/download","date":"2018-02-21T17:03:51.107Z","type":"message"}
+{"nick":"joyee","message":"I don't think the browser version works on my computer","date":"2018-02-21T17:08:47.960Z","type":"message"}
+{"nick":"joyee","message":"So I'll just use the app","date":"2018-02-21T17:08:54.774Z","type":"message"}
+{"nick":"BridgeAR","reason":"Ping timeout: 248 seconds","date":"2018-02-21T17:10:57.382Z","type":"quit"}
+{"nick":"qard_","reason":"Quit: qard_","date":"2018-02-21T17:18:06.485Z","type":"quit"}
+{"nick":"dave0x6d","reason":"Quit: Connection closed for inactivity","date":"2018-02-21T17:19:16.611Z","type":"quit"}
+{"nick":"ChALkeR","message":"Ok, I managed to join, I think.","date":"2018-02-21T17:27:25.047Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 276 seconds","date":"2018-02-21T17:42:21.294Z","type":"quit"}
+{"nick":"juggernaut451","reason":"Remote host closed the connection","date":"2018-02-21T17:50:44.804Z","type":"quit"}
+{"nick":"juggernaut451","date":"2018-02-21T18:09:09.910Z","type":"join"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 256 seconds","date":"2018-02-21T18:21:00.241Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Remote host closed the connection","date":"2018-02-21T18:25:39.320Z","type":"quit"}
+{"nick":"Fishrock123","date":"2018-02-21T18:32:06.419Z","type":"join"}
+{"nick":"gabrielschulhof","date":"2018-02-21T18:48:35.317Z","type":"join"}
+{"nick":"srl295","date":"2018-02-21T18:54:37.924Z","type":"join"}
+{"nick":"Fishrock123","message":"Is there a way to access node's uv_loop_t from a native addon?","date":"2018-02-21T19:13:00.500Z","type":"message"}
+{"nick":"Fishrock123","message":"e.g. make libuv calls in a native addon...","date":"2018-02-21T19:13:12.220Z","type":"message"}
+{"nick":"devsnek","message":"uv_default_loop?","date":"2018-02-21T19:15:45.711Z","type":"message"}
+{"nick":"devsnek","message":"thats what i always use anyway","date":"2018-02-21T19:16:00.236Z","type":"message"}
+{"nick":"devsnek","message":"seems to work","date":"2018-02-21T19:16:02.911Z","type":"message"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2018-02-21T19:20:13.567Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-02-21T19:22:49.470Z","type":"quit"}
+{"nick":"Fishrock123","message":"hmm noted","date":"2018-02-21T19:32:53.926Z","type":"message"}
+{"nick":"addaleax","message":"I’m force-pushing to master","date":"2018-02-21T19:42:03.618Z","type":"message"}
+{"nick":"devsnek","message":"what for","date":"2018-02-21T19:42:53.483Z","type":"message"}
+{"nick":"addaleax","message":"Fishrock123: GetCurrentEventLoop(isolate)? ;)","date":"2018-02-21T19:43:23.311Z","type":"message"}
+{"nick":"devsnek","message":"oof","date":"2018-02-21T19:44:09.525Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: missed metadata … I hope I didn’t stop you from doing anything? :/","date":"2018-02-21T19:45:01.159Z","type":"message"}
+{"nick":"devsnek","message":"nah, just curious","date":"2018-02-21T19:45:09.333Z","type":"message"}
+{"nick":"devsnek","message":"on that note though","date":"2018-02-21T19:45:27.577Z","type":"message"}
+{"nick":"devsnek","message":"for prs like #18509 would we ever just amend them in","date":"2018-02-21T19:46:15.294Z","type":"message"}
+{"nick":"juggerna_","date":"2018-02-21T19:46:24.483Z","type":"join"}
+{"nick":"juggernaut451","reason":"Ping timeout: 248 seconds","date":"2018-02-21T19:47:13.414Z","type":"quit"}
+{"nick":"juggerna_","reason":"Remote host closed the connection","date":"2018-02-21T19:53:39.756Z","type":"quit"}
+{"nick":"addaleax","message":"devsnek: the idea is to only ever do this for about 10 minutes after the original push","date":"2018-02-21T20:01:35.596Z","type":"message"}
+{"nick":"devsnek","message":"ok","date":"2018-02-21T20:01:51.583Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-02-21T20:02:34.784Z","type":"quit"}
+{"nick":"marthinal","date":"2018-02-21T20:03:00.468Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 256 seconds","date":"2018-02-21T20:07:13.368Z","type":"quit"}
+{"nick":"marthinal","date":"2018-02-21T20:10:32.889Z","type":"join"}
+{"nick":"adempus","date":"2018-02-21T20:10:58.564Z","type":"join"}
+{"nick":"adempus","reason":"Remote host closed the connection","date":"2018-02-21T20:14:34.053Z","type":"quit"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-02-21T20:15:19.653Z","type":"quit"}
+{"nick":"marthinal","date":"2018-02-21T20:15:45.921Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 260 seconds","date":"2018-02-21T20:20:14.797Z","type":"quit"}
+{"nick":"juggernaut451","date":"2018-02-21T20:25:31.742Z","type":"join"}
+{"nick":"mylesborins","message":"does anyone have time to help with a notable changes list for the 9.6.0 release?","date":"2018-02-21T20:38:42.123Z","type":"message"}
+{"nick":"mylesborins","message":"https://github.com/nodejs/node/pull/18902","date":"2018-02-21T20:38:46.563Z","type":"message"}
+{"nick":"devsnek","message":"mylesborins i can add a few, do we just edit your comment?","date":"2018-02-21T20:40:29.088Z","type":"message"}
+{"nick":"mylesborins","message":"yes please","date":"2018-02-21T20:40:43.951Z","type":"message"}
+{"nick":"juggernaut451","reason":"Remote host closed the connection","date":"2018-02-21T20:43:36.880Z","type":"quit"}
+{"nick":"devsnek","message":"i added two","date":"2018-02-21T20:43:58.948Z","type":"message"}
+{"nick":"devsnek","message":"the formatting looks a bit off though","date":"2018-02-21T20:44:28.912Z","type":"message"}
+{"nick":"juggernaut451","date":"2018-02-21T20:44:47.337Z","type":"join"}
+{"nick":"mylesborins","message":"I'll fix it","date":"2018-02-21T20:45:45.185Z","type":"message"}
+{"nick":"mylesborins","message":"no worries :D","date":"2018-02-21T20:45:46.781Z","type":"message"}
+{"nick":"devsnek","message":"oh","date":"2018-02-21T20:46:25.778Z","type":"message"}
+{"nick":"devsnek","message":"i just did heh","date":"2018-02-21T20:46:27.388Z","type":"message"}
+{"nick":"devsnek","message":"i wonder what happens if edits overlap","date":"2018-02-21T20:46:41.589Z","type":"message"}
+{"nick":"devsnek","message":"mylesborins: if the general change happened over multiple prs can we link all of them?","date":"2018-02-21T20:50:38.736Z","type":"message"}
+{"nick":"mylesborins","message":"thanks devsnek","date":"2018-02-21T20:50:41.956Z","type":"message"}
+{"nick":"mylesborins","message":"I just used those and I think I have a good set to do it","date":"2018-02-21T20:50:53.207Z","type":"message"}
+{"nick":"devsnek","message":"ok","date":"2018-02-21T20:50:58.261Z","type":"message"}
+{"nick":"mylesborins","message":"I'll post it in about 3 - 5 minutes","date":"2018-02-21T20:50:59.294Z","type":"message"}
+{"nick":"mylesborins","message":"and then if you could review that would be rad","date":"2018-02-21T20:51:04.451Z","type":"message"}
+{"nick":"devsnek","message":"👍","date":"2018-02-21T20:53:01.414Z","type":"message"}
+{"nick":"juggernaut451","reason":"Remote host closed the connection","date":"2018-02-21T20:57:12.402Z","type":"quit"}
+{"nick":"mylesborins","message":"devsnek take a look","date":"2018-02-21T21:03:30.210Z","type":"message"}
+{"nick":"devsnek","message":"o looks good","date":"2018-02-21T21:04:00.817Z","type":"message"}
+{"nick":"devsnek","message":"mylesborins: was the linux failure fixed?","date":"2018-02-21T21:10:04.497Z","type":"message"}
+{"nick":"marthinal","date":"2018-02-21T21:17:16.362Z","type":"join"}
+{"nick":"juggernaut451","date":"2018-02-21T21:18:58.353Z","type":"join"}
+{"nick":"qard_","date":"2018-02-21T21:23:13.347Z","type":"join"}
+{"nick":"Kiwi__","date":"2018-02-21T21:29:41.967Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-02-21T21:30:31.572Z","type":"quit"}
+{"nick":"Kiwi__","reason":"Quit: Page closed","date":"2018-02-21T21:37:09.803Z","type":"quit"}
+{"nick":"not-an-aardvark","date":"2018-02-21T21:42:46.327Z","type":"join"}
+{"nick":"mmarchini","message":"mylesborins: what should I do regarding https://github.com/nodejs/node/pull/14901? The dont-lands were added because there was a reverted commit in this PR. Since this is a semver-minor, should I replace the dont-land with backport-requested, or is it ok to just remove the dont-land labels? I'm asking because I don't know what's the common practice when there's a reverted commit in the PR","date":"2018-02-21T21:50:14.140Z","type":"message"}
+{"nick":"gabrielschulhof","reason":"Changing host","date":"2018-02-21T21:50:46.140Z","type":"quit"}
+{"nick":"gabrielschulhof","date":"2018-02-21T21:50:46.211Z","type":"join"}
+{"nick":"juggernaut451","reason":"Remote host closed the connection","date":"2018-02-21T22:04:21.380Z","type":"quit"}
+{"nick":"seishun","date":"2018-02-21T22:10:39.909Z","type":"join"}
+{"nick":"egsp_","reason":"Remote host closed the connection","date":"2018-02-21T22:17:19.332Z","type":"quit"}
+{"nick":"bhughes","reason":"Quit: ZNC - http://znc.in","date":"2018-02-21T22:24:20.514Z","type":"quit"}
+{"nick":"marthinal","date":"2018-02-21T22:25:55.459Z","type":"join"}
+{"nick":"devsnek","message":"where is the source for the nodejs.org site","date":"2018-02-21T22:37:50.072Z","type":"message"}
+{"nick":"devsnek","message":"i see a redesign repo but nothing for the current site","date":"2018-02-21T22:38:14.023Z","type":"message"}
+{"nick":"qard_","reason":"Quit: qard_","date":"2018-02-21T22:45:23.843Z","type":"quit"}
+{"nick":"bhughes","date":"2018-02-21T22:48:43.414Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-02-21T22:57:01.877Z","type":"quit"}
+{"nick":"qard","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-02-21T22:57:49.415Z","type":"quit"}
+{"nick":"qard","date":"2018-02-21T23:06:07.334Z","type":"join"}
+{"nick":"mylesborins","message":"devsnek github.com/nodejs/nodejs.org","date":"2018-02-21T23:09:06.867Z","type":"message"}
+{"nick":"devsnek","message":"thanks","date":"2018-02-21T23:09:17.374Z","type":"message"}
+{"nick":"mylesborins","message":"mmarchini just leave labels as they are... I'll land in next release, easy to find the history now, thanks","date":"2018-02-21T23:10:24.810Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 248 seconds","date":"2018-02-21T23:12:31.839Z","type":"quit"}
+{"nick":"marthinal","date":"2018-02-21T23:12:31.907Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 248 seconds","date":"2018-02-21T23:16:47.971Z","type":"quit"}
+{"nick":"Fishrock123","reason":"Quit: Leaving...","date":"2018-02-21T23:49:21.646Z","type":"quit"}
