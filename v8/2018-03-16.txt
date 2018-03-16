@@ -8,3 +8,93 @@
 {"nick":"xaxxon","reason":"Quit: xaxxon","date":"2018-03-16T07:01:49.640Z","type":"quit"}
 {"nick":"plutoniix","date":"2018-03-16T07:45:18.020Z","type":"join"}
 {"nick":"not-an-aardvark","reason":"Quit: Connection closed for inactivity","date":"2018-03-16T07:58:54.009Z","type":"quit"}
+{"nick":"dobson","reason":"Read error: Connection reset by peer","date":"2018-03-16T09:57:21.733Z","type":"quit"}
+{"nick":"dobson","date":"2018-03-16T10:01:40.666Z","type":"join"}
+{"nick":"mylesborins","reason":"Quit: farewell for now","date":"2018-03-16T10:25:12.084Z","type":"quit"}
+{"nick":"mylesborins","date":"2018-03-16T10:25:41.639Z","type":"join"}
+{"nick":"plutoniix","reason":"Quit: Leaving","date":"2018-03-16T11:37:55.678Z","type":"quit"}
+{"nick":"cloudshu","date":"2018-03-16T12:19:35.865Z","type":"join"}
+{"nick":"Garbee","date":"2018-03-16T12:27:00.920Z","type":"join"}
+{"nick":"gsathya","message":"devsnek: can you explain the problem that you'd trying to solve here? (instead of the solutions themselves)","date":"2018-03-16T13:24:46.829Z","type":"message"}
+{"nick":"devsnek","message":"ok one sec","date":"2018-03-16T13:25:10.455Z","type":"message"}
+{"nick":"devsnek","message":"so basically node has a ModuleWrap and a ScriptWrap","date":"2018-03-16T13:25:59.940Z","type":"message"}
+{"nick":"devsnek","message":"which wrap around Module/Script and help us actually run them","date":"2018-03-16T13:26:42.546Z","type":"message"}
+{"nick":"devsnek","message":"facilitate linking etc","date":"2018-03-16T13:26:49.707Z","type":"message"}
+{"nick":"devsnek","message":"part of this is exposing an api called \"vm\" to node users","date":"2018-03-16T13:27:48.444Z","type":"message"}
+{"nick":"devsnek","message":"which allows them to create \"Scripts\" and \"Modules\"","date":"2018-03-16T13:28:05.600Z","type":"message"}
+{"nick":"devsnek","message":"(see more at https://nodejs.org/api/vm.html)","date":"2018-03-16T13:28:16.937Z","type":"message"}
+{"nick":"devsnek","message":"we need to be able to hook dynamic import requests and initialise import meta requests","date":"2018-03-16T13:28:39.626Z","type":"message"}
+{"nick":"devsnek","message":"and send them to the user somehow","date":"2018-03-16T13:28:47.698Z","type":"message"}
+{"nick":"devsnek","message":"while making sure the user doesn't get to touch the requests going to node's actual esm loader","date":"2018-03-16T13:29:01.632Z","type":"message"}
+{"nick":"devsnek","message":"gsathya: all making sense?","date":"2018-03-16T13:30:25.858Z","type":"message"}
+{"nick":"gsathya","message":"devsnek: i have questions, but go on","date":"2018-03-16T14:30:00.469Z","type":"message"}
+{"nick":"devsnek","message":"that's about it","date":"2018-03-16T14:30:09.819Z","type":"message"}
+{"nick":"devsnek","message":"the last point about directing the requests to different places is where we get stuck","date":"2018-03-16T14:30:40.805Z","type":"message"}
+{"nick":"gsathya","message":"you get the HostImportModuleDynamicallyCallback and that has the HostDefinedOptions that you can use to disambiguate what to call, but HostInitializeImportMetaObjectCallback does not so you don't know what to call. Is this correct? Can you store a Module map from Module -> Primitive? (where the Primitive is that thing that you had originally stored in the HostDefinedOptions)","date":"2018-03-16T14:33:24.064Z","type":"message"}
+{"nick":"devsnek","message":"modules don't have any unique identification though so there's nothing you can put in a primitive to identify one","date":"2018-03-16T14:34:24.125Z","type":"message"}
+{"nick":"devsnek","message":"import meta was easier to implement because it gives the actual module instance","date":"2018-03-16T14:36:10.446Z","type":"message"}
+{"nick":"gsathya","message":"aklein: ^","date":"2018-03-16T14:39:35.156Z","type":"message"}
+{"nick":"aklein","message":"devsnek: the way to get such a primitive for a module is to do the mapping yourself","date":"2018-03-16T14:44:57.433Z","type":"message"}
+{"nick":"aklein","message":"that is, concretely, using something like std::unordered_map in C++","date":"2018-03-16T14:45:15.101Z","type":"message"}
+{"nick":"devsnek","message":"there's nothing to map by for modules","date":"2018-03-16T14:45:53.641Z","type":"message"}
+{"nick":"devsnek","message":"https://github.com/devsnek/node/blob/feature/vm-meta-import-etc/src/module_wrap.cc#L757","date":"2018-03-16T14:45:56.461Z","type":"message"}
+{"nick":"devsnek","message":"the best we can do is GetIdentityHash and that isn't unique","date":"2018-03-16T14:46:19.652Z","type":"message"}
+{"nick":"devsnek","message":"it only works if we have the actual module instance","date":"2018-03-16T14:46:38.779Z","type":"message"}
+{"nick":"devsnek","message":"https://github.com/devsnek/node/blob/feature/vm-meta-import-etc/src/module_wrap.cc#L66-L81","date":"2018-03-16T14:47:05.041Z","type":"message"}
+{"nick":"aklein","message":"devsnek: what are you calling GetIdentityHash() on if all you have is a v8::ScriptOrModule?","date":"2018-03-16T14:47:05.338Z","type":"message"}
+{"nick":"devsnek","message":"nothing","date":"2018-03-16T14:47:13.552Z","type":"message"}
+{"nick":"devsnek","message":"the identity hash is in the host defined options","date":"2018-03-16T14:47:31.539Z","type":"message"}
+{"nick":"aklein","message":"devsnek: so here's d8's mapping of modules: https://cs.chromium.org/chromium/src/v8/src/d8.cc?rcl=79b300af925102cdaaf3b64911687e828c188d2b&l=767","date":"2018-03-16T14:48:09.808Z","type":"message"}
+{"nick":"devsnek","message":"we can't map by url","date":"2018-03-16T14:48:25.684Z","type":"message"}
+{"nick":"devsnek","message":"urls aren't unique","date":"2018-03-16T14:48:39.511Z","type":"message"}
+{"nick":"aklein","message":"devsnek: you could map to some incremented ID on your end","date":"2018-03-16T14:48:39.713Z","type":"message"}
+{"nick":"aklein","message":"and then include that ID in the host defined options","date":"2018-03-16T14:48:51.697Z","type":"message"}
+{"nick":"devsnek","message":"and then when we only have Local<Module>","date":"2018-03-16T14:49:02.951Z","type":"message"}
+{"nick":"devsnek","message":"for the import meta","date":"2018-03-16T14:49:05.596Z","type":"message"}
+{"nick":"devsnek","message":"and not host defined options","date":"2018-03-16T14:49:11.361Z","type":"message"}
+{"nick":"aklein","message":"devsnek: sorry, don't follow, was there more to that last bit?","date":"2018-03-16T14:50:26.647Z","type":"message"}
+{"nick":"devsnek","message":"we can't attach our own incrementing id to the actual module","date":"2018-03-16T14:52:42.557Z","type":"message"}
+{"nick":"devsnek","message":"so it wouldn't work for the import meta callback","date":"2018-03-16T14:52:50.023Z","type":"message"}
+{"nick":"aklein","message":"devsnek: I'm proposing two side tables, analogous to those I'm showing for d8","date":"2018-03-16T14:53:03.022Z","type":"message"}
+{"nick":"aklein","message":"one mapping unique id -> Module","date":"2018-03-16T14:53:24.019Z","type":"message"}
+{"nick":"aklein","message":"and the other mapping Module -> unique id","date":"2018-03-16T14:53:29.110Z","type":"message"}
+{"nick":"devsnek","message":"i guess that would work","date":"2018-03-16T14:53:41.280Z","type":"message"}
+{"nick":"devsnek","message":"can't we just attach these callbacks to the actual scripts and modules","date":"2018-03-16T14:53:54.902Z","type":"message"}
+{"nick":"devsnek","message":"two global maps is a bit excessive","date":"2018-03-16T14:54:36.796Z","type":"message"}
+{"nick":"aklein","message":"devsnek: how would that work? the callbacks are just function pointers","date":"2018-03-16T14:54:47.442Z","type":"message"}
+{"nick":"devsnek","message":"instead of attaching them to the isolate","date":"2018-03-16T14:55:04.798Z","type":"message"}
+{"nick":"devsnek","message":"or context","date":"2018-03-16T14:55:07.859Z","type":"message"}
+{"nick":"devsnek","message":"or wherever","date":"2018-03-16T14:55:10.824Z","type":"message"}
+{"nick":"aklein","message":"devsnek: but you'd need a different callback for each module, right?","date":"2018-03-16T14:56:20.213Z","type":"message"}
+{"nick":"aklein","message":"at that point you couldn't use a function pointer","date":"2018-03-16T14:56:26.548Z","type":"message"}
+{"nick":"devsnek","message":"i would probably use a std::function at that point, yes","date":"2018-03-16T14:56:34.068Z","type":"message"}
+{"nick":"aklein","message":"you'd need some object to encapsulate the callback","date":"2018-03-16T14:56:35.674Z","type":"message"}
+{"nick":"aklein","message":"I'd imagine that in such a system you'd need to store a Global<Module> in the std::function","date":"2018-03-16T14:57:18.349Z","type":"message"}
+{"nick":"devsnek","message":"thats probably what i would do","date":"2018-03-16T14:57:43.445Z","type":"message"}
+{"nick":"aklein","message":"to go up a couple levels of abstraction: the current API assumes embedders might want to associate arbitrary amounts of data with a Module. For that, they'll already need a map of v8::Module to whatever","date":"2018-03-16T14:58:01.901Z","type":"message"}
+{"nick":"devsnek","message":"could also have Module::GetScriptOrigin or something","date":"2018-03-16T14:58:20.966Z","type":"message"}
+{"nick":"aklein","message":"given that assumption, we figured it should be relatively easy to do the inverse mapping as well. obviously some of this is informed (or you could say biased) by Chromium's requirements","date":"2018-03-16T15:01:01.375Z","type":"message"}
+{"nick":"aklein","message":"the reason we didn't expose GetModule() on ScriptOrModule is that we didn't want to constrain that API to actually have a handle to the relevant module","date":"2018-03-16T15:02:00.900Z","type":"message"}
+{"nick":"aklein","message":"and in fact I don't believe the object passed there actually does have access to the module (though I could be wrong, it's been awhile since I looked closely at this code)","date":"2018-03-16T15:03:09.532Z","type":"message"}
+{"nick":"devsnek","message":"i don't understand that last point but knowing that you guys intended people to use inverse maps and stuff at least lets me know theres a method to the madness","date":"2018-03-16T15:03:18.457Z","type":"message"}
+{"nick":"aklein","message":"the last point is that the actual object underlying v8::ScriptOrModule is v8::internal::Script","date":"2018-03-16T15:04:22.907Z","type":"message"}
+{"nick":"aklein","message":"https://cs.chromium.org/chromium/src/v8/src/objects/script.h?rcl=386975ac9a68cd5857557b0a9452f8b1f13e10f7&l=18","date":"2018-03-16T15:04:24.333Z","type":"message"}
+{"nick":"aklein","message":"glad to hear the explanation of the bidirectional mapping is helpful. sorry if the name of GetIdentityHash() was confusing...it really should just be called GetHashCode() or something","date":"2018-03-16T15:05:21.605Z","type":"message"}
+{"nick":"aklein","message":"(I believe it was named for consistency with v8::Object::GetIdentityHash())","date":"2018-03-16T15:05:32.122Z","type":"message"}
+{"nick":"devsnek","message":"well neither of them are unique (which i guess \"hash\" is supposed to imply?)","date":"2018-03-16T15:05:54.556Z","type":"message"}
+{"nick":"aklein","message":"yeah, the point is that it's only meant as a stable hash code","date":"2018-03-16T15:07:30.763Z","type":"message"}
+{"nick":"aklein","message":"for identity you can just fall back to C++ operator==","date":"2018-03-16T15:08:12.295Z","type":"message"}
+{"nick":"aklein","message":"but there's no notion of stable identity for an object that doesn't require holding a handle to it (either Global or Local)","date":"2018-03-16T15:08:37.228Z","type":"message"}
+{"nick":"aklein","message":"due to the moving GC","date":"2018-03-16T15:08:40.934Z","type":"message"}
+{"nick":"devsnek","message":"ye","date":"2018-03-16T15:10:09.443Z","type":"message"}
+{"nick":"devsnek","message":"aklein: what is this Global construct that d8 is using","date":"2018-03-16T15:21:04.210Z","type":"message"}
+{"nick":"devsnek","message":"its not a actual v8 thing as far as i can tell","date":"2018-03-16T15:21:10.480Z","type":"message"}
+{"nick":"aklein","message":"you might know it as Persistent","date":"2018-03-16T15:21:22.089Z","type":"message"}
+{"nick":"devsnek","message":"oh ","date":"2018-03-16T15:21:28.214Z","type":"message"}
+{"nick":"aklein","message":"I believe Persistent is the \"old\" name :)","date":"2018-03-16T15:21:33.524Z","type":"message"}
+{"nick":"devsnek","message":"its still called a Persistent in v8.h","date":"2018-03-16T15:21:41.184Z","type":"message"}
+{"nick":"aklein","message":"oh, sorry, looks like they're not quite equivalent","date":"2018-03-16T15:22:42.644Z","type":"message"}
+{"nick":"aklein","message":"Global is like Persistent but with move semantics","date":"2018-03-16T15:22:50.083Z","type":"message"}
+{"nick":"devsnek","message":"i dunno what that means :P","date":"2018-03-16T15:25:39.718Z","type":"message"}
+{"nick":"devsnek","message":"oh moving a pointer to another owner","date":"2018-03-16T15:27:32.316Z","type":"message"}
+{"nick":"bengl_","date":"2018-03-16T15:55:30.678Z","type":"join"}
