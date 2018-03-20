@@ -1,0 +1,110 @@
+{"nick":"xaxxon","message":"devsnek: it would be pretty hard to work with values if you couldn't ever store them outside of a lexical scope...","date":"2018-03-20T00:05:25.942Z","type":"message"}
+{"nick":"xaxxon","message":"or are you referring to global beyond persistenthandle or whatever its base type is?","date":"2018-03-20T00:05:50.897Z","type":"message"}
+{"nick":"devsnek","message":"Global : PersistentBase i think","date":"2018-03-20T00:06:07.926Z","type":"message"}
+{"nick":"devsnek","message":"but yea that class","date":"2018-03-20T00:06:11.942Z","type":"message"}
+{"nick":"xaxxon","message":"devsnek: it's basically a unique_ptr for javascript values","date":"2018-03-20T00:09:43.657Z","type":"message"}
+{"nick":"devsnek","message":"yea and its a+","date":"2018-03-20T00:10:01.059Z","type":"message"}
+{"nick":"xaxxon","message":"you seem to be quite impressed with it.. what were you using before?","date":"2018-03-20T00:10:59.030Z","type":"message"}
+{"nick":"devsnek","message":"nothing","date":"2018-03-20T00:12:47.328Z","type":"message"}
+{"nick":"devsnek","message":"i wasn't aware what i'm trying to do is possible","date":"2018-03-20T00:12:56.525Z","type":"message"}
+{"nick":"xaxxon","message":"yes, without global, you basically can't store JS values in data structures..","date":"2018-03-20T00:14:04.536Z","type":"message"}
+{"nick":"xaxxon","message":"are you doing anyhting particularly fancy?   or just getting started?","date":"2018-03-20T00:14:12.761Z","type":"message"}
+{"nick":"devsnek","message":"yea i was having a bad time","date":"2018-03-20T00:14:12.963Z","type":"message"}
+{"nick":"xaxxon","message":"devsnek: once you start embedding c++ objects inside your javascript objects and then setting c++ functions as callbacks for when the value is cleaned up... that's when the real power of Global starts to shine... but damn if it's not a pain in the ass, at the same time","date":"2018-03-20T00:17:15.498Z","type":"message"}
+{"nick":"devsnek","message":"i'm working with maps of Local<Module> right now","date":"2018-03-20T00:17:38.063Z","type":"message"}
+{"nick":"xaxxon","message":"if you're not following it already, make sure you check out the v8-users mailing list.   this channel is usually completely dead, but you can get help pretty regularly there.. or just learn from other people's questions","date":"2018-03-20T00:19:13.044Z","type":"message"}
+{"nick":"xaxxon","message":"https://groups.google.com/forum/#!forum/v8-users","date":"2018-03-20T00:19:24.590Z","type":"message"}
+{"nick":"devsnek","message":"i've never done a mailing list before","date":"2018-03-20T00:19:26.721Z","type":"message"}
+{"nick":"devsnek","message":"as long as you're around can you help me with this cryptic error i just got","date":"2018-03-20T00:20:09.870Z","type":"message"}
+{"nick":"devsnek","message":"i don't know what to make of this https://gc.gy/⚃⚢拏.png","date":"2018-03-20T00:20:29.130Z","type":"message"}
+{"nick":"xaxxon","message":"is this node stuff?","date":"2018-03-20T00:21:29.659Z","type":"message"}
+{"nick":"devsnek","message":"yea","date":"2018-03-20T00:21:34.504Z","type":"message"}
+{"nick":"xaxxon","message":"devsnek: I don't know anyhting about node","date":"2018-03-20T00:21:43.820Z","type":"message"}
+{"nick":"xaxxon","message":"yeah, no clue.   ","date":"2018-03-20T00:21:45.782Z","type":"message"}
+{"nick":"devsnek","message":"but in this case all i did is set up an unordered_map<Global<Module>, int>","date":"2018-03-20T00:21:49.471Z","type":"message"}
+{"nick":"xaxxon","message":"ok","date":"2018-03-20T00:22:00.503Z","type":"message"}
+{"nick":"devsnek","message":"and then i did `map[Global<Module>(isolate, module)] = id`","date":"2018-03-20T00:22:06.683Z","type":"message"}
+{"nick":"xaxxon","message":"that line causes the error?","date":"2018-03-20T00:23:22.533Z","type":"message"}
+{"nick":"devsnek","message":"https://www.irccloud.com/pastebin/h6OxDo9C/","date":"2018-03-20T00:23:48.730Z","type":"message"}
+{"nick":"devsnek","message":"i guess its this?","date":"2018-03-20T00:23:52.496Z","type":"message"}
+{"nick":"xaxxon","message":"in order to make a unordered map, you have to implement std::hash of the key type ","date":"2018-03-20T00:24:42.661Z","type":"message"}
+{"nick":"devsnek","message":"i was just sorta doing what i saw in d8","date":"2018-03-20T00:25:15.671Z","type":"message"}
+{"nick":"xaxxon","message":"..which probably doesn't make much sense for a javascript value","date":"2018-03-20T00:25:15.882Z","type":"message"}
+{"nick":"devsnek","message":"d8 has a map from cstring to module and from module to cstring","date":"2018-03-20T00:25:41.766Z","type":"message"}
+{"nick":"xaxxon","message":"it would be VERY expensive to look up this way.   instead, maybe if you can get a string name of the module, just key it by std::string","date":"2018-03-20T00:25:43.644Z","type":"message"}
+{"nick":"devsnek","message":"however in node","date":"2018-03-20T00:25:50.687Z","type":"message"}
+{"nick":"devsnek","message":"we can't key the module map by urls","date":"2018-03-20T00:25:56.128Z","type":"message"}
+{"nick":"devsnek","message":"because they aren't guaranteed to be unique","date":"2018-03-20T00:26:16.285Z","type":"message"}
+{"nick":"devsnek","message":"so i'm using an incrementing int","date":"2018-03-20T00:26:31.224Z","type":"message"}
+{"nick":"devsnek","message":"is that where the problem came from?","date":"2018-03-20T00:26:45.981Z","type":"message"}
+{"nick":"xaxxon","message":"well, this SPECIFIC problem is that you don't have std::hash specialized for global<module","date":"2018-03-20T00:27:03.144Z","type":"message"}
+{"nick":"xaxxon","message":">","date":"2018-03-20T00:27:03.731Z","type":"message"}
+{"nick":"xaxxon","message":"whichi is required for unordered_map/set","date":"2018-03-20T00:27:11.743Z","type":"message"}
+{"nick":"devsnek","message":"is there some thing in d8 i didn't see that handles that?","date":"2018-03-20T00:27:28.648Z","type":"message"}
+{"nick":"xaxxon","message":"I don't know much about d8, either.   I just use the raw api","date":"2018-03-20T00:27:43.636Z","type":"message"}
+{"nick":"xaxxon","message":"link me the file/line in d8 that has this?","date":"2018-03-20T00:27:56.202Z","type":"message"}
+{"nick":"xaxxon","message":"I'll take a quick look","date":"2018-03-20T00:28:01.050Z","type":"message"}
+{"nick":"devsnek","message":"sec","date":"2018-03-20T00:28:03.107Z","type":"message"}
+{"nick":"devsnek","message":"https://cs.chromium.org/chromium/src/v8/src/d8.cc?l=765","date":"2018-03-20T00:28:27.725Z","type":"message"}
+{"nick":"devsnek","message":"oh heck","date":"2018-03-20T00:28:39.714Z","type":"message"}
+{"nick":"devsnek","message":"GlobalModuleHash","date":"2018-03-20T00:28:43.200Z","type":"message"}
+{"nick":"devsnek","message":"lol","date":"2018-03-20T00:28:43.717Z","type":"message"}
+{"nick":"devsnek","message":"i guess that answers my question","date":"2018-03-20T00:29:01.207Z","type":"message"}
+{"nick":"xaxxon","message":"there ya go","date":"2018-03-20T00:29:51.476Z","type":"message"}
+{"nick":"xaxxon","message":"yeah, the alternative to implementing std::hash for the key type is to specify your own comparator","date":"2018-03-20T00:30:09.649Z","type":"message"}
+{"nick":"xaxxon","message":"that's the third parameter.. which is the type you emntioned","date":"2018-03-20T00:30:18.640Z","type":"message"}
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2018-03-20T00:31:15.721Z","type":"quit"}
+{"nick":"not-an-aardvark","reason":"Quit: Connection closed for inactivity","date":"2018-03-20T00:36:49.673Z","type":"quit"}
+{"nick":"devsnek","message":"wow its actually building","date":"2018-03-20T00:38:36.856Z","type":"message"}
+{"nick":"xaxxon","message":"devsnek: yay","date":"2018-03-20T00:50:47.694Z","type":"message"}
+{"nick":"xaxxon","reason":"Ping timeout: 256 seconds","date":"2018-03-20T01:36:41.486Z","type":"quit"}
+{"nick":"xaxxon","date":"2018-03-20T01:39:30.753Z","type":"join"}
+{"nick":"devsnek","message":"xaxxon: thanks i got everything working now :D https://github.com/devsnek/node/commit/91f415c029dd4b26a66b704ea87c60aa2fdb075a","date":"2018-03-20T01:46:25.233Z","type":"message"}
+{"nick":"xaxxon","message":"sweet","date":"2018-03-20T01:46:32.907Z","type":"message"}
+{"nick":"devsnek","message":"oh wait i forgot one thing","date":"2018-03-20T01:47:42.785Z","type":"message"}
+{"nick":"devsnek","message":"`delete env()->module_to_id_map[Global<Module>(env()->isolate(), module)];` won't compile","date":"2018-03-20T01:48:14.768Z","type":"message"}
+{"nick":"devsnek","message":"cannot delete expression of type mapped_type","date":"2018-03-20T01:48:39.734Z","type":"message"}
+{"nick":"devsnek","message":"oh hmm erase works","date":"2018-03-20T01:49:53.113Z","type":"message"}
+{"nick":"devsnek","message":"i thought unordered_map had an overload for delete[]","date":"2018-03-20T01:50:04.134Z","type":"message"}
+{"nick":"xaxxon","message":"devsnek: I don't think it's technically possible to do what you were trying to do","date":"2018-03-20T02:29:52.993Z","type":"message"}
+{"nick":"devsnek","message":"it all works","date":"2018-03-20T02:30:03.439Z","type":"message"}
+{"nick":"xaxxon","message":"I mean this: delete env()->module_to_id_map[Global<Module>(env()->isolate(), module)];","date":"2018-03-20T02:30:10.992Z","type":"message"}
+{"nick":"devsnek","message":"wdym","date":"2018-03-20T02:30:11.514Z","type":"message"}
+{"nick":"devsnek","message":"oh","date":"2018-03-20T02:30:13.784Z","type":"message"}
+{"nick":"devsnek","message":"i changed it to env()->module_to_id_map.erase(Global<Module>(env()->isolate(), module))","date":"2018-03-20T02:30:30.128Z","type":"message"}
+{"nick":"xaxxon","message":"yes, that works :)","date":"2018-03-20T02:30:43.604Z","type":"message"}
+{"nick":"devsnek","message":"i just incorrectly thought that unordered_map had an overload for delete[]","date":"2018-03-20T02:30:51.593Z","type":"message"}
+{"nick":"xaxxon","message":"I don't think that's something you can even do","date":"2018-03-20T02:31:00.329Z","type":"message"}
+{"nick":"devsnek","message":"i think it is","date":"2018-03-20T02:31:04.718Z","type":"message"}
+{"nick":"devsnek","message":"yep operator delete[] is a thing","date":"2018-03-20T02:31:21.712Z","type":"message"}
+{"nick":"xaxxon","message":"yes, there is such a thing, but I don't think you can make it take a reference type and have it perform an arbitrary action... especially pointing back to a different object (the actual map) to have it operate on","date":"2018-03-20T02:32:16.776Z","type":"message"}
+{"nick":"devsnek","message":"well you probs know better than i do","date":"2018-03-20T02:32:50.289Z","type":"message"}
+{"nick":"xaxxon","message":"env()->module_to_id_map[Global<Module>(env()->isolate(), module)]; returns a reference to a  value object","date":"2018-03-20T02:32:51.365Z","type":"message"}
+{"nick":"xaxxon","message":"it has no notion of being associated with a map","date":"2018-03-20T02:33:01.415Z","type":"message"}
+{"nick":"devsnek","message":"yea that makes sense","date":"2018-03-20T02:33:31.674Z","type":"message"}
+{"nick":"devsnek","message":"i'm too used to js","date":"2018-03-20T02:33:35.188Z","type":"message"}
+{"nick":"xaxxon","message":"delete[] is for calling the destructor of an array of objects","date":"2018-03-20T02:33:38.849Z","type":"message"}
+{"nick":"xaxxon","message":":)","date":"2018-03-20T02:33:55.870Z","type":"message"}
+{"nick":"xaxxon","message":"I'm the opposite.  my JS is ass","date":"2018-03-20T02:34:00.998Z","type":"message"}
+{"nick":"devsnek","message":"so are you a v8 dev or","date":"2018-03-20T02:34:31.650Z","type":"message"}
+{"nick":"devsnek","message":"rando good guy","date":"2018-03-20T02:34:37.534Z","type":"message"}
+{"nick":"xaxxon","message":"I have 1 patch in v8 and it was a trivial one-liner","date":"2018-03-20T02:35:05.546Z","type":"message"}
+{"nick":"xaxxon","message":"no I just hang out here in case there's another living soul that shows up","date":"2018-03-20T02:35:19.893Z","type":"message"}
+{"nick":"xaxxon","message":"which is literally about once every 6 months","date":"2018-03-20T02:35:38.849Z","type":"message"}
+{"nick":"xaxxon","message":"other than a dev saying like 3 things to another dev who never responds","date":"2018-03-20T02:35:41.389Z","type":"message"}
+{"nick":"devsnek","message":"i have 0 patches cuz anything v8 related that isn't the public api is more complex than rocket science","date":"2018-03-20T02:35:52.676Z","type":"message"}
+{"nick":"xaxxon","message":"my patch was to the public api","date":"2018-03-20T02:36:21.714Z","type":"message"}
+{"nick":"xaxxon","message":"I think it literally added the word \"explicit\" somewhere","date":"2018-03-20T02:36:29.858Z","type":"message"}
+{"nick":"xaxxon","message":"it was  a while ago","date":"2018-03-20T02:36:32.160Z","type":"message"}
+{"nick":"devsnek","message":"nice","date":"2018-03-20T02:36:49.404Z","type":"message"}
+{"nick":"Garbee","reason":"Quit: Connection closed for inactivity","date":"2018-03-20T03:18:31.179Z","type":"quit"}
+{"nick":"not-an-aardvark","date":"2018-03-20T05:05:27.132Z","type":"join"}
+{"nick":"xaxxon","reason":"Read error: Connection reset by peer","date":"2018-03-20T05:38:58.917Z","type":"quit"}
+{"nick":"xaxxon","date":"2018-03-20T05:51:15.995Z","type":"join"}
+{"nick":"xaxxon_","date":"2018-03-20T05:56:12.601Z","type":"join"}
+{"nick":"xaxxon","reason":"Ping timeout: 264 seconds","date":"2018-03-20T05:59:10.161Z","type":"quit"}
+{"nick":"xaxxon_","reason":"Quit: xaxxon_","date":"2018-03-20T06:49:28.779Z","type":"quit"}
+{"nick":"xaxxon","date":"2018-03-20T06:57:35.772Z","type":"join"}
+{"nick":"xaxxon","reason":"Quit: xaxxon","date":"2018-03-20T07:12:43.816Z","type":"quit"}
+{"nick":"trungl-bot","message":"\u00034\u0002Tree closed\u000f by machenbach@chromium.org: closed - maintenance","date":"2018-03-20T07:45:59.933Z","type":"message"}
+{"nick":"trungl-bot","message":"\u00033\u0002Tree opened\u000f by machenbach@chromium.org: open","date":"2018-03-20T07:57:05.354Z","type":"message"}
