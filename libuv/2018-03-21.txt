@@ -12,3 +12,75 @@
 {"nick":"Success","date":"2018-03-21T04:34:51.536Z","type":"join"}
 {"nick":"Success","reason":"Remote host closed the connection","date":"2018-03-21T05:42:48.910Z","type":"quit"}
 {"nick":"hari__","reason":"Ping timeout: 260 seconds","date":"2018-03-21T06:27:40.006Z","type":"quit"}
+{"nick":"Raziel","message":"duvnell: http://docs.libuv.org/en/v1.x/idle.html","date":"2018-03-21T08:39:51.534Z","type":"message"}
+{"nick":"Raziel","message":"maybe this?","date":"2018-03-21T08:39:53.753Z","type":"message"}
+{"nick":"Raziel","message":"would allow you to empty events in the other queues","date":"2018-03-21T08:40:20.203Z","type":"message"}
+{"nick":"strike_","reason":"Remote host closed the connection","date":"2018-03-21T10:24:58.592Z","type":"quit"}
+{"nick":"mylesborins","reason":"Quit: farewell for now","date":"2018-03-21T10:25:10.834Z","type":"quit"}
+{"nick":"strike_","date":"2018-03-21T10:25:25.616Z","type":"join"}
+{"nick":"mylesborins","date":"2018-03-21T10:25:41.458Z","type":"join"}
+{"nick":"AtumT","date":"2018-03-21T11:41:22.177Z","type":"join"}
+{"nick":"duvnell","message":"Raziel: thx, but I'm not sure that would work... I think you're suggesting to run the uv loop but in some attached idle callback dump process any other event loop systems' queues.  But that wouldn't process events from those queues when they arrive, i.e they don't interrupt uv's waiting on it's queue as soon as something arrives .. nor would it handle timed events from those other queues.","date":"2018-03-21T14:06:24.648Z","type":"message"}
+{"nick":"duvnell","message":"e.g. if I wanted to simultaneously run a uv loop on the gui thread of a win32 app, I can either pump the uv queue or the win32 queue, but not at the same time.. at least not without some background thread and (inefficiently) proxy all the events.","date":"2018-03-21T14:07:25.234Z","type":"message"}
+{"nick":"duvnell","message":"unless uv does run atop the win32 event loop on win32, and likewise on other platforms","date":"2018-03-21T14:07:46.800Z","type":"message"}
+{"nick":"daurnimator","reason":"Ping timeout: 256 seconds","date":"2018-03-21T14:07:52.738Z","type":"quit"}
+{"nick":"Raziel","message":"if I understand that page right (as it says having an active idle handle means the libuv loop will perform a zero timeout poll instead of blocking)","date":"2018-03-21T14:08:15.445Z","type":"message"}
+{"nick":"Raziel","message":"you could just do a while (PeekMessage()) in your idle handler","date":"2018-03-21T14:08:26.696Z","type":"message"}
+{"nick":"daurnimator","date":"2018-03-21T14:11:05.550Z","type":"join"}
+{"nick":"duvnell","message":"yeah but what if e.g. a mouse press occurs while ev is waiting for network i/o?  .. it won't be handled until something with the network happens to wake it up. ","date":"2018-03-21T14:15:20.163Z","type":"message"}
+{"nick":"Raziel","message":"it's not going to wait due to the zero timeout","date":"2018-03-21T14:15:49.685Z","type":"message"}
+{"nick":"Raziel","message":"it'll pick it up on the next (or 500 later) loop iteration","date":"2018-03-21T14:16:04.417Z","type":"message"}
+{"nick":"Raziel","message":"the downside is that'll you'll probably need to put some sleep/yield somewhere because of CPU usage if you keep doing nothing but not blocking","date":"2018-03-21T14:17:31.943Z","type":"message"}
+{"nick":"Raziel","message":"of course you could still just have 2 threads (I'd probably pick the UI one for the main thread, those UI libs tend to be picky especially on mobile OSes), but then there's the synchronization issues","date":"2018-03-21T14:18:44.187Z","type":"message"}
+{"nick":"duvnell","message":"well, yeah, I was gonna say that in that case, it's the other way around: the idle handler would need to block on win32 events so that e.g. mouse events are handled on time, but then the network events are starved.  Having to put a sleep or timed event either way to pool just introduces a delay of one side or the other.. certainly don't want to spin 100%","date":"2018-03-21T14:19:11.001Z","type":"message"}
+{"nick":"Raziel","message":"hm but mouse events would still be handled on time","date":"2018-03-21T14:19:51.264Z","type":"message"}
+{"nick":"duvnell","message":"there's uv_backend_fd() which indicates a background thread could do the \"waiting\" for uv events and then wake up the UI thread to do a UV_RUN_ONCE","date":"2018-03-21T14:20:07.698Z","type":"message"}
+{"nick":"Raziel","message":"(unless you do something that takes a lot of processing time before handling them, oviously)","date":"2018-03-21T14:20:11.296Z","type":"message"}
+{"nick":"duvnell","message":"that doesn't work on win32 however","date":"2018-03-21T14:20:19.894Z","type":"message"}
+{"nick":"duvnell","message":"(say's it's only for kqueue and epoll)","date":"2018-03-21T14:20:32.335Z","type":"message"}
+{"nick":"duvnell","message":"I was thinking that on win32 uv woudl have to use the win32 async io stuff.. which does pump the win32 queue IIRC","date":"2018-03-21T14:21:33.641Z","type":"message"}
+{"nick":"duvnell","message":"so perhaps it's already a non-issue on win32","date":"2018-03-21T14:21:42.291Z","type":"message"}
+{"nick":"duvnell","message":"uv and win32 will be pumped together","date":"2018-03-21T14:21:54.029Z","type":"message"}
+{"nick":"duvnell","message":"\"IOCP on Windows\"","date":"2018-03-21T14:23:20.135Z","type":"message"}
+{"nick":"Raziel","message":"hm io completion ports use thread pools","date":"2018-03-21T14:24:32.593Z","type":"message"}
+{"nick":"duvnell","message":"uv uses iocp","date":"2018-03-21T14:24:59.253Z","type":"message"}
+{"nick":"Raziel","message":"I'm just saying it doesn't need a Peek/GetWindowMessage loop ;)","date":"2018-03-21T14:25:28.477Z","type":"message"}
+{"nick":"duvnell","message":"does it not deliver your \"completion\" events back to some main thread?","date":"2018-03-21T14:26:26.055Z","type":"message"}
+{"nick":"duvnell","message":"via the event system I would suspect","date":"2018-03-21T14:26:35.585Z","type":"message"}
+{"nick":"duvnell","message":"perhaps not","date":"2018-03-21T14:26:43.769Z","type":"message"}
+{"nick":"Raziel","message":"iirc there's an option for that yeah","date":"2018-03-21T14:26:52.211Z","type":"message"}
+{"nick":"duvnell","message":"guess I can grep the uv src for TranslateMesasge/DispatchMessage .. 1 sec","date":"2018-03-21T14:28:12.901Z","type":"message"}
+{"nick":"duvnell","message":"only in src/win/tty.c o_O?","date":"2018-03-21T14:30:23.454Z","type":"message"}
+{"nick":"duvnell","message":"at bottom uv seems to call GetQueuedCompletionStatusEx()","date":"2018-03-21T14:34:47.590Z","type":"message"}
+{"nick":"duvnell","message":"perhaps that's interrupted by win32 events.. not sure","date":"2018-03-21T14:35:05.634Z","type":"message"}
+{"nick":"Raziel","message":"hm it can only be interrupted by IO completion stuff iirc (and only when alertable is TRUE)","date":"2018-03-21T14:36:21.230Z","type":"message"}
+{"nick":"Raziel","message":"do your libuv and ui \"threads\" need to talk a lot?","date":"2018-03-21T14:37:22.299Z","type":"message"}
+{"nick":"Raziel","message":"because there's always uv_async_send","date":"2018-03-21T14:37:32.503Z","type":"message"}
+{"nick":"duvnell","message":"well the point would be to run the network i/o and gui on the same thread.. so that e.g. something from the network comes in which might get translated into some change in the UI.. having to proxy that across threads is possible, but a considerable design element.. having to be careful to do things in the correct thread","date":"2018-03-21T14:40:03.235Z","type":"message"}
+{"nick":"duvnell","message":"and at the same time not have arbitrary delays in event handling e.g. those that would be introduced by having to periodically handle events from one queue or the other","date":"2018-03-21T14:40:46.475Z","type":"message"}
+{"nick":"Raziel","message":"hm is it though? cause you're probably already separating the state from its rendering","date":"2018-03-21T14:40:52.782Z","type":"message"}
+{"nick":"duvnell","message":"that would mean that any event from the backend would have to be proxyed to the frontend, and any action taken on the frontend would have to be proxyed to the backend's thread","date":"2018-03-21T14:41:26.671Z","type":"message"}
+{"nick":"Raziel","message":"yup, aka a client-server design :D","date":"2018-03-21T14:41:42.119Z","type":"message"}
+{"nick":"duvnell","message":"the \"server\" is already elsewhere :_)","date":"2018-03-21T14:42:15.207Z","type":"message"}
+{"nick":"duvnell","message":"to get events from the server into some other process is what uv is already doing","date":"2018-03-21T14:42:33.466Z","type":"message"}
+{"nick":"duvnell","message":"now something else has to be done to get it from uv to ui thread.. seems unfortunate","date":"2018-03-21T14:42:45.592Z","type":"message"}
+{"nick":"Raziel","message":"what are you rendering, lists and stuff (like some \"normal\" office/ide/etc app) or game-ish graphics?","date":"2018-03-21T14:43:54.906Z","type":"message"}
+{"nick":"Raziel","message":"(btw I have libuv and UI in a single thread and can render game stuff just fine with no mouse/keyboard lag)","date":"2018-03-21T14:45:43.600Z","type":"message"}
+{"nick":"duvnell","message":"it's not specified yet.. I have an existing event processing system which runs atop Win32, Cocoa and X11 native event loops.. I was looking to add network i/o ","date":"2018-03-21T14:47:13.453Z","type":"message"}
+{"nick":"duvnell","message":".. and do so without getting into overlapped i/o on win32 myself","date":"2018-03-21T14:47:33.698Z","type":"message"}
+{"nick":"duvnell","message":"yuk","date":"2018-03-21T14:47:38.657Z","type":"message"}
+{"nick":"Raziel","message":"what's the existing system?","date":"2018-03-21T14:47:45.553Z","type":"message"}
+{"nick":"Raziel","message":"or it's something proprietary/custom?","date":"2018-03-21T14:47:52.747Z","type":"message"}
+{"nick":"duvnell","message":"something proprietary at my office","date":"2018-03-21T14:47:59.621Z","type":"message"}
+{"nick":"Raziel","message":"dunno, run libuv in a thread, post big chunk of network stuff into a shared queue and each time there's a new message in that queue you PostMessage() to that native event loop so it gets processed? :D","date":"2018-03-21T14:49:11.862Z","type":"message"}
+{"nick":"Raziel","message":"or if that proprietary stuff already uses boost, there's asio (otherwise I wouldn't recommend boost on my worst enemy)","date":"2018-03-21T14:50:21.926Z","type":"message"}
+{"nick":"duvnell","message":"yeah I'm leaning toward having to have a background thread.. at least I think I can do the proxying between threads in a lower layer without the code on top having to know anything about that (e.g. wrapping all network i/o in some Stream interface)","date":"2018-03-21T14:50:35.999Z","type":"message"}
+{"nick":"duvnell","message":"we do use some boost, but no asio","date":"2018-03-21T14:51:04.268Z","type":"message"}
+{"nick":"duvnell","message":"it's just that the comment here: http://docs.libuv.org/en/v1.x/guide/eventloops.html?highlight=qt  about running alongside qt perhaps was a hasty thought","date":"2018-03-21T14:52:38.829Z","type":"message"}
+{"nick":"duvnell","message":"I was hoping the author of that comment might .. um .. comment","date":"2018-03-21T14:52:50.754Z","type":"message"}
+{"nick":"duvnell","message":"\"juggling multiple loops\" it says","date":"2018-03-21T14:53:33.434Z","type":"message"}
+{"nick":"Raziel","message":"hm yeah not sure I see the link between that stop example and having Qt alongside","date":"2018-03-21T14:53:36.155Z","type":"message"}
+{"nick":"duvnell","message":"how?  without some sort of arbirary delay","date":"2018-03-21T14:53:43.935Z","type":"message"}
+{"nick":"duvnell","message":"aside from this, I've found everything to be pretty clearly stated","date":"2018-03-21T14:54:36.994Z","type":"message"}
+{"nick":"duvnell","message":"which is good","date":"2018-03-21T14:54:39.878Z","type":"message"}
+{"nick":"zkat_","new_nick":"zkat","date":"2018-03-21T15:39:33.967Z","type":"nick"}
