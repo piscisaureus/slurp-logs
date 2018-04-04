@@ -1,0 +1,43 @@
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2018-04-04T00:06:22.337Z","type":"quit"}
+{"nick":"caitp","message":"gsathya: yes","date":"2018-04-04T00:18:28.375Z","type":"message"}
+{"nick":"gsathya","message":"excellent","date":"2018-04-04T00:25:47.229Z","type":"message"}
+{"nick":"not-an-aardvark","date":"2018-04-04T01:57:40.877Z","type":"join"}
+{"nick":"howdoi","date":"2018-04-04T03:38:29.858Z","type":"join"}
+{"nick":"jmdyck","reason":"Remote host closed the connection","date":"2018-04-04T04:13:51.159Z","type":"quit"}
+{"nick":"vikash-afk","reason":"Ping timeout: 240 seconds","date":"2018-04-04T05:53:35.515Z","type":"quit"}
+{"nick":"bkst","reason":"Ping timeout: 256 seconds","date":"2018-04-04T05:54:09.582Z","type":"quit"}
+{"nick":"bkst","date":"2018-04-04T05:55:30.487Z","type":"join"}
+{"nick":"vikash-afk","date":"2018-04-04T05:57:27.836Z","type":"join"}
+{"nick":"Bakkot","message":"littledan / caitp: on reviewing that spec text again, that does create a pretty weird bit of observable semantics:","date":"2018-04-04T06:03:58.288Z","type":"message"}
+{"nick":"Bakkot","message":"`{ let f; class A extends (class {}) { x = (console.log(this), console.log(f())); constructor() { f = () => this; super(); } }; new A; }`","date":"2018-04-04T06:04:00.762Z","type":"message"}
+{"nick":"Bakkot","message":"the first console.log succeeds, the second fails with `this is not yet bound`","date":"2018-04-04T06:04:31.688Z","type":"message"}
+{"nick":"Bakkot","message":"(chrome actually gets this right; congrats gsathya.)","date":"2018-04-04T06:05:06.677Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: in your example, why would `f()` and `this` be different?","date":"2018-04-04T06:05:27.817Z","type":"message"}
+{"nick":"Bakkot","message":"anyway, not entirely sure if that's desirable. also would make a fun test262 test, if it's not one.","date":"2018-04-04T06:05:36.290Z","type":"message"}
+{"nick":"Bakkot","message":"ljharb: because class field initializers are effectively `.call`'d with the return value of super, so they can see the instance as `this`, but only _after they finish running_ is the `this` value within the constructor bound, which is what's necessary for `f()` to succeed","date":"2018-04-04T06:06:42.240Z","type":"message"}
+{"nick":"Bakkot","message":"littledan: to be clear, I'm not suggesting that anything be done about this, just wanted to note it","date":"2018-04-04T06:07:25.527Z","type":"message"}
+{"nick":"ljharb","message":"ah it's not tdz'd, it's simply \"not bound\" prior to super?","date":"2018-04-04T06:07:28.518Z","type":"message"}
+{"nick":"littledan","message":"Bakkot, yes, it would have those semantics. I think this is exactly what we were explicitly buying into when we said initializers had this in scope","date":"2018-04-04T06:08:29.326Z","type":"message"}
+{"nick":"Bakkot","message":"littledan: an alternative semantics could be `10. Perform ? thisER.BindThisValue(result). 11. Perform ? InitializeInstanceFields(result, F). 12. Return result.`","date":"2018-04-04T06:10:13.720Z","type":"message"}
+{"nick":"Bakkot","message":"which is 100% observably identical except that the call to `f` above would succeed.","date":"2018-04-04T06:10:48.132Z","type":"message"}
+{"nick":"Bakkot","message":"ljharb: tdz'd and \"not bound\" amount to the same thing; not sure what you're asking","date":"2018-04-04T06:11:06.190Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: wouldn't TDZd be like `const f = () => a; let a; f()` would work, meaning, that since `super()` binds `this`, `f()` would work - but by being not bound at all, f() always throws?","date":"2018-04-04T06:11:55.911Z","type":"message"}
+{"nick":"littledan","message":"Oh wait did we discusse this at some point?","date":"2018-04-04T06:12:10.680Z","type":"message"}
+{"nick":"Bakkot","message":"ljharb: no, the point is that the `let a` basically does not happen until _after_ the call to `f`, i.e., after all the initializers run","date":"2018-04-04T06:13:28.840Z","type":"message"}
+{"nick":"Bakkot","message":"littledan: no idea","date":"2018-04-04T06:13:30.818Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: ohhh right, so `super(); f()` would be fine, it's that `f()` runs inside an initializer that makes it throw?","date":"2018-04-04T06:14:01.850Z","type":"message"}
+{"nick":"Bakkot","message":"ljharb: exactly, yes.","date":"2018-04-04T06:14:10.588Z","type":"message"}
+{"nick":"ljharb","message":"got it","date":"2018-04-04T06:14:22.334Z","type":"message"}
+{"nick":"ljharb","message":"weird but makes sense","date":"2018-04-04T06:14:26.263Z","type":"message"}
+{"nick":"littledan","message":"I just don't have much of an option here. Honestly I don't think 'ah here's some crazy code, let's change the semantics' is such an awesome design strategy in general","date":"2018-04-04T06:14:39.561Z","type":"message"}
+{"nick":"littledan","message":"I don't think this edge case matters much","date":"2018-04-04T06:14:57.650Z","type":"message"}
+{"nick":"Bakkot","message":"lol","date":"2018-04-04T06:15:00.225Z","type":"message"}
+{"nick":"Bakkot","message":"yeah, agreed.","date":"2018-04-04T06:15:01.747Z","type":"message"}
+{"nick":"littledan","message":"And this is pretty superficial","date":"2018-04-04T06:15:04.636Z","type":"message"}
+{"nick":"littledan","message":"It's not about the deep meaning of what an object really is or something","date":"2018-04-04T06:15:22.062Z","type":"message"}
+{"nick":"Bakkot","message":"that said, I could imagine some engine noticing that their implementation could be more efficient if it were the other way around, which _if_ that happened I think it would be good to change the spec","date":"2018-04-04T06:17:42.621Z","type":"message"}
+{"nick":"Bakkot","message":"but that is purely hypothetical and I am not suggeting changing anything unless that unlikely hypothetical comes to pass; I just like highlighting weird edge cases","date":"2018-04-04T06:18:06.616Z","type":"message"}
+{"nick":"littledan","message":"I don't think this related to engine efficiency at all","date":"2018-04-04T06:20:01.786Z","type":"message"}
+{"nick":"littledan","message":"*relates","date":"2018-04-04T06:20:18.491Z","type":"message"}
+{"nick":"littledan","message":"This is just a one-off edge case","date":"2018-04-04T06:20:27.210Z","type":"message"}
+{"nick":"littledan","message":"This TDZ is a thing either way","date":"2018-04-04T06:20:42.675Z","type":"message"}
