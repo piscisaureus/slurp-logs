@@ -31,3 +31,91 @@
 {"nick":"srl295","date":"2018-04-06T15:41:26.124Z","type":"join"}
 {"nick":"caridy","reason":"Read error: Connection timed out","date":"2018-04-06T15:58:02.220Z","type":"quit"}
 {"nick":"caridy","date":"2018-04-06T15:59:11.461Z","type":"join"}
+{"nick":"caridy","reason":"Remote host closed the connection","date":"2018-04-06T16:05:57.312Z","type":"quit"}
+{"nick":"caridy","date":"2018-04-06T16:06:46.467Z","type":"join"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-04-06T17:28:49.574Z","type":"quit"}
+{"nick":"bradleymeck","date":"2018-04-06T17:51:13.806Z","type":"join"}
+{"nick":"jackhorton","date":"2018-04-06T18:04:52.425Z","type":"join"}
+{"nick":"jackhorton","message":"Intl question: Steps 13 and 14 of InitializePluralRules are super vague, but id imagine everyone in ICU land is using uplrules_getKeywords. Unfortunately, theres no version of that that takes into account the number formatting options, so right now chakra vnext, spidermonkey, and V8 can report the wrong pluralCategories when the number formatting options are being used. Also, chakra can use some older versions of ICU that","date":"2018-04-06T18:11:02.143Z","type":"message"}
+{"nick":"jackhorton","message":"don't have uloc_getKeywords, so we fall back to just saying [ \"other\" ] there. In general, what is the point of reporting these categories? How are they expected to be used? Is it an issue if what engines report doesn't exactly line up with what they use?","date":"2018-04-06T18:11:02.360Z","type":"message"}
+{"nick":"jackhorton","message":"For example, `new Intl.PluralRules(\"en-US\", { type: \"cardinal\", minimumFractionDigits: 3 }).resolvedOptions()` reports [\"one\", \"other\"] but as far as I can tell, select(1) will always report \"other\" because its actually 1.000 and thus \"one\" is never used","date":"2018-04-06T18:13:51.131Z","type":"message"}
+{"nick":"littledan","message":"jackhorton: That's a great question. When implementing this in V8, I took a look at what SpiderMonkey did and just sort of cargo-culted it. Let me pull it up to remember...","date":"2018-04-06T18:30:08.428Z","type":"message"}
+{"nick":"littledan","message":"I think it was something like, actually format the number, then do PluralRules on it","date":"2018-04-06T18:30:33.452Z","type":"message"}
+{"nick":"littledan","message":"anyway we knew at the time that this was something of a mismatch with ICU. I think there's a bug open on the ICU trac to add this feature (but it's getting ignored like all of the other Intl-related issues)","date":"2018-04-06T18:31:07.184Z","type":"message"}
+{"nick":"littledan","message":"jackhorton: Yeah, what we do in V8 is actually format the number, then parse the number, then pass this into the C++ equivalent of uplrules_getKeywords","date":"2018-04-06T18:32:12.525Z","type":"message"}
+{"nick":"littledan","message":"jackhorton: Would that work for you>?","date":"2018-04-06T18:32:18.974Z","type":"message"}
+{"nick":"littledan","message":"hmm, the V8 code points to http://bugs.icu-project.org/trac/ticket/12763 but I think there's more beyond that that would be nice","date":"2018-04-06T18:33:21.873Z","type":"message"}
+{"nick":"littledan","message":"maybe we should discuss this at the next Intl meeting","date":"2018-04-06T18:33:28.668Z","type":"message"}
+{"nick":"jackhorton","message":"yeah, so selectWithFormat exists (its internal, so Chakra can't use it -- I already brought this up with our ICU people to bring up to ICU TC), but there isn't a getKeywordsWithFormat, so the two will be at odds","date":"2018-04-06T18:40:25.770Z","type":"message"}
+{"nick":"jackhorton","message":"also we cant use any C++ APIs so if C++ has an expanded capability here, that's not super useful. With that being said, the code above in Chrome shows [\"one\", \"other\"], even though one is never used","date":"2018-04-06T18:41:32.589Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-04-06T19:00:52.940Z","type":"quit"}
+{"nick":"jwalden","date":"2018-04-06T19:27:52.194Z","type":"join"}
+{"nick":"bradleymeck","date":"2018-04-06T19:50:19.190Z","type":"join"}
+{"nick":"pandem","reason":"Ping timeout: 240 seconds","date":"2018-04-06T20:14:27.789Z","type":"quit"}
+{"nick":"pandem","date":"2018-04-06T20:15:43.349Z","type":"join"}
+{"nick":"rkirsling","date":"2018-04-06T20:41:45.856Z","type":"join"}
+{"nick":"srl295","message":"jackhorton: uplrules_selectWithFormat is 'tech preview'","date":"2018-04-06T21:41:18.664Z","type":"message"}
+{"nick":"jackhorton","message":"sure. However, Windows can't include anything that isn't stable in public windows headers, so its not exposed by the system ICU on Windows and thus we cant (well.... really really shouldn't) use it in Chakra. We self-impose the same things on other platforms by hiding all draft/internal/deprecated APIs at compile time","date":"2018-04-06T21:43:02.991Z","type":"message"}
+{"nick":"srl295","message":"jackhorton:  but I don't see a proposal to make it a public API. So it will just stay internal at that point","date":"2018-04-06T21:43:27.050Z","type":"message"}
+{"nick":"srl295","message":"it's kind of a chicken and egg issue then. If you don't use it, it won't get feedback. Could you start with using it anyway (even if internal ) to see if it does what you need? then file a proposal to make it public?","date":"2018-04-06T21:44:16.311Z","type":"message"}
+{"nick":"srl295","message":"littledan: > it's getting ignored like all of the other Intl-related issues…   So we need people to push on your org representatives (Chrome in this case ) and/or contribute patches. Otherwise something will just show up as a nice to have.","date":"2018-04-06T21:45:35.243Z","type":"message"}
+{"nick":"jackhorton","message":"yeah, I only brought it to jeff genovy's attention yesterday, as I didn't realize it would be necessary to implement Intl.PluralRules. And, technically, it isn't, we can just use select() and be wrong when someone asks for different number options. But, if this API could be stabilized or re-thought into a version that can be stabilized, that would probably be best for everyone (the fact that all JS engines depend on an API","date":"2018-04-06T21:45:50.370Z","type":"message"}
+{"nick":"jackhorton","message":"marked \"internal: do not use\" in the ICU docs seems less than ideal)","date":"2018-04-06T21:45:50.551Z","type":"message"}
+{"nick":"srl295","message":"jackhorton:  it's marked \" * @internal ICU 59 technology preview, may be removed in the future\"","date":"2018-04-06T21:46:13.525Z","type":"message"}
+{"nick":"littledan","message":"Sorry for my wording there, but I still haven't heard back about even the design proposal for RelativeTimeFormat.formatToParts","date":"2018-04-06T21:47:34.947Z","type":"message"}
+{"nick":"srl295","message":"jackhorton: OK, i see what you mean: \"Internal do not use\"","date":"2018-04-06T21:47:38.051Z","type":"message"}
+{"nick":"srl295","message":"littledan: can you join an 8am Pacific call?","date":"2018-04-06T21:47:53.378Z","type":"message"}
+{"nick":"littledan","message":"Which day?","date":"2018-04-06T21:48:00.256Z","type":"message"}
+{"nick":"srl295","message":"not 8am, sorry","date":"2018-04-06T21:48:06.454Z","type":"message"}
+{"nick":"jackhorton","message":"I think \"do not use\" is probably auto-added to all internal API docs?","date":"2018-04-06T21:48:07.262Z","type":"message"}
+{"nick":"littledan","message":"In general that time works for me","date":"2018-04-06T21:48:08.962Z","type":"message"}
+{"nick":"srl295","message":"jackhorton: yes, it's in the Doxygen config. I'll file a bug on this..","date":"2018-04-06T21:48:16.591Z","type":"message"}
+{"nick":"srl295","message":"http://bugs.icu-project.org/trac/ticket/13685","date":"2018-04-06T21:49:07.559Z","type":"message"}
+{"nick":"littledan","message":"I wasn't aware that these issues were blocked on code. I thought they were blocked more on a decision from maintainers. Maybe I am misunderstanding","date":"2018-04-06T21:49:42.898Z","type":"message"}
+{"nick":"littledan","message":"Or is the decision-making blocked on Chrome pushing harder?","date":"2018-04-06T21:50:37.841Z","type":"message"}
+{"nick":"littledan","message":"It's just unclear to me what the process is here","date":"2018-04-06T21:51:01.810Z","type":"message"}
+{"nick":"srl295","message":"I don't think anyone is pushing at all, that's the problem","date":"2018-04-06T21:51:02.547Z","type":"message"}
+{"nick":"littledan","message":"How am I supposed to push?","date":"2018-04-06T21:51:12.988Z","type":"message"}
+{"nick":"littledan","message":"We talked with you about the issues, in several Intl meetings. What is the next step?","date":"2018-04-06T21:51:33.722Z","type":"message"}
+{"nick":"littledan","message":"We also filed bugs and sent emails to icu-design","date":"2018-04-06T21:52:26.152Z","type":"message"}
+{"nick":"srl295","message":"roght","date":"2018-04-06T21:52:31.993Z","type":"message"}
+{"nick":"srl295","message":"right","date":"2018-04-06T21:52:34.606Z","type":"message"}
+{"nick":"srl295","message":"for icu-design - would be good to get you on the call to discuss the api proposal","date":"2018-04-06T21:53:17.557Z","type":"message"}
+{"nick":"littledan","message":"Sure, what is the call?","date":"2018-04-06T21:53:33.451Z","type":"message"}
+{"nick":"littledan","message":"Happy to join","date":"2018-04-06T21:53:37.600Z","type":"message"}
+{"nick":"littledan","message":"There are lots of smaller bugs open as well--would those be good topics for the call?","date":"2018-04-06T21:54:49.581Z","type":"message"}
+{"nick":"srl295","message":"yes. I wonder if you can send me a list of agenda items and i can send it around and get feedback so that it is on the agenda ? next ICU call would be https://time.is/compare/0945_11_Apr_2018_in_PT","date":"2018-04-06T21:55:45.591Z","type":"message"}
+{"nick":"littledan","message":"I will be traveling then. When is the one after that?","date":"2018-04-06T21:57:19.518Z","type":"message"}
+{"nick":"srl295","message":"every week","date":"2018-04-06T21:57:29.613Z","type":"message"}
+{"nick":"littledan","message":"Oh perfect","date":"2018-04-06T21:57:35.404Z","type":"message"}
+{"nick":"littledan","message":"Yeah the same time the following week works for me, and that gives plenty of time to compile agenda items in advance","date":"2018-04-06T21:58:36.585Z","type":"message"}
+{"nick":"srl295","message":"Great","date":"2018-04-06T21:58:44.540Z","type":"message"}
+{"nick":"littledan","message":"How do I call in?","date":"2018-04-06T21:58:58.909Z","type":"message"}
+{"nick":"srl295","message":"i'll get you the info- sending a note to icu-tc now","date":"2018-04-06T21:59:15.790Z","type":"message"}
+{"nick":"littledan","message":"Thanks!","date":"2018-04-06T22:00:31.953Z","type":"message"}
+{"nick":"srl295","message":"np","date":"2018-04-06T22:00:36.202Z","type":"message"}
+{"nick":"littledan","message":"I probably won't want to come to all of these, but it will be good to be able to attend as things come up for Ecma 402","date":"2018-04-06T22:01:30.871Z","type":"message"}
+{"nick":"srl295","message":"littledan: http://bugs.icu-project.org/trac/ticket/12763#comment:18 please file a seprate ticket about this if you didn't already","date":"2018-04-06T22:01:40.396Z","type":"message"}
+{"nick":"srl295","message":"icu 62 has a shorter release cycle","date":"2018-04-06T22:02:12.246Z","type":"message"}
+{"nick":"srl295","message":"> ICU 62 feature freeze: 2018-05-09 (no more API changes)","date":"2018-04-06T22:02:42.429Z","type":"message"}
+{"nick":"littledan","message":"The release cycles don't really matter to me personally--if we can get the changes in some time in the next year, I am happy","date":"2018-04-06T22:02:48.740Z","type":"message"}
+{"nick":"littledan","message":"Maybe others will be more eager","date":"2018-04-06T22:03:03.765Z","type":"message"}
+{"nick":"littledan","message":"I can understand if new features will be low priority towards the end of the cycle; if so I am fine calling in later","date":"2018-04-06T22:03:30.034Z","type":"message"}
+{"nick":"srl295","message":"littledan: agenda is at http://site.icu-project.org/projectinfo/meetings","date":"2018-04-06T22:03:39.271Z","type":"message"}
+{"nick":"srl295","message":"earlier is better for features","date":"2018-04-06T22:03:57.421Z","type":"message"}
+{"nick":"srl295","message":"unfortunately i personally am not able to do much feature work. My ICU time this year is around infrastructure transition","date":"2018-04-06T22:04:49.552Z","type":"message"}
+{"nick":"littledan","message":"That is fine; I think if we figure out what sorts of changes might be accepted, we can find development resources somewhere or other","date":"2018-04-06T22:05:30.410Z","type":"message"}
+{"nick":"srl295","message":"but trying to advocate here wherever i can","date":"2018-04-06T22:05:33.785Z","type":"message"}
+{"nick":"srl295","message":"here's a custom query that will find things with the ecma keyword http://bugs.icu-project.org/trac/query?status=!closed&keywords=~ecma","date":"2018-04-06T22:06:15.298Z","type":"message"}
+{"nick":"littledan","message":"Do you discuss features that will land in the following release in these meetings, or is the agenda typically focused on the release under current development?","date":"2018-04-06T22:06:20.706Z","type":"message"}
+{"nick":"srl295","message":"we discuss whatever people bring up. we definitely approve apis for a future release. (so approving 62 apis when 61 is about to ship, say).","date":"2018-04-06T22:07:02.461Z","type":"message"}
+{"nick":"littledan","message":"Great","date":"2018-04-06T22:07:23.210Z","type":"message"}
+{"nick":"littledan","message":"Ok I will review these notes, the open issues, and get back to you late next week with something to put on a future meeting agenda","date":"2018-04-06T22:08:07.433Z","type":"message"}
+{"nick":"srl295","message":"sounds good. a shared (typically) google doc could work also, i can link it into the agenda","date":"2018-04-06T22:08:58.849Z","type":"message"}
+{"nick":"littledan","message":"OK works for me","date":"2018-04-06T22:09:53.534Z","type":"message"}
+{"nick":"littledan","message":"Sorry for my snark, and thanks for opening this invitation","date":"2018-04-06T22:10:11.420Z","type":"message"}
+{"nick":"srl295","message":"oh np. cool. could post it around here, etc.","date":"2018-04-06T22:10:28.168Z","type":"message"}
+{"nick":"littledan","message":"Right, of course, but it will take me some time to prepare everything","date":"2018-04-06T22:11:24.987Z","type":"message"}
+{"nick":"bradleymeck","reason":"Quit: bradleymeck","date":"2018-04-06T22:43:19.964Z","type":"quit"}
+{"nick":"AtumT_","date":"2018-04-06T22:59:59.145Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 265 seconds","date":"2018-04-06T23:00:17.449Z","type":"quit"}
