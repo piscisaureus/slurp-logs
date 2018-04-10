@@ -1213,3 +1213,1034 @@
 {"nick":"DeltaHeavy","message":"zumba_addict Not that I know of. You can always use pm2 with nginx for load balancing. How many requests we talking about here?","date":"2018-04-09T15:59:32.293Z","type":"message"}
 {"nick":"zumba_addict","message":"yup, pm2 is running","date":"2018-04-09T15:59:43.128Z","type":"message"}
 {"nick":"zumba_addict","message":"maybe 1000-1500 requests per min","date":"2018-04-09T15:59:57.801Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Well if you're using pm2 and doing load balancing you should be good.","date":"2018-04-09T16:00:21.111Z","type":"message"}
+{"nick":"zsoc","message":"what do you mean \"max connections\"?","date":"2018-04-09T16:00:43.492Z","type":"message"}
+{"nick":"zumba_addict","message":"the ec2 image I'm using only has 1 cpu. I noticed that when I ran pm2","date":"2018-04-09T16:00:45.154Z","type":"message"}
+{"nick":"zumba_addict","message":"max tcp connections","date":"2018-04-09T16:00:51.757Z","type":"message"}
+{"nick":"zsoc","message":"if you're using 1 cpu then you only want 1 instance","date":"2018-04-09T16:00:54.075Z","type":"message"}
+{"nick":"zumba_addict","message":"yup","date":"2018-04-09T16:00:58.197Z","type":"message"}
+{"nick":"zsoc","message":"max tcp connections is based on the OS","date":"2018-04-09T16:00:58.864Z","type":"message"}
+{"nick":"zsoc","message":"which is either max sockets or max file descriptors","date":"2018-04-09T16:01:05.991Z","type":"message"}
+{"nick":"zumba_addict","message":"so i'll update sysctl.conf","date":"2018-04-09T16:01:07.216Z","type":"message"}
+{"nick":"zsoc","message":"is this linux?","date":"2018-04-09T16:01:10.088Z","type":"message"}
+{"nick":"zumba_addict","message":"yes","date":"2018-04-09T16:01:12.311Z","type":"message"}
+{"nick":"zumba_addict","message":"i'll play with sysctl.conf","date":"2018-04-09T16:01:21.047Z","type":"message"}
+{"nick":"zsoc","message":"cat /proc/sys/fs/file-max","date":"2018-04-09T16:01:25.979Z","type":"message"}
+{"nick":"zumba_addict","message":"let me ssh","date":"2018-04-09T16:01:37.349Z","type":"message"}
+{"nick":"zsoc","message":"it should be something dumb like 30k or whatever, it depends on the distro","date":"2018-04-09T16:01:56.233Z","type":"message"}
+{"nick":"zsoc","message":"assuming it's a 64 bit system this should not be a bottleneck","date":"2018-04-09T16:02:16.589Z","type":"message"}
+{"nick":"zsoc","message":"i think on some versions of macos this can be an issue out of the box... but any linux server distro should be fine","date":"2018-04-09T16:02:28.660Z","type":"message"}
+{"nick":"zumba_addict","message":"200824","date":"2018-04-09T16:03:03.323Z","type":"message"}
+{"nick":"zumba_addict","message":"I was even thinking of putting the nodejs+redis in our nginx server. This way, there won't be anymore network calls","date":"2018-04-09T16:03:37.828Z","type":"message"}
+{"nick":"zumba_addict","message":"across network calls","date":"2018-04-09T16:03:42.924Z","type":"message"}
+{"nick":"zsoc","message":"what kind of requests is this handling","date":"2018-04-09T16:04:12.716Z","type":"message"}
+{"nick":"zsoc","message":"what does the redis instance do","date":"2018-04-09T16:04:15.858Z","type":"message"}
+{"nick":"zsoc","message":"is this scaleable? like.. stateless? is that what redis is for? your best bet is going to be deploying it on something with more cpu cores and spinning up +1 in a cluster per core with pm2","date":"2018-04-09T16:04:43.254Z","type":"message"}
+{"nick":"zsoc","message":"that should especially multiple the throughput fairly directly","date":"2018-04-09T16:04:53.715Z","type":"message"}
+{"nick":"zumba_addict","message":"we're making a dynamic index.html. Express generates it. It grabs data from an api server. The data is stored on the redis and then served back to nginx","date":"2018-04-09T16:04:58.129Z","type":"message"}
+{"nick":"zsoc","message":"oo","date":"2018-04-09T16:05:07.782Z","type":"message"}
+{"nick":"zsoc","message":"hmm uh","date":"2018-04-09T16:05:11.536Z","type":"message"}
+{"nick":"zumba_addict","message":"yes, I'll add more cores","date":"2018-04-09T16:05:12.937Z","type":"message"}
+{"nick":"botho","reason":"Quit: ZNC - http://znc.in","date":"2018-04-09T16:05:13.746Z","type":"quit"}
+{"nick":"zsoc","message":"hmm","date":"2018-04-09T16:05:15.838Z","type":"message"}
+{"nick":"zsoc","message":"so you have nginx serving... non-static files?","date":"2018-04-09T16:05:23.031Z","type":"message"}
+{"nick":"zsoc","message":"i'm confused by that","date":"2018-04-09T16:05:24.681Z","type":"message"}
+{"nick":"flaviodesousa","reason":"Ping timeout: 276 seconds","date":"2018-04-09T16:05:26.797Z","type":"quit"}
+{"nick":"zsoc","message":"by \"served back to nginx\" you mean that express is generating static pages based on cached data and nginx is serving that data? That makes more sense, sure","date":"2018-04-09T16:05:59.971Z","type":"message"}
+{"nick":"zsoc","message":"and there's just some threshold for cachebusting or w/e?","date":"2018-04-09T16:06:10.135Z","type":"message"}
+{"nick":"botho","date":"2018-04-09T16:06:33.213Z","type":"join"}
+{"nick":"zumba_addict","message":"nginx proxy_pass'es to the express. The express (right before res.send or res.render), it makes an api call to our product api server. Response is in json. The json is included in the index.html that will be returned by Express","date":"2018-04-09T16:06:33.390Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict Do load testing before tackling assumed perf issues IMO :p","date":"2018-04-09T16:06:43.938Z","type":"message"}
+{"nick":"zumba_addict","message":"Nginx takes care of the cachebusting","date":"2018-04-09T16:06:46.296Z","type":"message"}
+{"nick":"zumba_addict","message":"will do","date":"2018-04-09T16:06:54.272Z","type":"message"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 245 seconds","date":"2018-04-09T16:07:17.071Z","type":"quit"}
+{"nick":"zsoc","message":"oh, so express is actually serving the data per request","date":"2018-04-09T16:07:30.624Z","type":"message"}
+{"nick":"zumba_addict","message":"our index.html will be served with the products. In browser, we won't see anymore product api calls","date":"2018-04-09T16:07:31.631Z","type":"message"}
+{"nick":"zumba_addict","message":"yes","date":"2018-04-09T16:07:34.708Z","type":"message"}
+{"nick":"zsoc","message":"sure, yeah that's pretty normal stuff","date":"2018-04-09T16:07:40.524Z","type":"message"}
+{"nick":"zsoc","message":"the bottleneck really is your api server","date":"2018-04-09T16:07:45.788Z","type":"message"}
+{"nick":"zumba_addict","message":"and that product doesn't change oftern","date":"2018-04-09T16:07:47.368Z","type":"message"}
+{"nick":"zumba_addict","message":"yes","date":"2018-04-09T16:07:49.302Z","type":"message"}
+{"nick":"zsoc","message":"depending on the data, you maybe want to implement memoization","date":"2018-04-09T16:07:55.464Z","type":"message"}
+{"nick":"zumba_addict","message":"i quite agree. Redis will help a lot","date":"2018-04-09T16:07:58.177Z","type":"message"}
+{"nick":"zsoc","message":"oh is that what redis does?","date":"2018-04-09T16:08:04.654Z","type":"message"}
+{"nick":"zumba_addict","message":"yes","date":"2018-04-09T16:08:08.267Z","type":"message"}
+{"nick":"zsoc","message":"gotcha","date":"2018-04-09T16:08:10.679Z","type":"message"}
+{"nick":"zumba_addict","message":"it's extremely fast on my poc","date":"2018-04-09T16:08:15.936Z","type":"message"}
+{"nick":"jezeniel_","date":"2018-04-09T16:08:30.073Z","type":"join"}
+{"nick":"zsoc","message":"i'm lazy and would normally just wrap it in a memoizee() call with an X minute/hour cache life and skip redis :p","date":"2018-04-09T16:08:30.706Z","type":"message"}
+{"nick":"zumba_addict","message":"first call to the express, it's about 956ms. Next call is down to 0.102ms","date":"2018-04-09T16:08:33.122Z","type":"message"}
+{"nick":"zsoc","message":"but redis is better obv if you're scaling the application","date":"2018-04-09T16:08:46.697Z","type":"message"}
+{"nick":"zumba_addict","message":"yup","date":"2018-04-09T16:08:50.620Z","type":"message"}
+{"nick":"zsoc","message":"neat, then you seem gud :p","date":"2018-04-09T16:08:59.234Z","type":"message"}
+{"nick":"zumba_addict","message":"cool","date":"2018-04-09T16:09:03.458Z","type":"message"}
+{"nick":"NomadJim","reason":"Read error: Connection reset by peer","date":"2018-04-09T16:09:05.637Z","type":"quit"}
+{"nick":"zumba_addict","message":"i'll also check out redis sentinel if I like redis clustering","date":"2018-04-09T16:09:20.331Z","type":"message"}
+{"nick":"zumba_addict","message":"I like this setup because it's very easy. When I look at lambda, it was so confusing.","date":"2018-04-09T16:09:47.049Z","type":"message"}
+{"nick":"zumba_addict","message":"looked","date":"2018-04-09T16:09:50.749Z","type":"message"}
+{"nick":"NomadJim","date":"2018-04-09T16:09:51.167Z","type":"join"}
+{"nick":"zumba_addict","message":"that's what the other dev likes to implement here at work","date":"2018-04-09T16:10:05.265Z","type":"message"}
+{"nick":"zumba_addict","message":"I gave him pros and cons","date":"2018-04-09T16:10:20.366Z","type":"message"}
+{"nick":"smccarthy","reason":"Remote host closed the connection","date":"2018-04-09T16:10:39.386Z","type":"quit"}
+{"nick":"zumba_addict","message":"he also told me that our devops has been telling him that lambda is highly performant. I just said \"hmm, ok :)\"","date":"2018-04-09T16:11:36.962Z","type":"message"}
+{"nick":"SenasOzys","date":"2018-04-09T16:11:53.307Z","type":"join"}
+{"nick":"Venemo","date":"2018-04-09T16:12:23.268Z","type":"join"}
+{"nick":"kingarmadillo","date":"2018-04-09T16:12:56.359Z","type":"join"}
+{"nick":"darkhanb","date":"2018-04-09T16:13:46.480Z","type":"join"}
+{"nick":"shamanime_","reason":"Quit: Bye bye","date":"2018-04-09T16:14:06.053Z","type":"quit"}
+{"nick":"eduardodeoh","reason":"Quit: Bye Bye","date":"2018-04-09T16:14:06.230Z","type":"quit"}
+{"nick":"igemnace","reason":"Ping timeout: 260 seconds","date":"2018-04-09T16:14:37.333Z","type":"quit"}
+{"nick":"jkridner","reason":"Remote host closed the connection","date":"2018-04-09T16:14:38.249Z","type":"quit"}
+{"nick":"dr3w_","reason":"Quit: https://media3.giphy.com/media/3oKIPsx2VAYAgEHC12/giphy.gif","date":"2018-04-09T16:14:55.027Z","type":"quit"}
+{"nick":"Zames","reason":"Ping timeout: 264 seconds","date":"2018-04-09T16:15:21.462Z","type":"quit"}
+{"nick":"a--m","reason":"Quit: The Lounge - https://thelounge.github.io","date":"2018-04-09T16:15:24.052Z","type":"quit"}
+{"nick":"Zames_","date":"2018-04-09T16:15:28.265Z","type":"join"}
+{"nick":"Stigandr","reason":"Quit: ZNC 1.7.x-nightly-20180102-d4ae3115 - https://znc.in","date":"2018-04-09T16:15:47.583Z","type":"quit"}
+{"nick":"chrisbarless","date":"2018-04-09T16:16:12.308Z","type":"join"}
+{"nick":"kevvor","reason":"Quit: Leaving...","date":"2018-04-09T16:18:45.100Z","type":"quit"}
+{"nick":"cthulchu","message":"what is the complexity of string.length() and array.length() ?","date":"2018-04-09T16:21:06.733Z","type":"message"}
+{"nick":"cthulchu","message":"is it 1 or N?","date":"2018-04-09T16:21:12.545Z","type":"message"}
+{"nick":"Rashad","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T16:21:16.589Z","type":"quit"}
+{"nick":"cthulchu","message":"I expect it to be 1","date":"2018-04-09T16:21:20.454Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Probably depends on the implementation","date":"2018-04-09T16:22:04.193Z","type":"message"}
+{"nick":"cthulchu","message":"we're talking javascript","date":"2018-04-09T16:22:14.741Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I know","date":"2018-04-09T16:22:49.196Z","type":"message"}
+{"nick":"jkridner","date":"2018-04-09T16:23:07.795Z","type":"join"}
+{"nick":"a--m","date":"2018-04-09T16:23:15.433Z","type":"join"}
+{"nick":"DeltaHeavy","message":"String#length is likely calculated once when the string is created","date":"2018-04-09T16:23:23.019Z","type":"message"}
+{"nick":"DeltaHeavy","message":"And primatives are immutable so it won't change","date":"2018-04-09T16:23:28.470Z","type":"message"}
+{"nick":"cthulchu","message":"hm","date":"2018-04-09T16:23:42.509Z","type":"message"}
+{"nick":"cthulchu","message":"it's not calculated once 100%","date":"2018-04-09T16:23:58.876Z","type":"message"}
+{"nick":"cthulchu","message":"because size != length","date":"2018-04-09T16:24:05.413Z","type":"message"}
+{"nick":"cthulchu","message":"what you mean is there's one sequential block of memory for a string hence the complexity of length is 1 for a string","date":"2018-04-09T16:24:40.003Z","type":"message"}
+{"nick":"DeltaHeavy","message":"length in a string is the number of UTF-16 characters are in there. An emoji is 2 of them.","date":"2018-04-09T16:24:40.262Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Though still, a string doesn't change. primatives are immutable","date":"2018-04-09T16:24:49.231Z","type":"message"}
+{"nick":"McNugit","date":"2018-04-09T16:24:50.727Z","type":"join"}
+{"nick":"DeltaHeavy","message":"When you do string manipulation, you're creating new strings","date":"2018-04-09T16:25:02.849Z","type":"message"}
+{"nick":"cthulchu","message":"that's fine","date":"2018-04-09T16:25:10.701Z","type":"message"}
+{"nick":"cthulchu","message":"but still, js will delete the unaccessible now string, right?","date":"2018-04-09T16:25:32.889Z","type":"message"}
+{"nick":"cthulchu","message":"otherwise it's a leak","date":"2018-04-09T16:25:41.443Z","type":"message"}
+{"nick":"cthulchu","message":"sure it will","date":"2018-04-09T16:25:47.027Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Yep","date":"2018-04-09T16:25:58.739Z","type":"message"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T16:25:58.970Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T16:26:27.922Z","type":"join"}
+{"nick":"DeltaHeavy","message":"Idk how Array.prototype.length is calculated though","date":"2018-04-09T16:27:01.951Z","type":"message"}
+{"nick":"jezeniel_","reason":"Ping timeout: 256 seconds","date":"2018-04-09T16:27:11.429Z","type":"quit"}
+{"nick":"cthulchu","message":"I think array is the same","date":"2018-04-09T16:27:20.829Z","type":"message"}
+{"nick":"jkridner","reason":"Ping timeout: 240 seconds","date":"2018-04-09T16:27:27.759Z","type":"quit"}
+{"nick":"cthulchu","message":"well or similar","date":"2018-04-09T16:27:28.481Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Yeah, starting to think so too","date":"2018-04-09T16:27:43.583Z","type":"message"}
+{"nick":"cthulchu","message":"I think JS gives it the memory it wants plus half that much","date":"2018-04-09T16:27:51.147Z","type":"message"}
+{"nick":"botho","reason":"Quit: ZNC - http://znc.in","date":"2018-04-09T16:28:04.502Z","type":"quit"}
+{"nick":"cthulchu","message":"if we exceed the additional memory, it will destroy the array and create a new one","date":"2018-04-09T16:28:07.131Z","type":"message"}
+{"nick":"cthulchu","message":"hence .length is not complex at all","date":"2018-04-09T16:28:19.734Z","type":"message"}
+{"nick":"cthulchu","message":"so there's no practical need to store it in a variable","date":"2018-04-09T16:28:29.190Z","type":"message"}
+{"nick":"cthulchu","message":"we can just always call .length()","date":"2018-04-09T16:28:44.278Z","type":"message"}
+{"nick":"coot_","reason":"Quit: coot_","date":"2018-04-09T16:28:45.070Z","type":"quit"}
+{"nick":"computer2000","reason":"Remote host closed the connection","date":"2018-04-09T16:29:12.551Z","type":"quit"}
+{"nick":"botho","date":"2018-04-09T16:29:20.431Z","type":"join"}
+{"nick":"patarr","reason":"Ping timeout: 240 seconds","date":"2018-04-09T16:29:27.777Z","type":"quit"}
+{"nick":"jezeniel_","date":"2018-04-09T16:29:35.566Z","type":"join"}
+{"nick":"ktilcu","reason":"Read error: Connection reset by peer","date":"2018-04-09T16:29:37.625Z","type":"quit"}
+{"nick":"ktilcu","date":"2018-04-09T16:30:05.528Z","type":"join"}
+{"nick":"shoky_","message":"it's not a function, btw :p","date":"2018-04-09T16:30:25.284Z","type":"message"}
+{"nick":"saltybard","reason":"Client Quit","date":"2018-04-09T16:30:31.020Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T16:30:49.829Z","type":"join"}
+{"nick":"McNugit","reason":"Ping timeout: 265 seconds","date":"2018-04-09T16:31:14.424Z","type":"quit"}
+{"nick":"Rashad","date":"2018-04-09T16:32:06.029Z","type":"join"}
+{"nick":"toi","date":"2018-04-09T16:34:32.786Z","type":"join"}
+{"nick":"DeltaHeavy","message":"cthulchu All numbers are the same size in memory in JS","date":"2018-04-09T16:34:39.130Z","type":"message"}
+{"nick":"cthulchu","message":"expectable","date":"2018-04-09T16:34:59.259Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I think so anyways...one's that aren't suuuuuuper big or super percise","date":"2018-04-09T16:34:59.451Z","type":"message"}
+{"nick":"cthulchu","message":"like two bytes?","date":"2018-04-09T16:35:03.279Z","type":"message"}
+{"nick":"DeltaHeavy","message":"float64s","date":"2018-04-09T16:35:03.817Z","type":"message"}
+{"nick":"cthulchu","message":"oh, more like four","date":"2018-04-09T16:35:09.214Z","type":"message"}
+{"nick":"cthulchu","message":"oh","date":"2018-04-09T16:35:13.481Z","type":"message"}
+{"nick":"cthulchu","message":"okay","date":"2018-04-09T16:35:15.354Z","type":"message"}
+{"nick":"DeltaHeavy","message":"8 I think","date":"2018-04-09T16:35:28.229Z","type":"message"}
+{"nick":"cthulchu","message":"yeah","date":"2018-04-09T16:35:32.119Z","type":"message"}
+{"nick":"qard","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T16:35:34.628Z","type":"quit"}
+{"nick":"cthulchu","message":"still fine, I guess","date":"2018-04-09T16:35:37.451Z","type":"message"}
+{"nick":"nahtnam","date":"2018-04-09T16:35:42.682Z","type":"join"}
+{"nick":"beaky","date":"2018-04-09T16:35:50.651Z","type":"join"}
+{"nick":"nahtnam","message":"Anyone have a working webpack 4 config for SASS? I keep getting the error \"Use Chunks.groupsIterable and filter by instanceof Entrypoint instead\"","date":"2018-04-09T16:35:54.028Z","type":"message"}
+{"nick":"gloomy","reason":"Ping timeout: 276 seconds","date":"2018-04-09T16:38:35.755Z","type":"quit"}
+{"nick":"SwiftMatt","date":"2018-04-09T16:39:50.531Z","type":"join"}
+{"nick":"bradfordli123","date":"2018-04-09T16:40:49.842Z","type":"join"}
+{"nick":"igemnace","date":"2018-04-09T16:41:28.494Z","type":"join"}
+{"nick":"cthulchu","message":"using exceptions as a way of breaking out of a foreach is not too bad, is it?","date":"2018-04-09T16:42:01.165Z","type":"message"}
+{"nick":"captain_morgan","reason":"Quit: Ex-Chat","date":"2018-04-09T16:42:32.477Z","type":"quit"}
+{"nick":"cthulchu","message":"nope, I'll be a nice boy and use some instead of foreach :)","date":"2018-04-09T16:43:14.118Z","type":"message"}
+{"nick":"bradfordli123","reason":"Remote host closed the connection","date":"2018-04-09T16:43:14.295Z","type":"quit"}
+{"nick":"cthulchu","message":"hehe","date":"2018-04-09T16:43:16.030Z","type":"message"}
+{"nick":"captain_morgan","date":"2018-04-09T16:43:21.228Z","type":"join"}
+{"nick":"cthulchu","message":"and every","date":"2018-04-09T16:43:37.284Z","type":"message"}
+{"nick":"bradfordli123","date":"2018-04-09T16:44:02.034Z","type":"join"}
+{"nick":"SwiftMatt","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2018-04-09T16:44:50.035Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"cthulchu Using try / catch for flow control is bad","date":"2018-04-09T16:44:58.528Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Are you doing something only one one member of an array?","date":"2018-04-09T16:45:21.172Z","type":"message"}
+{"nick":"orbyt_","date":"2018-04-09T16:45:56.423Z","type":"join"}
+{"nick":"cthulchu","message":"yeah, figured so :) I do something to all of them, but if one of them is corrupt, I want to stop, so I'll use every and return false when something happens","date":"2018-04-09T16:45:58.185Z","type":"message"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 264 seconds","date":"2018-04-09T16:46:34.260Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"Before running that forEach I'd run an Array#some","date":"2018-04-09T16:46:54.263Z","type":"message"}
+{"nick":"cthulchu","message":"now your complexity is 2N","date":"2018-04-09T16:47:17.261Z","type":"message"}
+{"nick":"jamesc","date":"2018-04-09T16:47:19.126Z","type":"join"}
+{"nick":"cthulchu","message":"I want to keep it N :)","date":"2018-04-09T16:47:23.026Z","type":"message"}
+{"nick":"kingarmadillo","date":"2018-04-09T16:47:51.692Z","type":"join"}
+{"nick":"DeltaHeavy","message":"cthulchu Do you have performance problems?","date":"2018-04-09T16:48:40.906Z","type":"message"}
+{"nick":"cthulchu","message":"I do","date":"2018-04-09T16:49:01.080Z","type":"message"}
+{"nick":"cthulchu","message":"look, coding without keeping performance in mind is boring","date":"2018-04-09T16:49:32.199Z","type":"message"}
+{"nick":"cthulchu","message":"I don't want boring","date":"2018-04-09T16:49:36.485Z","type":"message"}
+{"nick":"cthulchu","message":"I want fun","date":"2018-04-09T16:49:38.329Z","type":"message"}
+{"nick":"ghoti","reason":"Remote host closed the connection","date":"2018-04-09T16:49:46.758Z","type":"quit"}
+{"nick":"cthulchu","message":"I think one .\\every will do the trick","date":"2018-04-09T16:49:52.683Z","type":"message"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T16:50:58.939Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T16:51:16.833Z","type":"join"}
+{"nick":"DeltaHeavy","message":"cthulchu Performance problems as in you have a slow page or you just want to code for performance?","date":"2018-04-09T16:51:31.885Z","type":"message"}
+{"nick":"cthulchu","message":"the latter","date":"2018-04-09T16:51:44.781Z","type":"message"}
+{"nick":"\\mSg","reason":"Remote host closed the connection","date":"2018-04-09T16:52:39.893Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"a for loop would be faster :p Though no offence at all but I'm not as inclined to help with the specifics of that as it's for fun rather than productivity","date":"2018-04-09T16:52:41.752Z","type":"message"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 240 seconds","date":"2018-04-09T16:53:57.797Z","type":"quit"}
+{"nick":"megamaced","reason":"Quit: Leaving","date":"2018-04-09T16:54:03.552Z","type":"quit"}
+{"nick":"OnkelTem","date":"2018-04-09T16:55:03.064Z","type":"join"}
+{"nick":"saltybard","reason":"Client Quit","date":"2018-04-09T16:55:35.996Z","type":"quit"}
+{"nick":"akiva","date":"2018-04-09T16:57:06.922Z","type":"join"}
+{"nick":"chjk6x","date":"2018-04-09T16:57:52.342Z","type":"join"}
+{"nick":"cthulchu","message":"for is not FP","date":"2018-04-09T17:00:16.248Z","type":"message"}
+{"nick":"cthulchu","message":"I'm trying to switch to FP AND keep stuff optimal","date":"2018-04-09T17:00:29.656Z","type":"message"}
+{"nick":"DeltaHeavy","message":"In JS, those two don't go together that well. Best thing to do is leave it up to the runtime environment to make optimizations which it does constantly as it runs, and not worry about performance until it's a problem *THEN* use a profiler to find out why it's slow.","date":"2018-04-09T17:01:29.219Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Immutability without AoT compiler optimizations is not performant","date":"2018-04-09T17:02:02.590Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Thing is it's not less performant enough to make any noticeable difference in the vast majority of use cases where JS is used.","date":"2018-04-09T17:02:31.963Z","type":"message"}
+{"nick":"PeDr0_HuG0","reason":"Ping timeout: 245 seconds","date":"2018-04-09T17:03:07.077Z","type":"quit"}
+{"nick":"pdub","date":"2018-04-09T17:04:20.912Z","type":"join"}
+{"nick":"jkridner","date":"2018-04-09T17:04:57.475Z","type":"join"}
+{"nick":"smccarthy","date":"2018-04-09T17:06:07.838Z","type":"join"}
+{"nick":"smccarthy","reason":"Remote host closed the connection","date":"2018-04-09T17:07:12.636Z","type":"quit"}
+{"nick":"smccarthy","date":"2018-04-09T17:08:28.035Z","type":"join"}
+{"nick":"coot_","date":"2018-04-09T17:09:09.491Z","type":"join"}
+{"nick":"jkridner","reason":"Ping timeout: 240 seconds","date":"2018-04-09T17:09:27.784Z","type":"quit"}
+{"nick":"Robin___","date":"2018-04-09T17:10:01.911Z","type":"join"}
+{"nick":"Doginal_","date":"2018-04-09T17:10:15.095Z","type":"join"}
+{"nick":"Doginal","reason":"Ping timeout: 265 seconds","date":"2018-04-09T17:10:52.465Z","type":"quit"}
+{"nick":"Doginal_","new_nick":"Doginal","date":"2018-04-09T17:10:52.825Z","type":"nick"}
+{"nick":"pd2000","reason":"Ping timeout: 265 seconds","date":"2018-04-09T17:11:50.433Z","type":"quit"}
+{"nick":"zumba_addict","message":"joepie91: check this out! HAHAHA! Glad I'm using your scrypt - https://content.myfitnesspal.com/security-information/FAQ.html","date":"2018-04-09T17:12:03.702Z","type":"message"}
+{"nick":"Robin___","message":"Hello. Im trying to log stuff to MySQL using Sequelize + Winston-transport-sequelize. The table is created, but nothing logged. Any friendly soul wanna help? Source: https://pastebin.com/zLEdx04f and winston-transport-sequelize: https://github.com/ortexx/winston-transport-sequelize thanks alot :)","date":"2018-04-09T17:12:38.654Z","type":"message"}
+{"nick":"mazula__","date":"2018-04-09T17:13:53.961Z","type":"join"}
+{"nick":"coot_","reason":"Quit: coot_","date":"2018-04-09T17:14:01.438Z","type":"quit"}
+{"nick":"pd2000","date":"2018-04-09T17:15:13.948Z","type":"join"}
+{"nick":"qard","date":"2018-04-09T17:15:59.373Z","type":"join"}
+{"nick":"joepie91","message":"zumba_addict: to be fair, they did use bcrypt :P","date":"2018-04-09T17:16:42.756Z","type":"message"}
+{"nick":"joepie91","message":"zumba_addict: also, that does actually seem like a correct handling of the security issue, so far","date":"2018-04-09T17:18:02.586Z","type":"message"}
+{"nick":"joepie91","message":"surprisingly","date":"2018-04-09T17:18:09.830Z","type":"message"}
+{"nick":"jezeniel_","reason":"Ping timeout: 260 seconds","date":"2018-04-09T17:19:29.018Z","type":"quit"}
+{"nick":"D1nger","reason":"Read error: Connection reset by peer","date":"2018-04-09T17:22:07.271Z","type":"quit"}
+{"nick":"texinwien_","date":"2018-04-09T17:24:17.816Z","type":"join"}
+{"nick":"saltybard","date":"2018-04-09T17:26:18.141Z","type":"join"}
+{"nick":"dr3w_","date":"2018-04-09T17:27:23.995Z","type":"join"}
+{"nick":"texinwien","reason":"Ping timeout: 264 seconds","date":"2018-04-09T17:27:57.396Z","type":"quit"}
+{"nick":"MeekCG","date":"2018-04-09T17:28:13.770Z","type":"join"}
+{"nick":"MeekCG","message":"Do you handle Capitalisation of stuff like names on the backend or frontend?","date":"2018-04-09T17:29:11.213Z","type":"message"}
+{"nick":"DeltaHeavy","message":"MeekCG Store it with the correct capitalization.","date":"2018-04-09T17:29:51.805Z","type":"message"}
+{"nick":"MeekCG","message":"DeltaHeavy, thanks","date":"2018-04-09T17:30:26.170Z","type":"message"}
+{"nick":"DeltaHeavy","message":"np","date":"2018-04-09T17:30:33.025Z","type":"message"}
+{"nick":"saltybard","reason":"Client Quit","date":"2018-04-09T17:30:40.872Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T17:31:14.908Z","type":"join"}
+{"nick":"hoijui__","date":"2018-04-09T17:31:53.699Z","type":"join"}
+{"nick":"eckhardt","date":"2018-04-09T17:32:36.505Z","type":"join"}
+{"nick":"miton18","reason":"Ping timeout: 260 seconds","date":"2018-04-09T17:35:04.963Z","type":"quit"}
+{"nick":"cthulchu","message":"DeltaHeavy, yeah, I know, I do it just to satisfy my ocd.","date":"2018-04-09T17:35:57.997Z","type":"message"}
+{"nick":"cthulchu","message":"and it's good to know what's below you","date":"2018-04-09T17:36:21.823Z","type":"message"}
+{"nick":"coot","date":"2018-04-09T17:37:45.021Z","type":"join"}
+{"nick":"kingarmadillo","date":"2018-04-09T17:38:45.733Z","type":"join"}
+{"nick":"patarr","date":"2018-04-09T17:39:44.772Z","type":"join"}
+{"nick":"YokoBR","date":"2018-04-09T17:41:32.290Z","type":"join"}
+{"nick":"Robin___","message":"hmm :(","date":"2018-04-09T17:41:33.820Z","type":"message"}
+{"nick":"YokoBR","message":"hi folks","date":"2018-04-09T17:41:35.223Z","type":"message"}
+{"nick":"YokoBR","message":"please, I'm trying to get webcam access with electron with no luck at all","date":"2018-04-09T17:41:50.694Z","type":"message"}
+{"nick":"YokoBR","message":"https://gist.github.com/jersobh/99dcdbba9180c8b17d056e90bb0c857c","date":"2018-04-09T17:41:56.330Z","type":"message"}
+{"nick":"pd2000","reason":"Read error: Connection reset by peer","date":"2018-04-09T17:43:41.937Z","type":"quit"}
+{"nick":"duderonomy","date":"2018-04-09T17:43:56.042Z","type":"join"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 260 seconds","date":"2018-04-09T17:43:58.972Z","type":"quit"}
+{"nick":"pd2000","date":"2018-04-09T17:44:08.829Z","type":"join"}
+{"nick":"duderonomy","reason":"Client Quit","date":"2018-04-09T17:44:11.323Z","type":"quit"}
+{"nick":"wonko7","reason":"Ping timeout: 240 seconds","date":"2018-04-09T17:45:05.596Z","type":"quit"}
+{"nick":"zumba_addict","message":"joepie91: maybe i misinterpreted the link i posted incorrectly. My impression was that even if they were already using bcrypt, they still got hacked","date":"2018-04-09T17:46:23.996Z","type":"message"}
+{"nick":"RLa","reason":"Quit: Leaving","date":"2018-04-09T17:46:52.997Z","type":"quit"}
+{"nick":"doodadjs_","date":"2018-04-09T17:47:10.165Z","type":"join"}
+{"nick":"Aikar","message":"bcrypt doesnt protect you from being hacked","date":"2018-04-09T17:47:21.867Z","type":"message"}
+{"nick":"Rodya_","date":"2018-04-09T17:47:40.441Z","type":"join"}
+{"nick":"SirPole","reason":"Ping timeout: 246 seconds","date":"2018-04-09T17:48:06.993Z","type":"quit"}
+{"nick":"joepie91","message":"^","date":"2018-04-09T17:48:30.526Z","type":"message"}
+{"nick":"Arimil","date":"2018-04-09T17:48:40.804Z","type":"join"}
+{"nick":"joepie91","message":"the point of password hashing is to reduce damage when you *do* get hacked","date":"2018-04-09T17:48:42.114Z","type":"message"}
+{"nick":"Rodya_","reason":"Remote host closed the connection","date":"2018-04-09T17:48:47.329Z","type":"quit"}
+{"nick":"Renari","reason":"Ping timeout: 264 seconds","date":"2018-04-09T17:48:58.134Z","type":"quit"}
+{"nick":"dr3w__","date":"2018-04-09T17:49:15.185Z","type":"join"}
+{"nick":"zumba_addict","message":"ah, I just read item 6","date":"2018-04-09T17:49:32.290Z","type":"message"}
+{"nick":"UnsaneVirusez","date":"2018-04-09T17:49:43.147Z","type":"join"}
+{"nick":"zumba_addict","message":"I was wrong then. \"The MyFitnessPal account information that was not protected using bcrypt was protected with SHA-1, a 160-bit hashing function\"","date":"2018-04-09T17:49:45.439Z","type":"message"}
+{"nick":"Rashad","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T17:49:58.397Z","type":"quit"}
+{"nick":"doodadjs","reason":"Ping timeout: 265 seconds","date":"2018-04-09T17:50:01.508Z","type":"quit"}
+{"nick":"Aikar","message":"basically, those who havent changed their pw in years may still of been sha1","date":"2018-04-09T17:50:11.611Z","type":"message"}
+{"nick":"asteele_","date":"2018-04-09T17:50:24.410Z","type":"join"}
+{"nick":"joepie91","message":"yeah, likely that","date":"2018-04-09T17:50:34.958Z","type":"message"}
+{"nick":"dr3w_","reason":"Ping timeout: 240 seconds","date":"2018-04-09T17:50:35.500Z","type":"quit"}
+{"nick":"Aikar","message":"its pretty standard procedure to upgrade as of next login","date":"2018-04-09T17:50:36.309Z","type":"message"}
+{"nick":"joepie91","message":"does mean they did their migration wrong though","date":"2018-04-09T17:50:39.820Z","type":"message"}
+{"nick":"zumba_addict","message":"mine would definitely be in sha1 since I haven't used myfitnesspal since 2012","date":"2018-04-09T17:50:46.967Z","type":"message"}
+{"nick":"joepie91","message":"Aikar: correct migration procedure is to re-hash the existing old hashes with the new algo, and then double-hash the input on their next login, and generate a 'clean' hash of their password","date":"2018-04-09T17:51:10.422Z","type":"message"}
+{"nick":"joepie91","message":"that way you don't have the problem of lingering weak hashes","date":"2018-04-09T17:51:17.982Z","type":"message"}
+{"nick":"zumba_addict","message":"but i think scrypt is still better than bcrypt","date":"2018-04-09T17:51:20.459Z","type":"message"}
+{"nick":"asteele","reason":"Ping timeout: 260 seconds","date":"2018-04-09T17:51:33.988Z","type":"quit"}
+{"nick":"Aikar","message":"oh fun, myfitnesspal was already using one of my super old pw's thats already been leaked. so no worry there lol","date":"2018-04-09T17:52:25.070Z","type":"message"}
+{"nick":"zumba_addict","message":"lol","date":"2018-04-09T17:52:49.110Z","type":"message"}
+{"nick":"pdub","reason":"Remote host closed the connection","date":"2018-04-09T17:53:14.670Z","type":"quit"}
+{"nick":"jkridner","date":"2018-04-09T17:53:15.228Z","type":"join"}
+{"nick":"horsey","date":"2018-04-09T17:54:36.957Z","type":"join"}
+{"nick":"Aikar","message":"that pw was so old i dont even know what uses it. anything important and/or new will all be using random gibberish now","date":"2018-04-09T17:55:08.261Z","type":"message"}
+{"nick":"pdub","date":"2018-04-09T17:55:48.681Z","type":"join"}
+{"nick":"kingarmadillo","date":"2018-04-09T17:56:31.716Z","type":"join"}
+{"nick":"YokoBR","message":"please folks","date":"2018-04-09T17:56:31.893Z","type":"message"}
+{"nick":"YokoBR","message":"what am I doing wrong?","date":"2018-04-09T17:56:37.266Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict Have you looked into argon2i?","date":"2018-04-09T17:56:55.338Z","type":"message"}
+{"nick":"jkridner","reason":"Ping timeout: 264 seconds","date":"2018-04-09T17:58:34.222Z","type":"quit"}
+{"nick":"wsieroci","reason":"Remote host closed the connection","date":"2018-04-09T17:58:34.919Z","type":"quit"}
+{"nick":"widp","reason":"Quit: WeeChat 2.1","date":"2018-04-09T17:58:52.079Z","type":"quit"}
+{"nick":"horsey","reason":"Ping timeout: 256 seconds","date":"2018-04-09T17:58:59.466Z","type":"quit"}
+{"nick":"Robin___","message":"nvm fixed it","date":"2018-04-09T17:59:44.687Z","type":"message"}
+{"nick":"pd2000","reason":"Read error: Connection reset by peer","date":"2018-04-09T17:59:53.110Z","type":"quit"}
+{"nick":"brandly","date":"2018-04-09T18:00:13.839Z","type":"join"}
+{"nick":"Sven_vB","date":"2018-04-09T18:00:17.004Z","type":"join"}
+{"nick":"eckhardt","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T18:00:21.270Z","type":"quit"}
+{"nick":"pd2000","date":"2018-04-09T18:00:40.477Z","type":"join"}
+{"nick":"Snugglebash","date":"2018-04-09T18:01:07.242Z","type":"join"}
+{"nick":"eckhardt","date":"2018-04-09T18:02:00.709Z","type":"join"}
+{"nick":"zumba_addict","message":"no, never heard of that DeltaHeavy. I'll check it out","date":"2018-04-09T18:02:21.219Z","type":"message"}
+{"nick":"Robin___","reason":"Quit: Leaving","date":"2018-04-09T18:03:15.074Z","type":"quit"}
+{"nick":"MeekCG","reason":"Quit: My iMac has gone to sleep. ZZZzzz…","date":"2018-04-09T18:03:27.983Z","type":"quit"}
+{"nick":"zumba_addict","message":"there's no binding for NodeJS","date":"2018-04-09T18:03:52.053Z","type":"message"}
+{"nick":"zumba_addict","message":"oh javascript :D","date":"2018-04-09T18:04:00.211Z","type":"message"}
+{"nick":"Arimil","reason":"Ping timeout: 240 seconds","date":"2018-04-09T18:04:27.808Z","type":"quit"}
+{"nick":"om2","date":"2018-04-09T18:05:34.860Z","type":"join"}
+{"nick":"Renari","date":"2018-04-09T18:06:10.747Z","type":"join"}
+{"nick":"rendar","date":"2018-04-09T18:06:14.411Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"You need an npm package","date":"2018-04-09T18:06:22.858Z","type":"message"}
+{"nick":"zumba_addict","message":"i'm currently using scrypt. What would be factors that can be ideal to move to argon?","date":"2018-04-09T18:06:26.089Z","type":"message"}
+{"nick":"afx237","reason":"Read error: Connection reset by peer","date":"2018-04-09T18:09:19.595Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"I don't know. I wouldn't neccessarily switch","date":"2018-04-09T18:10:11.358Z","type":"message"}
+{"nick":"Hu0p","date":"2018-04-09T18:12:35.446Z","type":"join"}
+{"nick":"pd2000","reason":"Read error: Connection reset by peer","date":"2018-04-09T18:13:02.063Z","type":"quit"}
+{"nick":"ocx","date":"2018-04-09T18:13:12.060Z","type":"join"}
+{"nick":"pd2000","date":"2018-04-09T18:13:29.898Z","type":"join"}
+{"nick":"ghoti","date":"2018-04-09T18:14:08.210Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T18:14:18.911Z","type":"join"}
+{"nick":"pd2000","reason":"Max SendQ exceeded","date":"2018-04-09T18:14:42.887Z","type":"quit"}
+{"nick":"pd2000","date":"2018-04-09T18:15:19.900Z","type":"join"}
+{"nick":"afx237","date":"2018-04-09T18:15:28.074Z","type":"join"}
+{"nick":"ocx","date":"2018-04-09T18:15:45.130Z","type":"part"}
+{"nick":"pd2000","reason":"Max SendQ exceeded","date":"2018-04-09T18:15:56.900Z","type":"quit"}
+{"nick":"ocx32","date":"2018-04-09T18:15:58.676Z","type":"join"}
+{"nick":"ocx32","message":" hi all, i am designing my app based on nodejs and auth0. now i got some architecture questions. i am starting with a simple webpage where you have home.html having a login button. when it is pressed i am redirected to auth0 website and authenticate. a callback is returned with the token to my nodejs on the home.html where parseToken is read and the token is stored in cookie. now my question is how should i proceed to automatically ge","date":"2018-04-09T18:16:01.319Z","type":"message"}
+{"nick":"pd2000","date":"2018-04-09T18:16:31.046Z","type":"join"}
+{"nick":"zumba_addict","message":"Hey folks, does this emoji show up? 👍","date":"2018-04-09T18:20:32.365Z","type":"message"}
+{"nick":"sauvin","reason":"Read error: Connection reset by peer","date":"2018-04-09T18:22:34.795Z","type":"quit"}
+{"nick":"shoky_","message":"zumba_addict yep. as should these 🐍🦀🕷🍄🥓🍕🍣🎷🎸🔜✡☯🕎🔯🆒🈂☠️","date":"2018-04-09T18:22:37.563Z","type":"message"}
+{"nick":"zumba_addict","message":":D awesome!","date":"2018-04-09T18:23:10.839Z","type":"message"}
+{"nick":"dopesong","date":"2018-04-09T18:23:31.761Z","type":"join"}
+{"nick":"Zames_","reason":"Ping timeout: 260 seconds","date":"2018-04-09T18:23:32.236Z","type":"quit"}
+{"nick":"ahmed_elgabri","date":"2018-04-09T18:24:04.214Z","type":"join"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T18:24:04.390Z","type":"quit"}
+{"nick":"srl295","date":"2018-04-09T18:25:46.801Z","type":"join"}
+{"nick":"wonko7","date":"2018-04-09T18:25:59.252Z","type":"join"}
+{"nick":"qard","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T18:26:05.594Z","type":"quit"}
+{"nick":"dopesong","reason":"Ping timeout: 276 seconds","date":"2018-04-09T18:28:26.830Z","type":"quit"}
+{"nick":"Zames","date":"2018-04-09T18:28:38.255Z","type":"join"}
+{"nick":"bradfordli123","reason":"Remote host closed the connection","date":"2018-04-09T18:31:35.275Z","type":"quit"}
+{"nick":"patarr","reason":"Ping timeout: 240 seconds","date":"2018-04-09T18:32:27.843Z","type":"quit"}
+{"nick":"joepie91","message":"environment variables claim another victim: https://twitter.com/copyconstruct/status/983215831696916480","date":"2018-04-09T18:32:36.172Z","type":"message"}
+{"nick":"Zames","reason":"Client Quit","date":"2018-04-09T18:33:22.874Z","type":"quit"}
+{"nick":"dopesong","date":"2018-04-09T18:35:37.983Z","type":"join"}
+{"nick":"thomas_25","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T18:35:54.505Z","type":"quit"}
+{"nick":"pd2000","reason":"Quit: Leaving","date":"2018-04-09T18:36:19.607Z","type":"quit"}
+{"nick":"dopesong","reason":"Remote host closed the connection","date":"2018-04-09T18:36:41.768Z","type":"quit"}
+{"nick":"Axy","date":"2018-04-09T18:37:10.947Z","type":"join"}
+{"nick":"dopesong","date":"2018-04-09T18:37:18.041Z","type":"join"}
+{"nick":"toi","reason":"Ping timeout: 264 seconds","date":"2018-04-09T18:39:22.071Z","type":"quit"}
+{"nick":"Cache_Money","date":"2018-04-09T18:39:29.811Z","type":"join"}
+{"nick":"Mia","reason":"Ping timeout: 260 seconds","date":"2018-04-09T18:39:59.011Z","type":"quit"}
+{"nick":"darutoko","reason":"Quit: Any sufficiently advanced technology is indistinguishable from magic. (Arthur C. Clarke)","date":"2018-04-09T18:40:37.359Z","type":"quit"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T18:40:56.990Z","type":"quit"}
+{"nick":"GreenJello","date":"2018-04-09T18:41:14.157Z","type":"join"}
+{"nick":"saltybard","date":"2018-04-09T18:41:21.889Z","type":"join"}
+{"nick":"zsoc","message":"hmm... how do i name something that start with a number","date":"2018-04-09T18:42:09.063Z","type":"message"}
+{"nick":"zsoc","message":"like lets say i have some middleware that's for handling 404 errors","date":"2018-04-09T18:42:24.213Z","type":"message"}
+{"nick":"bmlzootown","reason":"Quit: ZNC 1.6.6 - http://znc.in","date":"2018-04-09T18:42:31.708Z","type":"quit"}
+{"nick":"zsoc","message":"i guess just call it notFoundHandler or something","date":"2018-04-09T18:42:34.868Z","type":"message"}
+{"nick":"zsoc","message":"routeNotFoundHandler","date":"2018-04-09T18:42:49.690Z","type":"message"}
+{"nick":"Venemo","reason":"Quit: Communi 3.5.0 - http://communi.github.com","date":"2018-04-09T18:43:37.008Z","type":"quit"}
+{"nick":"ocx32","reason":"Quit: Page closed","date":"2018-04-09T18:44:31.738Z","type":"quit"}
+{"nick":"bmlzootown","date":"2018-04-09T18:44:34.759Z","type":"join"}
+{"nick":"zsoc","message":"also I still can't decide between camel case and kebab case for filenames... historically i've been using kebab for filenames but since doing more front end stuff i'm leaning towards camel...","date":"2018-04-09T18:44:38.797Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T18:44:43.198Z","type":"quit"}
+{"nick":"zsoc","message":"because i find that using camel case differentiates it more clearly from npm packages, since generally they are kebab","date":"2018-04-09T18:45:17.311Z","type":"message"}
+{"nick":"jrm","reason":"Ping timeout: 265 seconds","date":"2018-04-09T18:45:36.454Z","type":"quit"}
+{"nick":"saltybard","reason":"Client Quit","date":"2018-04-09T18:45:39.679Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T18:46:16.479Z","type":"join"}
+{"nick":"DeltaHeavy","message":"Anybody have serverless experience? Whenever I run my serverless commands like `serverless -v` it always prints out a bunch of output like `Serverless: Load command environment`","date":"2018-04-09T18:47:12.468Z","type":"message"}
+{"nick":"dpyro","date":"2018-04-09T18:47:36.837Z","type":"join"}
+{"nick":"patarr","date":"2018-04-09T18:50:04.134Z","type":"join"}
+{"nick":"duderonomy","date":"2018-04-09T18:50:20.172Z","type":"join"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T18:50:54.853Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T18:51:31.908Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T18:51:48.684Z","type":"join"}
+{"nick":"YokoBR","message":"how do I run a socket.io server on electron?","date":"2018-04-09T18:52:53.102Z","type":"message"}
+{"nick":"orbyt_","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T18:53:06.267Z","type":"quit"}
+{"nick":"wonko7","reason":"Ping timeout: 268 seconds","date":"2018-04-09T18:53:08.723Z","type":"quit"}
+{"nick":"jamesc","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T18:53:47.549Z","type":"quit"}
+{"nick":"zsoc","message":"electron already provides you with IPC between main process and renderer(s)","date":"2018-04-09T18:55:04.335Z","type":"message"}
+{"nick":"zsoc","message":"that's very much so like websockets","date":"2018-04-09T18:55:09.942Z","type":"message"}
+{"nick":"saltybard","reason":"Client Quit","date":"2018-04-09T18:55:28.666Z","type":"quit"}
+{"nick":"saltybard","date":"2018-04-09T18:55:54.868Z","type":"join"}
+{"nick":"MeekCG","date":"2018-04-09T18:56:44.678Z","type":"join"}
+{"nick":"TinkerT","reason":"Read error: Connection reset by peer","date":"2018-04-09T18:56:54.499Z","type":"quit"}
+{"nick":"eckhardt","reason":"Ping timeout: 260 seconds","date":"2018-04-09T18:58:32.341Z","type":"quit"}
+{"nick":"sorribas","reason":"Quit: ZNC 1.6.5 - http://znc.in","date":"2018-04-09T18:58:37.830Z","type":"quit"}
+{"nick":"jrm","date":"2018-04-09T18:58:51.461Z","type":"join"}
+{"nick":"TinkerT","date":"2018-04-09T18:59:07.860Z","type":"join"}
+{"nick":"bl0m1_","reason":"Remote host closed the connection","date":"2018-04-09T18:59:18.777Z","type":"quit"}
+{"nick":"duderonomy","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T18:59:46.514Z","type":"quit"}
+{"nick":"eckhardt","date":"2018-04-09T18:59:58.529Z","type":"join"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T19:00:55.868Z","type":"quit"}
+{"nick":"lucas_ai_","date":"2018-04-09T19:01:16.679Z","type":"join"}
+{"nick":"duderonomy","date":"2018-04-09T19:02:36.661Z","type":"join"}
+{"nick":"duderonomy","reason":"Client Quit","date":"2018-04-09T19:05:27.129Z","type":"quit"}
+{"nick":"eckhardt","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T19:08:22.503Z","type":"quit"}
+{"nick":"smccarthy","reason":"Remote host closed the connection","date":"2018-04-09T19:08:57.680Z","type":"quit"}
+{"nick":"spacewalker_supe","date":"2018-04-09T19:11:25.919Z","type":"join"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 264 seconds","date":"2018-04-09T19:11:46.243Z","type":"quit"}
+{"nick":"JosDzG","reason":"Quit: JosDzG","date":"2018-04-09T19:12:12.041Z","type":"quit"}
+{"nick":"wonko7","date":"2018-04-09T19:12:35.124Z","type":"join"}
+{"nick":"qard","date":"2018-04-09T19:12:57.130Z","type":"join"}
+{"nick":"Snugglebash","reason":"Read error: No route to host","date":"2018-04-09T19:13:45.828Z","type":"quit"}
+{"nick":"bl0m1","date":"2018-04-09T19:14:07.509Z","type":"join"}
+{"nick":"saltybard","date":"2018-04-09T19:15:43.911Z","type":"join"}
+{"nick":"wsieroci","date":"2018-04-09T19:16:03.453Z","type":"join"}
+{"nick":"MeekCG","reason":"Quit: My iMac has gone to sleep. ZZZzzz…","date":"2018-04-09T19:16:36.126Z","type":"quit"}
+{"nick":"saltybard","reason":"Quit: saltybard","date":"2018-04-09T19:20:55.880Z","type":"quit"}
+{"nick":"Cache_Money","reason":"Quit: Cache_Money","date":"2018-04-09T19:21:32.013Z","type":"quit"}
+{"nick":"gamelaster","date":"2018-04-09T19:22:58.751Z","type":"join"}
+{"nick":"gamelaster","reason":"Remote host closed the connection","date":"2018-04-09T19:23:01.174Z","type":"quit"}
+{"nick":"bradfordli123","date":"2018-04-09T19:24:40.790Z","type":"join"}
+{"nick":"NomadJim","reason":"Read error: Connection reset by peer","date":"2018-04-09T19:24:47.213Z","type":"quit"}
+{"nick":"NomadJim","date":"2018-04-09T19:25:31.215Z","type":"join"}
+{"nick":"SwiftMatt","date":"2018-04-09T19:25:42.140Z","type":"join"}
+{"nick":"kakashiAL","date":"2018-04-09T19:27:01.804Z","type":"join"}
+{"nick":"intelligentFool","date":"2018-04-09T19:27:20.650Z","type":"join"}
+{"nick":"MacWinner","date":"2018-04-09T19:27:43.269Z","type":"join"}
+{"nick":"wonko7","reason":"Ping timeout: 240 seconds","date":"2018-04-09T19:31:35.486Z","type":"quit"}
+{"nick":"genericuser","date":"2018-04-09T19:32:03.770Z","type":"join"}
+{"nick":"NomadJim","reason":"Read error: Connection reset by peer","date":"2018-04-09T19:32:47.347Z","type":"quit"}
+{"nick":"zpmorgan","reason":"Ping timeout: 245 seconds","date":"2018-04-09T19:33:07.156Z","type":"quit"}
+{"nick":"hoijui__","reason":"Ping timeout: 240 seconds","date":"2018-04-09T19:33:35.510Z","type":"quit"}
+{"nick":"NomadJim","date":"2018-04-09T19:33:46.650Z","type":"join"}
+{"nick":"saltybard","date":"2018-04-09T19:35:53.844Z","type":"join"}
+{"nick":"genericuser","reason":"Remote host closed the connection","date":"2018-04-09T19:36:39.472Z","type":"quit"}
+{"nick":"jamesc","date":"2018-04-09T19:36:58.781Z","type":"join"}
+{"nick":"beefjoe","reason":"Remote host closed the connection","date":"2018-04-09T19:37:01.889Z","type":"quit"}
+{"nick":"Doginal","reason":"Ping timeout: 245 seconds","date":"2018-04-09T19:37:17.048Z","type":"quit"}
+{"nick":"lucas_ai__","date":"2018-04-09T19:37:42.345Z","type":"join"}
+{"nick":"neonpastor","date":"2018-04-09T19:38:46.004Z","type":"join"}
+{"nick":"DeltaHeavy","message":"YokoBR Why do you need to be making network requests?","date":"2018-04-09T19:38:55.134Z","type":"message"}
+{"nick":"coot","reason":"Ping timeout: 276 seconds","date":"2018-04-09T19:40:35.849Z","type":"quit"}
+{"nick":"saltybard","reason":"Remote host closed the connection","date":"2018-04-09T19:41:18.831Z","type":"quit"}
+{"nick":"lucas_ai_","reason":"Ping timeout: 256 seconds","date":"2018-04-09T19:41:26.678Z","type":"quit"}
+{"nick":"GreenJello","reason":"Read error: Connection reset by peer","date":"2018-04-09T19:41:43.795Z","type":"quit"}
+{"nick":"ahmedelgabri","date":"2018-04-09T19:41:47.145Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T19:42:10.352Z","type":"quit"}
+{"nick":"GreenJello","date":"2018-04-09T19:42:19.913Z","type":"join"}
+{"nick":"lucas_ai__","reason":"Ping timeout: 260 seconds","date":"2018-04-09T19:42:52.227Z","type":"quit"}
+{"nick":"Arcaelyx_","date":"2018-04-09T19:42:57.248Z","type":"join"}
+{"nick":"Spr0cket","reason":"Ping timeout: 256 seconds","date":"2018-04-09T19:43:08.684Z","type":"quit"}
+{"nick":"patsToms","reason":"Ping timeout: 256 seconds","date":"2018-04-09T19:44:16.686Z","type":"quit"}
+{"nick":"ahmed_elgabri","reason":"Ping timeout: 265 seconds","date":"2018-04-09T19:44:34.426Z","type":"quit"}
+{"nick":"Spr0cket","date":"2018-04-09T19:44:58.539Z","type":"join"}
+{"nick":"Spr0cket","reason":"Changing host","date":"2018-04-09T19:44:58.894Z","type":"quit"}
+{"nick":"Spr0cket","date":"2018-04-09T19:44:59.071Z","type":"join"}
+{"nick":"Spr0cket","reason":"Changing host","date":"2018-04-09T19:44:59.071Z","type":"quit"}
+{"nick":"Spr0cket","date":"2018-04-09T19:44:59.071Z","type":"join"}
+{"nick":"testnick123","date":"2018-04-09T19:45:05.850Z","type":"join"}
+{"nick":"neonpastor","reason":"Quit: ZNC 1.6.1 - http://znc.in","date":"2018-04-09T19:45:27.210Z","type":"quit"}
+{"nick":"Arcaelyx","reason":"Ping timeout: 265 seconds","date":"2018-04-09T19:45:32.485Z","type":"quit"}
+{"nick":"patsToms","date":"2018-04-09T19:45:41.089Z","type":"join"}
+{"nick":"SwiftMatt","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2018-04-09T19:45:45.574Z","type":"quit"}
+{"nick":"xkapastel","reason":"Quit: Connection closed for inactivity","date":"2018-04-09T19:46:01.659Z","type":"quit"}
+{"nick":"tm","reason":"Ping timeout: 256 seconds","date":"2018-04-09T19:46:05.516Z","type":"quit"}
+{"nick":"ktilcu","reason":"Remote host closed the connection","date":"2018-04-09T19:48:05.700Z","type":"quit"}
+{"nick":"qard","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T19:48:16.686Z","type":"quit"}
+{"nick":"userx","date":"2018-04-09T19:48:55.676Z","type":"join"}
+{"nick":"ilyaigpetrov","reason":"Quit: Connection closed for inactivity","date":"2018-04-09T19:49:23.212Z","type":"quit"}
+{"nick":"Maqs","reason":"Ping timeout: 256 seconds","date":"2018-04-09T19:50:49.635Z","type":"quit"}
+{"nick":"dopesong_","date":"2018-04-09T19:51:03.412Z","type":"join"}
+{"nick":"zumba_addict","action":"gives up! I can't believe the dude is now asking for other thoughts about nodejs redis. He now wants to separate redis and nodejs and both be placed on separate dockers! Really? Dockers! :(","date":"2018-04-09T19:51:11.346Z","type":"action"}
+{"nick":"ffx","reason":"Quit: Leaving...","date":"2018-04-09T19:51:28.288Z","type":"quit"}
+{"nick":"zumba_addict","message":"I'm now going to slap the doc you sent me earlier DeltaHeavy","date":"2018-04-09T19:51:56.733Z","type":"message"}
+{"nick":"Maqs","date":"2018-04-09T19:52:44.591Z","type":"join"}
+{"nick":"sergey","reason":"Read error: Connection reset by peer","date":"2018-04-09T19:52:50.757Z","type":"quit"}
+{"nick":"akiva","reason":"Ping timeout: 276 seconds","date":"2018-04-09T19:52:56.815Z","type":"quit"}
+{"nick":"marthinal","date":"2018-04-09T19:53:18.072Z","type":"join"}
+{"nick":"sergey","date":"2018-04-09T19:53:24.754Z","type":"join"}
+{"nick":"dopesong","reason":"Ping timeout: 260 seconds","date":"2018-04-09T19:54:39.007Z","type":"quit"}
+{"nick":"Aztec03","reason":"Ping timeout: 260 seconds","date":"2018-04-09T19:54:39.183Z","type":"quit"}
+{"nick":"orbyt_","date":"2018-04-09T19:54:41.031Z","type":"join"}
+{"nick":"dr3w__","reason":"Quit: https://media3.giphy.com/media/3oKIPsx2VAYAgEHC12/giphy.gif","date":"2018-04-09T19:54:42.660Z","type":"quit"}
+{"nick":"YokoBR","message":"DeltaHeavy: Idk","date":"2018-04-09T19:55:15.684Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict What is the actual thing you're trying to do","date":"2018-04-09T19:55:19.458Z","type":"message"}
+{"nick":"DeltaHeavy","message":"YokoBR Then don't","date":"2018-04-09T19:55:22.818Z","type":"message"}
+{"nick":"horsey","date":"2018-04-09T19:55:26.029Z","type":"join"}
+{"nick":"YokoBR","message":"to integrate front /backend with electron","date":"2018-04-09T19:55:26.795Z","type":"message"}
+{"nick":"YokoBR","message":"since I can't figure out how to call ffmpeg on electorn","date":"2018-04-09T19:55:36.595Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Where's your backend?","date":"2018-04-09T19:55:36.772Z","type":"message"}
+{"nick":"YokoBR","message":"electron","date":"2018-04-09T19:55:38.721Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Oh","date":"2018-04-09T19:55:39.678Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You have no backend then","date":"2018-04-09T19:55:42.036Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Electron isn't a browser <--> server thing","date":"2018-04-09T19:55:48.991Z","type":"message"}
+{"nick":"DeltaHeavy","message":"The whole point of it is to avoid that","date":"2018-04-09T19:55:54.428Z","type":"message"}
+{"nick":"ffx","date":"2018-04-09T19:55:57.748Z","type":"join"}
+{"nick":"tm","date":"2018-04-09T19:56:03.148Z","type":"join"}
+{"nick":"dr3w_","date":"2018-04-09T19:56:28.440Z","type":"join"}
+{"nick":"wonko7","date":"2018-04-09T19:56:43.532Z","type":"join"}
+{"nick":"zumba_addict","message":"DeltaHeavy: it's really simple. I already created a poc for him. I proposed a machine that runs NodeJS Express and Redis. Then I learned he's been asking front end developeres who doesn't know much about servers. He now wants to separated Redis and Express, so 2 servers","date":"2018-04-09T19:56:45.399Z","type":"message"}
+{"nick":"zumba_addict","message":"separate","date":"2018-04-09T19:57:04.519Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict Is it just a generic backend? Why do you even need Redis? Sessions?","date":"2018-04-09T19:57:10.996Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T19:57:11.378Z","type":"quit"}
+{"nick":"zumba_addict","message":"for caching","date":"2018-04-09T19:57:17.008Z","type":"message"}
+{"nick":"zumba_addict","message":"catalog of our products, many of them","date":"2018-04-09T19:57:31.215Z","type":"message"}
+{"nick":"dr3w_","reason":"Client Quit","date":"2018-04-09T19:57:42.863Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"zumba_addict And you're currently suffering from bad performance?","date":"2018-04-09T19:57:59.765Z","type":"message"}
+{"nick":"zumba_addict","message":"I'll either use axios or fetch to call the api endpoint from another machine","date":"2018-04-09T19:58:01.463Z","type":"message"}
+{"nick":"genericuser","date":"2018-04-09T19:58:14.401Z","type":"join"}
+{"nick":"zumba_addict","message":"slow network sometimes. The poc has shown lots of improvement","date":"2018-04-09T19:58:21.799Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Cool","date":"2018-04-09T19:58:36.237Z","type":"message"}
+{"nick":"DeltaHeavy","message":"So would the 2 docker containers be on the same server?","date":"2018-04-09T19:58:43.818Z","type":"message"}
+{"nick":"Roughy","reason":"Quit: Meadow Fresh milk","date":"2018-04-09T19:58:44.158Z","type":"quit"}
+{"nick":"marthinal","date":"2018-04-09T19:58:46.516Z","type":"join"}
+{"nick":"zumba_addict","message":"no, separate physical machines","date":"2018-04-09T19:58:59.715Z","type":"message"}
+{"nick":"DeltaHeavy","message":"That's fucking stupid","date":"2018-04-09T19:59:06.480Z","type":"message"}
+{"nick":"eckhardt","date":"2018-04-09T19:59:11.398Z","type":"join"}
+{"nick":"zumba_addict","message":"i honestly against docker because it's another load rather than native os.","date":"2018-04-09T19:59:18.149Z","type":"message"}
+{"nick":"zumba_addict","message":"yes, it is stupid! hahaha","date":"2018-04-09T19:59:26.412Z","type":"message"}
+{"nick":"zumba_addict","message":"i told him","date":"2018-04-09T19:59:29.132Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Did you ask why? As well as tell him you're trying to reduce overhead so removing the network boundary would help a lot with that?","date":"2018-04-09T19:59:39.294Z","type":"message"}
+{"nick":"YokoBR","message":"Actually I have 2 problems","date":"2018-04-09T19:59:59.007Z","type":"message"}
+{"nick":"zumba_addict","message":"he won't know the answer, LOL","date":"2018-04-09T19:59:59.968Z","type":"message"}
+{"nick":"DeltaHeavy","message":"YokoBR Use Electron's IPC","date":"2018-04-09T20:00:12.820Z","type":"message"}
+{"nick":"zumba_addict","message":"i told him about the network boundary","date":"2018-04-09T20:00:20.711Z","type":"message"}
+{"nick":"horsey","reason":"Ping timeout: 268 seconds","date":"2018-04-09T20:00:21.745Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"zumba_addict Then ask him why we're doing something on no basis","date":"2018-04-09T20:00:23.257Z","type":"message"}
+{"nick":"zumba_addict","message":"yup","date":"2018-04-09T20:00:27.862Z","type":"message"}
+{"nick":"zumba_addict","message":"i just told him. I've given all the ideal setup. It's your call","date":"2018-04-09T20:00:54.712Z","type":"message"}
+{"nick":"patarr","reason":"Ping timeout: 264 seconds","date":"2018-04-09T20:00:58.256Z","type":"quit"}
+{"nick":"zumba_addict","message":"I won't support it","date":"2018-04-09T20:01:05.067Z","type":"message"}
+{"nick":"eckhardt_","date":"2018-04-09T20:01:40.245Z","type":"join"}
+{"nick":"DeltaHeavy","message":"I feel like hype driven development is getting worse and wrose","date":"2018-04-09T20:01:42.118Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Or maybe I'm just getting more experienced","date":"2018-04-09T20:01:51.856Z","type":"message"}
+{"nick":"zumba_addict","message":"I quite agree with you","date":"2018-04-09T20:03:19.897Z","type":"message"}
+{"nick":"eckhardt","reason":"Ping timeout: 256 seconds","date":"2018-04-09T20:03:39.439Z","type":"quit"}
+{"nick":"zumba_addict","message":"they only care about \"Oh this tool/software is cool, let's use it\"","date":"2018-04-09T20:03:39.631Z","type":"message"}
+{"nick":"DeltaHeavy","message":"YokoBR https://medium.com/@hamzasurti/in-progress-6959b733a55a","date":"2018-04-09T20:03:40.551Z","type":"message"}
+{"nick":"DeltaHeavy","message":"https://github.com/electron/electron/blob/master/docs/api/ipc-main.md","date":"2018-04-09T20:03:54.272Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict More times than not people seem to be creating insanely complicated infrastructure for intranet apps that probably rarely deal with more than 1 or a few requests concurrently. That and people calling things that aren't microservices microservices","date":"2018-04-09T20:05:22.590Z","type":"message"}
+{"nick":"ffx","reason":"Remote host closed the connection","date":"2018-04-09T20:05:33.890Z","type":"quit"}
+{"nick":"zumba_addict","message":"yup","date":"2018-04-09T20:05:45.491Z","type":"message"}
+{"nick":"dopesong_","reason":"Remote host closed the connection","date":"2018-04-09T20:05:57.921Z","type":"quit"}
+{"nick":"ahmedelgabri","reason":"Quit: WeeChat 2.1","date":"2018-04-09T20:06:10.110Z","type":"quit"}
+{"nick":"dopesong","date":"2018-04-09T20:06:32.352Z","type":"join"}
+{"nick":"pdub","reason":"Remote host closed the connection","date":"2018-04-09T20:07:00.936Z","type":"quit"}
+{"nick":"FunnyLookinHat","reason":"Remote host closed the connection","date":"2018-04-09T20:07:19.881Z","type":"quit"}
+{"nick":"patarr","date":"2018-04-09T20:07:21.431Z","type":"join"}
+{"nick":"DeltaHeavy","message":"zumba_addict https://medium.com/@tomsoderlund/micro-frontends-a-microservice-approach-to-front-end-web-development-f325ebdadc16","date":"2018-04-09T20:07:37.007Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Like...","date":"2018-04-09T20:07:51.477Z","type":"message"}
+{"nick":"DeltaHeavy","message":"fuck","date":"2018-04-09T20:07:57.276Z","type":"message"}
+{"nick":"dr3w_","date":"2018-04-09T20:07:58.224Z","type":"join"}
+{"nick":"pdub","date":"2018-04-09T20:08:19.858Z","type":"join"}
+{"nick":"DeltaHeavy","message":"\"Isolating micro-apps into IFrames using libraries and Window.postMessage APIs to coordinate. IFrames share APIs exposed by their parent window.\"","date":"2018-04-09T20:08:27.757Z","type":"message"}
+{"nick":"ffx","date":"2018-04-09T20:08:41.501Z","type":"join"}
+{"nick":"DeltaHeavy","message":"It's called `npm link` people","date":"2018-04-09T20:09:01.145Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Just use it","date":"2018-04-09T20:09:05.557Z","type":"message"}
+{"nick":"zumba_addict","message":"i know, lol :D","date":"2018-04-09T20:10:43.266Z","type":"message"}
+{"nick":"zumba_addict","message":"looking at the link now","date":"2018-04-09T20:10:56.165Z","type":"message"}
+{"nick":"wonko7","reason":"Ping timeout: 240 seconds","date":"2018-04-09T20:12:05.482Z","type":"quit"}
+{"nick":"jud","reason":"Ping timeout: 256 seconds","date":"2018-04-09T20:12:36.681Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"zumba_addict Oh this is the one I had trouble finding but blew my mind the most https://legacy.gitbook.com/book/jesty/microui/details","date":"2018-04-09T20:13:19.442Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I think it's an old version though","date":"2018-04-09T20:13:23.302Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Have to download as PDF","date":"2018-04-09T20:13:30.332Z","type":"message"}
+{"nick":"ryzendapgh","reason":"Changing host","date":"2018-04-09T20:13:41.540Z","type":"quit"}
+{"nick":"ryzendapgh","date":"2018-04-09T20:13:41.692Z","type":"join"}
+{"nick":"zumba_addict","message":"looking","date":"2018-04-09T20:14:45.706Z","type":"message"}
+{"nick":"patarr","reason":"Ping timeout: 265 seconds","date":"2018-04-09T20:16:57.427Z","type":"quit"}
+{"nick":"genericuser","reason":"Remote host closed the connection","date":"2018-04-09T20:17:48.702Z","type":"quit"}
+{"nick":"MeekCG","date":"2018-04-09T20:19:41.461Z","type":"join"}
+{"nick":"ed209","reason":"Remote host closed the connection","date":"2018-04-09T20:20:00.285Z","type":"quit"}
+{"nick":"wonko7","date":"2018-04-09T20:20:07.121Z","type":"join"}
+{"nick":"ed209","date":"2018-04-09T20:20:07.316Z","type":"join"}
+{"nick":"wsieroci","reason":"Remote host closed the connection","date":"2018-04-09T20:21:57.809Z","type":"quit"}
+{"nick":"patarr","date":"2018-04-09T20:23:47.784Z","type":"join"}
+{"nick":"SirPole","date":"2018-04-09T20:23:55.679Z","type":"join"}
+{"nick":"ams__","reason":"Quit: Connection closed for inactivity","date":"2018-04-09T20:25:30.738Z","type":"quit"}
+{"nick":"duderonomy","date":"2018-04-09T20:26:00.547Z","type":"join"}
+{"nick":"duderonomy","reason":"Client Quit","date":"2018-04-09T20:26:14.043Z","type":"quit"}
+{"nick":"YannMjl","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T20:27:15.682Z","type":"quit"}
+{"nick":"akiva","date":"2018-04-09T20:27:44.930Z","type":"join"}
+{"nick":"texinwien_","reason":"Ping timeout: 240 seconds","date":"2018-04-09T20:27:57.778Z","type":"quit"}
+{"nick":"kingarmadillo","date":"2018-04-09T20:31:47.703Z","type":"join"}
+{"nick":"Keanu73","reason":"Read error: Connection reset by peer","date":"2018-04-09T20:32:49.806Z","type":"quit"}
+{"nick":"texinwien_","date":"2018-04-09T20:33:03.940Z","type":"join"}
+{"nick":"ktilcu","date":"2018-04-09T20:34:31.998Z","type":"join"}
+{"nick":"oorza","message":"DeltaHeavy good lord the english is that is so bad it's hard to understand in places","date":"2018-04-09T20:35:04.742Z","type":"message"}
+{"nick":"samsch","date":"2018-04-09T20:35:11.875Z","type":"join"}
+{"nick":"zumba_addict","message":"That's very interesting! I stopped at the half part of the pdf. So right now, when we make a build of our React app, everything is rebuilt. All files in the build directory must be redeployed again. But it's really cool to only just deploy some parts of the UI. I think the author referred to it as MicroUI?","date":"2018-04-09T20:35:13.706Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict Yeah, though that's not a novel concept or anything.","date":"2018-04-09T20:36:04.156Z","type":"message"}
+{"nick":"zumba_addict","message":"it's been around","date":"2018-04-09T20:36:41.417Z","type":"message"}
+{"nick":"zumba_addict","message":"we need to update our deployment then","date":"2018-04-09T20:36:57.223Z","type":"message"}
+{"nick":"zumba_addict","message":"i'll continue reading","date":"2018-04-09T20:37:33.604Z","type":"message"}
+{"nick":"zumba_addict","message":"The author wrote \"What described before is not achievable without the right technology support. To identifies the right way, the first thing to do is to understand the issues we will meet. In this section we tried to do it.\"","date":"2018-04-09T20:38:21.441Z","type":"message"}
+{"nick":"genericuser","date":"2018-04-09T20:39:06.446Z","type":"join"}
+{"nick":"zumba_addict","message":"I think he's trying to solve the monolithic approach in deployment. I'll continue reading :)","date":"2018-04-09T20:39:38.169Z","type":"message"}
+{"nick":"brandly","reason":"Ping timeout: 276 seconds","date":"2018-04-09T20:40:23.788Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"I think the more recent version of this PDF I read a while ago and has since been taken down was a billion times more buzzwordy and terrible","date":"2018-04-09T20:41:23.379Z","type":"message"}
+{"nick":"ryzokuken","reason":"Remote host closed the connection","date":"2018-04-09T20:43:17.969Z","type":"quit"}
+{"nick":"zumba_addict","message":":D","date":"2018-04-09T20:43:54.642Z","type":"message"}
+{"nick":"jeffreylevesque","reason":"Ping timeout: 264 seconds","date":"2018-04-09T20:44:09.291Z","type":"quit"}
+{"nick":"zumba_addict","message":"what are your thoughts on that document?","date":"2018-04-09T20:44:14.535Z","type":"message"}
+{"nick":"patarr","reason":"Ping timeout: 240 seconds","date":"2018-04-09T20:45:57.785Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"zumba_addict Pretty awful","date":"2018-04-09T20:46:04.082Z","type":"message"}
+{"nick":"FunnyLookinHat","date":"2018-04-09T20:46:11.424Z","type":"join"}
+{"nick":"FunnyLookinHat","reason":"Changing host","date":"2018-04-09T20:46:11.795Z","type":"quit"}
+{"nick":"FunnyLookinHat","date":"2018-04-09T20:46:11.972Z","type":"join"}
+{"nick":"DeltaHeavy","message":"Hype hype hype","date":"2018-04-09T20:46:21.184Z","type":"message"}
+{"nick":"zumba_addict","message":"gotcha","date":"2018-04-09T20:46:29.622Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Doesn't define what a \"monolith\" frontend is","date":"2018-04-09T20:47:02.378Z","type":"message"}
+{"nick":"DeltaHeavy","message":"If it's using the same argument as microservices for not liking monoliths I'm not too sure how it fits","date":"2018-04-09T20:47:22.356Z","type":"message"}
+{"nick":"MeekCG","reason":"Quit: My iMac has gone to sleep. ZZZzzz…","date":"2018-04-09T20:47:52.285Z","type":"quit"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T20:49:55.238Z","type":"quit"}
+{"nick":"zumba_addict","message":"I threw a question to my officemate, he's never responded. I've waited for an hour now","date":"2018-04-09T20:51:25.581Z","type":"message"}
+{"nick":"testnick123","reason":"Ping timeout: 240 seconds","date":"2018-04-09T20:51:57.852Z","type":"quit"}
+{"nick":"tlent","date":"2018-04-09T20:52:27.417Z","type":"join"}
+{"nick":"coot","date":"2018-04-09T20:52:59.652Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T20:53:52.030Z","type":"join"}
+{"nick":"patarr","date":"2018-04-09T20:55:02.191Z","type":"join"}
+{"nick":"DeltaHeavy","message":"What was it?","date":"2018-04-09T21:00:14.619Z","type":"message"}
+{"nick":"samsch","message":"\"Can you spot me a $20?\"","date":"2018-04-09T21:00:45.180Z","type":"message"}
+{"nick":"DeltaHeavy","message":"gimme the deets","date":"2018-04-09T21:01:03.066Z","type":"message"}
+{"nick":"xiinotulp","date":"2018-04-09T21:02:32.498Z","type":"join"}
+{"nick":"rebrec","reason":"Read error: Connection reset by peer","date":"2018-04-09T21:03:03.564Z","type":"quit"}
+{"nick":"ThePendulum","message":"anyone here used the reddit API? I don't know where to find my client ID and secret o_o","date":"2018-04-09T21:03:32.057Z","type":"message"}
+{"nick":"rebrec","date":"2018-04-09T21:03:42.133Z","type":"join"}
+{"nick":"widp","date":"2018-04-09T21:03:55.820Z","type":"join"}
+{"nick":"DeltaHeavy","message":"ThePendulum You get it from some Reddit developer account thing. I remember getting it once","date":"2018-04-09T21:04:15.199Z","type":"message"}
+{"nick":"ThePendulum","message":"hm guess I got the wrong type of app","date":"2018-04-09T21:04:19.669Z","type":"message"}
+{"nick":"ThePendulum","message":"or rather, apparently I don't need it :p","date":"2018-04-09T21:04:47.447Z","type":"message"}
+{"nick":"dpyro","reason":"Ping timeout: 264 seconds","date":"2018-04-09T21:05:10.113Z","type":"quit"}
+{"nick":"mazula__","reason":"Quit: Page closed","date":"2018-04-09T21:05:28.839Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"You want to use the Reddit API? You're going to need that sorta stuff AFAIK","date":"2018-04-09T21:05:52.845Z","type":"message"}
+{"nick":"plutoniix","reason":"Ping timeout: 264 seconds","date":"2018-04-09T21:06:22.219Z","type":"quit"}
+{"nick":"zumba_addict","message":"sorry, had to help someone ehre","date":"2018-04-09T21:06:42.562Z","type":"message"}
+{"nick":"dpyro","date":"2018-04-09T21:06:45.311Z","type":"join"}
+{"nick":"zumba_addict","message":"I asked him why he wanted to separate the nodejs and redis to two separate servers","date":"2018-04-09T21:07:05.617Z","type":"message"}
+{"nick":"DeltaHeavy","message":"np","date":"2018-04-09T21:09:05.483Z","type":"message"}
+{"nick":"smccarthy","date":"2018-04-09T21:09:25.441Z","type":"join"}
+{"nick":"zumba_addict","message":"I think I was so mean when he told me that. I felt so mean because he's the boss of another team. I responded \"A dedicated redis cache server separated from the node app is a NO NO! LMAO!\" Our app doesn't use much cpu/ram at all","date":"2018-04-09T21:09:45.607Z","type":"message"}
+{"nick":"zumba_addict","message":"I shouldn't have written LMAO, hahaha","date":"2018-04-09T21:10:10.559Z","type":"message"}
+{"nick":"ThePendulum","message":"DeltaHeavy: nope, don't need a private key when you register it as an 'installed app'","date":"2018-04-09T21:10:29.441Z","type":"message"}
+{"nick":"mrkmg","reason":"Quit: mrkmg","date":"2018-04-09T21:12:31.719Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"zumba_addict lol yeah","date":"2018-04-09T21:13:30.015Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Gotta suppress those righteous emotions ;D","date":"2018-04-09T21:13:53.213Z","type":"message"}
+{"nick":"smccarthy","reason":"Ping timeout: 265 seconds","date":"2018-04-09T21:13:59.426Z","type":"quit"}
+{"nick":"zumba_addict","message":"i just got annoyed because he's been asking me for days then he would ask so many people and he'd get back to me asking the same questions","date":"2018-04-09T21:14:17.103Z","type":"message"}
+{"nick":"DeltaHeavy","message":"ThePendulum Are you hitting Reddit's API from your own backend or just from the installed app","date":"2018-04-09T21:14:40.768Z","type":"message"}
+{"nick":"DeltaHeavy","message":"zumba_addict It's good to remember that usually people are trying to do their best and just may not have a good grasp on some stuff.","date":"2018-04-09T21:15:13.701Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Or a lot of stuff","date":"2018-04-09T21:15:16.324Z","type":"message"}
+{"nick":"ThePendulum","message":"DeltaHeavy: huh, my backend is the 'installed app'","date":"2018-04-09T21:15:29.148Z","type":"message"}
+{"nick":"zumba_addict","message":"that's true :) I'll be kind","date":"2018-04-09T21:15:32.135Z","type":"message"}
+{"nick":"ThePendulum","message":"it's not a personal script nor is it a webpage","date":"2018-04-09T21:15:36.776Z","type":"message"}
+{"nick":"Aztec03","date":"2018-04-09T21:15:41.808Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T21:15:50.179Z","type":"quit"}
+{"nick":"texinwien_","reason":"Ping timeout: 255 seconds","date":"2018-04-09T21:15:53.915Z","type":"quit"}
+{"nick":"neonpastor","date":"2018-04-09T21:16:01.831Z","type":"join"}
+{"nick":"texinwien_","date":"2018-04-09T21:16:14.057Z","type":"join"}
+{"nick":"VX","date":"2018-04-09T21:16:32.274Z","type":"quit"}
+{"nick":"ironfroggy","reason":"Read error: Connection reset by peer","date":"2018-04-09T21:17:45.016Z","type":"quit"}
+{"nick":"ironfroggy","date":"2018-04-09T21:18:34.843Z","type":"join"}
+{"nick":"DeltaHeavy","message":"ThePendulum What's it for? Scraping?","date":"2018-04-09T21:18:41.153Z","type":"message"}
+{"nick":"dijksterhuis","date":"2018-04-09T21:19:43.998Z","type":"join"}
+{"nick":"cthulchu","message":"guys, do you build shortcuts? like function log(text){console.log(text);}?","date":"2018-04-09T21:20:07.311Z","type":"message"}
+{"nick":"sergey","date":"2018-04-09T21:20:18.795Z","type":"quit"}
+{"nick":"cthulchu","message":"some stuff is annoying","date":"2018-04-09T21:20:23.272Z","type":"message"}
+{"nick":"jamesc","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T21:20:37.713Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"No","date":"2018-04-09T21:21:57.003Z","type":"message"}
+{"nick":"xkapastel","date":"2018-04-09T21:22:28.114Z","type":"join"}
+{"nick":"Aiden","date":"2018-04-09T21:23:03.891Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T21:26:40.680Z","type":"join"}
+{"nick":"evanlucas","reason":"Remote host closed the connection","date":"2018-04-09T21:27:19.198Z","type":"quit"}
+{"nick":"qard","date":"2018-04-09T21:27:30.156Z","type":"join"}
+{"nick":"Aiden","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T21:29:16.131Z","type":"quit"}
+{"nick":"Aiden","date":"2018-04-09T21:30:19.675Z","type":"join"}
+{"nick":"Ergo","reason":"Quit: WeeChat 1.9.1","date":"2018-04-09T21:31:59.708Z","type":"quit"}
+{"nick":"xiinotulp","reason":"Quit: Leaving","date":"2018-04-09T21:34:42.485Z","type":"quit"}
+{"nick":"coot","reason":"Quit: coot","date":"2018-04-09T21:34:48.319Z","type":"quit"}
+{"nick":"lord|","date":"2018-04-09T21:37:06.066Z","type":"join"}
+{"nick":"pdub","reason":"Remote host closed the connection","date":"2018-04-09T21:40:27.189Z","type":"quit"}
+{"nick":"texinwien_","reason":"Ping timeout: 260 seconds","date":"2018-04-09T21:41:23.978Z","type":"quit"}
+{"nick":"Singmyr","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T21:42:48.257Z","type":"quit"}
+{"nick":"wonko7","reason":"Ping timeout: 256 seconds","date":"2018-04-09T21:44:31.423Z","type":"quit"}
+{"nick":"asphyxia","reason":"Ping timeout: 264 seconds","date":"2018-04-09T21:45:22.065Z","type":"quit"}
+{"nick":"devc","new_nick":"devc`afk","date":"2018-04-09T21:46:39.234Z","type":"nick"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T21:48:45.780Z","type":"quit"}
+{"nick":"ffx","reason":"Quit: Leaving...","date":"2018-04-09T21:52:50.848Z","type":"quit"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 260 seconds","date":"2018-04-09T21:54:14.018Z","type":"quit"}
+{"nick":"jeffreylevesque","date":"2018-04-09T21:55:27.689Z","type":"join"}
+{"nick":"horsey","date":"2018-04-09T21:56:21.155Z","type":"join"}
+{"nick":"Cork","reason":"Quit: .","date":"2018-04-09T21:59:08.080Z","type":"quit"}
+{"nick":"mooe","date":"2018-04-09T21:59:21.562Z","type":"join"}
+{"nick":"horsey","reason":"Ping timeout: 260 seconds","date":"2018-04-09T22:01:14.044Z","type":"quit"}
+{"nick":"jellobot","reason":"Remote host closed the connection","date":"2018-04-09T22:01:54.469Z","type":"quit"}
+{"nick":"JosDzG","date":"2018-04-09T22:01:59.993Z","type":"join"}
+{"nick":"jellobot","date":"2018-04-09T22:02:02.782Z","type":"join"}
+{"nick":"cthulchu","message":"is this how we delete fields from an object? label.id=undefined;","date":"2018-04-09T22:04:18.038Z","type":"message"}
+{"nick":"bdunavant","reason":"Remote host closed the connection","date":"2018-04-09T22:05:00.321Z","type":"quit"}
+{"nick":"NomadJim","reason":"Read error: Connection reset by peer","date":"2018-04-09T22:05:01.359Z","type":"quit"}
+{"nick":"cthulchu","message":"oh, there's delete","date":"2018-04-09T22:05:42.833Z","type":"message"}
+{"nick":"cthulchu","message":"faaaancy","date":"2018-04-09T22:05:45.323Z","type":"message"}
+{"nick":"NomadJim","date":"2018-04-09T22:05:47.829Z","type":"join"}
+{"nick":"DeltaHeavy","message":"cthulchu Don't use `delete`.","date":"2018-04-09T22:06:58.533Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Or one moment","date":"2018-04-09T22:07:06.106Z","type":"message"}
+{"nick":"cthulchu","message":"I think I ran into an issue now.","date":"2018-04-09T22:07:18.707Z","type":"message"}
+{"nick":"cthulchu","message":"I want to go through an array and edit its properties... does foreach has that argument by reference?","date":"2018-04-09T22:07:51.787Z","type":"message"}
+{"nick":"cthulchu","message":"it does","date":"2018-04-09T22:07:54.492Z","type":"message"}
+{"nick":"cthulchu","message":"sure it does","date":"2018-04-09T22:07:56.859Z","type":"message"}
+{"nick":"pdub","date":"2018-04-09T22:08:13.727Z","type":"join"}
+{"nick":"cthulchu","message":"mutations are bad, I know","date":"2018-04-09T22:08:20.745Z","type":"message"}
+{"nick":"DeltaHeavy","message":"cthulchu Yeah, don't use `delete`. It's NOT performant at ALL it seems","date":"2018-04-09T22:08:37.735Z","type":"message"}
+{"nick":"cthulchu","message":"interesting","date":"2018-04-09T22:08:54.276Z","type":"message"}
+{"nick":"cthulchu","message":"what should I use?","date":"2018-04-09T22:08:56.964Z","type":"message"}
+{"nick":"DeltaHeavy","message":"cthulchu Why not use Array#map?","date":"2018-04-09T22:08:57.681Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Instead of forEach","date":"2018-04-09T22:09:06.578Z","type":"message"}
+{"nick":"wrkrcoop","date":"2018-04-09T22:09:09.741Z","type":"join"}
+{"nick":"cthulchu","message":"well cuz I never used map","date":"2018-04-09T22:09:13.993Z","type":"message"}
+{"nick":"cthulchu","message":":(","date":"2018-04-09T22:09:16.685Z","type":"message"}
+{"nick":"ThePendulum","message":"it's straightforward","date":"2018-04-09T22:09:29.579Z","type":"message"}
+{"nick":"DeltaHeavy","message":"It's return value is the new value for that index","date":"2018-04-09T22:09:30.205Z","type":"message"}
+{"nick":"orbyt_","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T22:09:34.930Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"n> [1, 2, 3].map(a => a * 2)","date":"2018-04-09T22:09:39.883Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ 2, 4, 6 ]","date":"2018-04-09T22:09:41.661Z","type":"message"}
+{"nick":"Cork","date":"2018-04-09T22:09:57.358Z","type":"join"}
+{"nick":"DeltaHeavy","message":"[1, 2, 3].map(a => `#${a}`)","date":"2018-04-09T22:09:57.677Z","type":"message"}
+{"nick":"DeltaHeavy","message":"n>[1, 2, 3].map(a => `#${a}`)","date":"2018-04-09T22:10:05.959Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ '#1', '#2', '#3' ]","date":"2018-04-09T22:10:07.825Z","type":"message"}
+{"nick":"DeltaHeavy","message":"n> [1, 2, 3].map(a => 'EYYO')","date":"2018-04-09T22:10:22.588Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ 'EYYO', 'EYYO', 'EYYO' ]","date":"2018-04-09T22:10:24.237Z","type":"message"}
+{"nick":"cthulchu","message":"okay, I have an array of objects, each of which has fields. I need to delete a few fields from each","date":"2018-04-09T22:10:28.137Z","type":"message"}
+{"nick":"ThePendulum","message":"n> ['mom', 'dad', 'sis'].map(fam => 'hi ' + fam)","date":"2018-04-09T22:10:32.687Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ 'hi mom', 'hi dad', 'hi sis' ]","date":"2018-04-09T22:10:34.408Z","type":"message"}
+{"nick":"DeltaHeavy","message":"cthulchu Why do you want to delete fields?","date":"2018-04-09T22:10:40.332Z","type":"message"}
+{"nick":"ThePendulum","message":"cthulchu: return an object with all but those fields","date":"2018-04-09T22:10:57.294Z","type":"message"}
+{"nick":"cthulchu","message":"cuz this is the response from the API I work with and I need to send it back to clone a story","date":"2018-04-09T22:11:08.232Z","type":"message"}
+{"nick":"adempus","date":"2018-04-09T22:11:13.834Z","type":"join"}
+{"nick":"cthulchu","message":"but the labels of the story have ids","date":"2018-04-09T22:11:14.507Z","type":"message"}
+{"nick":"cthulchu","message":"I need to remove them","date":"2018-04-09T22:11:19.162Z","type":"message"}
+{"nick":"em","reason":"Read error: Connection reset by peer","date":"2018-04-09T22:11:28.039Z","type":"quit"}
+{"nick":"cthulchu","message":"otherwise pivotaltracker cries like a girl","date":"2018-04-09T22:11:28.253Z","type":"message"}
+{"nick":"adempus","reason":"Client Quit","date":"2018-04-09T22:11:39.416Z","type":"quit"}
+{"nick":"ThePendulum","message":"there's object.pick and object.omit as well","date":"2018-04-09T22:11:39.787Z","type":"message"}
+{"nick":"morenoh149","reason":"Ping timeout: 240 seconds","date":"2018-04-09T22:11:51.361Z","type":"quit"}
+{"nick":"ThePendulum","message":"libs","date":"2018-04-09T22:11:53.213Z","type":"message"}
+{"nick":"cthulchu","message":"omg","date":"2018-04-09T22:11:56.777Z","type":"message"}
+{"nick":"cthulchu","message":"no, I can't use third-party stuff","date":"2018-04-09T22:12:06.814Z","type":"message"}
+{"nick":"adempus","date":"2018-04-09T22:12:17.011Z","type":"join"}
+{"nick":"cthulchu","message":"here. it's not exactly free JS","date":"2018-04-09T22:12:20.166Z","type":"message"}
+{"nick":"cthulchu","message":"I'm not in a browser, technically","date":"2018-04-09T22:12:28.366Z","type":"message"}
+{"nick":"ThePendulum","message":"you","date":"2018-04-09T22:12:30.394Z","type":"message"}
+{"nick":"ThePendulum","message":"are using JS professionally?","date":"2018-04-09T22:12:41.117Z","type":"message"}
+{"nick":"adempus","date":"2018-04-09T22:12:41.293Z","type":"part"}
+{"nick":"cthulchu","message":"it's googlescript","date":"2018-04-09T22:12:50.926Z","type":"message"}
+{"nick":"ThePendulum","message":"ah right","date":"2018-04-09T22:12:58.148Z","type":"message"}
+{"nick":"cthulchu","message":"it's a bit tricky. can't use thirdparties","date":"2018-04-09T22:13:01.812Z","type":"message"}
+{"nick":"cthulchu","message":"but it's still JS","date":"2018-04-09T22:13:06.960Z","type":"message"}
+{"nick":"plexigras","reason":"Quit: WeeChat 2.0.1","date":"2018-04-09T22:13:09.598Z","type":"quit"}
+{"nick":"cthulchu","message":"anyhow, I'll delete them for now","date":"2018-04-09T22:13:16.264Z","type":"message"}
+{"nick":"ThePendulum","message":"why not just return an object that explicitly has all the props you need from it?","date":"2018-04-09T22:13:41.310Z","type":"message"}
+{"nick":"cthulchu","message":"If I wanted to be really functional, I'd need to create another object from this one, I guess","date":"2018-04-09T22:13:41.606Z","type":"message"}
+{"nick":"DeltaHeavy","message":"cthulchu Try this...","date":"2018-04-09T22:13:42.282Z","type":"message"}
+{"nick":"morenoh149","date":"2018-04-09T22:13:51.713Z","type":"join"}
+{"nick":"ThePendulum","message":"instead of deleting the ones you don't need from the original","date":"2018-04-09T22:13:55.510Z","type":"message"}
+{"nick":"cthulchu","message":"cuz the original is large","date":"2018-04-09T22:14:06.148Z","type":"message"}
+{"nick":"cthulchu","message":"it's easier to delete ten fields than to copy seventy","date":"2018-04-09T22:14:19.920Z","type":"message"}
+{"nick":"DeltaHeavy","message":"[{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }].map(({ b, ...rest }) => rest)","date":"2018-04-09T22:14:20.419Z","type":"message"}
+{"nick":"ThePendulum","message":"you could write a basic version of object.omit","date":"2018-04-09T22:14:33.444Z","type":"message"}
+{"nick":"DeltaHeavy","message":"n> [{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }].map(({ b, ...rest }) => rest)","date":"2018-04-09T22:14:38.444Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ { a: 1, c: 3 }, { a: 4, c: 6 } ]","date":"2018-04-09T22:14:40.271Z","type":"message"}
+{"nick":"cym3try","date":"2018-04-09T22:14:48.459Z","type":"join"}
+{"nick":"cthulchu","message":"woooooooooooooooooow","date":"2018-04-09T22:15:06.278Z","type":"message"}
+{"nick":"cthulchu","message":"heeeel!","date":"2018-04-09T22:15:24.712Z","type":"message"}
+{"nick":"cthulchu","message":"n> [{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }].map(({ b,a ...rest }) => rest)","date":"2018-04-09T22:15:41.005Z","type":"message"}
+{"nick":"jellobot","message":"cthulchu, Failed to parse code: Unexpected token, expected , (1:57)","date":"2018-04-09T22:15:41.221Z","type":"message"}
+{"nick":"cthulchu","message":"n> [{ a: 1, b: 2, c: 3 }, { a: 4, b: 5, c: 6 }].map(({ b,a, ...rest }) => rest)","date":"2018-04-09T22:15:44.740Z","type":"message"}
+{"nick":"jellobot","message":"(okay) [ { c: 3 }, { c: 6 } ]","date":"2018-04-09T22:15:46.392Z","type":"message"}
+{"nick":"cthulchu","message":"interesting...","date":"2018-04-09T22:15:53.658Z","type":"message"}
+{"nick":"zsoc","message":"be careful with that syntax, it's very close to something that might summon yourself :p","date":"2018-04-09T22:16:18.799Z","type":"message"}
+{"nick":"akiva","reason":"Ping timeout: 265 seconds","date":"2018-04-09T22:16:20.457Z","type":"quit"}
+{"nick":"cthulchu","message":"ahahahahah","date":"2018-04-09T22:16:26.948Z","type":"message"}
+{"nick":"orbyt_","date":"2018-04-09T22:16:52.951Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T22:17:43.485Z","type":"join"}
+{"nick":"justicef_","date":"2018-04-09T22:17:45.588Z","type":"join"}
+{"nick":"morenoh149","reason":"Ping timeout: 240 seconds","date":"2018-04-09T22:17:57.776Z","type":"quit"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2018-04-09T22:18:08.778Z","type":"quit"}
+{"nick":"cthulchu","message":"parentStory.labels = parentStory.labels.map(({id, created_at, updated_at, ...rest}) =>rest)","date":"2018-04-09T22:18:09.169Z","type":"message"}
+{"nick":"cthulchu","message":"looks right?","date":"2018-04-09T22:18:12.812Z","type":"message"}
+{"nick":"cthulchu","message":"I still mutate the parentStory object","date":"2018-04-09T22:18:24.045Z","type":"message"}
+{"nick":"cthulchu","message":"but now it looks a lot better","date":"2018-04-09T22:18:37.866Z","type":"message"}
+{"nick":"wrkrcoop","reason":"Ping timeout: 268 seconds","date":"2018-04-09T22:19:06.719Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"cthulchu Yep","date":"2018-04-09T22:19:24.001Z","type":"message"}
+{"nick":"b4dger","date":"2018-04-09T22:19:54.384Z","type":"join"}
+{"nick":"kingarmadillo","date":"2018-04-09T22:20:48.721Z","type":"join"}
+{"nick":"wrkrcoop","date":"2018-04-09T22:21:47.394Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 264 seconds","date":"2018-04-09T22:22:33.449Z","type":"quit"}
+{"nick":"cthulchu","message":"hm... I don't think googlescript is intelligent enough for the arrows","date":"2018-04-09T22:22:34.830Z","type":"message"}
+{"nick":"cthulchu","message":"says \"Missing : after property ID\"","date":"2018-04-09T22:23:19.646Z","type":"message"}
+{"nick":"DeltaHeavy","message":"If that's the case then it can't handle the rest `...` operator either","date":"2018-04-09T22:23:59.277Z","type":"message"}
+{"nick":"widp","reason":"Quit: WeeChat 2.1","date":"2018-04-09T22:24:39.145Z","type":"quit"}
+{"nick":"ThePendulum","message":"is there a name for formatting dates 20180409 ?","date":"2018-04-09T22:25:26.870Z","type":"message"}
+{"nick":"kingarmadillo","reason":"Ping timeout: 240 seconds","date":"2018-04-09T22:25:27.780Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"Fuuuck that format","date":"2018-04-09T22:26:49.774Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Where is it @_@","date":"2018-04-09T22:26:54.322Z","type":"message"}
+{"nick":"cthulchu","message":"okay, I'll go back to the normal foreach","date":"2018-04-09T22:29:36.183Z","type":"message"}
+{"nick":"cthulchu","message":"it's bad","date":"2018-04-09T22:29:39.399Z","type":"message"}
+{"nick":"cthulchu","message":"I mean It's not made for complex apps","date":"2018-04-09T22:29:48.245Z","type":"message"}
+{"nick":"cthulchu","message":"it's completely synchronous","date":"2018-04-09T22:30:01.185Z","type":"message"}
+{"nick":"cthulchu","message":"I don't mind sync, but I managed to get used to async and I now feel bad when things are sync","date":"2018-04-09T22:30:25.461Z","type":"message"}
+{"nick":"DeltaHeavy","message":"It being syncronous isn't bad...how owuld it NOT be syncronous?","date":"2018-04-09T22:30:40.200Z","type":"message"}
+{"nick":"DeltaHeavy","message":"It's \"bad\" because it's only useful for producing side-effects which aside for certain cases, are bad.","date":"2018-04-09T22:31:08.373Z","type":"message"}
+{"nick":"d4rklit3","date":"2018-04-09T22:33:44.804Z","type":"join"}
+{"nick":"wrkrcoop","message":"Hi. I’m about to start looking for freelance work and I was wondering if anyone in here has a company that is hiring remote workers?","date":"2018-04-09T22:34:54.938Z","type":"message"}
+{"nick":"smccarthy","date":"2018-04-09T22:35:24.236Z","type":"join"}
+{"nick":"cthulchu","message":"I mean, It's strange to make sync http requests. Especially when I need to make like five at the same time and I don't mind at all to promise.all","date":"2018-04-09T22:36:12.781Z","type":"message"}
+{"nick":"cthulchu","message":"and I know it's JS, so if they wanted, they could make a way to have them sync","date":"2018-04-09T22:36:48.393Z","type":"message"}
+{"nick":"cthulchu","message":"*async","date":"2018-04-09T22:36:55.485Z","type":"message"}
+{"nick":"de-vri-es","reason":"Quit: WeeChat 2.0.1","date":"2018-04-09T22:36:57.388Z","type":"quit"}
+{"nick":"de-vri-es","date":"2018-04-09T22:37:23.261Z","type":"join"}
+{"nick":"DeltaHeavy","message":"cthulchu I thought you were talking about Array#forEach","date":"2018-04-09T22:37:28.438Z","type":"message"}
+{"nick":"cthulchu","message":"oh no","date":"2018-04-09T22:37:38.313Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I thought that's what you were talking about being \"bad\"","date":"2018-04-09T22:37:40.313Z","type":"message"}
+{"nick":"cthulchu","message":"anyhow, I enjoy this google script a lot more than VBA, which is used by MS Office.","date":"2018-04-09T22:38:19.340Z","type":"message"}
+{"nick":"cthulchu","message":"I appreciate JS here.","date":"2018-04-09T22:38:33.779Z","type":"message"}
+{"nick":"d3x0r","message":"I have 1) a way to make existing http wait for request (deasync is another npm that does it) 2) a sync http request method  :)","date":"2018-04-09T22:38:47.706Z","type":"message"}
+{"nick":"kingarmadillo","date":"2018-04-09T22:40:08.281Z","type":"join"}
+{"nick":"cthulchu","message":"no need for that stuff in Node","date":"2018-04-09T22:40:21.107Z","type":"message"}
+{"nick":"d3x0r","message":"sure there is :) I didn't want to have to pass a callback to requrie","date":"2018-04-09T22:40:39.721Z","type":"message"}
+{"nick":"cthulchu","message":"hehehehe","date":"2018-04-09T22:40:46.617Z","type":"message"}
+{"nick":"cthulchu","message":"embrace the async","date":"2018-04-09T22:41:03.720Z","type":"message"}
+{"nick":"d3x0r","message":"I do :) except where require is involved","date":"2018-04-09T22:41:32.226Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r Don't do a sync HTTP request","date":"2018-04-09T22:42:10.247Z","type":"message"}
+{"nick":"trevor","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T22:42:19.840Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"You can always export a Promise","date":"2018-04-09T22:42:22.164Z","type":"message"}
+{"nick":"patarr","reason":"Ping timeout: 240 seconds","date":"2018-04-09T22:42:27.773Z","type":"quit"}
+{"nick":"d3x0r","message":"why not? I don't have anything to do except with for the next code to trun.","date":"2018-04-09T22:42:27.951Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Because when you do end up wanting to do other stuff, now you can't.","date":"2018-04-09T22:42:50.372Z","type":"message"}
+{"nick":"duderonomy","date":"2018-04-09T22:42:53.800Z","type":"join"}
+{"nick":"DeltaHeavy","message":"There's no need for it","date":"2018-04-09T22:43:00.544Z","type":"message"}
+{"nick":"d3x0r","message":"I won't. Where it's used it can't.","date":"2018-04-09T22:43:06.825Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Just export a promise","date":"2018-04-09T22:43:54.765Z","type":"message"}
+{"nick":"d3x0r","message":"that just makes it more async","date":"2018-04-09T22:44:03.928Z","type":"message"}
+{"nick":"eckhardt_","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-04-09T22:44:16.553Z","type":"quit"}
+{"nick":"d3x0r","message":"and still have to jump through hopps to have to wait","date":"2018-04-09T22:44:17.255Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You just have to use it as a promise","date":"2018-04-09T22:44:40.502Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Using Promise#then","date":"2018-04-09T22:44:43.385Z","type":"message"}
+{"nick":"DeltaHeavy","message":"const foo = require('./foo'); foo.then(a =>","date":"2018-04-09T22:44:59.590Z","type":"message"}
+{"nick":"d3x0r","message":"and then the whole code body is in the parameter of a function, including subsequent requires","date":"2018-04-09T22:45:05.472Z","type":"message"}
+{"nick":"d3x0r","message":"how ugly.","date":"2018-04-09T22:45:11.256Z","type":"message"}
+{"nick":"d3x0r","message":"when I can just... get code... eval code.","date":"2018-04-09T22:45:19.468Z","type":"message"}
+{"nick":"DeltaHeavy","message":"No it's not","date":"2018-04-09T22:45:21.605Z","type":"message"}
+{"nick":"oorza","message":"modern JS code is \"everything inside a promise\"","date":"2018-04-09T22:45:25.830Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Or wait, you mean in the then","date":"2018-04-09T22:45:26.942Z","type":"message"}
+{"nick":"oorza","message":"get used to it","date":"2018-04-09T22:45:28.032Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Yeah...there's not hing wrong with that","date":"2018-04-09T22:45:31.819Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You don't need to even do that","date":"2018-04-09T22:45:39.453Z","type":"message"}
+{"nick":"DeltaHeavy","message":"YOu can define a function and pass that function's reference as the parameter","date":"2018-04-09T22:45:47.287Z","type":"message"}
+{"nick":"oorza","message":"there's plenty wrong with it, like reasoning about order of execution, particularly once async/await roll out :P","date":"2018-04-09T22:45:55.223Z","type":"message"}
+{"nick":"d3x0r","message":"Ya I think I'll pass on the promise fad thanx :)","date":"2018-04-09T22:46:01.177Z","type":"message"}
+{"nick":"DeltaHeavy","message":"oorza async / await are rolled out, and what's wrong with it?","date":"2018-04-09T22:46:30.464Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r It's not a fad lol","date":"2018-04-09T22:46:35.840Z","type":"message"}
+{"nick":"d3x0r","message":"Time will tell :)","date":"2018-04-09T22:46:51.652Z","type":"message"}
+{"nick":"DeltaHeavy","message":"And facts","date":"2018-04-09T22:46:55.918Z","type":"message"}
+{"nick":"d3x0r","message":"right","date":"2018-04-09T22:47:01.073Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You going to write all your JS with no promises?","date":"2018-04-09T22:47:24.644Z","type":"message"}
+{"nick":"DeltaHeavy","message":"And instead...use what? Callbacks?","date":"2018-04-09T22:47:33.650Z","type":"message"}
+{"nick":"duderonomy","reason":"Client Quit","date":"2018-04-09T22:47:37.869Z","type":"quit"}
+{"nick":"d3x0r","message":"probably not","date":"2018-04-09T22:47:45.746Z","type":"message"}
+{"nick":"d3x0r","message":"but then every tool can be overused","date":"2018-04-09T22:47:51.558Z","type":"message"}
+{"nick":"DeltaHeavy","message":"How are you going to write async code?","date":"2018-04-09T22:48:02.395Z","type":"message"}
+{"nick":"oorza","message":"DeltaHeavy deciphering a maze of context passing async calls all over the place and trying to figure out what async context forked into which other contexts and how those eventually arrived at a stack trace that starts with something outside your codebase because it was resolved in a promise that was handed to Promise.all... well that's no fun","date":"2018-04-09T22:48:11.113Z","type":"message"}
+{"nick":"d3x0r","message":"I don't; I write event based code","date":"2018-04-09T22:48:27.252Z","type":"message"}
+{"nick":"DeltaHeavy","message":"oorza Sounds like using promises poorly","date":"2018-04-09T22:48:36.140Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r What do you write in JS where you don't do any of this?","date":"2018-04-09T22:48:42.133Z","type":"message"}
+{"nick":"DeltaHeavy","message":"HTTP backends?","date":"2018-04-09T22:48:48.639Z","type":"message"}
+{"nick":"d3x0r","message":"sure","date":"2018-04-09T22:48:57.920Z","type":"message"}
+{"nick":"d3x0r","message":"amongst other things","date":"2018-04-09T22:49:01.918Z","type":"message"}
+{"nick":"oorza","message":"DeltaHeavy they don't lend themselves to being used properly and it takes some userspace code work to get them to dump useful traces out","date":"2018-04-09T22:49:14.867Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r Ok, so if you want to do something over the network on your server, or query your DB, are you going to halt all execution while that happens?","date":"2018-04-09T22:49:28.257Z","type":"message"}
+{"nick":"oorza","message":"they're not cancellable, they don't require catch blocks to be attached to them, etc. etc.","date":"2018-04-09T22:49:36.383Z","type":"message"}
+{"nick":"oorza","message":"they're a pretty weak abstraction","date":"2018-04-09T22:49:40.640Z","type":"message"}
+{"nick":"DeltaHeavy","message":"oorza Totally disagree. Not my experience.","date":"2018-04-09T22:49:46.960Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You don't use catch blocks, you use Promise#catch","date":"2018-04-09T22:49:58.819Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You know about Promise#catch right?","date":"2018-04-09T22:50:03.412Z","type":"message"}
+{"nick":"oorza","message":"that's what I meant","date":"2018-04-09T22:50:07.223Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Do you know about promises unwrapping nested promises?","date":"2018-04-09T22:50:24.588Z","type":"message"}
+{"nick":"oorza","message":"yes","date":"2018-04-09T22:50:28.104Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I'll just have to respectfully disagree then.","date":"2018-04-09T22:50:41.255Z","type":"message"}
+{"nick":"smccarthy","reason":"Remote host closed the connection","date":"2018-04-09T22:50:48.396Z","type":"quit"}
+{"nick":"oorza","message":"Have you handled async code in other languages?","date":"2018-04-09T22:50:51.189Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Yep","date":"2018-04-09T22:50:57.821Z","type":"message"}
+{"nick":"oorza","message":"Node's approach is better than e.g. PHP but worse than most places","date":"2018-04-09T22:51:05.252Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I prefer Node's over most by far","date":"2018-04-09T22:51:19.970Z","type":"message"}
+{"nick":"smccarthy","date":"2018-04-09T22:51:21.465Z","type":"join"}
+{"nick":"doodadjs_","new_nick":"doodadjs","date":"2018-04-09T22:51:27.683Z","type":"nick"}
+{"nick":"DeltaHeavy","message":"For single threaded concurrency anyway","date":"2018-04-09T22:51:29.186Z","type":"message"}
+{"nick":"DeltaHeavy","message":"As that's all it can really do :p","date":"2018-04-09T22:51:37.589Z","type":"message"}
+{"nick":"sz0","date":"2018-04-09T22:53:12.123Z","type":"join"}
+{"nick":"morenoh149","date":"2018-04-09T22:53:23.481Z","type":"join"}
+{"nick":"orbyt_","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T22:53:32.028Z","type":"quit"}
+{"nick":"dopesong","reason":"Remote host closed the connection","date":"2018-04-09T22:53:32.205Z","type":"quit"}
+{"nick":"doodadjs","message":"In other places you create and start a Thread object, in Node.js, you start and wait events/callbacks  (maybe my description is wrong)","date":"2018-04-09T22:53:34.658Z","type":"message"}
+{"nick":"dopesong","date":"2018-04-09T22:54:07.020Z","type":"join"}
+{"nick":"DeltaHeavy","message":"oorza What do you think does it better? Only I can think of right now...I don't remember exactly but there was some FP language that just automatically dealt with it I think.","date":"2018-04-09T22:54:08.471Z","type":"message"}
+{"nick":"DeltaHeavy","message":"That said I am biased cause JS is my main language. I don't think it's the best, but I think it's concurrency model is damn good","date":"2018-04-09T22:54:32.556Z","type":"message"}
+{"nick":"DeltaHeavy","message":"doodadjs In Node you use promises and callbacks (usually promisified callbacks)","date":"2018-04-09T22:54:50.332Z","type":"message"}
+{"nick":"d3x0r","message":"yes and gives a good feeding point for external threads to give it data","date":"2018-04-09T22:54:53.686Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Callbacks are really only there for historical reasons","date":"2018-04-09T22:54:56.401Z","type":"message"}
+{"nick":"d3x0r","message":"having C/C++ code attached ... I'm not limited to a single threads","date":"2018-04-09T22:55:05.117Z","type":"message"}
+{"nick":"doodadjs","message":"DeltaHeavy: yep, at the end, you use Promises","date":"2018-04-09T22:55:12.756Z","type":"message"}
+{"nick":"orbyt_","date":"2018-04-09T22:57:50.983Z","type":"join"}
+{"nick":"dopesong","reason":"Ping timeout: 260 seconds","date":"2018-04-09T22:58:23.978Z","type":"quit"}
+{"nick":"orbyt_","reason":"Client Quit","date":"2018-04-09T23:00:39.136Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"d3x0r Creating your own threads and managing locks for concurrency, not parallelism so you can crunch things through the CPU faster, is much more complicated than using an abstraction like Promise","date":"2018-04-09T23:00:55.604Z","type":"message"}
+{"nick":"BlaDe^_","date":"2018-04-09T23:01:05.391Z","type":"part"}
+{"nick":"FunnyLookinHat","date":"2018-04-09T23:01:07.590Z","type":"quit"}
+{"nick":"d3x0r","message":"ya but something I've been in practice with for 23 years.  Kinda a master of that though I'd never say so","date":"2018-04-09T23:01:32.672Z","type":"message"}
+{"nick":"doodadjs","message":"Promise + Threads could be desirable","date":"2018-04-09T23:01:32.912Z","type":"message"}
+{"nick":"NomadJim","reason":"Read error: Connection reset by peer","date":"2018-04-09T23:01:34.799Z","type":"quit"}
+{"nick":"d3x0r","message":"and once it's given a JS interface; not so hard.","date":"2018-04-09T23:01:56.719Z","type":"message"}
+{"nick":"NomadJim","date":"2018-04-09T23:01:59.613Z","type":"join"}
+{"nick":"d3x0r","message":"err s/hard/complicated/","date":"2018-04-09T23:02:13.350Z","type":"message"}
+{"nick":"doodadjs","message":"Start threads, do your things until threads finish, then continue","date":"2018-04-09T23:02:14.820Z","type":"message"}
+{"nick":"d3x0r","message":"no....","date":"2018-04-09T23:02:27.776Z","type":"message"}
+{"nick":"d3x0r","message":"start threads... threads gather events and give it to the application, application does things to setup other events and is done","date":"2018-04-09T23:02:58.832Z","type":"message"}
+{"nick":"bencevans","date":"2018-04-09T23:03:08.202Z","type":"join"}
+{"nick":"d3x0r","message":"I don't see promoises used in addEventListener....","date":"2018-04-09T23:03:11.163Z","type":"message"}
+{"nick":"cym3try","reason":"Ping timeout: 256 seconds","date":"2018-04-09T23:03:17.400Z","type":"quit"}
+{"nick":"marthinal","date":"2018-04-09T23:03:21.547Z","type":"join"}
+{"nick":"DeltaHeavy","message":"JS is single threaded by nature. I doubt they'll ever be an API for threads","date":"2018-04-09T23:03:40.729Z","type":"message"}
+{"nick":"d3x0r","message":"webworkers","date":"2018-04-09T23:03:51.333Z","type":"message"}
+{"nick":"patarr","date":"2018-04-09T23:03:57.423Z","type":"join"}
+{"nick":"d3x0r","message":"cluster","date":"2018-04-09T23:03:58.745Z","type":"message"}
+{"nick":"d3x0r","message":"(module)","date":"2018-04-09T23:04:01.352Z","type":"message"}
+{"nick":"DeltaHeavy","message":"That's not a part of JS. That's a web API that's basically the same as starting up a second Node process and doing IPC","date":"2018-04-09T23:04:13.694Z","type":"message"}
+{"nick":"d3x0r","message":"it's still apis that allow multi-processing","date":"2018-04-09T23:04:45.443Z","type":"message"}
+{"nick":"DeltaHeavy","message":"They're not JS APIs to start a new thread in a JS process. They're APIs to start up new JS processes.","date":"2018-04-09T23:05:03.125Z","type":"message"}
+{"nick":"DeltaHeavy","message":"No shared memory or anything","date":"2018-04-09T23:05:18.532Z","type":"message"}
+{"nick":"DeltaHeavy","message":"You can do that with literally *any* language","date":"2018-04-09T23:05:27.843Z","type":"message"}
+{"nick":"doodadjs","message":"I dream of multi-threaded, but each thread must give a result, then Promise.all that","date":"2018-04-09T23:05:46.171Z","type":"message"}
+{"nick":"d3x0r","message":"Sure except sharedtypedarray, and webworkers (again) which is availble to node though nwjs","date":"2018-04-09T23:06:04.190Z","type":"message"}
+{"nick":"d3x0r","message":"and, typedarrays are shared memory with c++ threads, which yes, you can't start another JS 'thread'","date":"2018-04-09T23:06:31.052Z","type":"message"}
+{"nick":"genericuser","reason":"Remote host closed the connection","date":"2018-04-09T23:06:38.338Z","type":"quit"}
+{"nick":"d3x0r","message":"once a promise is resolved or rejected it's done.  That doesn't work for events.","date":"2018-04-09T23:06:58.104Z","type":"message"}
+{"nick":"thomas_25","date":"2018-04-09T23:07:07.868Z","type":"join"}
+{"nick":"doodadjs","message":"for \"events\", just start a new process","date":"2018-04-09T23:07:25.682Z","type":"message"}
+{"nick":"d3x0r","message":"no I add an event listener","date":"2018-04-09T23:07:35.582Z","type":"message"}
+{"nick":"DeltaHeavy","message":"doodadjs Why would you do that?","date":"2018-04-09T23:08:32.233Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Just...make an event","date":"2018-04-09T23:08:37.634Z","type":"message"}
+{"nick":"genericuser","date":"2018-04-09T23:08:53.228Z","type":"join"}
+{"nick":"emma","date":"2018-04-09T23:08:56.485Z","type":"join"}
+{"nick":"emma","reason":"Changing host","date":"2018-04-09T23:08:56.713Z","type":"quit"}
+{"nick":"emma","date":"2018-04-09T23:08:56.889Z","type":"join"}
+{"nick":"doodadjs","message":"I don't know another example than... a progression bar !!!","date":"2018-04-09T23:09:07.820Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r You can start JS processes but not have one process have more than one thread for executing JS","date":"2018-04-09T23:09:08.670Z","type":"message"}
+{"nick":"dopesong","date":"2018-04-09T23:09:08.855Z","type":"join"}
+{"nick":"cthulchu","message":"I have a feeling like there's not much difference between JSON.stringify() and .toString()","date":"2018-04-09T23:09:45.949Z","type":"message"}
+{"nick":"d3x0r","message":"nejs","date":"2018-04-09T23:09:49.224Z","type":"message"}
+{"nick":"doodadjs","message":"or a trigger(s) on X event(s)","date":"2018-04-09T23:09:51.763Z","type":"message"}
+{"nick":"d3x0r","message":"webworkers.","date":"2018-04-09T23:09:52.230Z","type":"message"}
+{"nick":"d3x0r","message":"in browsers","date":"2018-04-09T23:09:55.638Z","type":"message"}
+{"nick":"d3x0r","message":"webworker emulation in node is still single threaded","date":"2018-04-09T23:10:13.896Z","type":"message"}
+{"nick":"d3x0r","message":"with like all of the npm modules","date":"2018-04-09T23:10:29.106Z","type":"message"}
+{"nick":"earendel","reason":"Quit: Connection closed for inactivity","date":"2018-04-09T23:10:49.700Z","type":"quit"}
+{"nick":"d3x0r","message":"http://docs.nwjs.io/en/latest/For%20Users/Advanced/Protect%20JavaScript%20Source%20Code/#use-in-web-workers","date":"2018-04-09T23:11:09.404Z","type":"message"}
+{"nick":"superlou","date":"2018-04-09T23:11:29.511Z","type":"join"}
+{"nick":"doodadjs","message":"d3x0r: Nope, Node.js has no Webworkers","date":"2018-04-09T23:11:34.459Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r SharedArrayBuffer still moves memory between processes. 2 processes don't access the same memory addresses.","date":"2018-04-09T23:11:38.731Z","type":"message"}
+{"nick":"d3x0r","message":"no they're for webworker communication","date":"2018-04-09T23:11:52.660Z","type":"message"}
+{"nick":"d3x0r","message":"which is multi-thread single process","date":"2018-04-09T23:12:00.083Z","type":"message"}
+{"nick":"doodadjs","message":"\"Note that SharedArrayBuffer was disabled by default in all major browsers on 5 January, 2018 in response to Spectre.\"  ---  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/SharedArrayBuffer","date":"2018-04-09T23:12:32.551Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r Yeah I think I'm wrong on that actually","date":"2018-04-09T23:12:36.501Z","type":"message"}
+{"nick":"genericuser","reason":"Ping timeout: 260 seconds","date":"2018-04-09T23:13:27.268Z","type":"quit"}
+{"nick":"dopesong","reason":"Ping timeout: 240 seconds","date":"2018-04-09T23:13:27.752Z","type":"quit"}
+{"nick":"d3x0r","message":"the whole lua api in uhmm dual universe is event based... they have kinda a nice gui for it - select object - populates known methods - select event - fill in some code","date":"2018-04-09T23:14:09.919Z","type":"message"}
+{"nick":"Aiden","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T23:14:11.573Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"That is a web API though, so aside from anything implementing the non-JS spec, it doesn't exist but JS is mostly ran in browsers so I'll give you that. Either way concurrency (not parallelism) in JS is done through a single thread, you'd only use this stuff for parallelism.","date":"2018-04-09T23:14:21.505Z","type":"message"}
+{"nick":"d3x0r","message":"which is also kinda bad because if you want to use common codes","date":"2018-04-09T23:14:33.763Z","type":"message"}
+{"nick":"DeltaHeavy","message":"Is that in response to my message or a continuation of yours?","date":"2018-04-09T23:16:13.935Z","type":"message"}
+{"nick":"d3x0r","message":"if I have to move a buffer from disk to a network connection, there's no time gained from begeinning to end by delaying at any point; the buffer would have to be moved into memory, into cpu cache, back out to other memory transcoded; unless you can offload that to hardware or an external thread, there's not really anyhing else thta can be doe.","date":"2018-04-09T23:16:22.568Z","type":"message"}
+{"nick":"d3x0r","message":"but you can host mulieple processes (one per code) and then hyperthreading is also wasted...","date":"2018-04-09T23:16:37.639Z","type":"message"}
+{"nick":"act","date":"2018-04-09T23:17:05.004Z","type":"join"}
+{"nick":"d3x0r","message":"DeltaHeavy not really a response","date":"2018-04-09T23:17:07.450Z","type":"message"}
+{"nick":"d3x0r","message":"just musing","date":"2018-04-09T23:17:11.869Z","type":"message"}
+{"nick":"SirPole","reason":"Ping timeout: 256 seconds","date":"2018-04-09T23:17:20.679Z","type":"quit"}
+{"nick":"wrkrcoop","reason":"Quit: wrkrcoop","date":"2018-04-09T23:17:31.371Z","type":"quit"}
+{"nick":"DeltaHeavy","message":"What stops you from using common code with JS's single threaded concurrency model?","date":"2018-04-09T23:17:36.810Z","type":"message"}
+{"nick":"d3x0r","message":"and if the source of the files is already a memory mapped file... it's still going to take time to move it that isn't regained by relinquising","date":"2018-04-09T23:17:45.530Z","type":"message"}
+{"nick":"act","reason":"Client Quit","date":"2018-04-09T23:18:06.720Z","type":"quit"}
+{"nick":"d3x0r","message":"I just still don't see a use.  a promisified require doesn't help","date":"2018-04-09T23:18:39.451Z","type":"message"}
+{"nick":"d3x0r","message":"which is where we started with 'wish I could do a sync http request'","date":"2018-04-09T23:18:59.666Z","type":"message"}
+{"nick":"DeltaHeavy","message":"d3x0r I'm not talking about promisifying the requiring of a module","date":"2018-04-09T23:19:19.814Z","type":"message"}
+{"nick":"d3x0r","message":"then we haven't been talking about anything :)","date":"2018-04-09T23:19:39.141Z","type":"message"}
+{"nick":"DeltaHeavy","message":"I'm talking about if you want a value available as a module, but that value needs to be grabbed via a network request or something, export a promise from it","date":"2018-04-09T23:19:46.898Z","type":"message"}
+{"nick":"DeltaHeavy","message":"And that's something that's to be avoided anyway cause it's pretty awful","date":"2018-04-09T23:19:58.015Z","type":"message"}
+{"nick":"Arcarc","reason":"Ping timeout: 260 seconds","date":"2018-04-09T23:21:02.240Z","type":"quit"}
+{"nick":"morenoh149","reason":"Ping timeout: 260 seconds","date":"2018-04-09T23:21:08.988Z","type":"quit"}
+{"nick":"d3x0r","message":"... shrug ... *wanders away*","date":"2018-04-09T23:21:15.637Z","type":"message"}
+{"nick":"samsch","reason":"Quit: Leaving","date":"2018-04-09T23:22:52.462Z","type":"quit"}
+{"nick":"morenoh149","date":"2018-04-09T23:23:11.717Z","type":"join"}
+{"nick":"kevvor","date":"2018-04-09T23:24:23.796Z","type":"join"}
+{"nick":"EyePulp","reason":"Remote host closed the connection","date":"2018-04-09T23:29:56.704Z","type":"quit"}
+{"nick":"chjk6x","reason":"Ping timeout: 264 seconds","date":"2018-04-09T23:31:33.369Z","type":"quit"}
+{"nick":"dijksterhuis","reason":"Remote host closed the connection","date":"2018-04-09T23:31:41.124Z","type":"quit"}
+{"nick":"xkapastel","reason":"Quit: Connection closed for inactivity","date":"2018-04-09T23:31:52.560Z","type":"quit"}
+{"nick":"kevvor","reason":"Quit: Leaving...","date":"2018-04-09T23:33:23.616Z","type":"quit"}
+{"nick":"DLSteve","date":"2018-04-09T23:38:45.637Z","type":"join"}
+{"nick":"duderonomy","date":"2018-04-09T23:38:50.809Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-04-09T23:40:52.718Z","type":"quit"}
+{"nick":"tlent","reason":"Remote host closed the connection","date":"2018-04-09T23:42:59.317Z","type":"quit"}
+{"nick":"dopesong","date":"2018-04-09T23:45:02.901Z","type":"join"}
+{"nick":"EyePulp","date":"2018-04-09T23:45:47.406Z","type":"join"}
+{"nick":"FozzWorth","date":"2018-04-09T23:47:50.286Z","type":"join"}
+{"nick":"PeDr0_HuG0","date":"2018-04-09T23:48:14.363Z","type":"join"}
+{"nick":"ktilcu","reason":"Remote host closed the connection","date":"2018-04-09T23:49:19.466Z","type":"quit"}
+{"nick":"dopesong","reason":"Ping timeout: 255 seconds","date":"2018-04-09T23:49:47.871Z","type":"quit"}
+{"nick":"ktilcu","date":"2018-04-09T23:50:00.456Z","type":"join"}
+{"nick":"cthulchu","message":"why doesn't JSON.parse do something like if (typeoff(input)==\"Object\") return false;","date":"2018-04-09T23:50:05.309Z","type":"message"}
+{"nick":"cthulchu","message":"it still tries to parse it","date":"2018-04-09T23:50:15.537Z","type":"message"}
+{"nick":"cthulchu","message":"or better return input","date":"2018-04-09T23:50:44.102Z","type":"message"}
+{"nick":"cthulchu","message":"hehe","date":"2018-04-09T23:50:44.814Z","type":"message"}
+{"nick":"EyePulp","reason":"Ping timeout: 264 seconds","date":"2018-04-09T23:50:45.253Z","type":"quit"}
+{"nick":"cthulchu","message":"I could overload it, I guess","date":"2018-04-09T23:51:00.108Z","type":"message"}
+{"nick":"cthulchu","message":"I wonder if I can call it from the overload function","date":"2018-04-09T23:51:17.968Z","type":"message"}
+{"nick":"ktilcu","reason":"Remote host closed the connection","date":"2018-04-09T23:51:24.246Z","type":"quit"}
+{"nick":"ktilcu","date":"2018-04-09T23:51:39.831Z","type":"join"}
+{"nick":"thomas_25","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-09T23:52:23.466Z","type":"quit"}
+{"nick":"Aztec03","reason":"Ping timeout: 268 seconds","date":"2018-04-09T23:53:27.858Z","type":"quit"}
+{"nick":"thomas_25","date":"2018-04-09T23:54:09.498Z","type":"join"}
+{"nick":"marthinal","date":"2018-04-09T23:56:32.914Z","type":"join"}
+{"nick":"horsey","date":"2018-04-09T23:57:10.943Z","type":"join"}
+{"nick":"u0m3_","reason":"Ping timeout: 260 seconds","date":"2018-04-09T23:57:19.011Z","type":"quit"}
+{"nick":"pstef","reason":"Quit: Changing server","date":"2018-04-09T23:59:45.614Z","type":"quit"}
+{"nick":"bradfordli123","reason":"Ping timeout: 240 seconds","date":"2018-04-09T23:59:57.793Z","type":"quit"}
