@@ -10,3 +10,109 @@
 {"nick":"caitp","date":"2018-04-21T15:07:16.324Z","type":"join"}
 {"nick":"xaxxon","date":"2018-04-21T15:43:39.264Z","type":"join"}
 {"nick":"xaxxon","reason":"Quit: xaxxon","date":"2018-04-21T15:49:20.510Z","type":"quit"}
+{"nick":"caitp","message":"devsnek: my understanding of the \"kAuto\" policy is that v8 will perform RunMicrotasks on its own after finishing a top level JSEntry","date":"2018-04-21T16:14:26.557Z","type":"message"}
+{"nick":"devsnek","message":"thats what i understand too","date":"2018-04-21T16:14:38.723Z","type":"message"}
+{"nick":"caitp","message":"with other policies requiring you to do it manually","date":"2018-04-21T16:14:40.316Z","type":"message"}
+{"nick":"devsnek","message":"i'm just getting weird behaviour","date":"2018-04-21T16:14:52.418Z","type":"message"}
+{"nick":"caitp","message":"but as for whether the program exits or not, there's probably a mix of responsiility between your app and v8","date":"2018-04-21T16:15:04.557Z","type":"message"}
+{"nick":"devsnek","message":"when i try to .Get a persistent","date":"2018-04-21T16:15:19.467Z","type":"message"}
+{"nick":"caitp","message":"(I don't really know, but I'd say take a look at d8.cc)","date":"2018-04-21T16:15:21.241Z","type":"message"}
+{"nick":"devsnek","message":"there's a cast error when it tries to cast from v8::Isolate to v8::internal::Isolate","date":"2018-04-21T16:15:34.516Z","type":"message"}
+{"nick":"devsnek","message":"which is like really weird","date":"2018-04-21T16:15:39.468Z","type":"message"}
+{"nick":"caitp","message":"I guess I don't 100% know what you're asking, and I'm not the embedder expert in here either, but when in doubt always look at d8.cc :p","date":"2018-04-21T16:17:19.185Z","type":"message"}
+{"nick":"caitp","message":"or node, or chromium","date":"2018-04-21T16:17:29.779Z","type":"message"}
+{"nick":"devsnek","message":"its an error i've never seen before","date":"2018-04-21T16:19:24.395Z","type":"message"}
+{"nick":"devsnek","message":"i've done a bit of c++ in node","date":"2018-04-21T16:19:36.170Z","type":"message"}
+{"nick":"caitp","message":"well I mean, as an emedder you shouldn't eb seeing v8::internal::Isolate anyways, any time it's handed to you it should be ToLocal()'d","date":"2018-04-21T16:21:03.074Z","type":"message"}
+{"nick":"caitp","message":"I don't really know how you're ending up in that situation","date":"2018-04-21T16:21:14.546Z","type":"message"}
+{"nick":"caitp","message":"passing an API value to an internal method?","date":"2018-04-21T16:21:22.684Z","type":"message"}
+{"nick":"devsnek","message":"no the error is happening internally","date":"2018-04-21T16:21:28.348Z","type":"message"}
+{"nick":"devsnek","message":"i do `my_persistent.Get(isolate)`","date":"2018-04-21T16:21:39.518Z","type":"message"}
+{"nick":"devsnek","message":"and then inside the source for Persistent::Get","date":"2018-04-21T16:21:47.094Z","type":"message"}
+{"nick":"devsnek","message":"it aborts when it tries to cast","date":"2018-04-21T16:21:51.301Z","type":"message"}
+{"nick":"devsnek","message":"https://www.irccloud.com/pastebin/j4tWrQfO/","date":"2018-04-21T16:22:31.745Z","type":"message"}
+{"nick":"devsnek","message":"i suppose thats actually at the internal Context::New(isolate, persistent) call","date":"2018-04-21T16:23:16.539Z","type":"message"}
+{"nick":"caitp","message":"I see","date":"2018-04-21T16:25:14.137Z","type":"message"}
+{"nick":"caitp","message":"you might want to try breaking in v8::internal::Isolate::TearDown","date":"2018-04-21T16:27:08.514Z","type":"message"}
+{"nick":"caitp","message":"to see if you're hitting that before trying to deref the isolate?","date":"2018-04-21T16:27:23.733Z","type":"message"}
+{"nick":"devsnek","message":"hmm ok","date":"2018-04-21T16:27:46.338Z","type":"message"}
+{"nick":"devsnek","action":"googles how to set breakpoint in lldb","date":"2018-04-21T16:27:59.077Z","type":"action"}
+{"nick":"devsnek","message":"can i just type like breakpoint set v8::internal::Isolate::TearDown","date":"2018-04-21T16:28:38.913Z","type":"message"}
+{"nick":"devsnek","message":"will it recognise that","date":"2018-04-21T16:28:43.517Z","type":"message"}
+{"nick":"caitp","message":"I usually do just `b <symol>` or `b <file>:<line>`","date":"2018-04-21T16:30:18.984Z","type":"message"}
+{"nick":"devsnek","message":"caitp: it goes into promises here https://github.com/devsnek/ivan/blob/master/lib/ivan.js#L35","date":"2018-04-21T16:35:15.206Z","type":"message"}
+{"nick":"devsnek","message":"called here https://github.com/devsnek/ivan/blob/master/src/ivan.cc#L171","date":"2018-04-21T16:35:28.682Z","type":"message"}
+{"nick":"devsnek","message":"i'm worried that its hitting the dispose stuff","date":"2018-04-21T16:35:51.447Z","type":"message"}
+{"nick":"caitp","message":"well, the breakpoint in Isolate::TearDown should tell you if the isolate is being UAF'd, right?","date":"2018-04-21T16:41:35.238Z","type":"message"}
+{"nick":"caitp","message":"if the breakpoint hits, you could use _v8_internal_Print_StackTrace() in lldbb to see where that's getting hit from","date":"2018-04-21T16:43:22.396Z","type":"message"}
+{"nick":"devsnek","message":"fancy stuff","date":"2018-04-21T16:44:33.204Z","type":"message"}
+{"nick":"RT|Chatzilla","reason":"Quit: ChatZilla 0.9.86.1 [Firefox 2.0.0.22pre/2010030309]","date":"2018-04-21T16:55:19.957Z","type":"quit"}
+{"nick":"devsnek","message":"breakpoint never hits :(","date":"2018-04-21T17:14:10.174Z","type":"message"}
+{"nick":"caitp","message":"hmm","date":"2018-04-21T17:14:27.278Z","type":"message"}
+{"nick":"caitp","message":"that eliminates one class of problems at least right","date":"2018-04-21T17:14:48.431Z","type":"message"}
+{"nick":"devsnek","message":"i suppose...","date":"2018-04-21T17:15:01.287Z","type":"message"}
+{"nick":"devsnek","message":"i wish yang guo was on irc he always knows how to fix stuff","date":"2018-04-21T17:15:21.448Z","type":"message"}
+{"nick":"caitp","message":"you could try tweeting at him but I think they all deserve to have a real weekend","date":"2018-04-21T17:15:51.823Z","type":"message"}
+{"nick":"devsnek","message":"yea","date":"2018-04-21T17:16:01.161Z","type":"message"}
+{"nick":"caitp","message":"so, lets see..","date":"2018-04-21T17:17:23.206Z","type":"message"}
+{"nick":"caitp","message":"ok, I think I see the problem","date":"2018-04-21T17:29:08.099Z","type":"message"}
+{"nick":"devsnek","message":"oh god i hope so","date":"2018-04-21T17:29:14.014Z","type":"message"}
+{"nick":"caitp","message":"well the crash is during your module_.Get(isolate) call --- and the Isolate is fine","date":"2018-04-21T17:30:44.411Z","type":"message"}
+{"nick":"caitp","message":"so I'm guessing the module_ persistent is never initialized","date":"2018-04-21T17:30:54.537Z","type":"message"}
+{"nick":"devsnek","message":"right","date":"2018-04-21T17:30:55.026Z","type":"message"}
+{"nick":"devsnek","message":"uhhhh","date":"2018-04-21T17:30:58.057Z","type":"message"}
+{"nick":"caitp","message":"but it's hard to see why","date":"2018-04-21T17:31:02.172Z","type":"message"}
+{"nick":"devsnek","message":"it definitely is","date":"2018-04-21T17:31:07.980Z","type":"message"}
+{"nick":"devsnek","message":"there would be a different crash if it was empty","date":"2018-04-21T17:31:49.748Z","type":"message"}
+{"nick":"devsnek","message":"i can try logging that","date":"2018-04-21T17:33:07.747Z","type":"message"}
+{"nick":"devsnek","message":"caitp: IsEmpty is false","date":"2018-04-21T17:34:40.396Z","type":"message"}
+{"nick":"caitp","message":"I believe you that it's created, but I mean, the invalid access is happening dereferencing it","date":"2018-04-21T17:34:41.783Z","type":"message"}
+{"nick":"devsnek","message":"referencing the isolate","date":"2018-04-21T17:34:49.811Z","type":"message"}
+{"nick":"devsnek","message":"dereferencing*","date":"2018-04-21T17:34:53.258Z","type":"message"}
+{"nick":"caitp","message":"so like, whatever it's pointing to is trash","date":"2018-04-21T17:34:53.713Z","type":"message"}
+{"nick":"devsnek","message":"the error is `*p`","date":"2018-04-21T17:35:05.384Z","type":"message"}
+{"nick":"caitp","message":"yes","date":"2018-04-21T17:35:08.797Z","type":"message"}
+{"nick":"caitp","message":"and the `*p` is your dereferenced Persistent<Module>","date":"2018-04-21T17:35:25.673Z","type":"message"}
+{"nick":"caitp","message":"or rather","date":"2018-04-21T17:35:31.943Z","type":"message"}
+{"nick":"devsnek","message":"oshiz","date":"2018-04-21T17:35:32.121Z","type":"message"}
+{"nick":"devsnek","message":"so tf is going on here then","date":"2018-04-21T17:35:48.414Z","type":"message"}
+{"nick":"caitp","message":"I think `that` is a Module*, and *p is dereferencing the internalized version of that","date":"2018-04-21T17:36:03.059Z","type":"message"}
+{"nick":"caitp","message":"which appears to be trash","date":"2018-04-21T17:36:20.109Z","type":"message"}
+{"nick":"caitp","message":"adam, sathya and georg are the people I'd probably ask","date":"2018-04-21T17:36:58.566Z","type":"message"}
+{"nick":"devsnek","message":"not doing reviews adam?","date":"2018-04-21T17:37:19.521Z","type":"message"}
+{"nick":"caitp","message":"doesn't seem unlikely","date":"2018-04-21T17:38:11.776Z","type":"message"}
+{"nick":"devsnek","message":"i don't remember his last name","date":"2018-04-21T17:38:21.463Z","type":"message"}
+{"nick":"devsnek","message":"but there's an adam on chromium-reviews whose status is \"not doing reviews\"","date":"2018-04-21T17:38:34.989Z","type":"message"}
+{"nick":"caitp","message":"yeah that's the one","date":"2018-04-21T17:38:57.501Z","type":"message"}
+{"nick":"caitp","message":"I guess he's out","date":"2018-04-21T17:39:12.612Z","type":"message"}
+{"nick":"devsnek","message":"do you know about global vs persistent usage","date":"2018-04-21T17:39:23.155Z","type":"message"}
+{"nick":"devsnek","message":"global is persistent + move semantics right","date":"2018-04-21T17:39:28.933Z","type":"message"}
+{"nick":"caitp","message":"my api knowledge is pretty limited","date":"2018-04-21T17:39:35.014Z","type":"message"}
+{"nick":"caitp","message":"pretty much only run into it when writing C++ unit tests","date":"2018-04-21T17:39:46.785Z","type":"message"}
+{"nick":"devsnek","message":"i'll do some debugging around where i set the persistent","date":"2018-04-21T17:41:49.414Z","type":"message"}
+{"nick":"devsnek","message":"ugh","date":"2018-04-21T17:41:52.099Z","type":"message"}
+{"nick":"devsnek","message":"caitp: i figured it out","date":"2018-04-21T17:52:20.654Z","type":"message"}
+{"nick":"devsnek","message":"i feel like an idiot","date":"2018-04-21T17:52:26.082Z","type":"message"}
+{"nick":"caitp","message":"nice","date":"2018-04-21T17:52:39.229Z","type":"message"}
+{"nick":"devsnek","message":"you know my ModuleWrap::New?","date":"2018-04-21T17:52:53.279Z","type":"message"}
+{"nick":"devsnek","message":"https://www.irccloud.com/pastebin/4hsrGBvQ/evil.diff","date":"2018-04-21T17:53:21.079Z","type":"message"}
+{"nick":"devsnek","message":"i forgot to pass it to the FunctionTemplate 🤦‍♂️","date":"2018-04-21T17:53:40.669Z","type":"message"}
+{"nick":"caitp","message":"so it was an empty callack and your thing creating the persistent was never getting called?","date":"2018-04-21T17:54:42.340Z","type":"message"}
+{"nick":"devsnek","message":"yep","date":"2018-04-21T17:54:53.375Z","type":"message"}
+{"nick":"caitp","message":"yeah, I don't totally get the point of the null callack","date":"2018-04-21T17:55:35.120Z","type":"message"}
+{"nick":"caitp","message":"so that seems like an easy mistake to make","date":"2018-04-21T17:55:46.092Z","type":"message"}
+{"nick":"devsnek","message":"i feel so dead","date":"2018-04-21T17:56:35.595Z","type":"message"}
+{"nick":"caitp","message":"I'd rather ASSERT(callback != nullptr) and have a separate static method for creating a null-callback FunctionTemplate if embebdders really need that","date":"2018-04-21T17:56:40.128Z","type":"message"}
+{"nick":"devsnek","message":"its actually weirding me out","date":"2018-04-21T17:56:52.025Z","type":"message"}
+{"nick":"devsnek","message":"i was always doing ASSIGN_OR_RETURN_UNWRAP(&obj, that);","date":"2018-04-21T17:57:17.077Z","type":"message"}
+{"nick":"devsnek","message":"which should have bit the unwrap being a nullptr and returned before anything ran","date":"2018-04-21T17:57:34.506Z","type":"message"}
+{"nick":"caitp","message":"well anyway, cool you figured it out","date":"2018-04-21T17:58:58.892Z","type":"message"}
+{"nick":"devsnek","message":"thanks for helping out","date":"2018-04-21T17:59:16.499Z","type":"message"}
+{"nick":"plutoniix","date":"2018-04-21T19:21:27.267Z","type":"join"}
+{"nick":"plutoniix","reason":"Max SendQ exceeded","date":"2018-04-21T19:21:35.236Z","type":"quit"}
+{"nick":"plutoniix","date":"2018-04-21T19:22:41.328Z","type":"join"}
+{"nick":"RT|Chatzilla","date":"2018-04-21T22:59:26.406Z","type":"join"}
+{"nick":"AtumT_","date":"2018-04-21T23:04:41.341Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 260 seconds","date":"2018-04-21T23:07:49.230Z","type":"quit"}
+{"nick":"AtumT","date":"2018-04-21T23:18:05.517Z","type":"join"}
+{"nick":"AtumT_","reason":"Ping timeout: 264 seconds","date":"2018-04-21T23:19:33.446Z","type":"quit"}
