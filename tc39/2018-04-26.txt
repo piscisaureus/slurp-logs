@@ -96,3 +96,112 @@
 {"nick":"caitp","message":"CreateDynamicFunction doesn't have that modification though, so it is a SyntaxError in new Function(...) --- I guess I assumed it was consistent between the two","date":"2018-04-26T15:21:26.804Z","type":"message"}
 {"nick":"caitp","message":"the fact that it's not consistent is also kind of bad","date":"2018-04-26T15:21:33.906Z","type":"message"}
 {"nick":"seishun","date":"2018-04-26T15:45:27.243Z","type":"join"}
+{"nick":"seishun","reason":"Read error: Connection reset by peer","date":"2018-04-26T16:05:01.582Z","type":"quit"}
+{"nick":"seishun","date":"2018-04-26T16:12:46.819Z","type":"join"}
+{"nick":"littledan","message":"Yeah, I mean I agree with you on the design point. That's why I argued against allowing private fields access from eval in committee. But, the committee went the other way","date":"2018-04-26T16:46:04.643Z","type":"message"}
+{"nick":"littledan","message":"You're probably right about there being spec bugs here, I need to look at it more closely","date":"2018-04-26T16:46:41.523Z","type":"message"}
+{"nick":"ljharb","message":"could private fields be made to work inside Function","date":"2018-04-26T17:14:56.113Z","type":"message"}
+{"nick":"ljharb","message":"?","date":"2018-04-26T17:14:56.774Z","type":"message"}
+{"nick":"keith_miller","date":"2018-04-26T17:17:47.082Z","type":"join"}
+{"nick":"saulh","reason":"Remote host closed the connection","date":"2018-04-26T18:20:06.429Z","type":"quit"}
+{"nick":"gsathya","message":"caitp: The jsfiddle you posted is not a SyntaxError looking at the spec and V8 behaves correctly. I don't know about test262 tests, but I have V8 tests for this","date":"2018-04-26T18:58:55.809Z","type":"message"}
+{"nick":"caitp","message":"gsathya: it should be though","date":"2018-04-26T19:07:13.556Z","type":"message"}
+{"nick":"caitp","message":"that its not is bad","date":"2018-04-26T19:07:15.619Z","type":"message"}
+{"nick":"caitp","message":"like, it is a bad design","date":"2018-04-26T19:10:03.657Z","type":"message"}
+{"nick":"caitp","message":"i explained why up there","date":"2018-04-26T19:12:46.319Z","type":"message"}
+{"nick":"jwalden","date":"2018-04-26T19:18:49.544Z","type":"join"}
+{"nick":"Bakkot","message":"ljharb: function is like indirect eval, no? it doesn't see variables from the calling scope. so it definitely shouldn't see private names.","date":"2018-04-26T20:05:39.540Z","type":"message"}
+{"nick":"Bakkot","message":"caitp: not sure I understand the argument that it's a bad design","date":"2018-04-26T20:07:50.732Z","type":"message"}
+{"nick":"Bakkot","message":"indirect eval should not have access to private names, direct eval should; this is consistent with access to anything else that's closed over","date":"2018-04-26T20:08:56.970Z","type":"message"}
+{"nick":"ljharb","message":"Bakkot: ah yeah good call","date":"2018-04-26T20:31:51.395Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 240 seconds","date":"2018-04-26T20:33:21.407Z","type":"quit"}
+{"nick":"caitp","message":"Bakkot: because its room for injected stuff to access private state, it breaks guarantees","date":"2018-04-26T20:44:16.722Z","type":"message"}
+{"nick":"caitp","message":"not a fan of that","date":"2018-04-26T20:44:24.178Z","type":"message"}
+{"nick":"Bakkot","message":"caitp: if you're not sanitizing code passed to a direct eval, you have bigger problems","date":"2018-04-26T20:57:16.968Z","type":"message"}
+{"nick":"Bakkot","message":"I don't think it breaks guarantees any more than the fact that a direct eval can access closed-over variables","date":"2018-04-26T20:57:36.164Z","type":"message"}
+{"nick":"Bakkot","message":"if you want guarantees, you need to be able to reason about what you're passing to eval","date":"2018-04-26T20:57:59.452Z","type":"message"}
+{"nick":"caitp","message":"yeah, OR, the primitive could be just not exposing this","date":"2018-04-26T20:58:37.457Z","type":"message"}
+{"nick":"caitp","message":"because like, there's no benefit to it","date":"2018-04-26T20:58:43.596Z","type":"message"}
+{"nick":"Bakkot","message":"there's benefit - it makes the mental model more consistent","date":"2018-04-26T20:59:25.909Z","type":"message"}
+{"nick":"caitp","message":"how","date":"2018-04-26T20:59:31.576Z","type":"message"}
+{"nick":"Bakkot","message":"currently the model for how privacy works with private fields is that the names are lexically scoped, so code has access to the field iff it has access to the lexical scope in question, just like for closed-over variables","date":"2018-04-26T21:00:24.680Z","type":"message"}
+{"nick":"Bakkot","message":"this implies they can be used from a direct eval","date":"2018-04-26T21:00:33.774Z","type":"message"}
+{"nick":"caitp","message":"eval has behaved kind of stupidly forever, keeping consistency with that badness isn't really improving things, it's just making new things worse","date":"2018-04-26T21:00:47.549Z","type":"message"}
+{"nick":"caitp","message":"a simpler model is like \"eval code can't use private names, period\"","date":"2018-04-26T21:01:13.084Z","type":"message"}
+{"nick":"caitp","message":"which would be awesome","date":"2018-04-26T21:01:19.743Z","type":"message"}
+{"nick":"caitp","message":"or at the very least \"can only use private names declared in PNEs which occur within the eval\"","date":"2018-04-26T21:01:45.301Z","type":"message"}
+{"nick":"Bakkot","message":"That's strictly less simple","date":"2018-04-26T21:02:24.654Z","type":"message"}
+{"nick":"Bakkot","message":"that's precisely the above mental model, plus an epicycle","date":"2018-04-26T21:02:24.969Z","type":"message"}
+{"nick":"caitp","message":"how is that less simple","date":"2018-04-26T21:02:39.205Z","type":"message"}
+{"nick":"Bakkot","message":"Because now it's \"currently the model for how privacy works with private fields is that the names are lexically scoped, so code has access to the field iff it has access to the lexical scope in question, just like for closed-over variables. EXCEPT ALSO they're opaque to direct eval, for some reason.\"","date":"2018-04-26T21:03:04.485Z","type":"message"}
+{"nick":"caitp","message":"eval'd code isn't strictly in the same lexical scope","date":"2018-04-26T21:03:34.717Z","type":"message"}
+{"nick":"caitp","message":"that string can come from anywhere","date":"2018-04-26T21:03:38.890Z","type":"message"}
+{"nick":"Bakkot","message":"the model is no longer \"lexical scope\". now it's \"lexical scope, and we decided to make it work differently for direct eval\"","date":"2018-04-26T21:03:45.711Z","type":"message"}
+{"nick":"Bakkot","message":"for the purposes of JS code, direct eval'd code is in the same lexical scope.","date":"2018-04-26T21:04:01.261Z","type":"message"}
+{"nick":"Bakkot","message":"that's what the \"direct\" part means.","date":"2018-04-26T21:04:12.589Z","type":"message"}
+{"nick":"caitp","message":"or we can just stop calling it \"lexical scope\" and just make PNEs behave sort of like lexical scope","date":"2018-04-26T21:04:13.322Z","type":"message"}
+{"nick":"caitp","message":"\"it's lexical, but better than ES2015 lexical\"","date":"2018-04-26T21:04:28.628Z","type":"message"}
+{"nick":"Bakkot","message":"sure, we can, but then we've introduced a new kind of scoping to the language.","date":"2018-04-26T21:04:55.598Z","type":"message"}
+{"nick":"caitp","message":"I mean, not really","date":"2018-04-26T21:05:29.920Z","type":"message"}
+{"nick":"caitp","message":"it's just a stricter meaning of lexical","date":"2018-04-26T21:05:44.696Z","type":"message"}
+{"nick":"Bakkot","message":"stricter implies different","date":"2018-04-26T21:06:07.833Z","type":"message"}
+{"nick":"cloudshu","message":"i prefer not special casing direct eval for private names as well","date":"2018-04-26T21:06:27.506Z","type":"message"}
+{"nick":"caitp","message":"\"it's the same but with fewer bad ideas\"","date":"2018-04-26T21:06:27.872Z","type":"message"}
+{"nick":"cloudshu","message":"is the desire so there's no need to implement by-name access for private names?","date":"2018-04-26T21:07:18.542Z","type":"message"}
+{"nick":"cloudshu","message":"and everything can be by-slot or whatever with all the lookups resolved ahead of time?","date":"2018-04-26T21:07:28.221Z","type":"message"}
+{"nick":"caitp","message":"i'm not 100% sure what you mean -- you mean like instead of doing a dynamic search for the name, it's statically known?","date":"2018-04-26T21:09:03.181Z","type":"message"}
+{"nick":"cloudshu","message":"yes","date":"2018-04-26T21:09:28.210Z","type":"message"}
+{"nick":"caitp","message":"it's probably easier to do that yeah","date":"2018-04-26T21:09:58.608Z","type":"message"}
+{"nick":"cloudshu","message":"i'm asking if you want private names to be invisible to direct eval for implementation reasons, or because you think it's gross","date":"2018-04-26T21:10:00.482Z","type":"message"}
+{"nick":"caitp","message":"hopefully the dynamic lookups can be eliminated during optimization anyways, but that's not really the reason for not liking it","date":"2018-04-26T21:11:08.125Z","type":"message"}
+{"nick":"cloudshu","message":"okay","date":"2018-04-26T21:11:29.963Z","type":"message"}
+{"nick":"caitp","message":"way I see it, eval code isn't \"really\" lexical, even for direct eval, it shouldn't be treated as lexical","date":"2018-04-26T21:11:31.290Z","type":"message"}
+{"nick":"cloudshu","message":"ah interesting","date":"2018-04-26T21:12:16.988Z","type":"message"}
+{"nick":"cloudshu","message":"i've always considered direct eval to be exactly lexical","date":"2018-04-26T21:12:24.854Z","type":"message"}
+{"nick":"caitp","message":"well I mean the spec considers it that wy","date":"2018-04-26T21:12:33.356Z","type":"message"}
+{"nick":"caitp","message":"way","date":"2018-04-26T21:12:34.134Z","type":"message"}
+{"nick":"caitp","message":"but the actual eval'd source isn't guaranteed to be lexical","date":"2018-04-26T21:12:46.238Z","type":"message"}
+{"nick":"cloudshu","message":"eval in general isn't really lexical, to be sure, but direct eval remains so","date":"2018-04-26T21:12:51.615Z","type":"message"}
+{"nick":"cloudshu","message":"how so? because vars might not escape sometimes?","date":"2018-04-26T21:12:56.798Z","type":"message"}
+{"nick":"caitp","message":"because the string could come from somewhere else","date":"2018-04-26T21:13:22.363Z","type":"message"}
+{"nick":"caitp","message":"could come from user input","date":"2018-04-26T21:13:24.365Z","type":"message"}
+{"nick":"caitp","message":"could come from untrusted stuff","date":"2018-04-26T21:13:28.739Z","type":"message"}
+{"nick":"caitp","message":"so because of that, I don't think it should be able to do anything with lexical variables surrounding the direct eval","date":"2018-04-26T21:13:50.063Z","type":"message"}
+{"nick":"caitp","message":"sanitized or not","date":"2018-04-26T21:13:54.307Z","type":"message"}
+{"nick":"cloudshu","message":"oh, not lexical in that the eval'd source isn't in-situ in the scope in which it's evaluated","date":"2018-04-26T21:14:17.269Z","type":"message"}
+{"nick":"cloudshu","message":"i think the mental model of direct eval is to eval something in the current lexical scope","date":"2018-04-26T21:15:29.540Z","type":"message"}
+{"nick":"cloudshu","message":"making private names an exception here would be very surprising imo","date":"2018-04-26T21:15:37.432Z","type":"message"}
+{"nick":"caitp","message":"i wouldn't be surprised","date":"2018-04-26T21:15:47.957Z","type":"message"}
+{"nick":"cloudshu","message":"and i don't mean the mental model for the spec, i mean how people use it","date":"2018-04-26T21:15:49.750Z","type":"message"}
+{"nick":"caitp","message":"in fact, I'm pretty sure most people don't really distinguish between direct and indirect eval","date":"2018-04-26T21:16:19.425Z","type":"message"}
+{"nick":"cloudshu","message":"really?","date":"2018-04-26T21:16:31.422Z","type":"message"}
+{"nick":"cloudshu","message":"actually who uses indirect eval anyhow","date":"2018-04-26T21:16:50.887Z","type":"message"}
+{"nick":"ljharb","message":"i use it","date":"2018-04-26T21:20:09.514Z","type":"message"}
+{"nick":"ljharb","message":"`Function` is the only way to featuretest syntax","date":"2018-04-26T21:20:18.298Z","type":"message"}
+{"nick":"ljharb","message":"(the only way that’s not eval, and eval is terrible)","date":"2018-04-26T21:20:27.289Z","type":"message"}
+{"nick":"caitp","message":"I've seen people use it by accident when I was working on angularjs, and use it on purpose for sketchy reasons","date":"2018-04-26T21:20:46.898Z","type":"message"}
+{"nick":"cloudshu","message":"i see","date":"2018-04-26T21:21:53.843Z","type":"message"}
+{"nick":"caitp","message":"statically resolving private names would be nice though","date":"2018-04-26T21:30:27.678Z","type":"message"}
+{"nick":"caitp","message":"no doubt","date":"2018-04-26T21:30:29.344Z","type":"message"}
+{"nick":"Bakkot","message":"as long as there's no direct evals, which everyone has to check for anyway, you can still do that","date":"2018-04-26T21:30:58.671Z","type":"message"}
+{"nick":"caitp","message":"not worth having 2 paths for it imo","date":"2018-04-26T21:31:55.992Z","type":"message"}
+{"nick":"caitp","message":"not in baseline","date":"2018-04-26T21:32:13.919Z","type":"message"}
+{"nick":"cloudshu","message":"the path already has to exist for basically everything else, though","date":"2018-04-26T21:35:18.556Z","type":"message"}
+{"nick":"caitp","message":"we don't really have a path converting dynamic loads into constants in baseline","date":"2018-04-26T21:36:18.598Z","type":"message"}
+{"nick":"caitp","message":"at least, last I checked","date":"2018-04-26T21:36:29.425Z","type":"message"}
+{"nick":"caitp","message":"and eliminating scope resolution and stuff, having multiple paths for it seems pretty flaky","date":"2018-04-26T21:37:24.456Z","type":"message"}
+{"nick":"cloudshu","message":"that's a parser decision","date":"2018-04-26T22:07:11.123Z","type":"message"}
+{"nick":"cloudshu","message":"i don't know how ignition works, it's vregs, right?","date":"2018-04-26T22:07:16.953Z","type":"message"}
+{"nick":"cloudshu","message":"but the decision whether a local or something can even go into a vreg must be based on the presence of eval","date":"2018-04-26T22:07:27.089Z","type":"message"}
+{"nick":"not-an-aardvark","date":"2018-04-26T22:40:40.788Z","type":"join"}
+{"nick":"keith_miller","reason":"Read error: Connection reset by peer","date":"2018-04-26T22:40:41.234Z","type":"quit"}
+{"nick":"keith_miller","date":"2018-04-26T22:42:51.447Z","type":"join"}
+{"nick":"arai","reason":"Ping timeout: 276 seconds","date":"2018-04-26T22:49:23.846Z","type":"quit"}
+{"nick":"keith_miller","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-26T22:53:45.082Z","type":"quit"}
+{"nick":"keith_miller","date":"2018-04-26T23:04:46.807Z","type":"join"}
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2018-04-26T23:20:13.262Z","type":"quit"}
+{"nick":"caitp","message":"I'm not implementing it in v8 --- making the decision, either at parse time or at codegen time, creates a complex decision, which is kind of annoying to make for something not strictly necessary","date":"2018-04-26T23:30:58.003Z","type":"message"}
+{"nick":"caitp","message":"but again, it's not really a \"change it for easier implementation\" thing, it's just a \"don't expose private information to arbitrary code\" thing","date":"2018-04-26T23:31:38.139Z","type":"message"}
+{"nick":"keith_miller","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2018-04-26T23:35:19.477Z","type":"quit"}
+{"nick":"keith_miller","date":"2018-04-26T23:37:06.589Z","type":"join"}
+{"nick":"arai","date":"2018-04-26T23:59:17.490Z","type":"join"}
