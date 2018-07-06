@@ -75,3 +75,191 @@
 {"nick":"m00dy","date":"2018-07-05T15:18:56.619Z","type":"join"}
 {"nick":"Wes-","message":"you mean via .load ?","date":"2018-07-05T15:43:48.899Z","type":"message"}
 {"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-07-05T15:55:54.196Z","type":"quit"}
+{"nick":"bradleymeck","message":"Wes-: I'm not sure what .load you are referring to","date":"2018-07-05T16:05:25.960Z","type":"message"}
+{"nick":"bradleymeck","message":"we probably cannot deprecate how Module.prototype.load works","date":"2018-07-05T16:05:46.128Z","type":"message"}
+{"nick":"bradleymeck","message":"this is more just for the CLI","date":"2018-07-05T16:05:51.539Z","type":"message"}
+{"nick":"bradleymeck","message":"I would love to deprecate how Module.prototype.load works... but don't think it is feasible","date":"2018-07-05T16:06:07.235Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: Ah, I thought you were talking about the .load commannd from the repl.  From my perspective - eliminating non-.js has perf benefits (fewer calls to stat()), but it will be a breaking change -- and really probably not measurable if the node_modules pattern module.paths doesn't get changed.  A require miss on my platform is probably around 30 calls to stat() IIRC","date":"2018-07-05T16:08:04.906Z","type":"message"}
+{"nick":"m00dy","date":"2018-07-05T16:08:32.500Z","type":"join"}
+{"nick":"Wes-","message":"bradleymeck: that said - in gpsee I rigged things so that require(X) could load either X.js, X.so, or both.  This was a VERY useful pattern for wrapping  system libraries and exposing something with javascript flavour","date":"2018-07-05T16:09:04.104Z","type":"message"}
+{"nick":"Wes-","message":"Also, X.jsc which was a pre-compiled version of the module","date":"2018-07-05T16:10:39.847Z","type":"message"}
+{"nick":"Wes-","message":"The insight there is that I believe programmers should type require(\"X\") to load X.js - the file extension shouldn't be a detail that's exposed to the API consumer.  As an API provider, I should be free to change the implementation details, such that module X that was originally written in JS is now written in C++","date":"2018-07-05T16:12:02.369Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-07-05T16:17:46.320Z","type":"quit"}
+{"nick":"ljharb","message":"that is entirely correct imo","date":"2018-07-05T16:26:47.437Z","type":"message"}
+{"nick":"ljharb","message":"same reason “index” shouldn’t appear in a require path","date":"2018-07-05T16:26:59.339Z","type":"message"}
+{"nick":"bradleymeck","message":"Wes-: i still want the specifier in your example to not require extension","date":"2018-07-05T16:27:59.318Z","type":"message"}
+{"nick":"bradleymeck","message":"i am talking explicitly about the resolved file on disk","date":"2018-07-05T16:28:10.293Z","type":"message"}
+{"nick":"ljharb","message":"bradleymeck: i think docs should deprecate using extensions, not the other way around.","date":"2018-07-05T16:28:55.774Z","type":"message"}
+{"nick":"ljharb","message":"(If something is to be deprecated)","date":"2018-07-05T16:29:10.856Z","type":"message"}
+{"nick":"bradleymeck","message":"ljharb: i'm not talking about specifiers though?","date":"2018-07-05T16:29:13.213Z","type":"message"}
+{"nick":"ljharb","message":"oh, my bad :-) what are you talking about?","date":"2018-07-05T16:29:39.169Z","type":"message"}
+{"nick":"bradleymeck","message":"files on disk, no extension / unknown extension","date":"2018-07-05T16:29:49.976Z","type":"message"}
+{"nick":"bradleymeck","message":"`touch foo` or `touch `foo.bar` then using `node ./foo` or `node ./foo.bar`","date":"2018-07-05T16:30:09.344Z","type":"message"}
+{"nick":"ljharb","message":"so like, every file in a “bin” that often lacks an extension on npm?","date":"2018-07-05T16:30:23.037Z","type":"message"}
+{"nick":"bradleymeck","message":"yes, hence only docs deprecation for now","date":"2018-07-05T16:30:41.960Z","type":"message"}
+{"nick":"ljharb","message":"that definitely doesn’t seem like a good idea","date":"2018-07-05T16:31:03.423Z","type":"message"}
+{"nick":"bradleymeck","message":"why?","date":"2018-07-05T16:31:15.518Z","type":"message"}
+{"nick":"bradleymeck","message":"your \"bin\" scripts can point to things with extensions","date":"2018-07-05T16:31:24.492Z","type":"message"}
+{"nick":"ljharb","message":"altho I’d accept that an extensionless file would throw without a shebang","date":"2018-07-05T16:31:24.599Z","type":"message"}
+{"nick":"ljharb","message":"it can, but i prefer not to","date":"2018-07-05T16:31:34.342Z","type":"message"}
+{"nick":"bradleymeck","message":"why do you want it to point to a file without an extension?","date":"2018-07-05T16:31:50.034Z","type":"message"}
+{"nick":"ljharb","message":"all my bins are extensionless. Binaries don’t have extensions typically","date":"2018-07-05T16:31:54.548Z","type":"message"}
+{"nick":"bradleymeck","message":"they aren't binaries though","date":"2018-07-05T16:32:01.765Z","type":"message"}
+{"nick":"ljharb","message":"extensions are for files you run with a program","date":"2018-07-05T16:32:04.603Z","type":"message"}
+{"nick":"bradleymeck","message":"you always run those files with `node`","date":"2018-07-05T16:32:15.054Z","type":"message"}
+{"nick":"ljharb","message":"i can do `./bar` and run it. That makes it an executable","date":"2018-07-05T16:32:17.350Z","type":"message"}
+{"nick":"ljharb","message":"executables, rather, are extensionless","date":"2018-07-05T16:32:33.136Z","type":"message"}
+{"nick":"bradleymeck","message":"executable yes, but not a binary","date":"2018-07-05T16:32:34.231Z","type":"message"}
+{"nick":"ljharb","message":"a/binary/executable/g in my above comments then","date":"2018-07-05T16:32:48.161Z","type":"message"}
+{"nick":"bradleymeck","message":"this is part of an inconsistency problem","date":"2018-07-05T16:32:48.869Z","type":"message"}
+{"nick":"bradleymeck","message":"right now `node foo.wasm` loads `foo.wasm` as CJS","date":"2018-07-05T16:33:00.888Z","type":"message"}
+{"nick":"bradleymeck","message":"same for without extension","date":"2018-07-05T16:33:12.052Z","type":"message"}
+{"nick":"ljharb","message":"it would make sense for a known extension to dominate","date":"2018-07-05T16:33:28.214Z","type":"message"}
+{"nick":"bradleymeck","message":"which is... not bueno if we support loading things as ESM for the entrypoint etc","date":"2018-07-05T16:33:36.647Z","type":"message"}
+{"nick":"ljharb","message":"but otherwise i think that CJS is the right default, absent a flag","date":"2018-07-05T16:33:46.854Z","type":"message"}
+{"nick":"bradleymeck","message":"ESM entrypoint has problems with this idea, so would webpackage/wasm","date":"2018-07-05T16:33:47.651Z","type":"message"}
+{"nick":"ljharb","message":"i still think a flag that defines the extension i want to pretend the entry point has, is the right approach","date":"2018-07-05T16:34:07.010Z","type":"message"}
+{"nick":"ljharb","message":"like `node --ext=mjs foo`","date":"2018-07-05T16:34:28.469Z","type":"message"}
+{"nick":"ljharb","message":"and that CJS should stay the default, but it could always throw unless ext=js is supplied, sometime in the future","date":"2018-07-05T16:35:10.387Z","type":"message"}
+{"nick":"bradleymeck","message":"we can't use CLI flags reliably in shebangs","date":"2018-07-05T16:35:47.214Z","type":"message"}
+{"nick":"bradleymeck","message":"various shells only parse the first argument in a shebang","date":"2018-07-05T16:36:02.866Z","type":"message"}
+{"nick":"bradleymeck","message":"and various `env` only read the 2nd argument","date":"2018-07-05T16:36:03.913Z","type":"message"}
+{"nick":"bradleymeck","message":"@ljharb yes, like I said, that is not reliable in a shebang","date":"2018-07-05T16:36:08.033Z","type":"message"}
+{"nick":"bradleymeck","message":"we could add a full shell parser to get it out of the shebang, but different shells parse things differently :(","date":"2018-07-05T16:36:10.760Z","type":"message"}
+{"nick":"bradleymeck","message":"ljharb: but how do you handle shells/OS that don't let you put that in the shebang","date":"2018-07-05T16:36:10.921Z","type":"message"}
+{"nick":"bradleymeck","message":"also windows...","date":"2018-07-05T16:36:43.668Z","type":"message"}
+{"nick":"m00dy","date":"2018-07-05T16:39:40.687Z","type":"join"}
+{"nick":"ljharb","message":"oh i didn’t mean in a shebang","date":"2018-07-05T16:42:29.363Z","type":"message"}
+{"nick":"ljharb","message":"i meant to node","date":"2018-07-05T16:42:31.911Z","type":"message"}
+{"nick":"ljharb","message":"shebangs would still only work for cjs","date":"2018-07-05T16:42:41.872Z","type":"message"}
+{"nick":"bradleymeck","message":"yea, so how do you load it with just `foo`","date":"2018-07-05T16:45:59.699Z","type":"message"}
+{"nick":"ljharb","message":"you’d do `node foo` and it would assume CJS? Or `./foo`","date":"2018-07-05T17:03:59.608Z","type":"message"}
+{"nick":"ljharb","message":"you just wouldn’t have an extensionless executable entry point that wasn’t in cjs.","date":"2018-07-05T17:04:18.081Z","type":"message"}
+{"nick":"al-damiri","date":"2018-07-05T17:04:34.561Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-05T17:14:44.404Z","type":"quit"}
+{"nick":"seishun","date":"2018-07-05T17:16:20.084Z","type":"join"}
+{"nick":"bradleymeck","message":"@ljharb `npm -g` etc don't have the relative path or `node` in front","date":"2018-07-05T17:17:53.629Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-07-05T17:28:02.832Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2018-07-05T17:33:14.386Z","type":"quit"}
+{"nick":"ljharb","message":"sure, so those would always start in CJS","date":"2018-07-05T17:35:16.067Z","type":"message"}
+{"nick":"bradleymeck","message":"`npm -g` seems like a pretty important thing to let not be CJS","date":"2018-07-05T17:36:57.573Z","type":"message"}
+{"nick":"bradleymeck","message":"especially if like you said, you don't want to put extensions on the command","date":"2018-07-05T17:37:33.869Z","type":"message"}
+{"nick":"ljharb","message":"I’m not sure why","date":"2018-07-05T17:38:48.544Z","type":"message"}
+{"nick":"bradleymeck","message":"why what","date":"2018-07-05T17:40:52.846Z","type":"message"}
+{"nick":"bradleymeck","message":"i want mocha etc. to have their entirety to be ESM if they want","date":"2018-07-05T17:41:13.685Z","type":"message"}
+{"nick":"ljharb","message":"why not a CJS bootstrap tho","date":"2018-07-05T17:41:26.038Z","type":"message"}
+{"nick":"ljharb","message":"but i see how if that’s a goal it can complicate things","date":"2018-07-05T17:41:58.542Z","type":"message"}
+{"nick":"ljharb","message":"altho that would still work. It just means *extensionless* is forever CJS","date":"2018-07-05T17:42:13.400Z","type":"message"}
+{"nick":"dc13ff","reason":"Quit: Connection closed for inactivity","date":"2018-07-05T17:42:18.836Z","type":"quit"}
+{"nick":"ljharb","message":"that’d be an effective deprecation (if ESM became preferred) without needing an actual one","date":"2018-07-05T17:42:34.659Z","type":"message"}
+{"nick":"ljharb","message":"anybody who wanted a non-cjs entry point would be incentivized to use an extension there","date":"2018-07-05T17:42:53.289Z","type":"message"}
+{"nick":"ljharb","message":"(altho for `mocha` to work at all, there’d have to be *some* extensionless file - so it’s actually impossible imo to deprecate extensionless executables)","date":"2018-07-05T17:43:25.459Z","type":"message"}
+{"nick":"bradleymeck","message":"`mocha` is a symlink in your PATH to a file","date":"2018-07-05T17:44:25.691Z","type":"message"}
+{"nick":"bradleymeck","message":"so yes, it doesn't have an extension but Node loads the file it points to","date":"2018-07-05T17:44:53.058Z","type":"message"}
+{"nick":"ljharb","message":"ah ok then yeah, there’s still no issue","date":"2018-07-05T17:45:42.089Z","type":"message"}
+{"nick":"ljharb","message":"extensionless can mean CJS forever and there’s no real issue (assuming npm always creates an extensionless symlink for bins on install)","date":"2018-07-05T17:46:02.414Z","type":"message"}
+{"nick":"bradleymeck","message":"it does","date":"2018-07-05T17:47:03.123Z","type":"message"}
+{"nick":"bradleymeck","message":"i agree that extensionless is not an issue","date":"2018-07-05T17:47:10.105Z","type":"message"}
+{"nick":"bradleymeck","message":"but new extensions are","date":"2018-07-05T17:47:13.747Z","type":"message"}
+{"nick":"bradleymeck","message":".wasm going from CJS -> WASM is still breaking","date":"2018-07-05T17:47:25.748Z","type":"message"}
+{"nick":"bradleymeck","message":"so they too would need to use the CJS entrypoint to `import()` into WASM if we don't want breaking changes","date":"2018-07-05T17:48:04.594Z","type":"message"}
+{"nick":"bradleymeck","message":"so, you are -1 to deprecating extensionless but what about unknown extensions?","date":"2018-07-05T17:48:34.140Z","type":"message"}
+{"nick":"ljharb","message":"wait i'm confused","date":"2018-07-05T17:54:28.930Z","type":"message"}
+{"nick":"ljharb","message":"i think that whenever there's an extension, require.extensions logic should apply","date":"2018-07-05T17:54:41.691Z","type":"message"}
+{"nick":"ljharb","message":"and if it's unknown, it should throw just like requiring a module with an unknown extension does","date":"2018-07-05T17:54:56.002Z","type":"message"}
+{"nick":"ljharb","message":"and extensionless as an entry point is just a special case","date":"2018-07-05T17:55:10.110Z","type":"message"}
+{"nick":"bradleymeck","message":"@ljharb requiring and it not being in `require.extensions` loads it a CJS currently","date":"2018-07-05T18:18:17.501Z","type":"message"}
+{"nick":"bradleymeck","message":"so loading `require('./foo.wasm')` loads CJS currently","date":"2018-07-05T18:26:34.301Z","type":"message"}
+{"nick":"marthinal","date":"2018-07-05T18:39:53.237Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-05T18:42:52.356Z","type":"quit"}
+{"nick":"bradleymeck","message":"`echo 'console.log(123)' > ./foo.wasm && node ./foo.wasm` prints 123 if that is better at showing the issue","date":"2018-07-05T18:47:04.179Z","type":"message"}
+{"nick":"ljharb","message":"bradleymeck: i'd be +1 on breaking that","date":"2018-07-05T18:51:26.300Z","type":"message"}
+{"nick":"ljharb","message":"bradleymeck: iow, on making unknown extensions stop working","date":"2018-07-05T18:51:34.780Z","type":"message"}
+{"nick":"bradleymeck","message":"can't do that for `require` but can for CLI I think","date":"2018-07-05T18:51:47.874Z","type":"message"}
+{"nick":"ljharb","message":"hm","date":"2018-07-05T18:52:52.154Z","type":"message"}
+{"nick":"bradleymeck","message":"CLI is probably more important I think since `import` is looming","date":"2018-07-05T18:52:56.785Z","type":"message"}
+{"nick":"ljharb","message":"hmm","date":"2018-07-05T18:53:00.942Z","type":"message"}
+{"nick":"ljharb","message":"if they can't be the same i'm not sure i'm on board","date":"2018-07-05T18:53:07.397Z","type":"message"}
+{"nick":"ljharb","message":"would it actually be incompatible with npm to change it for require?","date":"2018-07-05T18:53:27.881Z","type":"message"}
+{"nick":"bradleymeck","message":"a variety of things are using `require` to load up things that aren't .js as CJS but I would need to take time to rerun my tests","date":"2018-07-05T18:54:45.553Z","type":"message"}
+{"nick":"bradleymeck","message":"it was pretty fringe case last I checked","date":"2018-07-05T18:54:52.965Z","type":"message"}
+{"nick":"ljharb","message":"if it's fixable by evangelism tho?","date":"2018-07-05T18:55:07.407Z","type":"message"}
+{"nick":"bradleymeck","message":"CLI won't match require anyway if we allow it to match import","date":"2018-07-05T18:55:18.638Z","type":"message"}
+{"nick":"ljharb","message":"it seems like a useful thing to be able to universally make unknown extensions fail","date":"2018-07-05T18:55:20.374Z","type":"message"}
+{"nick":"ljharb","message":"how so","date":"2018-07-05T18:55:30.924Z","type":"message"}
+{"nick":"bradleymeck","message":"things like URL based entrypoints make it not match require","date":"2018-07-05T18:55:32.022Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 276 seconds","date":"2018-07-05T18:55:32.177Z","type":"quit"}
+{"nick":"ljharb","message":"um, what? a URL on the CLI?","date":"2018-07-05T18:55:44.175Z","type":"message"}
+{"nick":"ljharb","message":"that's silly, why would we have that","date":"2018-07-05T18:55:52.169Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: in my example, the extension is used to indicate how the embedding engine should handle the file.  .so gets opened with dlopen(), for example.  If you eliminate that, you'll have to add magic numbers at the start or something.....not the end of the world, I suppose.","date":"2018-07-05T18:55:59.778Z","type":"message"}
+{"nick":"bradleymeck","message":"maybe silly, but also about loading .wasm etc, import definitely loads .wasm not as CJS","date":"2018-07-05T18:56:14.765Z","type":"message"}
+{"nick":"Wes-","message":"'extensionless', from my POV, would be anything that can be handled with exec(2)","date":"2018-07-05T18:56:29.507Z","type":"message"}
+{"nick":"bradleymeck","message":"Wes-: I don't understand","date":"2018-07-05T18:56:33.120Z","type":"message"}
+{"nick":"bradleymeck","message":"we aren't talking about the strings passed to require()","date":"2018-07-05T18:56:48.216Z","type":"message"}
+{"nick":"Wes-","message":"which, ironically, uses magic numbers to figure out how to deal with the contents (shebang)","date":"2018-07-05T18:56:56.926Z","type":"message"}
+{"nick":"Wes-","message":"holy scrolly, I didn't realize my screen was stuck.","date":"2018-07-05T18:57:12.627Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: Oh - I have misunderstood, then.","date":"2018-07-05T18:57:20.965Z","type":"message"}
+{"nick":"bradleymeck","message":"this is about the real file on disk","date":"2018-07-05T18:57:29.536Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: Interesting - how do you plan to indicate the handler? same principle as exec? (shebang)","date":"2018-07-05T18:59:26.321Z","type":"message"}
+{"nick":"bradleymeck","message":"file extension like you said","date":"2018-07-05T18:59:40.927Z","type":"message"}
+{"nick":"bradleymeck","message":"file on disk has path w/ extension that isn't known would start to error","date":"2018-07-05T19:00:06.425Z","type":"message"}
+{"nick":"bradleymeck","message":"thats the deprecation","date":"2018-07-05T19:00:14.912Z","type":"message"}
+{"nick":"bradleymeck","message":"without any extension seems fine to keep as CJS","date":"2018-07-05T19:00:26.320Z","type":"message"}
+{"nick":"bradleymeck","message":"so instead of `node ./foo.ts` loading `foo.ts` as CJS it would just complain that it doesn't know what to do","date":"2018-07-05T19:01:26.076Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: Gotcha.   That actually makes sense to me if you have a long term goal like require(\"X\") loading a DSO etc","date":"2018-07-05T19:02:12.264Z","type":"message"}
+{"nick":"bradleymeck","message":"DSO? acronym not found","date":"2018-07-05T19:02:30.951Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: dynamic shared object, eg what you can load with dlopen()","date":"2018-07-05T19:04:13.945Z","type":"message"}
+{"nick":"bradleymeck","message":"ah, well this seems unrelated to that exactly","date":"2018-07-05T19:04:30.306Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: what's the reasoning behind the change?","date":"2018-07-05T19:04:49.614Z","type":"message"}
+{"nick":"bradleymeck","message":"it does relate to supporting any new file formats in general","date":"2018-07-05T19:04:51.837Z","type":"message"}
+{"nick":"Wes-","message":"okay, that makes sensse","date":"2018-07-05T19:04:57.355Z","type":"message"}
+{"nick":"Wes-","message":"My specific use-case is DSOs, but it could be anything.  Even typescript.","date":"2018-07-05T19:05:09.960Z","type":"message"}
+{"nick":"bradleymeck","message":"Wes-: because `node foo.wasm` things `foo.wasm` is CJS","date":"2018-07-05T19:05:10.168Z","type":"message"}
+{"nick":"Wes-","message":"Oh, lol, .ts must be typescript. HAHA","date":"2018-07-05T19:05:17.343Z","type":"message"}
+{"nick":"bradleymeck","message":"Wes-: right now Node asserts that it is CJS","date":"2018-07-05T19:05:32.883Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: not the way I read CJS","date":"2018-07-05T19:05:34.723Z","type":"message"}
+{"nick":"marthinal","date":"2018-07-05T19:05:37.180Z","type":"join"}
+{"nick":"Wes-","message":"Sorry, misunderstood you.","date":"2018-07-05T19:05:43.711Z","type":"message"}
+{"nick":"Wes-","message":"Yes, it does","date":"2018-07-05T19:05:46.719Z","type":"message"}
+{"nick":"bradleymeck","message":"so we are incredibly breaking whenever we support a new file extension on the CLI","date":"2018-07-05T19:06:15.359Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: Gotcha now. As a user who is a future-proof-oriented developer, I would totally vote for that feature.","date":"2018-07-05T19:07:06.554Z","type":"message"}
+{"nick":"bradleymeck","message":"it got shot down hard last time i suggested it XD","date":"2018-07-05T19:07:27.908Z","type":"message"}
+{"nick":"Wes-","message":"bradleymeck: I can see that too.  I like a lot of things that are unpopular with other developers. :D","date":"2018-07-05T19:07:50.699Z","type":"message"}
+{"nick":"bradleymeck","message":"Wes-: feel free to read https://github.com/nodejs/node/pull/15365 if you want","date":"2018-07-05T19:09:32.876Z","type":"message"}
+{"nick":"seishun","date":"2018-07-05T19:09:35.355Z","type":"join"}
+{"nick":"Wes-","message":"bradleymeck: interesting.  The ESM vs CJS problem is an interesting and important case","date":"2018-07-05T19:14:18.629Z","type":"message"}
+{"nick":"bradleymeck","message":"it has gotten quite tiresome to talk about, but still exists","date":"2018-07-05T19:14:43.758Z","type":"message"}
+{"nick":"bradleymeck","message":"using WASM seems to get more people to care for w/e reason","date":"2018-07-05T19:15:00.959Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-05T19:15:02.593Z","type":"quit"}
+{"nick":"marthinal","date":"2018-07-05T19:15:28.766Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 256 seconds","date":"2018-07-05T19:20:01.563Z","type":"quit"}
+{"nick":"devsnek","message":"looks like i missed a fun conversation","date":"2018-07-05T20:39:11.392Z","type":"message"}
+{"nick":"marthinal","date":"2018-07-05T20:41:38.650Z","type":"join"}
+{"nick":"bradleymeck","message":"\"fun\" is a word","date":"2018-07-05T20:43:20.512Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 265 seconds","date":"2018-07-05T20:44:01.379Z","type":"quit"}
+{"nick":"devsnek","message":"hehe","date":"2018-07-05T20:44:55.765Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-05T20:54:14.380Z","type":"quit"}
+{"nick":"marthinal","date":"2018-07-05T20:55:17.954Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-05T21:02:54.461Z","type":"quit"}
+{"nick":"bradleymeck","message":"mhdawson_: what questions did you have about using the debugger protocol?","date":"2018-07-05T21:29:54.807Z","type":"message"}
+{"nick":"devsnek","message":"tim just added a debug log thing to node so you can watch how chrome interacts with node","date":"2018-07-05T21:36:45.442Z","type":"message"}
+{"nick":"marthinal","date":"2018-07-05T21:48:21.665Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 240 seconds","date":"2018-07-05T21:52:35.485Z","type":"quit"}
+{"nick":"bradleymeck","message":"i still want to see if we can use mdns or something so we can actually support inspector listening on port 0 in a sane way","date":"2018-07-05T22:33:56.449Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: once we have mdns in core i think we're required to implement flyweb :P","date":"2018-07-05T22:38:32.664Z","type":"message"}
+{"nick":"bradleymeck","message":"hah, we have ws in core but we don't expose that~","date":"2018-07-05T22:38:56.130Z","type":"message"}
+{"nick":"devsnek","message":"not a proper ws though","date":"2018-07-05T22:40:07.532Z","type":"message"}
+{"nick":"devsnek","message":"tbh i just want flyweb to become a thing","date":"2018-07-05T22:40:19.801Z","type":"message"}
+{"nick":"devsnek","message":"so much fun to use","date":"2018-07-05T22:40:24.239Z","type":"message"}
+{"nick":"srl295","date":"2018-07-05T23:02:18.622Z","type":"join"}
+{"nick":"AtumT","reason":"Remote host closed the connection","date":"2018-07-05T23:08:21.758Z","type":"quit"}
+{"nick":"srl295","message":"just to get some visibility here, i put a PR in for https://github.com/nodejs/node/issues/19214 - abandon the 'small icu' mechanisms, check in full ICU to the repo. Open question whether lfs might come into play, ` 26M    deps/icu-full/source/data/in/icudt62l.dat` and all that.","date":"2018-07-05T23:23:04.911Z","type":"message"}
+{"nick":"srl295","message":"it's very much reversing 4-year-old decisions. But they are also 4-year-old decisions.","date":"2018-07-05T23:30:16.688Z","type":"message"}
+{"nick":"srl295","message":"devsnek: thanks for your support","date":"2018-07-05T23:30:25.424Z","type":"message"}
+{"nick":"devsnek","message":"srl295: np, the idea of small-icu kills me","date":"2018-07-05T23:31:04.929Z","type":"message"}
+{"nick":"devsnek","message":"might as well just go no-icu at that point :/","date":"2018-07-05T23:31:23.535Z","type":"message"}
+{"nick":"srl295","message":"devsnek: well, that was the status quo at that point: no-icu.","date":"2018-07-05T23:32:05.280Z","type":"message"}
+{"nick":"devsnek","message":"hehe","date":"2018-07-05T23:32:22.017Z","type":"message"}
+{"nick":"devsnek","message":"everyone speaks english anyway :P","date":"2018-07-05T23:32:28.949Z","type":"message"}
+{"nick":"srl295","message":"small was a compromise. full api, pull in the data as/if/when needed","date":"2018-07-05T23:32:31.236Z","type":"message"}
+{"nick":"srl295","message":"yeah, exactly. :P","date":"2018-07-05T23:32:34.290Z","type":"message"}
