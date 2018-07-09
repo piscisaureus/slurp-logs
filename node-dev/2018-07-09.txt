@@ -19,3 +19,39 @@
 {"nick":"zsocw","date":"2018-07-09T07:08:12.271Z","type":"join"}
 {"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-07-09T07:08:54.955Z","type":"quit"}
 {"nick":"marthinal","date":"2018-07-09T07:09:06.042Z","type":"join"}
+{"nick":"seishun","date":"2018-07-09T09:01:44.743Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 244 seconds","date":"2018-07-09T09:56:48.551Z","type":"quit"}
+{"nick":"seishun","date":"2018-07-09T10:07:27.440Z","type":"join"}
+{"nick":"mylesborins","reason":"Quit: farewell for now","date":"2018-07-09T10:25:08.945Z","type":"quit"}
+{"nick":"mylesborins","date":"2018-07-09T10:25:17.558Z","type":"join"}
+{"nick":"zeds","date":"2018-07-09T11:38:09.599Z","type":"join"}
+{"nick":"zeds","date":"2018-07-09T11:39:31.950Z","type":"part"}
+{"nick":"AtumT","date":"2018-07-09T11:40:49.008Z","type":"join"}
+{"nick":"wa7son","message":"This is odd. When I try to run the latest nightly I get an \"perThreadSetup is not defined\" error from \"internal/bootstrap/node.js:100\". But when I compile it my self from master I don't get any error. It's a change made my @mcollina, but I can't see that there's anything wrong with the commit. Here's the error: https://travis-ci.org/elastic/apm-agent-nodejs/jobs/401715809","date":"2018-07-09T13:32:01.269Z","type":"message"}
+{"nick":"wa7son","message":"Here's the commit where that line was added: https://github.com/nodejs/node/commit/19795d83833de7489afec583f8773ee9c0452f70#diff-362950ada44657730d806a6908957c35","date":"2018-07-09T13:32:21.568Z","type":"message"}
+{"nick":"bradleymeck","message":"@wa7son does this happen when you turn on workers?","date":"2018-07-09T13:33:25.881Z","type":"message"}
+{"nick":"wa7son","message":"bradleymeck: No it's without workers","date":"2018-07-09T13:33:43.835Z","type":"message"}
+{"nick":"bradleymeck","message":"@wa7son does it go away when you turn on workers?","date":"2018-07-09T13:34:04.586Z","type":"message"}
+{"nick":"wa7son","message":"bradleymeck: ah - I'll give it a go... hang on","date":"2018-07-09T13:34:53.443Z","type":"message"}
+{"nick":"bradleymeck","message":"cause I'm pretty sure it is missing the feature flag if statement like https://github.com/nodejs/node/blob/19795d83833de7489afec583f8773ee9c0452f70/lib/internal/bootstrap/node.js#L130-L132","date":"2018-07-09T13:36:17.966Z","type":"message"}
+{"nick":"bradleymeck","message":"but idk if it runs before that stuff gets setup","date":"2018-07-09T13:36:41.079Z","type":"message"}
+{"nick":"wa7son","message":"hmm actually it's a bit hard for me to test this because it happens as part of the `NVM_NODEJS_ORG_MIRROR=https://nodejs.org/download/nightly/ nvm install 10` command - so it's before I get a chance to turn on any flags","date":"2018-07-09T13:39:04.227Z","type":"message"}
+{"nick":"wa7son","message":"unless I can turn on flags via an environment variable maybe?","date":"2018-07-09T13:40:41.624Z","type":"message"}
+{"nick":"wa7son","message":"Ah maybe I can use NODE_OPTIONS","date":"2018-07-09T13:42:45.479Z","type":"message"}
+{"nick":"wa7son","message":"Hmm nope couldn't test it. Getting an \"node: --experimental-worker is not allowed in NODE_OPTIONS\" error","date":"2018-07-09T13:52:34.534Z","type":"message"}
+{"nick":"wa7son","message":"I think I probably need to figure out a way to reproduce this locally first so I don't rely on the nightly","date":"2018-07-09T13:54:11.168Z","type":"message"}
+{"nick":"wa7son","message":"bradleymeck: Even if it is related to workers being enabled or not, how come I get the \"not defined\" error? A few lines above the same variable is being accessed without any issue: https://github.com/nodejs/node/blob/a478259af7671fa2794aa030f7790a9d9772be5e/lib/internal/bootstrap/node.js#L92-L96","date":"2018-07-09T14:05:40.538Z","type":"message"}
+{"nick":"wa7son","message":"hmm maybe I'm looking at the wrong branch. Which branch is the 10.6.1 nightly built off?","date":"2018-07-09T14:22:11.313Z","type":"message"}
+{"nick":"wa7son","message":"bradleymeck: finally got it tested with `--experimental-worker`... just downloaded the nightly manually instead of using nvm :D - It doesn't do a difference. The error is still there","date":"2018-07-09T14:24:39.584Z","type":"message"}
+{"nick":"wa7son","message":"Ah! I found the bug now. The nightly is apparently built from `v10.x-staging` and in that branch on line 100 we have the problem: https://github.com/nodejs/node/blob/eaea66e3c0ba0b66e40d7039dc2ba399ee912f30/lib/internal/bootstrap/node.js#L100","date":"2018-07-09T14:31:57.899Z","type":"message"}
+{"nick":"wa7son","message":"Who's responsible for backporting to that branch? Is it Trott","date":"2018-07-09T14:33:31.074Z","type":"message"}
+{"nick":"mcollina","message":"that commit works smoothly on master without --experimental-workers","date":"2018-07-09T14:40:14.332Z","type":"message"}
+{"nick":"mcollina","message":"I know exactly what problem is there, should I send a proper backport PR?","date":"2018-07-09T14:40:51.648Z","type":"message"}
+{"nick":"wa7son","message":"mcollina: yeah, should have made a better summary. The error is only in the `v10.x-staging` branch. Not master","date":"2018-07-09T15:05:48.775Z","type":"message"}
+{"nick":"wa7son","message":"mcollina: it was because your commit was backported to that branch but that change wasn't removed. What's the process of fixing a bug like that? Should one create a new PR against just that branch?","date":"2018-07-09T15:06:39.642Z","type":"message"}
+{"nick":"wa7son","message":"mcollina: you're of course welcome to do it, I was just curious about the process if I were to do it my self","date":"2018-07-09T15:07:26.611Z","type":"message"}
+{"nick":"mcollina","message":"I'm pretty busy so it might be a few days.. we might want to fix it earlier on. I think you have to backport https://github.com/nodejs/node/pull/21378 first and then apply my commit.","date":"2018-07-09T15:26:09.317Z","type":"message"}
+{"nick":"al-damiri","date":"2018-07-09T15:26:09.884Z","type":"join"}
+{"nick":"mcollina","message":"wa7son: https://github.com/nodejs/node/pull/21659#issuecomment-403525012 < see this comment","date":"2018-07-09T15:45:58.695Z","type":"message"}
+{"nick":"FrankyCyborg","reason":"Quit: FrankyCyborg","date":"2018-07-09T15:48:24.376Z","type":"quit"}
+{"nick":"wa7son","message":"mcollina: 👍","date":"2018-07-09T15:49:41.606Z","type":"message"}
