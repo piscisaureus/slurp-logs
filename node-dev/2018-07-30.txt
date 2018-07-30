@@ -1,0 +1,92 @@
+{"nick":"TimothyGu","message":"devsnek: You might be interested in https://github.com/bcoe/c8/issues/14","date":"2018-07-30T00:45:32.683Z","type":"message"}
+{"nick":"devsnek","message":"TimothyGu: just proves my point :)","date":"2018-07-30T00:46:20.428Z","type":"message"}
+{"nick":"TimothyGu","message":"devsnek: huh?","date":"2018-07-30T00:46:43.695Z","type":"message"}
+{"nick":"devsnek","message":"huh?","date":"2018-07-30T00:46:53.451Z","type":"message"}
+{"nick":"TimothyGu","message":"proves what point","date":"2018-07-30T00:46:59.376Z","type":"message"}
+{"nick":"devsnek","message":"oh i thought this was an issue with c8","date":"2018-07-30T00:47:48.104Z","type":"message"}
+{"nick":"devsnek","message":"this is a confusing issue ugh","date":"2018-07-30T00:48:19.122Z","type":"message"}
+{"nick":"devsnek","message":"is this because c8 is reaching into v8","date":"2018-07-30T00:49:12.050Z","type":"message"}
+{"nick":"devsnek","message":"TimothyGu: i thought you referring to the issue i opened about experimental features being used in libraries","date":"2018-07-30T00:50:34.158Z","type":"message"}
+{"nick":"devsnek","message":"this seems like a mix of evil though","date":"2018-07-30T00:50:40.840Z","type":"message"}
+{"nick":"TimothyGu","message":"No it's not","date":"2018-07-30T00:50:46.092Z","type":"message"}
+{"nick":"TimothyGu","message":"and :/","date":"2018-07-30T00:51:01.775Z","type":"message"}
+{"nick":"devsnek","message":"there's not much we can do unless the new module type lands in 262","date":"2018-07-30T00:51:16.125Z","type":"message"}
+{"nick":"devsnek","message":"about this","date":"2018-07-30T00:51:21.731Z","type":"message"}
+{"nick":"TimothyGu","message":"I think we can change the ESM translator to at least don't use the same filename","date":"2018-07-30T00:51:33.875Z","type":"message"}
+{"nick":"devsnek","message":"we definitely should be using the file:// url for that module","date":"2018-07-30T00:52:26.582Z","type":"message"}
+{"nick":"TimothyGu","message":"for what module?","date":"2018-07-30T00:53:08.729Z","type":"message"}
+{"nick":"devsnek","message":"const module = new ModuleWrap(reexports, `${url}`);","date":"2018-07-30T00:53:18.422Z","type":"message"}
+{"nick":"TimothyGu","message":"I'm not sure I agree","date":"2018-07-30T00:53:31.274Z","type":"message"}
+{"nick":"devsnek","message":"its the url that gets put into our module map","date":"2018-07-30T00:53:42.660Z","type":"message"}
+{"nick":"TimothyGu","message":"Oh","date":"2018-07-30T00:54:03.683Z","type":"message"}
+{"nick":"TimothyGu","message":"I didn't know the ModuleWrap url gets used in that way","date":"2018-07-30T00:54:16.997Z","type":"message"}
+{"nick":"devsnek","message":"oh it doesn't get used from `.url`","date":"2018-07-30T00:54:25.343Z","type":"message"}
+{"nick":"devsnek","message":"but then we lose the ability to tell where a ModuleWrap came from if we don't use the url its associated with","date":"2018-07-30T00:54:42.969Z","type":"message"}
+{"nick":"TimothyGu","message":"We could do the same thing with `cjs-facade:`","date":"2018-07-30T00:55:23.014Z","type":"message"}
+{"nick":"devsnek","message":"cjs-facade doesn't go in the module map","date":"2018-07-30T00:55:37.134Z","type":"message"}
+{"nick":"devsnek","message":"i'm surprised it didn't show up on that guy's console.log","date":"2018-07-30T00:55:52.391Z","type":"message"}
+{"nick":"TimothyGu","message":"(there's a scheme check in c8)","date":"2018-07-30T00:56:05.508Z","type":"message"}
+{"nick":"devsnek","message":"oh ok","date":"2018-07-30T00:56:13.492Z","type":"message"}
+{"nick":"TimothyGu","message":"well, we could then not use the url attached to the ModuleWrap in the module map","date":"2018-07-30T00:56:26.088Z","type":"message"}
+{"nick":"devsnek","message":"right now url is created before ModuleJob even exists","date":"2018-07-30T00:56:50.078Z","type":"message"}
+{"nick":"TimothyGu","message":"because the current situation is IMO bad and needs to be fixed","date":"2018-07-30T00:56:59.563Z","type":"message"}
+{"nick":"devsnek","message":"i think the fix is dynamic module records","date":"2018-07-30T00:57:08.647Z","type":"message"}
+{"nick":"TimothyGu","message":"Okay: https://github.com/nodejs/node/blob/master/lib/internal/modules/esm/loader.js#L135-L139","date":"2018-07-30T00:57:31.387Z","type":"message"}
+{"nick":"TimothyGu","message":"so the `url` used for the module map isn't coming from the translator in anyway","date":"2018-07-30T00:57:53.702Z","type":"message"}
+{"nick":"devsnek","message":"no","date":"2018-07-30T00:58:00.428Z","type":"message"}
+{"nick":"TimothyGu","message":"which means that we can call `createDynamicModule` in the CJS handler with another URL than the file name URL","date":"2018-07-30T00:58:37.241Z","type":"message"}
+{"nick":"TimothyGu","message":"without messing up the module map","date":"2018-07-30T00:58:44.782Z","type":"message"}
+{"nick":"devsnek","message":"you could pass `timothy` for the url every time","date":"2018-07-30T00:59:02.189Z","type":"message"}
+{"nick":"devsnek","message":"v8 doesn't care","date":"2018-07-30T00:59:06.278Z","type":"message"}
+{"nick":"devsnek","message":"i would say lets see what happens with dynamic module records and then we can run around worrying about this if those don't go through","date":"2018-07-30T00:59:19.030Z","type":"message"}
+{"nick":"TimothyGu","message":"exactly, V8 doesn't care","date":"2018-07-30T00:59:30.058Z","type":"message"}
+{"nick":"TimothyGu","message":"so we should just use another URL for `createDynamicModule` instead of messing up downstream expectations","date":"2018-07-30T00:59:56.172Z","type":"message"}
+{"nick":"TimothyGu","message":"and dynamic module records are at least a few years out","date":"2018-07-30T01:00:09.072Z","type":"message"}
+{"nick":"devsnek","message":"using something non-obvious for that wrapper url kills debugging though","date":"2018-07-30T01:00:52.723Z","type":"message"}
+{"nick":"devsnek","message":"and if its obvious people will confuse it","date":"2018-07-30T01:01:05.213Z","type":"message"}
+{"nick":"TimothyGu","message":"yeah we could just use another scheme","date":"2018-07-30T01:01:28.354Z","type":"message"}
+{"nick":"TimothyGu","message":"and what do you need debugging for? Except for Node.js core development","date":"2018-07-30T01:01:55.723Z","type":"message"}
+{"nick":"TimothyGu","message":"like, there's nothing in that wrapper lol, except `import { executor, $default } from ''; export { $default as default }; if (typeof executor === \"function\") executor();`","date":"2018-07-30T01:04:05.400Z","type":"message"}
+{"nick":"devsnek","message":"i suppose we could do like `wrapper://` or something","date":"2018-07-30T01:04:34.434Z","type":"message"}
+{"nick":"devsnek","message":"it should be obvious to users too","date":"2018-07-30T01:04:38.024Z","type":"message"}
+{"nick":"devsnek","message":"they have to deal with it while debugging stuff","date":"2018-07-30T01:04:44.607Z","type":"message"}
+{"nick":"TimothyGu","message":"having a dedicated scheme would also aid debugging as they can just blackbox the whole scheme","date":"2018-07-30T01:05:41.595Z","type":"message"}
+{"nick":"devsnek","message":"sure","date":"2018-07-30T01:05:48.480Z","type":"message"}
+{"nick":"devsnek","message":"i'm going to just be super optimistic and assume that dynamic record makes 8 months","date":"2018-07-30T01:06:12.187Z","type":"message"}
+{"nick":"TimothyGu","message":"ha-ha","date":"2018-07-30T01:06:22.181Z","type":"message"}
+{"nick":"devsnek","message":":(","date":"2018-07-30T01:06:27.004Z","type":"message"}
+{"nick":"TimothyGu","message":"okay but","date":"2018-07-30T01:08:24.528Z","type":"message"}
+{"nick":"TimothyGu","message":"\"CJS façade\"","date":"2018-07-30T01:08:31.859Z","type":"message"}
+{"nick":"TimothyGu","message":"so poetic","date":"2018-07-30T01:08:33.612Z","type":"message"}
+{"nick":"TimothyGu","message":"as if a CJS module is a shy child","date":"2018-07-30T01:09:38.471Z","type":"message"}
+{"nick":"TimothyGu","message":"and needs to put up a façade to face the dangerous new ESM world","date":"2018-07-30T01:09:55.502Z","type":"message"}
+{"nick":"devsnek","message":"hehe","date":"2018-07-30T01:12:24.710Z","type":"message"}
+{"nick":"m00dy","date":"2018-07-30T01:32:01.328Z","type":"join"}
+{"nick":"m00dy","reason":"Ping timeout: 256 seconds","date":"2018-07-30T01:36:58.720Z","type":"quit"}
+{"nick":"marthinal","date":"2018-07-30T02:14:08.266Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 264 seconds","date":"2018-07-30T02:18:57.930Z","type":"quit"}
+{"nick":"BridgeAR2","reason":"Ping timeout: 264 seconds","date":"2018-07-30T02:22:34.142Z","type":"quit"}
+{"nick":"antsanto","date":"2018-07-30T02:33:46.944Z","type":"join"}
+{"nick":"antsanto","reason":"Remote host closed the connection","date":"2018-07-30T02:40:35.978Z","type":"quit"}
+{"nick":"zeds","date":"2018-07-30T03:23:37.362Z","type":"join"}
+{"nick":"zeds","date":"2018-07-30T03:25:29.588Z","type":"part"}
+{"nick":"m00dy","date":"2018-07-30T03:33:14.288Z","type":"join"}
+{"nick":"m00dy","reason":"Ping timeout: 248 seconds","date":"2018-07-30T03:38:09.426Z","type":"quit"}
+{"nick":"not-an-aardvark","date":"2018-07-30T03:59:36.728Z","type":"join"}
+{"nick":"marthinal","date":"2018-07-30T04:43:35.004Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 268 seconds","date":"2018-07-30T04:48:13.697Z","type":"quit"}
+{"nick":"marthinal","date":"2018-07-30T04:52:31.488Z","type":"join"}
+{"nick":"lpin","date":"2018-07-30T05:30:38.174Z","type":"join"}
+{"nick":"m00dy","date":"2018-07-30T05:34:40.916Z","type":"join"}
+{"nick":"m00dy","reason":"Ping timeout: 264 seconds","date":"2018-07-30T05:39:57.960Z","type":"quit"}
+{"nick":"BridgeAR2","date":"2018-07-30T06:07:41.040Z","type":"join"}
+{"nick":"not-an-aardvark","reason":"Quit: Connection closed for inactivity","date":"2018-07-30T06:09:15.862Z","type":"quit"}
+{"nick":"benjamingr_","date":"2018-07-30T07:12:44.002Z","type":"join"}
+{"nick":"BridgeAR2","reason":"Ping timeout: 264 seconds","date":"2018-07-30T07:20:10.024Z","type":"quit"}
+{"nick":"m00dy","date":"2018-07-30T07:22:39.441Z","type":"join"}
+{"nick":"benjamingr_","message":"Hey, I got a few people interested in contributing to Node this Wednesday and I won't be able to show them around - is anyone here available for questions from them around 5PM UTC?","date":"2018-07-30T07:29:13.902Z","type":"message"}
+{"nick":"benjamingr_","message":"They're a bunch of nice people and are all professional devs but none of them have Node experience - we already have good docs for building and doing stuff - but people run into stuff (those who did code and learns before know what I mean)","date":"2018-07-30T07:29:52.341Z","type":"message"}
+{"nick":"benjamingr_","message":"If no one has time - no pressure - but if you do - ping me either here or at benjamingr@gmail.com","date":"2018-07-30T07:30:05.474Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-07-30T07:53:59.941Z","type":"quit"}
+{"nick":"bengl","message":"benjamingr_: I'll do my best to be around. I've mentored at almost all Code & Learns and even compiled Node on Windows recently!","date":"2018-07-30T07:54:48.385Z","type":"message"}
+{"nick":"m00dy","date":"2018-07-30T07:54:58.396Z","type":"join"}
