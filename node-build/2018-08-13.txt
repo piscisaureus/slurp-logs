@@ -67,3 +67,196 @@
 {"nick":"refack","message":"They were offline for a few days. So it could be bit-rot","date":"2018-08-13T15:58:09.720Z","type":"message"}
 {"nick":"joyee","message":"They are re-enabled in https://github.com/nodejs/build/issues/1441","date":"2018-08-13T15:59:22.155Z","type":"message"}
 {"nick":"joyee","message":"Maybe something was missing when the images were rebuilt?","date":"2018-08-13T15:59:43.338Z","type":"message"}
+{"nick":"node-gh","date":"2018-08-13T16:01:32.429Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T16:01:32.630Z","type":"part"}
+{"nick":"node-gh","date":"2018-08-13T16:01:42.699Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T16:01:42.862Z","type":"part"}
+{"nick":"refack","message":"Oh poo. `tap2junit -i test.tap` doesn't pick those as failed tests.","date":"2018-08-13T16:10:30.748Z","type":"message"}
+{"nick":"refack","message":"totalmem works:","date":"2018-08-13T16:19:39.580Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/eG7hAF0H/","date":"2018-08-13T16:19:45.912Z","type":"message"}
+{"nick":"refack","message":"and 2GB is not small","date":"2018-08-13T16:20:04.531Z","type":"message"}
+{"nick":"refack","message":"ohh, but","date":"2018-08-13T16:32:08.601Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/IJY8Zwwn/","date":"2018-08-13T16:32:12.777Z","type":"message"}
+{"nick":"joyee","message":"hm, wait, why isn't common.enoughTestMem using freemem?","date":"2018-08-13T16:51:28.902Z","type":"message"}
+{"nick":"refack","message":"my tought as well","date":"2018-08-13T16:51:48.088Z","type":"message"}
+{"nick":"refack","message":"I guess since it's a transient parameter, while `totalmem` is a platform constant","date":"2018-08-13T16:52:24.604Z","type":"message"}
+{"nick":"joyee","message":"Still it should've throw proper errors instead of outright crashing..","date":"2018-08-13T16:53:03.936Z","type":"message"}
+{"nick":"refack","message":"I assume we want to always skip this test on certain platforms. not being dependant on transient conditions","date":"2018-08-13T16:53:14.190Z","type":"message"}
+{"nick":"refack","message":"Yes","date":"2018-08-13T16:53:20.346Z","type":"message"}
+{"nick":"refack","message":"AFAICT the test does check if it can allocated that amount of memry","date":"2018-08-13T16:53:36.543Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/1rZimPYc/","date":"2018-08-13T16:53:53.822Z","type":"message"}
+{"nick":"joyee","message":"It's also strange that only the latin-1 encoding test failed","date":"2018-08-13T16:57:15.631Z","type":"message"}
+{"nick":"joyee","message":"Other encodings worked fine","date":"2018-08-13T16:57:24.337Z","type":"message"}
+{"nick":"refack","message":"yes","date":"2018-08-13T16:57:34.556Z","type":"message"}
+{"nick":"ktr","date":"2018-08-13T17:06:06.826Z","type":"join"}
+{"nick":"ktr","reason":"K-Lined","date":"2018-08-13T17:09:30.496Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-08-13T17:09:54.328Z","type":"join"}
+{"nick":"joyee","message":"I can reproduce the failure on that machine, I'll see if I can get a coredump out","date":"2018-08-13T17:13:15.568Z","type":"message"}
+{"nick":"refack","message":"I'm doing that as well","date":"2018-08-13T17:13:28.936Z","type":"message"}
+{"nick":"refack","message":"It seems like the test _doesn't_ fail","date":"2018-08-13T17:13:37.996Z","type":"message"}
+{"nick":"refack","message":"i.e. `buf.tostring()` completes","date":"2018-08-13T17:13:54.506Z","type":"message"}
+{"nick":"joyee","message":"https://www.irccloud.com/pastebin/xTR3JET2/","date":"2018-08-13T17:15:33.481Z","type":"message"}
+{"nick":"joyee","message":"I've gone one repro, but didn't save the core dump","date":"2018-08-13T17:15:45.161Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/cnsTLEXA/","date":"2018-08-13T17:16:10.750Z","type":"message"}
+{"nick":"benjamincoe","date":"2018-08-13T17:16:28.019Z","type":"quit"}
+{"nick":"joyee","message":"That didn't fail with signal 9 it seems","date":"2018-08-13T17:16:46.273Z","type":"message"}
+{"nick":"refack","message":"ohh right","date":"2018-08-13T17:17:07.788Z","type":"message"}
+{"nick":"refack","message":"But I think I understand why this test is special","date":"2018-08-13T17:17:27.299Z","type":"message"}
+{"nick":"refack","message":"besides the overflowing `buf.tostring()`","date":"2018-08-13T17:17:52.565Z","type":"message"}
+{"nick":"refack","message":"it also does `let maxString = buf.toString('latin1', 1);`","date":"2018-08-13T17:18:19.067Z","type":"message"}
+{"nick":"refack","message":"so at that point I assume the process is thrashing to the swap file","date":"2018-08-13T17:18:46.059Z","type":"message"}
+{"nick":"refack","message":"ohh and a third `maxString = buf.toString('latin1', 0, kStringMaxLength);`","date":"2018-08-13T17:19:01.456Z","type":"message"}
+{"nick":"refack","message":"Seems right","date":"2018-08-13T17:20:24.841Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/vzexNAXk/","date":"2018-08-13T17:20:28.824Z","type":"message"}
+{"nick":"joyee","message":"It tried to let the GC collect that string","date":"2018-08-13T17:20:39.468Z","type":"message"}
+{"nick":"refack","message":"third allocation fails","date":"2018-08-13T17:20:40.986Z","type":"message"}
+{"nick":"refack","message":"maybe split to 3 tests. or add an async step or an explicit GC call","date":"2018-08-13T17:22:18.204Z","type":"message"}
+{"nick":"joyee","message":"I am not even sure `maxString = undefined;` does what it's supposed to do","date":"2018-08-13T17:22:48.472Z","type":"message"}
+{"nick":"refack","message":"It's just a hint","date":"2018-08-13T17:23:03.198Z","type":"message"}
+{"nick":"refack","message":"You still need the GC to run","date":"2018-08-13T17:23:13.016Z","type":"message"}
+{"nick":"joyee","message":"Yeah, I am not sure if the GC actually cares","date":"2018-08-13T17:23:28.529Z","type":"message"}
+{"nick":"refack","message":"From the timing of the log output  it does seem like there is heavy swaping going on","date":"2018-08-13T17:23:52.577Z","type":"message"}
+{"nick":"joyee","message":"Can you run it with `--trace_gc --trace_gc_verbose`?","date":"2018-08-13T17:24:18.845Z","type":"message"}
+{"nick":"refack","message":"running.","date":"2018-08-13T17:25:28.467Z","type":"message"}
+{"nick":"refack","message":"I know you can:","date":"2018-08-13T17:25:33.801Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/qE2nPCG4/","date":"2018-08-13T17:25:41.273Z","type":"message"}
+{"nick":"joyee","message":"Yeah I'd use that for this particular test","date":"2018-08-13T17:26:16.092Z","type":"message"}
+{"nick":"joyee","message":"But then...if there isn't enough space, the test still shouldn't crash","date":"2018-08-13T17:26:59.695Z","type":"message"}
+{"nick":"refack","message":"That could be an OS bug","date":"2018-08-13T17:27:25.331Z","type":"message"}
+{"nick":"refack","message":"BTW when I run it directly I get `$? 137`","date":"2018-08-13T17:28:19.619Z","type":"message"}
+{"nick":"refack","message":"not -9","date":"2018-08-13T17:28:27.830Z","type":"message"}
+{"nick":"refack","message":"ohh that the same","date":"2018-08-13T17:29:00.002Z","type":"message"}
+{"nick":"refack","message":"I have one failing with trace","date":"2018-08-13T17:29:55.084Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/FI3zgCwR/","date":"2018-08-13T17:30:00.021Z","type":"message"}
+{"nick":"refack","message":"and one that passed","date":"2018-08-13T17:31:48.365Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/059SqSBt/","date":"2018-08-13T17:31:51.596Z","type":"message"}
+{"nick":"refack","message":"The GC doesn't run between sync JS lines","date":"2018-08-13T17:32:19.208Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/NwfgnCMA/","date":"2018-08-13T17:32:27.000Z","type":"message"}
+{"nick":"refack","message":"this is the code","date":"2018-08-13T17:32:47.876Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/nT0Ds9wg/test.js","date":"2018-08-13T17:32:57.334Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/Sxvuhjxd/","date":"2018-08-13T17:34:21.877Z","type":"message"}
+{"nick":"refack","message":"even the failed `toString` doesn't get released","date":"2018-08-13T17:34:40.608Z","type":"message"}
+{"nick":"refack","message":"BTW it's `External` memory. Does the GC even manage that?","date":"2018-08-13T17:35:09.007Z","type":"message"}
+{"nick":"ajvpot6","date":"2018-08-13T17:35:49.625Z","type":"join"}
+{"nick":"refack","message":"last one, with explicit `global.gc()` calls","date":"2018-08-13T17:39:27.824Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/zMF1YpIa/","date":"2018-08-13T17:39:33.401Z","type":"message"}
+{"nick":"ajvpot6","reason":"Remote host closed the connection","date":"2018-08-13T17:39:37.632Z","type":"quit"}
+{"nick":"MatthewAllan9323","date":"2018-08-13T17:41:28.743Z","type":"join"}
+{"nick":"MatthewAllan9323","reason":"Remote host closed the connection","date":"2018-08-13T17:46:14.109Z","type":"quit"}
+{"nick":"joyee","message":"GC should collect the JS strings which should be responsible of freeing those external memory","date":"2018-08-13T17:48:16.933Z","type":"message"}
+{"nick":"refack","message":"Right, thanks.","date":"2018-08-13T17:48:44.649Z","type":"message"}
+{"nick":"joyee","message":"So calling the v8 helper does the trick?","date":"2018-08-13T17:52:21.344Z","type":"message"}
+{"nick":"refack","message":"yes","date":"2018-08-13T17:52:30.601Z","type":"message"}
+{"nick":"refack","message":"But like you said, it should crash. So I'm trying to get a core","date":"2018-08-13T17:53:13.630Z","type":"message"}
+{"nick":"refack","message":"*should not","date":"2018-08-13T17:53:22.489Z","type":"message"}
+{"nick":"szt29","date":"2018-08-13T18:07:02.276Z","type":"join"}
+{"nick":"wols","date":"2018-08-13T18:08:25.945Z","type":"join"}
+{"nick":"szt29","reason":"Remote host closed the connection","date":"2018-08-13T18:09:35.886Z","type":"quit"}
+{"nick":"wols","reason":"Remote host closed the connection","date":"2018-08-13T18:12:50.698Z","type":"quit"}
+{"nick":"BridgeAR","date":"2018-08-13T18:20:51.000Z","type":"join"}
+{"nick":"insidious28","date":"2018-08-13T18:29:21.310Z","type":"join"}
+{"nick":"insidious28","reason":"Remote host closed the connection","date":"2018-08-13T18:31:21.185Z","type":"quit"}
+{"nick":"BridgeAR","reason":"Remote host closed the connection","date":"2018-08-13T18:39:42.032Z","type":"quit"}
+{"nick":"BridgeAR","date":"2018-08-13T18:52:23.623Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T19:11:36.550Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T19:11:36.712Z","type":"part"}
+{"nick":"mmarchini_","date":"2018-08-13T19:16:54.269Z","type":"join"}
+{"nick":"CC668","date":"2018-08-13T19:17:30.174Z","type":"join"}
+{"nick":"zkat_","date":"2018-08-13T19:17:40.854Z","type":"join"}
+{"nick":"ryzokuken_","date":"2018-08-13T19:17:52.344Z","type":"join"}
+{"nick":"rvagg_","date":"2018-08-13T19:18:35.314Z","type":"join"}
+{"nick":"ofrobots__","date":"2018-08-13T19:18:45.641Z","type":"join"}
+{"nick":"CC668","reason":"Remote host closed the connection","date":"2018-08-13T19:19:12.166Z","type":"quit"}
+{"nick":"BridgeAR","reason":"Remote host closed the connection","date":"2018-08-13T19:21:39.326Z","type":"quit"}
+{"nick":"ryzokuken","reason":"*.net *.split","date":"2018-08-13T19:25:18.372Z","type":"quit"}
+{"nick":"zkat","reason":"*.net *.split","date":"2018-08-13T19:25:18.372Z","type":"quit"}
+{"nick":"ofrobots_","reason":"*.net *.split","date":"2018-08-13T19:25:25.623Z","type":"quit"}
+{"nick":"mmarchini","reason":"*.net *.split","date":"2018-08-13T19:25:25.947Z","type":"quit"}
+{"nick":"rvagg","reason":"*.net *.split","date":"2018-08-13T19:25:26.110Z","type":"quit"}
+{"nick":"zkat_","new_nick":"zkat","date":"2018-08-13T19:25:29.040Z","type":"nick"}
+{"nick":"ryzokuken_","new_nick":"ryzokuken","date":"2018-08-13T19:25:30.717Z","type":"nick"}
+{"nick":"rvagg_","new_nick":"rvagg","date":"2018-08-13T19:25:30.879Z","type":"nick"}
+{"nick":"joyee","message":"refack: any progress? It's still failing CIs, maybe we should just use the `global.gc` quick fix to make CI green again first","date":"2018-08-13T19:43:46.352Z","type":"message"}
+{"nick":"refack","message":"Sure. I'l write up a PR","date":"2018-08-13T19:44:13.872Z","type":"message"}
+{"nick":"node-gh","date":"2018-08-13T20:08:32.392Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T20:08:32.554Z","type":"part"}
+{"nick":"refack","message":"Here we go https://github.com/nodejs/node/pull/22301","date":"2018-08-13T20:22:06.243Z","type":"message"}
+{"nick":"BridgeAR","date":"2018-08-13T20:26:30.618Z","type":"join"}
+{"nick":"Dwarf17","date":"2018-08-13T20:38:12.471Z","type":"join"}
+{"nick":"Dwarf17","reason":"Remote host closed the connection","date":"2018-08-13T20:41:08.622Z","type":"quit"}
+{"nick":"Trott","message":"Is this something I should log onto the relevant machine and clean up manually to see if it fixes the pipeline job? https://github.com/nodejs/node/pull/21870#issuecomment-412664493","date":"2018-08-13T21:07:45.297Z","type":"message"}
+{"nick":"Trott","message":"Looks like it's test-joyent-freebsd10-x64-2 so...FreeBSD, and I know that's been A Thing lately?","date":"2018-08-13T21:08:59.018Z","type":"message"}
+{"nick":"refack","message":"I think it's an actual github refresh bug","date":"2018-08-13T21:09:25.563Z","type":"message"}
+{"nick":"Trott","message":"Yeah, `git status` now says it's clean....","date":"2018-08-13T21:09:40.621Z","type":"message"}
+{"nick":"Trott","message":"(I might be on the wrong host. I'm looking at the most recent failure now.)","date":"2018-08-13T21:09:51.266Z","type":"message"}
+{"nick":"Trott","message":"Oh, this:","date":"2018-08-13T21:10:20.321Z","type":"message"}
+{"nick":"Trott","message":"https://www.irccloud.com/pastebin/GVNQ67qp/","date":"2018-08-13T21:10:21.425Z","type":"message"}
+{"nick":"refack","message":"When a test-pull-request  starts and does a rebase it calculates the git SHA of the rebased branch. If one of the workers fetches a different  git ref, that's the fail","date":"2018-08-13T21:11:02.207Z","type":"message"}
+{"nick":"refack","message":"that's the linter, right?","date":"2018-08-13T21:11:35.195Z","type":"message"}
+{"nick":"Trott","message":"Yes.","date":"2018-08-13T21:12:01.157Z","type":"message"}
+{"nick":"Trott","message":"https://ci.nodejs.org/job/node-linter/529/console","date":"2018-08-13T21:12:06.777Z","type":"message"}
+{"nick":"Trott","message":"Mildly more context if it helps:","date":"2018-08-13T21:13:08.541Z","type":"message"}
+{"nick":"Trott","message":"https://www.irccloud.com/pastebin/zVMNlk3K/","date":"2018-08-13T21:13:09.425Z","type":"message"}
+{"nick":"Trott","message":"Oh, that might be something that only happens when the linter fails? Still should be fixed of course.","date":"2018-08-13T21:14:44.760Z","type":"message"}
+{"nick":"joyee","message":"Shouldn't https://github.com/nodejs/build/blob/master/jenkins/scripts/node-test-commit-pre.sh do `git clean -fxd` somewhere?","date":"2018-08-13T21:25:54.383Z","type":"message"}
+{"nick":"refack","message":"The Jenkins git plugin does it","date":"2018-08-13T21:26:22.343Z","type":"message"}
+{"nick":"joyee","message":"hmm, it's strange that there have been a lot of unstaged files errors lately","date":"2018-08-13T21:26:47.840Z","type":"message"}
+{"nick":"joyee","message":"When does that plugin run?","date":"2018-08-13T21:27:00.802Z","type":"message"}
+{"nick":"refack","message":"at the start of each job, it's usually the only code that does the checkout","date":"2018-08-13T21:27:48.433Z","type":"message"}
+{"nick":"refack","message":"I think it happens when we have shell script that does rebasing","date":"2018-08-13T21:28:36.321Z","type":"message"}
+{"nick":"joyee","message":"https://ci.nodejs.org/job/node-test-commit-arm/17682/nodes=centos7-arm64-gcc6/console","date":"2018-08-13T21:35:29.880Z","type":"message"}
+{"nick":"joyee","message":"I can't figure out why there was untracked files with this log","date":"2018-08-13T21:35:50.911Z","type":"message"}
+{"nick":"joyee","message":"s/untracked files/unstaged changes/","date":"2018-08-13T21:36:07.653Z","type":"message"}
+{"nick":"joyee","message":"hmm..it's cloning the bash script from maclover7's repo?","date":"2018-08-13T21:37:09.825Z","type":"message"}
+{"nick":"node-gh","date":"2018-08-13T21:38:03.756Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-13T21:38:03.918Z","type":"part"}
+{"nick":"refack","message":"re: linter. there was an old PR with a fix waiting https://github.com/nodejs/build/pull/1349","date":"2018-08-13T21:39:34.264Z","type":"message"}
+{"nick":"refack","message":"The \"Untracked\" can be expected. the `modified:   deps/v8/third_party/jinja2/LICENSE` is a weird thing I've been seing even localy","date":"2018-08-13T21:40:39.513Z","type":"message"}
+{"nick":"refack","message":"I'm assuming it's and EOL issue that git \"auto-fixes\"","date":"2018-08-13T21:41:01.244Z","type":"message"}
+{"nick":"refack","message":"This is how the linter looks now - https://ci.nodejs.org/blue/organizations/jenkins/node-linter/detail/node-linter/536/pipeline","date":"2018-08-13T21:45:46.469Z","type":"message"}
+{"nick":"BridgeAR","reason":"Ping timeout: 240 seconds","date":"2018-08-13T21:52:35.587Z","type":"quit"}
+{"nick":"joyee","message":"refack: ouch, that file is using CRLF","date":"2018-08-13T21:55:16.885Z","type":"message"}
+{"nick":"refack","message":"Don't get me started...","date":"2018-08-13T21:55:53.691Z","type":"message"}
+{"nick":"joyee","message":"Should we just work around this with .gitattribute?","date":"2018-08-13T21:56:37.578Z","type":"message"}
+{"nick":"refack","message":"I run (on windows) with `binary`","date":"2018-08-13T21:57:09.273Z","type":"message"}
+{"nick":"refack","message":"except `.bat` files, windows doesn't care anymore","date":"2018-08-13T21:57:32.985Z","type":"message"}
+{"nick":"refack","message":"For this I don't know. Ask targos","date":"2018-08-13T21:58:13.022Z","type":"message"}
+{"nick":"joyee","message":"V8 is currently using `* text=auto`","date":"2018-08-13T22:02:06.933Z","type":"message"}
+{"nick":"refack","message":"Then we need to wither fix that file. Or change .gitglobal on that machine...","date":"2018-08-13T22:02:44.573Z","type":"message"}
+{"nick":"refack","message":"`core.autocrlf = input`","date":"2018-08-13T22:03:29.195Z","type":"message"}
+{"nick":"joyee","message":"Maybe we should take another stab at https://github.com/nodejs/node/pull/7019","date":"2018-08-13T22:05:38.708Z","type":"message"}
+{"nick":"refack","message":"But we'll need to patch https://github.com/nodejs/node/blob/master/deps/v8/.gitattributes anyway","date":"2018-08-13T22:09:24.745Z","type":"message"}
+{"nick":"Hink","date":"2018-08-13T22:11:00.082Z","type":"join"}
+{"nick":"Hink","reason":"Remote host closed the connection","date":"2018-08-13T22:12:11.465Z","type":"quit"}
+{"nick":"joyee","message":"um...does that file affect us?","date":"2018-08-13T22:15:29.040Z","type":"message"}
+{"nick":"joyee","message":"Git should not read it when we check out the node repo?","date":"2018-08-13T22:15:51.669Z","type":"message"}
+{"nick":"refack","message":"I assumed it's recursive like .gitignore","date":"2018-08-13T22:16:15.820Z","type":"message"}
+{"nick":"joyee","message":"If it's read by git, then when someone updates deps/v8, that file should've been converted to use LF before being checking into the repo right?","date":"2018-08-13T22:17:04.521Z","type":"message"}
+{"nick":"joyee","message":"hm, looks like the license file is older than the .gitattributes","date":"2018-08-13T22:17:43.650Z","type":"message"}
+{"nick":"refack","message":"yeah, I also need to read if `*` is like `*.*` or it might be special for `LICENSE` and `README` files","date":"2018-08-13T22:18:45.492Z","type":"message"}
+{"nick":"refack","message":"Actualy I would think that CI machines should run with `core.autocrlf = false`","date":"2018-08-13T22:21:49.255Z","type":"message"}
+{"nick":"refack","message":"They are not dev machines. They should use the files as is","date":"2018-08-13T22:22:06.096Z","type":"message"}
+{"nick":"refack","message":"like we use `npm ci`","date":"2018-08-13T22:22:23.161Z","type":"message"}
+{"nick":"mmarchini_","date":"2018-08-13T22:28:07.938Z","type":"part"}
+{"nick":"mmarchini","date":"2018-08-13T22:28:55.746Z","type":"join"}
+{"nick":"mmarchini","message":"Agreed","date":"2018-08-13T22:29:23.174Z","type":"message"}
+{"nick":"mmarchini","message":"BTW, yesterday I fixed this issue by removing the dirty workspaces","date":"2018-08-13T22:29:33.469Z","type":"message"}
+{"nick":"mmarchini","message":"I know this won't fix the issue in the long term, but should be enough to pass some CI runs","date":"2018-08-13T22:29:58.972Z","type":"message"}
+{"nick":"joyee","message":"mmarchini: that means theoratically we'd need to wipe every workspace so that the file is checked out properly from scratch?","date":"2018-08-13T22:33:12.193Z","type":"message"}
+{"nick":"mmarchini","message":"We might need to do that anyway after setting `core.autocrlf = false`, unless git is able to revert the EOL changes in these files after setting this option","date":"2018-08-13T22:45:03.971Z","type":"message"}
+{"nick":"mmarchini","message":"Do we know how many workspaces are affected? I found two yesterday","date":"2018-08-13T22:46:59.420Z","type":"message"}
+{"nick":"joyee","message":"See https://github.com/nodejs/reliability/issues/12","date":"2018-08-13T22:50:01.563Z","type":"message"}
+{"nick":"joyee","message":"test-packetnet-centos7-arm64-2, test-packetnet-centos7-arm64-1, test-digitalocean-ubuntu1604_sharedlibs_container-x64-7, test-digitalocean-ubuntu1604_sharedlibs_container-x64-10","date":"2018-08-13T22:50:14.274Z","type":"message"}
+{"nick":"mmarchini","message":"We could set `core.autocrlf = false` manually on these machines and try to `git checkout deps/v8/third_party/jinja2/LICENSE`. If that works we can write an ansible playbook to set this option on all servers","date":"2018-08-13T22:57:55.008Z","type":"message"}
+{"nick":"refack","message":"It's not working","date":"2018-08-13T22:58:13.102Z","type":"message"}
+{"nick":"refack","message":"not even rm","date":"2018-08-13T22:58:18.867Z","type":"message"}
+{"nick":"refack","message":"I thing I need to clear some cache","date":"2018-08-13T22:58:27.856Z","type":"message"}
+{"nick":"mmarchini","message":"Even after setting `core.autocrlf = false`?","date":"2018-08-13T22:59:18.045Z","type":"message"}
+{"nick":"refack","message":"yes. I remembered it being a pain","date":"2018-08-13T23:03:09.230Z","type":"message"}
+{"nick":"refack","message":"what a good way to see what the diff  is really about","date":"2018-08-13T23:04:59.892Z","type":"message"}
+{"nick":"refack","message":"?","date":"2018-08-13T23:05:05.509Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/MeIaztbj/","date":"2018-08-13T23:08:42.678Z","type":"message"}
+{"nick":"refack","message":"help!","date":"2018-08-13T23:08:45.496Z","type":"message"}
+{"nick":"refack","message":"wait. I got it","date":"2018-08-13T23:12:40.508Z","type":"message"}
+{"nick":"refack","message":"ohh it broke again","date":"2018-08-13T23:14:35.706Z","type":"message"}
+{"nick":"refack","message":"https://www.irccloud.com/pastebin/sEVk3A9c/","date":"2018-08-13T23:14:39.604Z","type":"message"}
