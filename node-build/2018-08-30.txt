@@ -32,3 +32,80 @@
 {"nick":"node-gh","date":"2018-08-30T15:33:01.835Z","type":"part"}
 {"nick":"node-gh","date":"2018-08-30T15:40:50.283Z","type":"join"}
 {"nick":"node-gh","date":"2018-08-30T15:40:50.441Z","type":"part"}
+{"nick":"Kazuto13","date":"2018-08-30T16:06:52.635Z","type":"join"}
+{"nick":"Kazuto13","reason":"Killed (Sigyn (Spam is off topic on freenode.))","date":"2018-08-30T16:10:17.027Z","type":"quit"}
+{"nick":"StephenS18","date":"2018-08-30T16:25:30.962Z","type":"join"}
+{"nick":"StephenS18","reason":"Remote host closed the connection","date":"2018-08-30T16:27:50.714Z","type":"quit"}
+{"nick":"Kirito","date":"2018-08-30T16:29:45.565Z","type":"join"}
+{"nick":"Kirito","reason":"Remote host closed the connection","date":"2018-08-30T16:33:48.305Z","type":"quit"}
+{"nick":"exio420","date":"2018-08-30T16:45:07.017Z","type":"join"}
+{"nick":"exio420","reason":"Remote host closed the connection","date":"2018-08-30T16:45:29.243Z","type":"quit"}
+{"nick":"Guest79333","date":"2018-08-30T16:45:52.571Z","type":"join"}
+{"nick":"Guest79333","reason":"Remote host closed the connection","date":"2018-08-30T16:47:30.213Z","type":"quit"}
+{"nick":"gabrielschulhof","reason":"Changing host","date":"2018-08-30T16:47:57.312Z","type":"quit"}
+{"nick":"gabrielschulhof","date":"2018-08-30T16:47:57.469Z","type":"join"}
+{"nick":"gabrielschulhof","message":"Hey, all! I just back-ported Anna's env cleanup hook changes to v6.x-staging because of a N-API issue we received. When I tried to run make -j5 test I get a gyp error: gyp: name 'build_v8_with_gn' is not defined while evaluating condition 'build_v8_with_gn == \"true\"' in binding.gyp while trying to load binding.gyp","date":"2018-08-30T16:47:58.731Z","type":"message"}
+{"nick":"gabrielschulhof","message":"This is weird, because that config option doesn't exist anywhere in v6.x-staging. I did a git clean -x -d -f -f to make sure there are no artefacts from before I switched branches.","date":"2018-08-30T16:48:29.822Z","type":"message"}
+{"nick":"gabrielschulhof","message":"Is there anything else I can clean?","date":"2018-08-30T16:48:36.099Z","type":"message"}
+{"nick":"refack","message":"Look at the .node-gyp cache","date":"2018-08-30T16:49:07.471Z","type":"message"}
+{"nick":"refack","message":"Also see what node-gyp is passing to gyp with -I","date":"2018-08-30T16:49:45.717Z","type":"message"}
+{"nick":"refack","message":"The error might be in an included .gyp file, not necessarily in `binding.gyp`","date":"2018-08-30T16:50:33.151Z","type":"message"}
+{"nick":"liste23","date":"2018-08-30T16:51:35.450Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-30T16:53:03.244Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-30T16:53:03.441Z","type":"part"}
+{"nick":"liste23","reason":"Remote host closed the connection","date":"2018-08-30T16:54:57.255Z","type":"quit"}
+{"nick":"gabrielschulhof","message":"refack: Yeah, I figured, because on master the setting ends up in config.gypi as a result of running configure.","date":"2018-08-30T17:00:23.571Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: rm -rf ~/.node-gyp ... lessee ...","date":"2018-08-30T17:00:56.267Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: Hmmm ... same issue ...","date":"2018-08-30T17:01:21.606Z","type":"message"}
+{"nick":"node-slack-bot_","message":"[riclau] it's also referenced in `common.gypi` (on master). Related: https://github.com/nodejs/node-gyp/issues/1457","date":"2018-08-30T17:01:49.798Z","type":"message"}
+{"nick":"refack","message":"Meanwhile, You could add it to common.gypi it should be safe","date":"2018-08-30T17:02:52.884Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: Oh, I did that, but there are more. There's also an lto-related setting.","date":"2018-08-30T17:03:23.866Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: So, I'd have to add all the settings it complains about by hand. OK, I'll do it, but it's not clean, and I don't know how the CI will work.","date":"2018-08-30T17:04:07.608Z","type":"message"}
+{"nick":"refack","message":"Well seems like you've leaked some new .gyp file into the old branch. That's strange","date":"2018-08-30T17:05:35.650Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: git grep -nH 'build_v8_with_gn' has no results on my v6.x-staging.","date":"2018-08-30T17:06:13.620Z","type":"message"}
+{"nick":"gabrielschulhof","message":"refack: So, it's nowhere in the source tree, AFAICT.","date":"2018-08-30T17:06:34.581Z","type":"message"}
+{"nick":"refack","message":"does it search in `.` prefixed files?","date":"2018-08-30T17:06:40.733Z","type":"message"}
+{"nick":"gabrielschulhof","message":"It searches in all files indexed by git, AFAIK.","date":"2018-08-30T17:06:53.073Z","type":"message"}
+{"nick":"gabrielschulhof","message":"But I can do a find | xargs grep.","date":"2018-08-30T17:06:59.442Z","type":"message"}
+{"nick":"refack","message":"there are a few .* files in the root that cache GYP stuff","date":"2018-08-30T17:08:02.695Z","type":"message"}
+{"nick":"gabrielschulhof","message":"after a git clean -x -d -f -f, find . -type f | xargs grep -nH build_v8_with_gn from the repo root gives no results.","date":"2018-08-30T17:08:57.491Z","type":"message"}
+{"nick":"gabrielschulhof","message":"Yet, as a result of make test, the following is added:","date":"2018-08-30T17:09:26.118Z","type":"message"}
+{"nick":"gabrielschulhof","message":"./test/addons/01_function_arguments/build/config.gypi:12:    \"build_v8_with_gn\": \"false\",","date":"2018-08-30T17:09:27.530Z","type":"message"}
+{"nick":"refack","message":"super strange","date":"2018-08-30T17:09:28.710Z","type":"message"}
+{"nick":"refack","message":"node-gyp pulls headers from the insternet","date":"2018-08-30T17:09:50.072Z","type":"message"}
+{"nick":"refack","message":"node-gyp pulls headers from the internet","date":"2018-08-30T17:09:54.382Z","type":"message"}
+{"nick":"gabrielschulhof","message":"OK, so those may be polluted.","date":"2018-08-30T17:10:06.934Z","type":"message"}
+{"nick":"refack","message":"I think it's based on the version on the running binary","date":"2018-08-30T17:10:19.181Z","type":"message"}
+{"nick":"refack","message":"you could pass a nodeDir=","date":"2018-08-30T17:10:27.861Z","type":"message"}
+{"nick":"refack","message":"export npm_config_nodeDir=","date":"2018-08-30T17:10:41.003Z","type":"message"}
+{"nick":"refack","message":"I think","date":"2018-08-30T17:10:42.646Z","type":"message"}
+{"nick":"gabrielschulhof","message":"Yeah. I'll try that next.","date":"2018-08-30T17:10:47.978Z","type":"message"}
+{"nick":"gabrielschulhof","message":"OK, I have rm -rf ~/.node-gyp and export npm_config_nodedir=${HOME}/node/node2 (which is where my tree is).","date":"2018-08-30T17:11:46.555Z","type":"message"}
+{"nick":"node-slack-bot_","message":"[riclau] make test should already be using  nodedir.","date":"2018-08-30T17:12:03.631Z","type":"message"}
+{"nick":"gabrielschulhof","message":"OK, I may have had a stale npm_config_nodedir set in my environment.","date":"2018-08-30T17:12:13.870Z","type":"message"}
+{"nick":"gabrielschulhof","message":"It's good now.","date":"2018-08-30T17:12:30.555Z","type":"message"}
+{"nick":"gabrielschulhof","message":"Thanks for your help!","date":"2018-08-30T17:12:35.966Z","type":"message"}
+{"nick":"refack","message":"Yay 🏋️‍♀️","date":"2018-08-30T17:12:57.835Z","type":"message"}
+{"nick":"gabrielschulhof","message":"🙂","date":"2018-08-30T17:16:04.226Z","type":"message"}
+{"nick":"roger_rabbit19","date":"2018-08-30T17:25:52.571Z","type":"join"}
+{"nick":"roger_rabbit19","reason":"Remote host closed the connection","date":"2018-08-30T17:27:10.725Z","type":"quit"}
+{"nick":"Waggie4","date":"2018-08-30T17:34:54.314Z","type":"join"}
+{"nick":"Waggie4","reason":"Remote host closed the connection","date":"2018-08-30T17:39:46.034Z","type":"quit"}
+{"nick":"Connection","date":"2018-08-30T18:46:12.611Z","type":"join"}
+{"nick":"Connection","reason":"Remote host closed the connection","date":"2018-08-30T18:46:13.208Z","type":"quit"}
+{"nick":"ljharb","message":"irc-slack test, irc side","date":"2018-08-30T18:46:37.724Z","type":"message"}
+{"nick":"node-slack-bot_","message":"[ljharb] irc-slack test, slack side","date":"2018-08-30T18:46:43.318Z","type":"message"}
+{"nick":"sxa","reason":"Ping timeout: 240 seconds","date":"2018-08-30T19:14:04.707Z","type":"quit"}
+{"nick":"targos","reason":"Quit: Connection closed for inactivity","date":"2018-08-30T20:22:49.540Z","type":"quit"}
+{"nick":"graingert1","date":"2018-08-30T20:45:25.687Z","type":"join"}
+{"nick":"graingert1","reason":"Ping timeout: 240 seconds","date":"2018-08-30T20:54:34.843Z","type":"quit"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 245 seconds","date":"2018-08-30T21:24:38.349Z","type":"quit"}
+{"nick":"KobrAs25","date":"2018-08-30T22:38:59.074Z","type":"join"}
+{"nick":"KobrAs25","reason":"Remote host closed the connection","date":"2018-08-30T22:41:33.141Z","type":"quit"}
+{"nick":"node-gh","date":"2018-08-30T23:06:38.869Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-30T23:06:39.026Z","type":"part"}
+{"nick":"node-gh","date":"2018-08-30T23:07:09.661Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-30T23:07:09.661Z","type":"part"}
+{"nick":"node-gh","date":"2018-08-30T23:20:10.255Z","type":"join"}
+{"nick":"node-gh","date":"2018-08-30T23:20:10.412Z","type":"part"}
+{"nick":"gabrielschulhof","date":"2018-08-30T23:20:51.487Z","type":"join"}
