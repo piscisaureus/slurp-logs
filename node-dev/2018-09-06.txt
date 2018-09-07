@@ -126,3 +126,158 @@
 {"nick":"bradleymeck","message":"also heap total can be > RSS since it could just be using unmodified memory which could be pushed to virtual mem by OS","date":"2018-09-06T15:52:59.461Z","type":"message"}
 {"nick":"seishun","date":"2018-09-06T15:55:56.391Z","type":"join"}
 {"nick":"benjamincoe","date":"2018-09-06T15:58:47.721Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T16:03:28.919Z","type":"quit"}
+{"nick":"joyee","message":"Hmm, I think the paged spaces are using the AccountingStats which is maintained during allocation and collection","date":"2018-09-06T16:03:30.586Z","type":"message"}
+{"nick":"seishun","reason":"Disconnected by services","date":"2018-09-06T16:04:27.367Z","type":"quit"}
+{"nick":"joyee","message":"Hard to tell if it is accurate without traces","date":"2018-09-06T16:04:31.755Z","type":"message"}
+{"nick":"seishun","date":"2018-09-06T16:04:35.470Z","type":"join"}
+{"nick":"bradleymeck","message":"joyee: accurate vs what","date":"2018-09-06T16:06:33.997Z","type":"message"}
+{"nick":"benjamincoe","date":"2018-09-06T16:07:01.765Z","type":"join"}
+{"nick":"joyee","message":"What the objects are actually using","date":"2018-09-06T16:07:11.934Z","type":"message"}
+{"nick":"bradleymeck","message":"oh that is completely different in intent","date":"2018-09-06T16:07:56.235Z","type":"message"}
+{"nick":"bradleymeck","message":"reserved is different from used","date":"2018-09-06T16:08:14.439Z","type":"message"}
+{"nick":"joyee","message":"Heap used is mostly adding those stats (except the new space)","date":"2018-09-06T16:08:58.270Z","type":"message"}
+{"nick":"bradleymeck","message":"heap used should be shallow sizes not physically used within heap total","date":"2018-09-06T16:10:45.154Z","type":"message"}
+{"nick":"joyee","message":"Heap total should be calculated based on pages","date":"2018-09-06T16:10:47.014Z","type":"message"}
+{"nick":"bradleymeck","message":"see string ropes in heap snapshots and you can likely see this directly","date":"2018-09-06T16:11:05.039Z","type":"message"}
+{"nick":"bradleymeck","message":"heap total should be on space that the heap is able to occupy currently without realloc","date":"2018-09-06T16:11:46.031Z","type":"message"}
+{"nick":"bradleymeck","message":"heap used should be space logically occupied by objects in heap","date":"2018-09-06T16:12:01.123Z","type":"message"}
+{"nick":"bradleymeck","message":"rss should be space physically occupied","date":"2018-09-06T16:12:10.007Z","type":"message"}
+{"nick":"joyee","message":"The heap code maintain the accounting stats when creating cons strings yeah","date":"2018-09-06T16:12:46.853Z","type":"message"}
+{"nick":"bradleymeck","message":"external is unmanaged by heap (likely not to show up in rss unless modified)","date":"2018-09-06T16:12:50.409Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: and cons strings can have some sharing like wa7son saw","date":"2018-09-06T16:13:08.819Z","type":"message"}
+{"nick":"joyee","message":"I just guess that it may or may not make mistakes when maintaining the accounting stats","date":"2018-09-06T16:13:18.948Z","type":"message"}
+{"nick":"bradleymeck","message":"so if it double counts, it can be misleading if you think heap used represents physically used space instead of logically","date":"2018-09-06T16:13:29.691Z","type":"message"}
+{"nick":"joyee","message":"Since that’s what the API actually output from","date":"2018-09-06T16:13:34.058Z","type":"message"}
+{"nick":"joyee","message":"Those three numbers are calculated from different sources, ultimately","date":"2018-09-06T16:14:48.795Z","type":"message"}
+{"nick":"bradleymeck","message":"you could probably figure out heapReserved but that might be more costly","date":"2018-09-06T16:16:10.091Z","type":"message"}
+{"nick":"joyee","message":"RSS is from OS, heap total from pages minus header sizes, and heap used from the accounting stats","date":"2018-09-06T16:16:17.954Z","type":"message"}
+{"nick":"bradleymeck","message":"since you have to ensure something doesn't get double counted while traversing and/or allocating","date":"2018-09-06T16:16:31.989Z","type":"message"}
+{"nick":"joyee","message":"The API does not count though, it just reads the accounting stats of the paged spaces, and do a subtraction for the semispace","date":"2018-09-06T16:17:37.165Z","type":"message"}
+{"nick":"bradleymeck","message":"but what are the accounting stats composed of?","date":"2018-09-06T16:18:20.722Z","type":"message"}
+{"nick":"joyee","message":"The subtraction is unlikely to go wrong, but the accounting stats..IDK","date":"2018-09-06T16:18:22.170Z","type":"message"}
+{"nick":"bradleymeck","message":"the accounting stats likely are per node","date":"2018-09-06T16:18:34.721Z","type":"message"}
+{"nick":"joyee","message":"They are maintained during allocation and collection","date":"2018-09-06T16:18:35.875Z","type":"message"}
+{"nick":"bradleymeck","message":"which would lead to this idea of logical usage not physical usage","date":"2018-09-06T16:18:50.880Z","type":"message"}
+{"nick":"joyee","message":"And also during promotion I think","date":"2018-09-06T16:19:28.973Z","type":"message"}
+{"nick":"joyee","message":"It’s pretty hard to tell without a live heap","date":"2018-09-06T16:20:14.305Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: you can see similar behavior here from the JSON heap snapshots","date":"2018-09-06T16:21:13.395Z","type":"message"}
+{"nick":"joyee","message":"Um, how is the heap snapshot related?","date":"2018-09-06T16:23:57.445Z","type":"message"}
+{"nick":"devsnek","message":"someone here who is good with c++","date":"2018-09-06T16:24:15.338Z","type":"message"}
+{"nick":"joyee","message":"That is a detailed graph of the heap","date":"2018-09-06T16:24:18.313Z","type":"message"}
+{"nick":"devsnek","message":"addaleax suggested i change `inline std::string x() const { return x_ }` to be `std::string&`","date":"2018-09-06T16:24:36.245Z","type":"message"}
+{"nick":"joyee","message":"The accounting stats are numbers maintained along side the objects...","date":"2018-09-06T16:24:49.418Z","type":"message"}
+{"nick":"devsnek","message":"which means i should also remove the const qualifier right?","date":"2018-09-06T16:25:26.786Z","type":"message"}
+{"nick":"devsnek","message":"but then if my this target is const qualified, the methods don't work","date":"2018-09-06T16:26:27.525Z","type":"message"}
+{"nick":"joyee","message":"devsnek: you can return a const string& right?","date":"2018-09-06T16:27:27.875Z","type":"message"}
+{"nick":"devsnek","message":"honestly i have no idea how most of these combinations of types work","date":"2018-09-06T16:27:57.747Z","type":"message"}
+{"nick":"joyee","message":"Then the qualifier can be kept","date":"2018-09-06T16:28:05.875Z","type":"message"}
+{"nick":"devsnek","message":"before i had `inline const char* x() const {}`","date":"2018-09-06T16:28:18.743Z","type":"message"}
+{"nick":"devsnek","message":"so should the new thing be `inline const std::string& x() {}`","date":"2018-09-06T16:28:31.115Z","type":"message"}
+{"nick":"joyee","message":"inline const string& x() const {}","date":"2018-09-06T16:29:08.587Z","type":"message"}
+{"nick":"devsnek","message":"lots of const","date":"2018-09-06T16:29:36.039Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: i'm stating that the metrics being shown in the snapshot include size of nodes","date":"2018-09-06T16:30:34.672Z","type":"message"}
+{"nick":"bradleymeck","message":"size of nodes total can greatly differ from rss","date":"2018-09-06T16:30:53.311Z","type":"message"}
+{"nick":"bradleymeck","message":"including being > rss","date":"2018-09-06T16:30:58.188Z","type":"message"}
+{"nick":"bradleymeck","message":"i'm thinking the concept of heap used seems to consistently be logical/virtual usage, not reserved","date":"2018-09-06T16:31:18.705Z","type":"message"}
+{"nick":"joyee","message":"The const before {} means you cannot let the caller modify the object’s state, if the reference you return is not a const reference, the caller can use that to modify x","date":"2018-09-06T16:31:21.359Z","type":"message"}
+{"nick":"lundibundi","date":"2018-09-06T16:32:33.437Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: what do you mean by reserved? You mean the memory taken by the pages?","date":"2018-09-06T16:32:36.010Z","type":"message"}
+{"nick":"bradleymeck","message":"physically in ram","date":"2018-09-06T16:33:52.716Z","type":"message"}
+{"nick":"bradleymeck","message":"unrelated to memory taken by pages","date":"2018-09-06T16:34:24.872Z","type":"message"}
+{"nick":"bradleymeck","message":"memory taken by pages is probably also virtual","date":"2018-09-06T16:34:41.700Z","type":"message"}
+{"nick":"bradleymeck","message":"resident not reserved* gah","date":"2018-09-06T16:36:51.523Z","type":"message"}
+{"nick":"joyee","message":"The physical committed memory are not exposed by node’s API, it’s in heap statistics though","date":"2018-09-06T16:36:55.011Z","type":"message"}
+{"nick":"bradleymeck","message":"thats the typical term","date":"2018-09-06T16:36:58.246Z","type":"message"}
+{"nick":"bradleymeck","message":"but the OS may not have all that memory in RSS just because it was alloc'd","date":"2018-09-06T16:37:32.223Z","type":"message"}
+{"nick":"bradleymeck","message":"https://en.wikipedia.org/wiki/Memory_overcommitment and all","date":"2018-09-06T16:37:45.874Z","type":"message"}
+{"nick":"joyee","message":"Oh yeah in that case we will need to see the heap statistics","date":"2018-09-06T16:40:31.343Z","type":"message"}
+{"nick":"joyee","message":"Not heap total and heap used, those are only part of the heap statistics","date":"2018-09-06T16:40:53.006Z","type":"message"}
+{"nick":"joyee","message":"The heap statistics includes an entry about physically committed memory, although it’s still an estimation","date":"2018-09-06T16:41:34.850Z","type":"message"}
+{"nick":"devsnek","message":"does any part of ThreadPoolWork run in the main thread","date":"2018-09-06T16:42:14.212Z","type":"message"}
+{"nick":"devsnek","message":"or hmm","date":"2018-09-06T16:42:38.457Z","type":"message"}
+{"nick":"joyee","message":"We don’t seem to have an API to get the VSZ...hmm","date":"2018-09-06T16:47:44.164Z","type":"message"}
+{"nick":"joyee","message":"Maybe it’s because that’s hard to model on non-linux platforms(shrug","date":"2018-09-06T16:49:42.595Z","type":"message"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T16:59:35.941Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T17:01:02.503Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T17:01:53.817Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T17:05:37.403Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T17:06:33.501Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 245 seconds","date":"2018-09-06T17:08:48.300Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T17:09:15.596Z","type":"join"}
+{"nick":"devsnek","message":"seems like the finished callback runs in the loop thread","date":"2018-09-06T17:13:02.455Z","type":"message"}
+{"nick":"gamelaster","date":"2018-09-06T17:15:30.789Z","type":"join"}
+{"nick":"devsnek","message":"how would i have a mutex that locks to the whole thread","date":"2018-09-06T17:15:32.817Z","type":"message"}
+{"nick":"devsnek","message":"not a callsite","date":"2018-09-06T17:15:34.410Z","type":"message"}
+{"nick":"devsnek","message":"so like if i try to lock the mutex twice in the same thread both locks pass","date":"2018-09-06T17:15:59.382Z","type":"message"}
+{"nick":"TimothyGu","message":"devsnek: not sure if this is what you're looking for but a semaphore?","date":"2018-09-06T17:16:28.002Z","type":"message"}
+{"nick":"devsnek","message":"maybe","date":"2018-09-06T17:17:10.250Z","type":"message"}
+{"nick":"seishun","date":"2018-09-06T17:17:33.734Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2018-09-06T17:31:43.249Z","type":"quit"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 244 seconds","date":"2018-09-06T17:37:41.434Z","type":"quit"}
+{"nick":"gabrielschulhof","date":"2018-09-06T17:45:09.293Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-09-06T18:00:49.654Z","type":"quit"}
+{"nick":"lundibundi","date":"2018-09-06T18:03:42.394Z","type":"join"}
+{"nick":"marthinal","date":"2018-09-06T18:08:56.590Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-09-06T18:10:52.565Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2018-09-06T18:25:58.244Z","type":"quit"}
+{"nick":"lundibundi","date":"2018-09-06T18:30:01.433Z","type":"join"}
+{"nick":"JamJam_kid","date":"2018-09-06T18:36:07.734Z","type":"join"}
+{"nick":"JamJam_kid","reason":"Ping timeout: 252 seconds","date":"2018-09-06T18:40:33.608Z","type":"quit"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T18:50:23.038Z","type":"quit"}
+{"nick":"AtumT","date":"2018-09-06T18:50:52.622Z","type":"join"}
+{"nick":"benjamincoe","date":"2018-09-06T18:54:27.524Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T18:56:11.409Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T18:56:34.456Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T18:57:18.258Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T18:58:57.521Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T18:59:01.356Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 244 seconds","date":"2018-09-06T19:11:43.459Z","type":"quit"}
+{"nick":"seishun","date":"2018-09-06T19:14:15.119Z","type":"join"}
+{"nick":"marthinal","date":"2018-09-06T19:16:27.526Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 245 seconds","date":"2018-09-06T19:20:28.303Z","type":"quit"}
+{"nick":"marthinal","date":"2018-09-06T19:29:31.905Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-09-06T19:39:09.472Z","type":"quit"}
+{"nick":"gamelaster","reason":"Ping timeout: 272 seconds","date":"2018-09-06T19:49:18.838Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 272 seconds","date":"2018-09-06T19:51:13.084Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T20:32:53.795Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T20:45:45.940Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T20:48:30.585Z","type":"join"}
+{"nick":"jbenet","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:02:10.218Z","type":"quit"}
+{"nick":"wa7son","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:02:10.218Z","type":"quit"}
+{"nick":"TimothyGu","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:02:10.218Z","type":"quit"}
+{"nick":"seishun","date":"2018-09-06T21:02:42.895Z","type":"join"}
+{"nick":"othiym23","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:02:43.429Z","type":"quit"}
+{"nick":"bengl","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:02:43.429Z","type":"quit"}
+{"nick":"othiym23","date":"2018-09-06T21:03:37.725Z","type":"join"}
+{"nick":"bengl","date":"2018-09-06T21:03:38.022Z","type":"join"}
+{"nick":"TimothyGu","date":"2018-09-06T21:03:39.831Z","type":"join"}
+{"nick":"wa7son","date":"2018-09-06T21:03:42.624Z","type":"join"}
+{"nick":"jbenet","date":"2018-09-06T21:03:54.730Z","type":"join"}
+{"nick":"marthinal","date":"2018-09-06T21:13:19.064Z","type":"join"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 245 seconds","date":"2018-09-06T21:13:48.337Z","type":"quit"}
+{"nick":"gabrielschulhof","date":"2018-09-06T21:15:58.371Z","type":"join"}
+{"nick":"marthinal","reason":"Ping timeout: 252 seconds","date":"2018-09-06T21:17:33.899Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 246 seconds","date":"2018-09-06T21:42:19.250Z","type":"quit"}
+{"nick":"dc13ff","date":"2018-09-06T21:48:57.958Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T21:52:15.198Z","type":"quit"}
+{"nick":"zeds1","date":"2018-09-06T21:57:41.367Z","type":"join"}
+{"nick":"benjamincoe","date":"2018-09-06T22:00:56.597Z","type":"join"}
+{"nick":"zeds1","date":"2018-09-06T22:01:05.003Z","type":"part"}
+{"nick":"lundibundi","reason":"Ping timeout: 252 seconds","date":"2018-09-06T22:03:51.496Z","type":"quit"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T22:15:12.661Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T22:17:11.731Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T22:17:17.513Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T22:17:51.469Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T22:17:51.469Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T22:18:06.802Z","type":"join"}
+{"nick":"al-damiri","reason":"Quit: Connection closed for inactivity","date":"2018-09-06T22:21:21.836Z","type":"quit"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T22:32:45.881Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T22:33:24.573Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T22:37:07.565Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T22:48:10.556Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T23:05:43.368Z","type":"quit"}
+{"nick":"benjamincoe","date":"2018-09-06T23:13:45.015Z","type":"join"}
+{"nick":"benjamincoe","reason":"Remote host closed the connection","date":"2018-09-06T23:22:10.304Z","type":"quit"}
+{"nick":"nemix","date":"2018-09-06T23:40:46.649Z","type":"join"}
+{"nick":"benjamincoe","date":"2018-09-06T23:50:32.055Z","type":"join"}
