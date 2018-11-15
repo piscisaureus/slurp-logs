@@ -44,3 +44,202 @@
 {"nick":"devsnek","message":"i meant like the larger context of node doing node things","date":"2018-11-15T07:58:32.259Z","type":"message"}
 {"nick":"joyee","message":"I think most of those come back to either v8::isolate or v8::context :S","date":"2018-11-15T07:59:05.860Z","type":"message"}
 {"nick":"devsnek","message":"each environment is associated with the isolate for that thread and the initial context used when bootstrapping","date":"2018-11-15T07:59:58.731Z","type":"message"}
+{"nick":"joyee","message":"Sure but why do we have to stuck them in on class and assume we can depend on them...","date":"2018-11-15T08:00:34.784Z","type":"message"}
+{"nick":"joyee","message":"Other than being lazy","date":"2018-11-15T08:00:53.515Z","type":"message"}
+{"nick":"devsnek","message":"because its our way of tracking which <generic engine handle> we're dealing with","date":"2018-11-15T08:01:26.916Z","type":"message"}
+{"nick":"joyee","message":"You mean v8 handles?","date":"2018-11-15T08:01:54.439Z","type":"message"}
+{"nick":"devsnek","message":"well in this case its v8::Isolate","date":"2018-11-15T08:02:07.907Z","type":"message"}
+{"nick":"joyee","message":"Why do we have to track that is what I am wondering","date":"2018-11-15T08:02:28.503Z","type":"message"}
+{"nick":"joyee","message":"You can make that an argument instead of being lazy and taking that from a giant Environment, no?","date":"2018-11-15T08:02:59.321Z","type":"message"}
+{"nick":"devsnek","message":"well it helps deal with workers and people who embed node","date":"2018-11-15T08:03:54.314Z","type":"message"}
+{"nick":"joyee","message":"Otherwise you end up with tons of stuff depending on each other in a strange way","date":"2018-11-15T08:03:59.298Z","type":"message"}
+{"nick":"devsnek","message":"if a context doesn't have an associated environment we definitely shouldn't be running bootstrap on it","date":"2018-11-15T08:04:16.910Z","type":"message"}
+{"nick":"joyee","message":"Why? AFAICT it is the opposite","date":"2018-11-15T08:04:17.487Z","type":"message"}
+{"nick":"joyee","message":"You can’t really share code that assume too much","date":"2018-11-15T08:04:54.660Z","type":"message"}
+{"nick":"devsnek","message":"we need to keep a bucket of all the things that are working together to make node run","date":"2018-11-15T08:05:13.037Z","type":"message"}
+{"nick":"devsnek","message":"the isolate, the libuv with that isolate, etc","date":"2018-11-15T08:05:27.067Z","type":"message"}
+{"nick":"joyee","message":"Or you just need to handle whenever GetCurrentContext gives you a nullptr","date":"2018-11-15T08:05:30.545Z","type":"message"}
+{"nick":"joyee","message":"Sure but why can’t they be arguments instead of being a giant Singleton blob?","date":"2018-11-15T08:06:18.814Z","type":"message"}
+{"nick":"joyee","message":"Well not exactly Singleton but somewhat per thread","date":"2018-11-15T08:07:01.846Z","type":"message"}
+{"nick":"devsnek","message":"it is per thread","date":"2018-11-15T08:07:32.833Z","type":"message"}
+{"nick":"devsnek","message":"what do you mean arguments","date":"2018-11-15T08:07:45.270Z","type":"message"}
+{"nick":"joyee","message":"Function arguments, somewhat","date":"2018-11-15T08:07:58.022Z","type":"message"}
+{"nick":"joyee","message":"Or just don’t depend on one Environment and assume. Make them Environment-independent ode","date":"2018-11-15T08:08:31.641Z","type":"message"}
+{"nick":"joyee","message":"Code","date":"2018-11-15T08:08:35.374Z","type":"message"}
+{"nick":"joyee","message":"And you can plug-in Environment when it’s needed","date":"2018-11-15T08:09:08.318Z","type":"message"}
+{"nick":"devsnek","message":"like `void FSRead(const FunctionCallbackInfo<Value>& args) { Isolate* = args.GetIsolate(); uv_fs_read(???) }`","date":"2018-11-15T08:09:19.006Z","type":"message"}
+{"nick":"joyee","message":"Sure why not, but it isn’t too hard for Callbacks since they already have the things you need","date":"2018-11-15T08:10:03.371Z","type":"message"}
+{"nick":"joyee","message":"I am mostly talking about non Callback code","date":"2018-11-15T08:10:28.169Z","type":"message"}
+{"nick":"devsnek","message":"if your code doesn't need to use the env then don't use it","date":"2018-11-15T08:10:58.687Z","type":"message"}
+{"nick":"joyee","message":"The callbacks are already static in any case","date":"2018-11-15T08:11:01.756Z","type":"message"}
+{"nick":"devsnek","message":"iirc native_module does use it though","date":"2018-11-15T08:11:07.642Z","type":"message"}
+{"nick":"devsnek","message":"it has a bunch of persistent strings right","date":"2018-11-15T08:11:16.917Z","type":"message"}
+{"nick":"joyee","message":"Yes for no good reason other than being lazy","date":"2018-11-15T08:11:22.326Z","type":"message"}
+{"nick":"joyee","message":"It can be a bunch of static C strings","date":"2018-11-15T08:11:38.352Z","type":"message"}
+{"nick":"joyee","message":"And you just make external strings out of them when necessary","date":"2018-11-15T08:11:55.756Z","type":"message"}
+{"nick":"devsnek","message":"in some alternative reality i like to pretend Environment* is our gateway to an engine agnostic node core","date":"2018-11-15T08:11:57.557Z","type":"message"}
+{"nick":"joyee","message":"And take your context when you do so instead of grabbing it from a somewhat global Environment","date":"2018-11-15T08:12:33.533Z","type":"message"}
+{"nick":"devsnek","message":"i generally do GetCurrentContext","date":"2018-11-15T08:12:57.765Z","type":"message"}
+{"nick":"joyee","message":"I don’t see how having a hotchpotch that contains a bunch of v8 things help node being agnostic?","date":"2018-11-15T08:13:31.294Z","type":"message"}
+{"nick":"devsnek","message":"i don't think a goal of environment is to make node be engine agnostic","date":"2018-11-15T08:14:02.575Z","type":"message"}
+{"nick":"joyee","message":"You can take off the intertwined dependency and make clearer boundaries and abstract the components when they are less intertwined","date":"2018-11-15T08:14:27.514Z","type":"message"}
+{"nick":"devsnek","message":"but when you add up all the random shit we need to do for v8","date":"2018-11-15T08:14:32.535Z","type":"message"}
+{"nick":"devsnek","message":"env abstracts a lot of that away","date":"2018-11-15T08:14:46.460Z","type":"message"}
+{"nick":"devsnek","message":"if you don't need the env don't use it","date":"2018-11-15T08:15:06.805Z","type":"message"}
+{"nick":"devsnek","message":"but a lot of core does need it","date":"2018-11-15T08:15:14.187Z","type":"message"}
+{"nick":"joyee","message":"But there is only a handful of those things, we can strip them out","date":"2018-11-15T08:15:16.121Z","type":"message"}
+{"nick":"joyee","message":"Like having Native Module only depends on an isolate and a context as argument makes it more VM-agnostic if you are just shimming V8 APIs to make it work, because then it depends on very few APIs instead of the whole bunch depended by Environment","date":"2018-11-15T08:16:47.926Z","type":"message"}
+{"nick":"devsnek","message":"shrug","date":"2018-11-15T08:17:06.437Z","type":"message"}
+{"nick":"joyee","message":"The current state is other engines need to shim v8 APIs, so decomposing the blob just helps you recognize which part needs what","date":"2018-11-15T08:18:24.133Z","type":"message"}
+{"nick":"devsnek","message":"but like on a general level","date":"2018-11-15T08:19:03.054Z","type":"message"}
+{"nick":"devsnek","message":"your strings as an example","date":"2018-11-15T08:19:07.893Z","type":"message"}
+{"nick":"devsnek","message":"every file in node could contain some strings and externals and whatnot","date":"2018-11-15T08:19:16.521Z","type":"message"}
+{"nick":"joyee","message":"And you don’t even have to shin parts that you don’t need and make them behind Ifdef","date":"2018-11-15T08:19:21.600Z","type":"message"}
+{"nick":"devsnek","message":"or we could just do what we do now, which is put them in a single place","date":"2018-11-15T08:19:24.733Z","type":"message"}
+{"nick":"devsnek","message":"which abstracts out the v8 external string stuff","date":"2018-11-15T08:19:40.580Z","type":"message"}
+{"nick":"devsnek","message":"because that part doesn't matter","date":"2018-11-15T08:19:43.390Z","type":"message"}
+{"nick":"joyee","message":"We can put those in somewhere else that is not Environment, since you just need it to be persistent","date":"2018-11-15T08:20:36.882Z","type":"message"}
+{"nick":"devsnek","message":"yeah but strings isn't the only thing","date":"2018-11-15T08:20:51.813Z","type":"message"}
+{"nick":"devsnek","message":"we have piles of things that are related to the current js vm","date":"2018-11-15T08:21:03.172Z","type":"message"}
+{"nick":"joyee","message":"Sure and they are all env->something() that depends on env->isolate() or env->context()","date":"2018-11-15T08:22:02.264Z","type":"message"}
+{"nick":"devsnek","message":"indeed","date":"2018-11-15T08:22:17.118Z","type":"message"}
+{"nick":"joyee","message":"I am taking about making it env->abstraction()->something() and make abstraction take env->context() and/or env->isolate() when being instantiated","date":"2018-11-15T08:23:38.750Z","type":"message"}
+{"nick":"devsnek","message":"idgi","date":"2018-11-15T08:24:06.172Z","type":"message"}
+{"nick":"joyee","message":"And if something is a function instead of an accessor of some data, make it take a context","date":"2018-11-15T08:24:14.794Z","type":"message"}
+{"nick":"devsnek","message":"there's only one possible isolate for an environment","date":"2018-11-15T08:24:21.011Z","type":"message"}
+{"nick":"devsnek","message":"if there are multiple isolates trying to use an env something has gone terribly wrong","date":"2018-11-15T08:24:31.873Z","type":"message"}
+{"nick":"joyee","message":"But abstraction is code","date":"2018-11-15T08:24:52.202Z","type":"message"}
+{"nick":"devsnek","message":"huh","date":"2018-11-15T08:25:13.782Z","type":"message"}
+{"nick":"joyee","message":"You don’t need to worry about code causing races if it does not depend on shared state but take them as arguments","date":"2018-11-15T08:25:41.346Z","type":"message"}
+{"nick":"devsnek","message":"i'm not worried about races","date":"2018-11-15T08:26:05.289Z","type":"message"}
+{"nick":"devsnek","message":"its just like","date":"2018-11-15T08:26:27.430Z","type":"message"}
+{"nick":"devsnek","message":"x, y, and z abstractions all use an isolate. the isolate will always be the same. x, y, and z abstractions can eliminate isolate as a variable","date":"2018-11-15T08:27:07.971Z","type":"message"}
+{"nick":"m00dy","date":"2018-11-15T08:27:17.796Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T08:27:41.254Z","type":"quit"}
+{"nick":"joyee","message":"Sure then they can have an isolate pointer as data member, not an Environment which contains tons of stuff you don’t need","date":"2018-11-15T08:27:56.423Z","type":"message"}
+{"nick":"m00dy","date":"2018-11-15T08:27:56.656Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T08:27:56.729Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T08:29:15.438Z","type":"join"}
+{"nick":"devsnek","message":"the common thread here *is* the environment though","date":"2018-11-15T08:29:16.059Z","type":"message"}
+{"nick":"joyee","message":"devsnek: why?","date":"2018-11-15T08:31:17.435Z","type":"message"}
+{"nick":"devsnek","message":"because it is?","date":"2018-11-15T08:31:34.440Z","type":"message"}
+{"nick":"joyee","message":"The main question is, I don't see other v8 applications do  things this way.","date":"2018-11-15T08:31:37.225Z","type":"message"}
+{"nick":"joyee","message":"Even d8 doesn't put everything onto one giant blob","date":"2018-11-15T08:31:59.807Z","type":"message"}
+{"nick":"devsnek","message":"i was just about to use d8 as an example","date":"2018-11-15T08:32:10.472Z","type":"message"}
+{"nick":"devsnek","message":"d8 has the same thing as environment","date":"2018-11-15T08:33:17.132Z","type":"message"}
+{"nick":"devsnek","message":"but they call it PerIsolateData","date":"2018-11-15T08:33:21.672Z","type":"message"}
+{"nick":"devsnek","message":"and obviously it has less stuff","date":"2018-11-15T08:33:41.079Z","type":"message"}
+{"nick":"joyee","message":"Sure but I am not talking about data?","date":"2018-11-15T08:33:41.830Z","type":"message"}
+{"nick":"devsnek","message":"its just the name","date":"2018-11-15T08:33:56.728Z","type":"message"}
+{"nick":"joyee","message":"env->something() is the result of calling some code","date":"2018-11-15T08:33:56.871Z","type":"message"}
+{"nick":"devsnek","message":"Shell::PerIsolateData ~= node::Environment","date":"2018-11-15T08:34:05.283Z","type":"message"}
+{"nick":"joyee","message":"I am talking about making that code independent of Envirnoment","date":"2018-11-15T08:34:07.006Z","type":"message"}
+{"nick":"devsnek","message":"i still don't understand the why","date":"2018-11-15T08:34:47.205Z","type":"message"}
+{"nick":"joyee","message":"Because you can totally do Environment::GetCurrent(isolate) in your code if you need that","date":"2018-11-15T08:35:37.409Z","type":"message"}
+{"nick":"joyee","message":"Instead of making it a member of the class","date":"2018-11-15T08:35:50.349Z","type":"message"}
+{"nick":"devsnek","message":"the things that have env as a member are like","date":"2018-11-15T08:36:49.465Z","type":"message"}
+{"nick":"devsnek","message":"our uv wrappers and whatnot","date":"2018-11-15T08:36:57.850Z","type":"message"}
+{"nick":"joyee","message":"Otherwise you end up in a funny situation: most of your methods are static and can totally get the env from Environment::GetCurrent(isolate) and isolate can come from somewhere else","date":"2018-11-15T08:37:00.362Z","type":"message"}
+{"nick":"joyee","message":"And you still have env as a data member","date":"2018-11-15T08:37:09.385Z","type":"message"}
+{"nick":"devsnek","message":"yeah you could do that","date":"2018-11-15T08:37:38.642Z","type":"message"}
+{"nick":"devsnek","message":"but why","date":"2018-11-15T08:37:43.996Z","type":"message"}
+{"nick":"joyee","message":"What good does it do if you don't even need the env","date":"2018-11-15T08:37:54.362Z","type":"message"}
+{"nick":"devsnek","message":"you could keep a reference to isolate and a reference to the libuv thread","date":"2018-11-15T08:37:57.572Z","type":"message"}
+{"nick":"devsnek","message":"environment just keeps them both for you","date":"2018-11-15T08:38:06.720Z","type":"message"}
+{"nick":"devsnek","message":"and all the abstractions between them","date":"2018-11-15T08:38:11.259Z","type":"message"}
+{"nick":"joyee","message":"So that you don't depend on all the weird stuff on env","date":"2018-11-15T08:38:24.576Z","type":"message"}
+{"nick":"devsnek","message":"what does that mean though lol","date":"2018-11-15T08:38:33.219Z","type":"message"}
+{"nick":"devsnek","message":"i just see code using env","date":"2018-11-15T08:38:51.013Z","type":"message"}
+{"nick":"joyee","message":"Look at all the private member of our env","date":"2018-11-15T08:38:58.779Z","type":"message"}
+{"nick":"devsnek","message":"lots of stuff","date":"2018-11-15T08:39:35.944Z","type":"message"}
+{"nick":"joyee","message":"For example, NativeModule does not need any libuv thing to do its job","date":"2018-11-15T08:39:38.261Z","type":"message"}
+{"nick":"devsnek","message":"no one said it did","date":"2018-11-15T08:40:02.259Z","type":"message"}
+{"nick":"joyee","message":"But now libuv has to be initialized before NativeModule can work","date":"2018-11-15T08:40:03.337Z","type":"message"}
+{"nick":"joyee","message":"Because NativeModule depends on env","date":"2018-11-15T08:40:14.352Z","type":"message"}
+{"nick":"devsnek","message":"well it has to be anyway","date":"2018-11-15T08:40:15.501Z","type":"message"}
+{"nick":"devsnek","message":"no because NativeModule depends on the js vm","date":"2018-11-15T08:40:24.629Z","type":"message"}
+{"nick":"joyee","message":"So you can only compile modules *after* libuv loop is initialized","date":"2018-11-15T08:40:38.927Z","type":"message"}
+{"nick":"devsnek","message":"isolate doesn't exist until platform exists","date":"2018-11-15T08:40:44.040Z","type":"message"}
+{"nick":"devsnek","message":"and platform doesn't exist until libuv exists","date":"2018-11-15T08:40:50.243Z","type":"message"}
+{"nick":"joyee","message":"Wait, ok, that's a bad example, but you can switch libuv with tons of other stuff on environment","date":"2018-11-15T08:41:35.206Z","type":"message"}
+{"nick":"joyee","message":"Like all the AliasedBuffers","date":"2018-11-15T08:41:59.587Z","type":"message"}
+{"nick":"devsnek","message":"environment exists before bootstrap starts","date":"2018-11-15T08:42:07.135Z","type":"message"}
+{"nick":"devsnek","message":"and you definitely need should_abort_on_uncaught_toggle_ before you bootstrap","date":"2018-11-15T08:42:38.379Z","type":"message"}
+{"nick":"joyee","message":"Conceptually, environment consists of a lot of things","date":"2018-11-15T08:42:43.380Z","type":"message"}
+{"nick":"joyee","message":"You don't have to put them all onto env->something()","date":"2018-11-15T08:43:00.867Z","type":"message"}
+{"nick":"joyee","message":"Like the options, it can be env->options()","date":"2018-11-15T08:43:15.714Z","type":"message"}
+{"nick":"devsnek","message":"where else would options be","date":"2018-11-15T08:43:41.970Z","type":"message"}
+{"nick":"joyee","message":"You can have something that needs options parsing but don't have an Environment","date":"2018-11-15T08:44:22.374Z","type":"message"}
+{"nick":"joyee","message":"For example, options tests","date":"2018-11-15T08:44:30.720Z","type":"message"}
+{"nick":"devsnek","message":"you can create the options parser without it being attached to environment afaik","date":"2018-11-15T08:45:30.123Z","type":"message"}
+{"nick":"joyee","message":"Yes exactly","date":"2018-11-15T08:45:39.124Z","type":"message"}
+{"nick":"joyee","message":"That's what I am aiming for","date":"2018-11-15T08:45:46.626Z","type":"message"}
+{"nick":"devsnek","message":"but where do you attach it then","date":"2018-11-15T08:45:58.852Z","type":"message"}
+{"nick":"devsnek","message":"i'm in some random function somewhere in c++ core and i need options","date":"2018-11-15T08:46:11.935Z","type":"message"}
+{"nick":"devsnek","message":"so i do `x` to get them","date":"2018-11-15T08:46:16.932Z","type":"message"}
+{"nick":"joyee","message":"You call some code to end up with env->abstraction(), but that code does not have to be attatched to an environment","date":"2018-11-15T08:46:29.146Z","type":"message"}
+{"nick":"devsnek","message":"what is it attached to","date":"2018-11-15T08:46:55.091Z","type":"message"}
+{"nick":"joyee","message":"You get them from a env as a arugment","date":"2018-11-15T08:47:01.734Z","type":"message"}
+{"nick":"devsnek","message":"argument from where","date":"2018-11-15T08:47:20.265Z","type":"message"}
+{"nick":"joyee","message":"From the random C++ function","date":"2018-11-15T08:47:34.632Z","type":"message"}
+{"nick":"devsnek","message":"as an example, v8 doesn't pass it to native functions","date":"2018-11-15T08:47:40.140Z","type":"message"}
+{"nick":"joyee","message":"Your native functions still need to get the environment somehow, most likely,  Environment::GetCurrent()","date":"2018-11-15T08:48:22.883Z","type":"message"}
+{"nick":"devsnek","message":"so then we have an environment","date":"2018-11-15T08:48:50.251Z","type":"message"}
+{"nick":"devsnek","message":"now i want to get the options associated with the current isolate and event loop and etc","date":"2018-11-15T08:49:07.302Z","type":"message"}
+{"nick":"devsnek","message":"so i do what","date":"2018-11-15T08:49:10.275Z","type":"message"}
+{"nick":"devsnek","message":"not `env->options()`","date":"2018-11-15T08:49:14.485Z","type":"message"}
+{"nick":"joyee","message":"But you need the environment only because you need  very small subset of things in the Environment","date":"2018-11-15T08:49:19.247Z","type":"message"}
+{"nick":"joyee","message":"It's still env->options()","date":"2018-11-15T08:49:35.354Z","type":"message"}
+{"nick":"devsnek","message":"i mean every time you have the isolate pointer","date":"2018-11-15T08:49:49.628Z","type":"message"}
+{"nick":"joyee","message":"I am talking about making the options parser independent of Environment","date":"2018-11-15T08:49:53.760Z","type":"message"}
+{"nick":"devsnek","message":"you're not using every method on isolate","date":"2018-11-15T08:49:54.720Z","type":"message"}
+{"nick":"devsnek","message":"there are hundreds of things on isolate alone","date":"2018-11-15T08:50:07.425Z","type":"message"}
+{"nick":"devsnek","message":"but you use different ones in different places","date":"2018-11-15T08:50:25.772Z","type":"message"}
+{"nick":"joyee","message":"Sure but you don't make isolate->script_compiler(), you make ScriptCompiler takes an isolate","date":"2018-11-15T08:50:53.282Z","type":"message"}
+{"nick":"devsnek","message":"that doesn't really apply to options though","date":"2018-11-15T08:51:55.744Z","type":"message"}
+{"nick":"devsnek","message":"you only wanna build those once","date":"2018-11-15T08:52:05.199Z","type":"message"}
+{"nick":"joyee","message":"You don't need options parsing, say, in embedders","date":"2018-11-15T08:53:05.036Z","type":"message"}
+{"nick":"joyee","message":"So why even build them","date":"2018-11-15T08:53:18.076Z","type":"message"}
+{"nick":"rtn","date":"2018-11-15T08:53:31.131Z","type":"join"}
+{"nick":"rtn","new_nick":"ralphtheninja","date":"2018-11-15T08:53:36.270Z","type":"nick"}
+{"nick":"devsnek","message":"i dunno","date":"2018-11-15T08:53:48.933Z","type":"message"}
+{"nick":"devsnek","message":"i'm gonna catch some zs now though","date":"2018-11-15T08:54:05.553Z","type":"message"}
+{"nick":"devsnek","message":"later","date":"2018-11-15T08:54:09.165Z","type":"message"}
+{"nick":"joyee","message":"later","date":"2018-11-15T08:54:48.095Z","type":"message"}
+{"nick":"joyee","message":"(BTW ScriptCompiler doesn't even need an isolate, it just needs a context..)","date":"2018-11-15T08:54:59.131Z","type":"message"}
+{"nick":"srl295","reason":"Quit: Connection closed for inactivity","date":"2018-11-15T09:08:31.700Z","type":"quit"}
+{"nick":"addaleax","message":"joyee: this is a lot to read up on here :D some of the reason that Environment exists is us  being lazy, but generally there's not a 1:1 correspondence to Isolates... it's still a good idea to make some of our modules more independent of it, though","date":"2018-11-15T09:12:43.409Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T09:14:52.802Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T09:15:39.854Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T09:20:38.205Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T09:20:53.102Z","type":"join"}
+{"nick":"joyee","message":"addaleax: yeah, I am trying to make the NativeModule C++ part only *takes* a context when it needs one. That'll loose the benefit of env->some_string() but I doubt if that's significant..","date":"2018-11-15T10:06:41.356Z","type":"message"}
+{"nick":"joyee","message":"addaleax: Also, I notice that FIXED_ONE_BYTE_STRING is not creating internalized strings..are there any handy APIs that do that except putting them onto env?","date":"2018-11-15T10:08:22.271Z","type":"message"}
+{"nick":"addaleax","message":"joyee: you'd still want to have 1 instance of each binding module per Environment, or per Context, but not per Isolate","date":"2018-11-15T10:10:03.167Z","type":"message"}
+{"nick":"addaleax","message":"joyee: I think it would be fine to make FIXED_ONE_BYTE_STRING  always create internalised strings","date":"2018-11-15T10:10:37.788Z","type":"message"}
+{"nick":"addaleax","message":"(but I would expect the env->some_string() optimisation to be worth it)","date":"2018-11-15T10:11:13.554Z","type":"message"}
+{"nick":"joyee","message":"addaleax: hmm, right, but I guess it's only going to be worth it for normal native modules, not for the bootstrappers whose arguments are only created once","date":"2018-11-15T10:14:36.549Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T10:59:10.941Z","type":"quit"}
+{"nick":"xkapastel","date":"2018-11-15T11:37:49.678Z","type":"join"}
+{"nick":"m00dy","date":"2018-11-15T11:39:13.080Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T13:10:20.886Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T13:14:38.567Z","type":"join"}
+{"nick":"antsmartian","date":"2018-11-15T13:34:07.036Z","type":"join"}
+{"nick":"RNM","date":"2018-11-15T13:36:56.610Z","type":"join"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2018-11-15T13:44:47.171Z","type":"quit"}
+{"nick":"ralphtheninja","date":"2018-11-15T13:56:15.508Z","type":"part"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T14:10:21.931Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T14:14:20.272Z","type":"join"}
+{"nick":"marthinal","date":"2018-11-15T14:22:21.973Z","type":"join"}
+{"nick":"doodadjs","date":"2018-11-15T14:34:02.513Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T15:06:07.311Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T15:08:55.761Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T15:08:58.422Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T15:09:12.505Z","type":"join"}
+{"nick":"octetcloud","date":"2018-11-15T15:13:14.393Z","type":"join"}
+{"nick":"octetcloud","reason":"Read error: Connection reset by peer","date":"2018-11-15T15:15:46.483Z","type":"quit"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T15:53:42.034Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T15:55:04.376Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-15T15:55:24.545Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-15T15:55:53.096Z","type":"join"}
+{"nick":"m00dy","reason":"Read error: Connection reset by peer","date":"2018-11-15T15:56:57.296Z","type":"quit"}
