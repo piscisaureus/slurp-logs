@@ -46,3 +46,61 @@
 {"nick":"seishun","reason":"Ping timeout: 246 seconds","date":"2018-11-29T07:43:35.998Z","type":"quit"}
 {"nick":"seishun","date":"2018-11-29T07:53:03.665Z","type":"join"}
 {"nick":"seishun","reason":"Ping timeout: 246 seconds","date":"2018-11-29T07:57:57.126Z","type":"quit"}
+{"nick":"xkapastel","date":"2018-11-29T09:44:32.054Z","type":"join"}
+{"nick":"srl295","reason":"Quit: Connection closed for inactivity","date":"2018-11-29T09:45:37.019Z","type":"quit"}
+{"nick":"joyee","message":"addaleax: hi, are you around?","date":"2018-11-29T11:17:13.802Z","type":"message"}
+{"nick":"addaleax","message":"joyee: kinda, yes? :)","date":"2018-11-29T11:18:21.488Z","type":"message"}
+{"nick":"joyee","message":"addaleax: so how do our embedders actually use the Environment API? I *think* the protocol is, you can `NewIsolate()`, `CreateIsolateData()`, `NewContext()`, `CreateEnvironment()`, then `LoadEnvironment()`, and at the end you `FreeEnvironment()`?","date":"2018-11-29T11:20:28.414Z","type":"message"}
+{"nick":"joyee","message":"I am trying to figure out which part I can touch and which part I probably shouldn't","date":"2018-11-29T11:21:11.406Z","type":"message"}
+{"nick":"joyee","message":"(or shouldn't without some deprecation)","date":"2018-11-29T11:21:41.117Z","type":"message"}
+{"nick":"addaleax","message":"joyee: yes, although LoadEnvironment() is a terrible one... it should be split up into the part before the main script is  executed, and after (essentially, split our bootstrapper at `_third_party_main`)","date":"2018-11-29T11:22:45.736Z","type":"message"}
+{"nick":"joyee","message":"addaleax: that's exactly what I am trying to mess with :)","date":"2018-11-29T11:23:09.341Z","type":"message"}
+{"nick":"addaleax","message":"I talked with rubys about that in Vancouver, he said he'd do a PR but apparently that hasn't happened?","date":"2018-11-29T11:23:29.831Z","type":"message"}
+{"nick":"addaleax","message":"joyee: there's an open issue that you could find by searching for _third_party_main","date":"2018-11-29T11:23:49.509Z","type":"message"}
+{"nick":"joyee","message":"addaleax: ah, yes, I am more focused on trying to disentangle all the things that we do to the process object...because that's the mine zone I am mainly uncomfortable with, you'll never know at any point which code would randomly touch anything on process","date":"2018-11-29T11:25:20.326Z","type":"message"}
+{"nick":"addaleax","message":"joyee: yea, that's good... we also still have a lot of internals on process, right? :/","date":"2018-11-29T11:26:08.533Z","type":"message"}
+{"nick":"joyee","message":"I'd assume by the point we call _third_party_main, the process object should be setup nice and tidy","date":"2018-11-29T11:26:10.505Z","type":"message"}
+{"nick":"joyee","message":"addaleax: yeah...there are a bunch of underscore properties there, at least the first step would be to figure out when is the point they are all setup (i.e. probably safe to \"snapshot\" the process)","date":"2018-11-29T11:27:27.757Z","type":"message"}
+{"nick":"joyee","message":"Although, some C++ code actually tries to use the process object as a big global to communicate with JS..","date":"2018-11-29T11:28:15.647Z","type":"message"}
+{"nick":"addaleax","message":"yeah... we should not be doing that :D","date":"2018-11-29T11:28:42.805Z","type":"message"}
+{"nick":"m00dy","date":"2018-11-29T11:29:36.380Z","type":"join"}
+{"nick":"joyee","message":"addaleax: also, is it by accident that we don't have a cctest that mimic what embedders do? I looked for `LoadEnvironment` in test and all I got were comments","date":"2018-11-29T11:30:01.837Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T11:30:09.346Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-29T11:30:31.528Z","type":"join"}
+{"nick":"joyee","message":"It would be great to..at least know that you introduce a difference in the protocol, either by accident or deliberately","date":"2018-11-29T11:31:24.956Z","type":"message"}
+{"nick":"addaleax","message":"joyee: sooo... LoadEnvironment is problematic, and I'd be surprised to see it used a lot, because if you don't have third_party_main compiled in and no arguments, it'll go into a REPL by default","date":"2018-11-29T11:31:35.254Z","type":"message"}
+{"nick":"addaleax","message":"I guess that's mainly why we don't have a cctest?","date":"2018-11-29T11:31:53.027Z","type":"message"}
+{"nick":"joyee","message":"addaleax: I am thinking about some special magic to get the bootstrap JS code recognize that it's under that cctest...or maybe that's a terrible idea","date":"2018-11-29T11:32:43.280Z","type":"message"}
+{"nick":"addaleax","message":"joyee: I wouldn't do that... I think either you or I should do what rubys said they would do, and then test that","date":"2018-11-29T11:33:52.279Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T11:34:05.650Z","type":"quit"}
+{"nick":"joyee","message":"addaleax: yeah, actually splitting the code would be a better idea..","date":"2018-11-29T11:34:47.610Z","type":"message"}
+{"nick":"addaleax","message":"Like, provide a c++ api that would allow us to run the bootstrap code only up to third_party_main","date":"2018-11-29T11:34:54.599Z","type":"message"}
+{"nick":"m00dy","date":"2018-11-29T11:35:05.091Z","type":"join"}
+{"nick":"addaleax","message":"And *possibly* another one that would only run the rest","date":"2018-11-29T11:35:11.386Z","type":"message"}
+{"nick":"r04r","reason":"Quit: This shouldn't be happening. What's happening?!","date":"2018-11-29T11:37:39.439Z","type":"quit"}
+{"nick":"joyee","message":"addaleax: that's also what I am thinking, but I think we also need to figure out the stages first before we split all the bootstrappers..and somehow make the JS files split in a way that makes more sense","date":"2018-11-29T11:38:13.162Z","type":"message"}
+{"nick":"joyee","message":"I think the `startExecution` I added in https://github.com/nodejs/node/pull/24673 can be a point to make a split","date":"2018-11-29T11:38:46.865Z","type":"message"}
+{"nick":"joyee","message":"Although still not sure how it's going to be split..","date":"2018-11-29T11:39:03.341Z","type":"message"}
+{"nick":"m00dy","reason":"Ping timeout: 250 seconds","date":"2018-11-29T11:40:22.478Z","type":"quit"}
+{"nick":"addaleax","message":"joyee: I didn't see that pr yet because I was still in tokyo, but I'll take a look in an hour or so if that's okay? :)","date":"2018-11-29T11:42:24.405Z","type":"message"}
+{"nick":"joyee","message":"addaleax: ah sorry, wasn't trying to rush you or anything :) It's just a rather superficial refactoring, using early returns to reduce the indentation and introducing some nested functions.","date":"2018-11-29T11:43:51.962Z","type":"message"}
+{"nick":"joyee","message":"addaleax: but then after this it's easier to see how to make a split..","date":"2018-11-29T11:44:33.831Z","type":"message"}
+{"nick":"m00dy","date":"2018-11-29T11:46:23.424Z","type":"join"}
+{"nick":"joyee","message":"addaleax: enjoy your remaining time in tokyo :D","date":"2018-11-29T11:46:26.412Z","type":"message"}
+{"nick":"addaleax","message":"joyee: yeah, just wanted to give you a heads up :) and I returned to germany yesterday, I kinda miss it tho ;)","date":"2018-11-29T11:47:25.269Z","type":"message"}
+{"nick":"joyee","message":"addaleax: OK, wait, I did know that you returned yesterday, lol","date":"2018-11-29T11:48:06.610Z","type":"message"}
+{"nick":"joyee","message":"Although TBH I didn't know what date it is today","date":"2018-11-29T11:48:35.466Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T12:13:16.202Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-29T12:15:16.841Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T13:09:51.522Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-29T13:12:38.827Z","type":"join"}
+{"nick":"addaleax","message":"yeah, it kind of begins to blur for me too when i'm on 11 hour flights ;)","date":"2018-11-29T13:18:21.491Z","type":"message"}
+{"nick":"Trott","message":"If you're a Node.js Collaborator, please consider approving the fast-tracking request at https://github.com/nodejs/node/pull/24712.","date":"2018-11-29T13:44:02.209Z","type":"message"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T14:05:54.126Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-29T14:06:27.248Z","type":"join"}
+{"nick":"m00dy","reason":"Remote host closed the connection","date":"2018-11-29T14:15:58.517Z","type":"quit"}
+{"nick":"m00dy","date":"2018-11-29T14:16:12.887Z","type":"join"}
+{"nick":"doodadjs","date":"2018-11-29T14:18:54.099Z","type":"join"}
+{"nick":"al-damiri","date":"2018-11-29T14:33:54.919Z","type":"join"}
+{"nick":"Znullptr","date":"2018-11-29T14:35:59.111Z","type":"join"}
+{"nick":"Znullptr","date":"2018-11-29T14:45:08.656Z","type":"quit"}
