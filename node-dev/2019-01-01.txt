@@ -24,3 +24,97 @@
 {"nick":"antsmartian","date":"2019-01-01T14:26:10.838Z","type":"join"}
 {"nick":"qbit","reason":"Quit: WeeChat 2.3","date":"2019-01-01T14:40:00.791Z","type":"quit"}
 {"nick":"qbit","date":"2019-01-01T14:58:51.232Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-01T16:36:56.361Z","type":"quit"}
+{"nick":"addaleax","message":"devsnek: yeah, I don’t think I can debug that without the other files :'D","date":"2019-01-01T19:09:36.774Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: https://alex-wasm.appspot.com/threads/pthread-main.js https://alex-wasm.appspot.com/threads/wasm/test.wasm","date":"2019-01-01T19:10:24.039Z","type":"message"}
+{"nick":"devsnek","message":"https://alex-wasm.appspot.com/threads/test.js.mem","date":"2019-01-01T19:10:38.275Z","type":"message"}
+{"nick":"devsnek","message":"then just make a wrapper around worker_threads.Worker which appends `./` to the file path","date":"2019-01-01T19:11:00.549Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: that doesn’t quite tell me how to run the whole thing? :/","date":"2019-01-01T19:15:59.969Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: run test.js with pthread-main.js and test.wasm and test.js.mem present","date":"2019-01-01T19:16:38.720Z","type":"message"}
+{"nick":"devsnek","message":"and a shim of Worker","date":"2019-01-01T19:16:42.013Z","type":"message"}
+{"nick":"devsnek","message":"i just did like `function Worker(u) { return new wt.Worker(`./${u}`) }`","date":"2019-01-01T19:17:05.661Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: `TypeError: [object Uint32Array] is not an integer shared typed array.` ?","date":"2019-01-01T19:18:17.492Z","type":"message"}
+{"nick":"devsnek","message":"oh yeah i got that","date":"2019-01-01T19:18:35.032Z","type":"message"}
+{"nick":"devsnek","message":"i don't remember how i fixed it","date":"2019-01-01T19:18:38.733Z","type":"message"}
+{"nick":"devsnek","message":"i think i had to enable wasm threads","date":"2019-01-01T19:18:48.985Z","type":"message"}
+{"nick":"devsnek","message":"`isolate->SetWasmThreadsEnabledCallback([](Local<Context>) { return true; })`","date":"2019-01-01T19:19:08.204Z","type":"message"}
+{"nick":"addaleax","message":"uh","date":"2019-01-01T19:19:40.072Z","type":"message"}
+{"nick":"addaleax","message":"okay :D","date":"2019-01-01T19:19:40.993Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: do the wasm threads somehow pass shared memory without a .postMessage() call?","date":"2019-01-01T19:20:09.762Z","type":"message"}
+{"nick":"addaleax","message":"because that alone would explain the problem","date":"2019-01-01T19:20:15.280Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: also getting `TypeError: this.addEventListener is not a function` @ `pthread-main.js:38`","date":"2019-01-01T19:23:02.957Z","type":"message"}
+{"nick":"addaleax","message":"but yeah, I really don’t know about wasm threads, but if they pass SharedArrayBuffers around without us tracking it … not sure how that’s supposed to work?","date":"2019-01-01T19:23:34.437Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: they definitely post the buffers","date":"2019-01-01T19:32:21.965Z","type":"message"}
+{"nick":"devsnek","message":"wasm threads doesn't actually let wasm itself do the threading, it just adds primitives for working with shared memory to wasm","date":"2019-01-01T19:32:45.683Z","type":"message"}
+{"nick":"devsnek","message":"which is why pthread uses the host workers","date":"2019-01-01T19:32:52.876Z","type":"message"}
+{"nick":"devsnek","message":"oh and yeah i did have to change pthread to match the worker_thread api","date":"2019-01-01T19:33:44.177Z","type":"message"}
+{"nick":"devsnek","message":"which reminds me, messages being sent from the main thread never got received by the workers","date":"2019-01-01T19:34:07.968Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: any chance you could come up with some ready-to-run reproduction? ^^","date":"2019-01-01T19:34:56.008Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: sure, do you accept tar.gz","date":"2019-01-01T19:35:12.725Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: yes, i do, although i managed to get it to segfault just now :P","date":"2019-01-01T19:35:27.217Z","type":"message"}
+{"nick":"devsnek","message":"ey then you're probably on the right track","date":"2019-01-01T19:35:44.072Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: do you know why threading has to be explicitly enabled if we use the host `Worker` implementation?","date":"2019-01-01T19:38:47.877Z","type":"message"}
+{"nick":"addaleax","message":"like … what extra things does WASM do that it can’t already?","date":"2019-01-01T19:39:04.711Z","type":"message"}
+{"nick":"addaleax","message":"also, i’m going to do a debug build, so that takes some time…","date":"2019-01-01T19:39:49.937Z","type":"message"}
+{"nick":"devsnek","message":"actually reading through the latest wasm thread spec","date":"2019-01-01T19:41:47.263Z","type":"message"}
+{"nick":"devsnek","message":"but this is confusing","date":"2019-01-01T19:41:52.224Z","type":"message"}
+{"nick":"devsnek","message":"the host definitely creates the threads","date":"2019-01-01T19:42:27.784Z","type":"message"}
+{"nick":"devsnek","message":"oh wait you know what","date":"2019-01-01T19:42:42.995Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: wasm can create the memory itself","date":"2019-01-01T19:42:52.689Z","type":"message"}
+{"nick":"devsnek","message":"i think that's the problem","date":"2019-01-01T19:42:56.642Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: we don’t track creating SABs, we track their being passed through .postMessage()… I wonder if they’re skipping that in some way","date":"2019-01-01T19:43:33.348Z","type":"message"}
+{"nick":"addaleax","message":"or if they’re not allocating the memory through the ArrayBufferAllocator","date":"2019-01-01T19:44:01.020Z","type":"message"}
+{"nick":"addaleax","message":"looking at the valgrind output, that seems mildly likely…","date":"2019-01-01T19:44:13.453Z","type":"message"}
+{"nick":"addaleax","message":"but I’d call that a V8 bug","date":"2019-01-01T19:44:18.535Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: they would just be posting the wasm instance itself","date":"2019-01-01T19:44:37.590Z","type":"message"}
+{"nick":"devsnek","message":"you thread by postMessage-ing a WebAssembly.Module","date":"2019-01-01T19:45:09.827Z","type":"message"}
+{"nick":"devsnek","message":"and that module would have a memory export","date":"2019-01-01T19:45:17.758Z","type":"message"}
+{"nick":"devsnek","message":"which would be a SharedArrrayBuffer","date":"2019-01-01T19:45:27.609Z","type":"message"}
+{"nick":"devsnek","message":"which would explain why it wasn't creating the proper type of buffer with wasm threads not enabled","date":"2019-01-01T19:45:48.710Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: I don’t think that’s the root cause here, but yes, we’re not fully implementing the V8 interface for transferring WASM modules…","date":"2019-01-01T19:46:31.427Z","type":"message"}
+{"nick":"devsnek","message":"i guess that would explain it then","date":"2019-01-01T19:48:07.677Z","type":"message"}
+{"nick":"addaleax","message":"not sure … in that case the serialization/deserialization shouldn’t even work","date":"2019-01-01T19:50:05.297Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: that might be the reason you’re not receiving messages in some cases, probably not the reason for the crash though","date":"2019-01-01T19:50:31.476Z","type":"message"}
+{"nick":"devsnek","message":"threads are messy :(","date":"2019-01-01T19:50:55.682Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: I don’t think the issue is that we’re not implementing the full V8 API; looks like we’d only need that for custom cases, V8 already seems to have a default implementation","date":"2019-01-01T20:25:28.700Z","type":"message"}
+{"nick":"addaleax","message":"might have a fix though :)","date":"2019-01-01T20:28:50.220Z","type":"message"}
+{"nick":"devsnek","message":"yeet","date":"2019-01-01T20:30:54.380Z","type":"message"}
+{"nick":"AtumT_","date":"2019-01-01T20:39:11.350Z","type":"join"}
+{"nick":"addaleax","message":"devsnek: a reproducible test case would be neat … I think this /might/ apply to all V8 `JSArrayBuffer`s for which `this->is_wasm_memory()` is true, but I’m not sure, because it seems like for `new WebAssembly.Memory()` things work?","date":"2019-01-01T20:40:04.118Z","type":"message"}
+{"nick":"addaleax","message":"and yes it’s not crashing anymore","date":"2019-01-01T20:40:08.374Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: if you got it hitting the segfault you got as far as i did","date":"2019-01-01T20:40:47.888Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: i meant, something to include in our test suite :)","date":"2019-01-01T20:41:04.411Z","type":"message"}
+{"nick":"devsnek","message":"oh","date":"2019-01-01T20:41:07.136Z","type":"message"}
+{"nick":"devsnek","message":"uhhhhh","date":"2019-01-01T20:41:15.181Z","type":"message"}
+{"nick":"addaleax","message":"… yeah :D","date":"2019-01-01T20:41:16.680Z","type":"message"}
+{"nick":"devsnek","message":"actually i think i can do this","date":"2019-01-01T20:41:27.304Z","type":"message"}
+{"nick":"addaleax","message":"that would be amazing","date":"2019-01-01T20:41:40.888Z","type":"message"}
+{"nick":"AtumT","reason":"Ping timeout: 246 seconds","date":"2019-01-01T20:41:51.054Z","type":"quit"}
+{"nick":"bhughes","date":"2019-01-01T20:45:04.712Z","type":"join"}
+{"nick":"addaleax","message":"devsnek: https://github.com/addaleax/node/commit/b81b8eca0f3595ea33653ff1782ab1005555e50a","date":"2019-01-01T20:46:41.842Z","type":"message"}
+{"nick":"devsnek","message":"nice","date":"2019-01-01T20:47:06.240Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: i can either open a PR now and say you’re working on a test case, or you can take it from here (assuming that this is the right fix ^^) … which do you prefer?","date":"2019-01-01T20:50:59.072Z","type":"message"}
+{"nick":"devsnek","message":"i have a test case","date":"2019-01-01T20:51:12.105Z","type":"message"}
+{"nick":"devsnek","message":"i'll send it to you in a sec","date":"2019-01-01T20:51:18.170Z","type":"message"}
+{"nick":"addaleax","message":"oh, nice :)","date":"2019-01-01T20:51:27.663Z","type":"message"}
+{"nick":"AtumT","date":"2019-01-01T20:52:09.872Z","type":"join"}
+{"nick":"AtumT_","reason":"Ping timeout: 244 seconds","date":"2019-01-01T20:53:20.349Z","type":"quit"}
+{"nick":"devsnek","message":"addaleax: https://gist.github.com/devsnek/4708128c88e7e7d9b450cd8e901eceb7","date":"2019-01-01T20:53:46.439Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: if you want to test that the memory transfers correctly, send `module` with postMessage and create a new Instance in each worker","date":"2019-01-01T20:54:32.814Z","type":"message"}
+{"nick":"devsnek","message":"each instance's exports.memory should be the same shared buffer","date":"2019-01-01T20:54:46.052Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: uh, you can’t share .wasm files over gist, I think … do i have to get clang in order to compile this? :'D","date":"2019-01-01T20:59:32.542Z","type":"message"}
+{"nick":"devsnek","message":"addaleax: you can paste the .wat file into https://webassembly.github.io/wabt/demo/wat2wasm/","date":"2019-01-01T20:59:55.106Z","type":"message"}
+{"nick":"devsnek","message":"with \"threads\" checked","date":"2019-01-01T20:59:59.077Z","type":"message"}
+{"nick":"devsnek","message":"and then click \"download\"","date":"2019-01-01T21:00:02.286Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: thanks, TIL :)","date":"2019-01-01T21:00:50.319Z","type":"message"}
+{"nick":"devsnek","message":"i'm also not sure if we should set the wasm threads callback or run that test with --allow-natives-syntax","date":"2019-01-01T21:01:13.614Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: --experimental-wasm-threads also does the trick :)","date":"2019-01-01T21:01:33.690Z","type":"message"}
+{"nick":"devsnek","message":"oh neat","date":"2019-01-01T21:01:38.979Z","type":"message"}
+{"nick":"addaleax","message":"okay, great","date":"2019-01-01T21:02:01.765Z","type":"message"}
+{"nick":"addaleax","message":"got it to crash/not crash depending on whether my patch is applied","date":"2019-01-01T21:02:14.891Z","type":"message"}
+{"nick":"devsnek","message":"woo","date":"2019-01-01T21:02:18.928Z","type":"message"}
+{"nick":"addaleax","message":"will open a PR in a minute :)","date":"2019-01-01T21:02:19.564Z","type":"message"}
+{"nick":"devsnek","message":"now write a test which does threaded fibonacci :^)","date":"2019-01-01T21:02:39.122Z","type":"message"}
+{"nick":"seishun","reason":"Ping timeout: 245 seconds","date":"2019-01-01T21:05:28.360Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-01T21:38:29.848Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 245 seconds","date":"2019-01-01T22:20:28.302Z","type":"quit"}
