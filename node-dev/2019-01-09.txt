@@ -75,3 +75,129 @@
 {"nick":"joyee","message":"ryzokuken: I don't think there's any convenient scripts to run all the tests other than the makefile targets. BTW you can just run `tools/test.py -J default` for the JS tests","date":"2019-01-09T15:55:15.155Z","type":"message"}
 {"nick":"ryzokuken","message":"joyee: thanks","date":"2019-01-09T15:58:27.272Z","type":"message"}
 {"nick":"joyee","message":"wouldn't be a crazy idea to add support to run non-JS tests in `tools/test.py`, I'd say, but someone needs to write that","date":"2019-01-09T15:59:47.478Z","type":"message"}
+{"nick":"joyee","message":"Though to build the addons we will still need to port those build commands in node.gyp so they can get picked up by ninja","date":"2019-01-09T16:01:34.325Z","type":"message"}
+{"nick":"refack","message":"joyee: did you mean the build commands in `Makefile`?","date":"2019-01-09T16:03:37.060Z","type":"message"}
+{"nick":"al-damiri","date":"2019-01-09T16:04:10.286Z","type":"join"}
+{"nick":"joyee","message":"refack: the `make build-addons` etc","date":"2019-01-09T16:05:31.044Z","type":"message"}
+{"nick":"refack","message":"Yeah that's what I assumed. (it's just stuff in the `Makefile`, anything that is scripted in `node.gyp` should work with `ninja`)","date":"2019-01-09T16:06:26.926Z","type":"message"}
+{"nick":"joyee","message":"I was thinking about a `ninja -C out/Release` and `tools/test.py -J default` workflow","date":"2019-01-09T16:07:14.879Z","type":"message"}
+{"nick":"joyee","message":"So that you don't need to run make at all","date":"2019-01-09T16:07:25.645Z","type":"message"}
+{"nick":"refack","message":"so yeah, batch-building the addons is what's missing","date":"2019-01-09T16:09:23.706Z","type":"message"}
+{"nick":"refack","message":"https://github.com/nodejs/node/blob/b83088b0bb2b8dfa6ee72a807cc10fe1ac898278/Makefile#L362-L368","date":"2019-01-09T16:09:25.155Z","type":"message"}
+{"nick":"joyee","message":"That's mostly done in the tools/build-addons.js anyway","date":"2019-01-09T16:09:48.117Z","type":"message"}
+{"nick":"refack","message":"Exactly","date":"2019-01-09T16:09:54.952Z","type":"message"}
+{"nick":"ryzokuken","message":"I'd be interested to explore and see.","date":"2019-01-09T16:11:19.298Z","type":"message"}
+{"nick":"ryzokuken","message":"since running ninja is ages faster.","date":"2019-01-09T16:11:27.627Z","type":"message"}
+{"nick":"refack","message":"...so we could scaffold that target into a gyp file","date":"2019-01-09T16:11:31.146Z","type":"message"}
+{"nick":"joyee","message":"ryzokuken: it is? I haven't tried using ninja to build Node since...ages","date":"2019-01-09T16:11:59.267Z","type":"message"}
+{"nick":"refack","message":"ninja doesn't suffer from https://github.com/nodejs/node/issues/25135","date":"2019-01-09T16:13:10.071Z","type":"message"}
+{"nick":"refack","message":"so it's idempotent (doesn't re-run the V8 code gen and doesn't re link everything)","date":"2019-01-09T16:13:45.890Z","type":"message"}
+{"nick":"joyee","message":"Also, why would we need the ./node and ./node_g symlink other than..they are somewhat easier to type?","date":"2019-01-09T16:14:02.519Z","type":"message"}
+{"nick":"joyee","message":"But the symlinks give us a lot of headache","date":"2019-01-09T16:14:22.960Z","type":"message"}
+{"nick":"refack","message":"legacy?","date":"2019-01-09T16:14:30.727Z","type":"message"}
+{"nick":"joyee","message":"I don't think they are that convenient to be worth the headaches TBH","date":"2019-01-09T16:15:24.397Z","type":"message"}
+{"nick":"refack","message":"I don't have an opinion (our Windows build does't create them, and in WSL I ignore them)","date":"2019-01-09T16:16:17.041Z","type":"message"}
+{"nick":"joyee","message":"For local development you can always add some aliases in your bashrc or whatever anyway","date":"2019-01-09T16:16:29.209Z","type":"message"}
+{"nick":"ryzokuken","message":"Me neither. Tried again sometime ago and it was faster.","date":"2019-01-09T16:16:51.060Z","type":"message"}
+{"nick":"refack","message":"I'm still focused on getting make not to re-run every time...","date":"2019-01-09T16:17:00.839Z","type":"message"}
+{"nick":"gamelaster","date":"2019-01-09T16:20:59.885Z","type":"join"}
+{"nick":"jcovingt","date":"2019-01-09T16:31:28.261Z","type":"join"}
+{"nick":"rtn","date":"2019-01-09T16:34:22.604Z","type":"join"}
+{"nick":"jcovingt","message":"joyee I've been looking for whether the v8 code caching build change landed in 8.x.x, but I'm pretty sure it landed only in 10.x.x.","date":"2019-01-09T16:39:56.298Z","type":"message"}
+{"nick":"jcovingt","message":"https://github.com/nodejs/node/pull/21405","date":"2019-01-09T16:41:07.821Z","type":"message"}
+{"nick":"gamelaster","reason":"Read error: Connection reset by peer","date":"2019-01-09T16:46:05.541Z","type":"quit"}
+{"nick":"BridgeAR","message":"joyee: would you be so kind and have a look at the backport requested label for 11? You refactor a lot of the process and C++ code at the moment and it becomes increasingly difficult to backport other commits due to conflicts :/","date":"2019-01-09T16:51:23.951Z","type":"message"}
+{"nick":"BridgeAR","message":"I would help if my C++ knowledge would be better but these conflicts are not always to resolve for me","date":"2019-01-09T16:52:16.485Z","type":"message"}
+{"nick":"svennidal","reason":"Quit: WeeChat 2.3","date":"2019-01-09T16:53:41.898Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-09T17:07:51.177Z","type":"join"}
+{"nick":"MylesBorins","message":"ljharb re: staging for Current release lines we do either a patch or a minor depending on what is on staging","date":"2019-01-09T17:10:26.721Z","type":"message"}
+{"nick":"MylesBorins","message":"a commit being on that branch guarantees it will be in the next release barring regressions","date":"2019-01-09T17:10:41.391Z","type":"message"}
+{"nick":"joyee","message":"BridgeAR: sure, sorry about the delay, I think I gave a try a while back but was blocked on some other patches that I am not even sure about backportability...I can take a look again","date":"2019-01-09T17:26:47.509Z","type":"message"}
+{"nick":"joyee","message":"jcovingt: v8.x is going maintainance mode","date":"2019-01-09T17:29:58.198Z","type":"message"}
+{"nick":"AtumT","date":"2019-01-09T17:52:39.064Z","type":"join"}
+{"nick":"AtumT","reason":"Read error: Connection reset by peer","date":"2019-01-09T17:58:18.848Z","type":"quit"}
+{"nick":"AtumT","date":"2019-01-09T17:58:32.416Z","type":"join"}
+{"nick":"joyee","message":"BTW, I am experimenting with a `git node backport` in https://github.com/joyeecheung/node-core-utils/tree/backport","date":"2019-01-09T18:08:50.643Z","type":"message"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-09T18:11:56.759Z","type":"quit"}
+{"nick":"gamelaster","date":"2019-01-09T18:12:33.895Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-09T18:18:42.112Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-09T18:23:19.409Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-09T18:28:47.464Z","type":"join"}
+{"nick":"joyee","message":"BridgeAR: the `lib/internal/console/` folder on v11.x-staging is pretty bizzare: they are added by backports of a bunch of superficial stylish commits while the actual PR that created them (https://github.com/nodejs/node/pull/24709) are not backported","date":"2019-01-09T18:32:02.643Z","type":"message"}
+{"nick":"joyee","message":"I am not quite sure if the file added there is in a shape that actually makes sense for v11 or if there's any potential semver major changes","date":"2019-01-09T18:33:08.980Z","type":"message"}
+{"nick":"BridgeAR","message":"joyee: yes, I saw that as well. The problem is that a lot of other commits rely on those changes. It would be great if we manage to backport everything in a non semver-major fashion so following commits can land","date":"2019-01-09T18:34:47.217Z","type":"message"}
+{"nick":"BridgeAR","message":"And I know that this is probably not that easy :/","date":"2019-01-09T18:35:00.501Z","type":"message"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-01-09T18:36:12.814Z","type":"quit"}
+{"nick":"BridgeAR","message":"You could try to start over with the console parts by first deleting everything and then backporting the original semver-major commit while removing the breaking changes from that commit","date":"2019-01-09T18:36:19.353Z","type":"message"}
+{"nick":"joyee","message":"BridgeAR: that part was easy, I am talking about later commits","date":"2019-01-09T18:36:47.178Z","type":"message"}
+{"nick":"joyee","message":"The lib/internal/console/ changes are not semver-major","date":"2019-01-09T18:37:03.864Z","type":"message"}
+{"nick":"joyee","message":"But the folder was created even though none of those files are compiled","date":"2019-01-09T18:37:34.111Z","type":"message"}
+{"nick":"BridgeAR","message":"But the same with those: after backporting that commit you could try to apply each console commit in order","date":"2019-01-09T18:37:37.973Z","type":"message"}
+{"nick":"BridgeAR","message":"That way the conflicts should be minimal","date":"2019-01-09T18:37:44.451Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-09T18:37:58.365Z","type":"join"}
+{"nick":"joyee","message":"BridgeAR: there are already out-of-order commits landed on v11 that blocked me from backporting https://github.com/nodejs/node/pull/24709","date":"2019-01-09T18:38:30.055Z","type":"message"}
+{"nick":"joyee","message":"Those are superficial commits like switching to object spread and capitalize comments","date":"2019-01-09T18:39:07.030Z","type":"message"}
+{"nick":"joyee","message":"Maybe I could try reverting all those first locally..","date":"2019-01-09T18:39:51.006Z","type":"message"}
+{"nick":"BridgeAR","message":"joyee: I suggest to revert them first (in inverse landing order) and then to apply each commit in the order as it should have","date":"2019-01-09T18:40:01.480Z","type":"message"}
+{"nick":"BridgeAR","message":":D","date":"2019-01-09T18:40:05.486Z","type":"message"}
+{"nick":"BridgeAR","message":"Yes","date":"2019-01-09T18:40:07.949Z","type":"message"}
+{"nick":"joyee","message":"k...I have backported a few console PRs but it seems to take forever to upload them to github","date":"2019-01-09T18:40:58.974Z","type":"message"}
+{"nick":"BridgeAR","message":"That's great :)","date":"2019-01-09T18:41:22.635Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-09T18:42:44.232Z","type":"quit"}
+{"nick":"joyee","message":"BrdgeAR: https://github.com/nodejs/node/pull/25420","date":"2019-01-09T18:54:43.762Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-09T18:54:57.671Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-09T18:59:16.348Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-09T19:11:57.097Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 252 seconds","date":"2019-01-09T19:16:42.876Z","type":"quit"}
+{"nick":"zeds","date":"2019-01-09T19:16:58.829Z","type":"join"}
+{"nick":"zeds","date":"2019-01-09T19:24:03.165Z","type":"part"}
+{"nick":"dbevenius","date":"2019-01-09T19:31:09.369Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 244 seconds","date":"2019-01-09T19:58:10.355Z","type":"quit"}
+{"nick":"mgol","date":"2019-01-09T20:08:37.864Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 250 seconds","date":"2019-01-09T20:10:49.758Z","type":"quit"}
+{"nick":"BridgeAR","message":"MylesBorins (or anyone who has an answer): do our time rules also apply for backports or is it fine to land them as soon as we have a green CI and a single LG?","date":"2019-01-09T20:18:46.391Z","type":"message"}
+{"nick":"MylesBorins","message":"no time rule for backports","date":"2019-01-09T20:19:35.180Z","type":"message"}
+{"nick":"MylesBorins","message":"land immediately","date":"2019-01-09T20:19:35.675Z","type":"message"}
+{"nick":"BridgeAR","message":"Thanks","date":"2019-01-09T20:19:39.097Z","type":"message"}
+{"nick":"BridgeAR","message":"What about reviews? They should get at least one, right?","date":"2019-01-09T20:19:54.297Z","type":"message"}
+{"nick":"MylesBorins","message":"if you can","date":"2019-01-09T20:20:50.496Z","type":"message"}
+{"nick":"MylesBorins","message":"depends on how confident you are","date":"2019-01-09T20:21:34.234Z","type":"message"}
+{"nick":"BridgeAR","message":"Great, thanks a lot","date":"2019-01-09T20:24:34.689Z","type":"message"}
+{"nick":"rtn","reason":"Quit: leaving","date":"2019-01-09T20:27:15.210Z","type":"quit"}
+{"nick":"gamelaster","reason":"Ping timeout: 250 seconds","date":"2019-01-09T20:29:50.827Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-09T20:33:20.062Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-09T20:34:54.241Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-09T20:42:58.416Z","type":"join"}
+{"nick":"AtumT_","date":"2019-01-09T20:51:15.556Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 245 seconds","date":"2019-01-09T20:53:23.451Z","type":"quit"}
+{"nick":"AtumT","date":"2019-01-09T21:04:01.065Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 252 seconds","date":"2019-01-09T21:04:15.700Z","type":"quit"}
+{"nick":"AtumT_","reason":"Ping timeout: 240 seconds","date":"2019-01-09T21:04:47.430Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-09T21:18:23.447Z","type":"join"}
+{"nick":"rtn","reason":"Ping timeout: 240 seconds","date":"2019-01-09T21:27:47.509Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-09T21:27:55.497Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 268 seconds","date":"2019-01-09T21:33:01.739Z","type":"quit"}
+{"nick":"rtn","reason":"Ping timeout: 250 seconds","date":"2019-01-09T21:46:32.821Z","type":"quit"}
+{"nick":"jcovingt","reason":"Ping timeout: 256 seconds","date":"2019-01-09T22:01:35.257Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-09T22:12:04.087Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-09T22:16:38.569Z","type":"quit"}
+{"nick":"gamelaster","date":"2019-01-09T22:21:16.506Z","type":"join"}
+{"nick":"rtn","date":"2019-01-09T22:46:59.559Z","type":"join"}
+{"nick":"rtn","reason":"Read error: Connection reset by peer","date":"2019-01-09T22:48:12.795Z","type":"quit"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-01-09T22:50:10.289Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-09T22:53:26.450Z","type":"join"}
+{"nick":"rtn","reason":"Quit: leaving","date":"2019-01-09T23:02:07.050Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-09T23:06:19.110Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-09T23:10:00.349Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-09T23:14:28.331Z","type":"quit"}
+{"nick":"rtn","reason":"Ping timeout: 246 seconds","date":"2019-01-09T23:15:45.050Z","type":"quit"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-01-09T23:29:10.429Z","type":"quit"}
+{"nick":"richardlau_","reason":"Quit: http://quassel-irc.org - Chat comfortably. Anywhere.","date":"2019-01-09T23:30:53.832Z","type":"quit"}
+{"nick":"richardlau","date":"2019-01-09T23:31:15.321Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-09T23:32:00.364Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-09T23:36:43.328Z","type":"quit"}
+{"nick":"BridgeAR","message":"Is anyone around to give a LG for some backports?","date":"2019-01-09T23:47:37.619Z","type":"message"}
+{"nick":"BridgeAR","message":"https://github.com/nodejs/node/pull/25405","date":"2019-01-09T23:47:39.457Z","type":"message"}
+{"nick":"BridgeAR","message":"https://github.com/nodejs/node/pull/25406","date":"2019-01-09T23:47:47.825Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-09T23:53:05.052Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-09T23:57:24.055Z","type":"quit"}
