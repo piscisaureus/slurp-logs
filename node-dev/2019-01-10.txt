@@ -132,3 +132,112 @@
 {"nick":"bradleymeck","message":"rather than just a length check","date":"2019-01-10T15:55:49.624Z","type":"message"}
 {"nick":"bradleymeck","message":"i can do the length check in the C++ to error down there even","date":"2019-01-10T15:56:19.861Z","type":"message"}
 {"nick":"jcovingt","date":"2019-01-10T15:56:52.184Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: um, wait, if the checks are done in `Module.prototype` methods, then the users can simply monkey patch `Module` to disable that","date":"2019-01-10T16:01:59.339Z","type":"message"}
+{"nick":"bradleymeck","message":"they have to load code that could do that, freezing the objects is not part of integrity checks of code","date":"2019-01-10T16:02:38.753Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: `process._eval` is an alias that pending to be removed, you don't need to take that into account when adding new options","date":"2019-01-10T16:03:00.882Z","type":"message"}
+{"nick":"bradleymeck","message":"once users load whitelisted code, integrity is done and mutating objects/runtime is assumed to be whitelisted as well","date":"2019-01-10T16:03:01.670Z","type":"message"}
+{"nick":"bradleymeck","message":"https://docs.google.com/document/d/1h__FmXsEWRuNrzAV_l3Iw9i_z8fCXSokGfBiW8-nDNg/edit?ts=5c1adaed#heading=h.ds7eznjmk6b7 goes into some detail about other features we need if we want to lock down other forms of attacks","date":"2019-01-10T16:03:35.635Z","type":"message"}
+{"nick":"joyee","message":"Node.js used to pass command line options to JS land via `process._something` which we don't do anymore","date":"2019-01-10T16:03:44.539Z","type":"message"}
+{"nick":"bradleymeck","message":"things like preventing mutating core are a different feature","date":"2019-01-10T16:03:48.882Z","type":"message"}
+{"nick":"bradleymeck","message":"ok, can migrate then since it doesn't add weird 3rd code src position then","date":"2019-01-10T16:08:30.221Z","type":"message"}
+{"nick":"AtumT","date":"2019-01-10T16:23:15.983Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: oh wait...inspector is not the biggest blocker, the ESM code loads everything eagerly including CJSModule","date":"2019-01-10T16:27:06.968Z","type":"message"}
+{"nick":"joyee","message":"But ideally something like that (involving FS reads) really should not happen so early as it would be impossible to snapshot after that, so that restricts the code we could snapshot","date":"2019-01-10T16:28:35.114Z","type":"message"}
+{"nick":"joyee","message":"(Unless we make the code lazy)","date":"2019-01-10T16:29:10.532Z","type":"message"}
+{"nick":"lundibundi","reason":"Ping timeout: 258 seconds","date":"2019-01-10T16:32:43.228Z","type":"quit"}
+{"nick":"devsnek","message":"bradleymeck: does your pr hook v8's compile from string check","date":"2019-01-10T16:36:47.371Z","type":"message"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2019-01-10T16:49:37.310Z","type":"quit"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-10T16:54:22.460Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T17:01:48.768Z","type":"join"}
+{"nick":"gamelaster","reason":"Ping timeout: 264 seconds","date":"2019-01-10T17:01:52.043Z","type":"quit"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-01-10T17:04:21.089Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-10T17:06:07.349Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T17:20:32.046Z","type":"join"}
+{"nick":"jcovingt","reason":"Ping timeout: 264 seconds","date":"2019-01-10T17:24:04.012Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-10T17:32:18.068Z","type":"join"}
+{"nick":"bradleymeck","message":"devsnek: no, location based and not meant to stop arbitrary code, similar to diff between intgerity= and unsafe-eval in web","date":"2019-01-10T17:33:20.017Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: a ton of stuff we could reorganize to be lazier","date":"2019-01-10T17:33:46.746Z","type":"message"}
+{"nick":"bradleymeck","message":"ESM doubtfully needs to be loaded too long prior to user code","date":"2019-01-10T17:34:07.682Z","type":"message"}
+{"nick":"mgol","date":"2019-01-10T17:35:18.866Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: hmm, so conceptually, if ESM is only loading methods from CJSModule, then it should be fine to simply move those methods (which may not need to know anything about manifest) to a separate file and load them from there, instead of having them depend on the existence of a loaded manifest (which does not make sense)","date":"2019-01-10T17:35:53.325Z","type":"message"}
+{"nick":"joyee","message":"I don't see how loading the implementation of `CJSModule._nodeModulePaths` has to happen after a manifest is loaded, for example","date":"2019-01-10T17:36:51.916Z","type":"message"}
+{"nick":"bradleymeck","message":"anything that could mutate `CJSModule` is suspect","date":"2019-01-10T17:37:50.552Z","type":"message"}
+{"nick":"bradleymeck","message":"if we moved it to be something that didn't depend on the actual reference to CJSModule it wouldn't be something for concern","date":"2019-01-10T17:38:15.891Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: it's impossible to mutate them during bootstrap prior to any user code execution","date":"2019-01-10T17:38:27.504Z","type":"message"}
+{"nick":"bradleymeck","message":"but JS leaks refs all over the place and it is hard even with tooling to assert that something is safely used w/o mutation","date":"2019-01-10T17:38:37.996Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: sure, but I can't check things about if it mutated how the manifest is used","date":"2019-01-10T17:39:08.181Z","type":"message"}
+{"nick":"bradleymeck","message":"instead of just checking if the init of CJS sys is safe, I get to check all usages","date":"2019-01-10T17:39:20.205Z","type":"message"}
+{"nick":"bradleymeck","message":"which i don't feel like I could do as a human well","date":"2019-01-10T17:39:35.887Z","type":"message"}
+{"nick":"joyee","message":"We can simply use `require('internal/something').nodeModulePaths` during bootstrap, and then assign `CJSModule._nodeModulePaths = require('internal/something').nodeModulePaths` later","date":"2019-01-10T17:39:59.720Z","type":"message"}
+{"nick":"joyee","message":"But logically we don't really have to load `_nodeModulePaths ` from `CJSModule ` during bootstrap","date":"2019-01-10T17:40:46.849Z","type":"message"}
+{"nick":"joyee","message":"We are in currently in a bind be cause even in our internals we mix the namespace with the class","date":"2019-01-10T17:41:52.444Z","type":"message"}
+{"nick":"bradleymeck","message":"yup","date":"2019-01-10T17:42:15.844Z","type":"message"}
+{"nick":"bradleymeck","message":"i can move some stuff around in a follow on PR or in this PR if you tell me where you want the init for policies to end up","date":"2019-01-10T17:42:44.673Z","type":"message"}
+{"nick":"joyee","message":"If we disentangle all that we should be able to avoid a dependency like that","date":"2019-01-10T17:42:53.768Z","type":"message"}
+{"nick":"bradleymeck","message":"moving it next to prepareUserCode threw lots of things","date":"2019-01-10T17:42:58.366Z","type":"message"}
+{"nick":"joyee","message":"I am fine with a TODO for now","date":"2019-01-10T17:43:10.047Z","type":"message"}
+{"nick":"bradleymeck","message":"i'm not ready to push it all the way down there","date":"2019-01-10T17:43:13.065Z","type":"message"}
+{"nick":"bradleymeck","message":"ok","date":"2019-01-10T17:43:26.872Z","type":"message"}
+{"nick":"bradleymeck","message":"would it also make sense that instead of adding after the snapshot to have them removed?","date":"2019-01-10T17:43:59.630Z","type":"message"}
+{"nick":"bradleymeck","message":"like if browser globals got deleted/reverted rather than added","date":"2019-01-10T17:44:28.065Z","type":"message"}
+{"nick":"joyee","message":"bradleymack: what do you mean by \"them\"?","date":"2019-01-10T17:44:31.551Z","type":"message"}
+{"nick":"bradleymeck","message":"for browser globals, always include them in the snapshot, remove them if they are unwanted *after* starting up the snapshot","date":"2019-01-10T17:45:14.112Z","type":"message"}
+{"nick":"joyee","message":"We have `--no-browser-globals`","date":"2019-01-10T17:45:59.583Z","type":"message"}
+{"nick":"joyee","message":"So yes","date":"2019-01-10T17:46:08.488Z","type":"message"}
+{"nick":"joyee","message":"But since the browser globals are used everywhere internally, it makes sense to include them in the snapshot, even when they are not exposed to the global proxy","date":"2019-01-10T17:47:17.786Z","type":"message"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-10T18:23:43.331Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-10T18:24:02.521Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-10T18:31:53.728Z","type":"join"}
+{"nick":"lundibundi","reason":"Remote host closed the connection","date":"2019-01-10T18:35:00.575Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-10T18:36:00.096Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-10T18:36:16.493Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T18:51:55.439Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 258 seconds","date":"2019-01-10T18:56:28.158Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T19:11:55.451Z","type":"join"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-01-10T19:12:43.022Z","type":"quit"}
+{"nick":"mgol","date":"2019-01-10T19:13:51.492Z","type":"join"}
+{"nick":"noname","date":"2019-01-10T19:14:53.811Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 272 seconds","date":"2019-01-10T19:16:52.892Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-10T19:19:59.658Z","type":"join"}
+{"nick":"rtn_","date":"2019-01-10T19:28:38.601Z","type":"join"}
+{"nick":"rtn","reason":"Read error: Connection reset by peer","date":"2019-01-10T19:28:59.420Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-10T19:33:40.037Z","type":"join"}
+{"nick":"rtn_","reason":"Read error: Connection reset by peer","date":"2019-01-10T19:33:43.722Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-01-10T19:41:06.043Z","type":"quit"}
+{"nick":"rtn","reason":"Quit: leaving","date":"2019-01-10T19:43:13.006Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-10T20:01:56.461Z","type":"join"}
+{"nick":"seishun","reason":"Ping timeout: 258 seconds","date":"2019-01-10T20:09:18.252Z","type":"quit"}
+{"nick":"al-damiri","reason":"Quit: Connection closed for inactivity","date":"2019-01-10T20:12:19.038Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T20:22:01.820Z","type":"join"}
+{"nick":"lundibundi","reason":"Remote host closed the connection","date":"2019-01-10T20:25:44.818Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-10T20:26:07.406Z","type":"quit"}
+{"nick":"rtn","date":"2019-01-10T20:34:05.854Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-10T20:45:00.193Z","type":"join"}
+{"nick":"seishun","date":"2019-01-10T20:48:50.994Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 258 seconds","date":"2019-01-10T20:49:33.236Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 246 seconds","date":"2019-01-10T21:02:04.276Z","type":"quit"}
+{"nick":"al-damiri","date":"2019-01-10T21:25:10.834Z","type":"join"}
+{"nick":"zeds","date":"2019-01-10T21:27:55.091Z","type":"join"}
+{"nick":"zeds","date":"2019-01-10T21:28:02.148Z","type":"part"}
+{"nick":"dbevenius","date":"2019-01-10T21:42:01.324Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-10T21:46:31.315Z","type":"quit"}
+{"nick":"joaocgreis","reason":"Ping timeout: 252 seconds","date":"2019-01-10T22:08:46.119Z","type":"quit"}
+{"nick":"joaocgreis","date":"2019-01-10T22:09:02.661Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-10T22:12:59.393Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-10T22:17:42.899Z","type":"quit"}
+{"nick":"noname__","date":"2019-01-10T22:20:54.464Z","type":"join"}
+{"nick":"Ultrasauce","reason":"Quit: Ultrasauce","date":"2019-01-10T22:23:41.296Z","type":"quit"}
+{"nick":"noname","reason":"Ping timeout: 246 seconds","date":"2019-01-10T22:23:51.127Z","type":"quit"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-01-10T22:25:45.873Z","type":"quit"}
+{"nick":"Ultrasauce","date":"2019-01-10T22:30:19.330Z","type":"join"}
+{"nick":"bradleymeck","message":"fuuuuun","date":"2019-01-10T22:58:24.348Z","type":"message"}
+{"nick":"bradleymeck","message":"https://gist.github.com/bmeck/4cefb843091b4d46ed9036557db0b9e2 , using globals is leaking fun stuff if you get tricky about it","date":"2019-01-10T23:03:54.129Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-10T23:13:05.417Z","type":"join"}
+{"nick":"FruitieX","reason":"Ping timeout: 250 seconds","date":"2019-01-10T23:17:04.999Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-10T23:17:33.288Z","type":"quit"}
+{"nick":"FruitieX","date":"2019-01-10T23:22:10.674Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-10T23:23:13.649Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-10T23:27:28.465Z","type":"quit"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-01-10T23:33:10.237Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-10T23:42:05.090Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 258 seconds","date":"2019-01-10T23:46:39.248Z","type":"quit"}
