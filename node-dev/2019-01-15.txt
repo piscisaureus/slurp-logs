@@ -1,0 +1,79 @@
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-15T00:01:45.249Z","type":"quit"}
+{"nick":"joyee","message":"And if safe_globals is executed before loaders.js then I am pretty certain that the point right after the execution of safe_globals is somewhere a snapshot can be taken - if safe_globals stays environment-independent","date":"2019-01-15T00:02:13.634Z","type":"message"}
+{"nick":"joyee","message":"loaders.js on the other hand still depends on CLI flags and environment variables in its evaluation.","date":"2019-01-15T00:03:16.595Z","type":"message"}
+{"nick":"joyee","message":"So with it's current shape we cannot snapshot after loaders.js - that'd be a bogus snapshot that can crash if not loaded in the same environment as the one where it's built","date":"2019-01-15T00:04:31.647Z","type":"message"}
+{"nick":"joyee","message":"(But maybe I am still too optimistic because the construction of process object itself, that happens before all that, is already environment dependent)","date":"2019-01-15T00:08:34.903Z","type":"message"}
+{"nick":"zeds","date":"2019-01-15T00:15:10.202Z","type":"join"}
+{"nick":"zeds","date":"2019-01-15T00:15:17.178Z","type":"part"}
+{"nick":"dbevenius","date":"2019-01-15T00:25:56.779Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-15T00:30:36.840Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 268 seconds","date":"2019-01-15T00:31:58.261Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T01:28:55.837Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-15T01:33:43.857Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T01:46:01.041Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-15T01:50:18.082Z","type":"quit"}
+{"nick":"bradleymeck","message":"joyee: SnapshotCreator can contain codegen","date":"2019-01-15T01:59:13.741Z","type":"message"}
+{"nick":"bradleymeck","message":"i don't think that is safe to use cross arch, but it should be safe per build","date":"2019-01-15T01:59:43.608Z","type":"message"}
+{"nick":"bradleymeck","message":"https://github.com/v8/v8/blob/master/include/v8.h#L8590 v8::SnapshotCreator::FunctionCodeHandling::kKeep","date":"2019-01-15T02:01:13.024Z","type":"message"}
+{"nick":"bradleymeck","message":"one of the big things with that is that you can prewarm your JIT","date":"2019-01-15T02:01:33.321Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: that's separate, there simply  isn't a point snapshotting bootstrapping code other than the modules that will also be executed later.","date":"2019-01-15T02:03:27.468Z","type":"message"}
+{"nick":"bradleymeck","message":"last i did a benchmark it was significant if you prewarmed things for apps at least","date":"2019-01-15T02:04:29.823Z","type":"message"}
+{"nick":"bradleymeck","message":"i couldn't ever get node.js to be snapshot properly","date":"2019-01-15T02:04:42.751Z","type":"message"}
+{"nick":"joyee","message":"Why? the bootstrap code should be GC'd after bootstrap","date":"2019-01-15T02:04:57.086Z","type":"message"}
+{"nick":"bradleymeck","message":"but the point is that code can be contained, I was confused why you said it couldnt","date":"2019-01-15T02:05:07.984Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: because persistent refs to functions stay warmed with their inline caches","date":"2019-01-15T02:05:23.830Z","type":"message"}
+{"nick":"bradleymeck","message":"otherwise it drops back and completely does a 1st pass codegen","date":"2019-01-15T02:06:00.221Z","type":"message"}
+{"nick":"bradleymeck","message":"and then has to rewarm","date":"2019-01-15T02:06:07.008Z","type":"message"}
+{"nick":"devsnek","message":"y'all have the craziest convos these days","date":"2019-01-15T02:06:58.613Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-15T02:07:01.552Z","type":"join"}
+{"nick":"joyee","message":"That's not the bootstrap functions, but the closures that are the results of execution of the functions, though I don't think it hurts - you'd need to pay the cost of warming it up without snapshots anyway","date":"2019-01-15T02:08:22.709Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: for ones that are never called, sure","date":"2019-01-15T02:09:46.550Z","type":"message"}
+{"nick":"bradleymeck","message":"the point is to call as much as you can then get to a point where snapshotting is ok","date":"2019-01-15T02:10:07.191Z","type":"message"}
+{"nick":"bradleymeck","message":"node isn't in a great position for this currently","date":"2019-01-15T02:10:14.778Z","type":"message"}
+{"nick":"bradleymeck","message":"but moving more towards treating snapshots as only for data instead of codegen seems to be very limited","date":"2019-01-15T02:10:36.812Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-15T02:11:07.345Z","type":"quit"}
+{"nick":"joyee","message":"In my brain data contains code","date":"2019-01-15T02:11:09.057Z","type":"message"}
+{"nick":"joyee","message":"Or to say, code is a subset","date":"2019-01-15T02:11:20.063Z","type":"message"}
+{"nick":"joyee","message":"They are part of the heap","date":"2019-01-15T02:11:26.549Z","type":"message"}
+{"nick":"bradleymeck","message":"not if you use kClear","date":"2019-01-15T02:11:33.649Z","type":"message"}
+{"nick":"bradleymeck","message":"anyways, we can certainly keep our globals thing to a new thing only compiled from C++ before the snapshot","date":"2019-01-15T02:12:38.969Z","type":"message"}
+{"nick":"joyee","message":"Optional subset is still a subset ;)","date":"2019-01-15T02:13:41.711Z","type":"message"}
+{"nick":"joyee","message":"That's what I attempted once to do in per_context.js but I couldn't because","date":"2019-01-15T02:14:45.333Z","type":"message"}
+{"nick":"joyee","message":"per_context.js is part of the embdder API","date":"2019-01-15T02:14:54.023Z","type":"message"}
+{"nick":"joyee","message":"So you can't really return anything, or to store anything","date":"2019-01-15T02:15:30.471Z","type":"message"}
+{"nick":"bradleymeck","message":"if the subset is never intersecting the set, it isn't really a subset","date":"2019-01-15T02:16:07.526Z","type":"message"}
+{"nick":"joyee","message":"(Maybe you can by adding another embedder field in the context but I don't think it's worth it)","date":"2019-01-15T02:16:08.473Z","type":"message"}
+{"nick":"joyee","message":"If you look at the set dynamically, it's always a subset","date":"2019-01-15T02:17:42.135Z","type":"message"}
+{"nick":"bradleymeck","message":"i don't agree in realistic terms~","date":"2019-01-15T02:18:08.074Z","type":"message"}
+{"nick":"devsnek","message":"per_context is node internals","date":"2019-01-15T02:18:32.703Z","type":"message"}
+{"nick":"bradleymeck","message":"but disagreeing doesn't really affect this stuff","date":"2019-01-15T02:18:41.961Z","type":"message"}
+{"nick":"joyee","message":"devsnek: but it's part of the embedder contract","date":"2019-01-15T02:19:23.433Z","type":"message"}
+{"nick":"devsnek","message":"you've lost me","date":"2019-01-15T02:19:34.822Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: out of curiosity what do you use \"~\" to mean","date":"2019-01-15T02:20:25.228Z","type":"message"}
+{"nick":"joyee","message":"If you return something from per_context.js, you can't really store it and get it back out later other than store a field in the context","date":"2019-01-15T02:20:36.279Z","type":"message"}
+{"nick":"joyee","message":"Which is visible to the embedder so it's not really an internal","date":"2019-01-15T02:20:50.917Z","type":"message"}
+{"nick":"devsnek","message":"oh for getting a reference to the iife?","date":"2019-01-15T02:21:09.160Z","type":"message"}
+{"nick":"bradleymeck","message":"devsnek: that the discussion could go either way, in actual voice my words would go up and down in pitch most likely around that","date":"2019-01-15T02:21:18.955Z","type":"message"}
+{"nick":"joyee","message":"`NewContext` is embedder API","date":"2019-01-15T02:21:23.004Z","type":"message"}
+{"nick":"joyee","message":"devsnek: for getting a reference directly to something created in per_context.js","date":"2019-01-15T02:21:41.525Z","type":"message"}
+{"nick":"joyee","message":"(Instead of through...global, then you'd be poluting it for embedders)","date":"2019-01-15T02:22:22.900Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: you could always hide some number of things if you could control the actual calling of v8 couldn't you","date":"2019-01-15T02:24:21.993Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: what do you mean by actual calling of v8?","date":"2019-01-15T02:24:50.962Z","type":"message"}
+{"nick":"joyee","message":"Also v8 is not controlled by us in the embedder API","date":"2019-01-15T02:25:18.814Z","type":"message"}
+{"nick":"bradleymeck","message":"well if we don't control v8 it doesn't matter, but you can make funky views of globals","date":"2019-01-15T02:26:56.986Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-15T02:27:01.590Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-15T02:31:07.344Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T02:55:59.337Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-15T03:00:40.784Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T03:17:46.178Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-15T03:22:47.284Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T03:37:05.096Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 258 seconds","date":"2019-01-15T03:41:36.145Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T04:11:54.393Z","type":"join"}
+{"nick":"dbeveniu_","date":"2019-01-15T04:43:10.180Z","type":"join"}
+{"nick":"dbevenius","reason":"Read error: Connection reset by peer","date":"2019-01-15T04:43:10.290Z","type":"quit"}
+{"nick":"dbeveniu_","reason":"Remote host closed the connection","date":"2019-01-15T06:17:34.761Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-15T06:19:56.220Z","type":"join"}
+{"nick":"lpin","date":"2019-01-15T06:24:55.281Z","type":"join"}
+{"nick":"lundibundi","date":"2019-01-15T06:30:55.977Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 272 seconds","date":"2019-01-15T06:49:54.813Z","type":"quit"}
