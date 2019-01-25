@@ -103,3 +103,142 @@
 {"nick":"devsnek","message":"no, because it gets called","date":"2019-01-24T15:58:24.739Z","type":"message"}
 {"nick":"guybedford","message":"because changing the WeakMap in the bootstrapper to a Map fixes the issue","date":"2019-01-24T15:58:25.687Z","type":"message"}
 {"nick":"devsnek","message":"i really wish my debug build had workd","date":"2019-01-24T15:59:13.522Z","type":"message"}
+{"nick":"guybedford","message":"if it was collected it might still be called right? Because it still \"exists\" in memory?","date":"2019-01-24T16:00:28.165Z","type":"message"}
+{"nick":"guybedford","message":"(just trying to work out why the console.log is working)","date":"2019-01-24T16:01:06.126Z","type":"message"}
+{"nick":"devsnek","message":"for the console.log to work it has to do the weakmap get","date":"2019-01-24T16:01:25.263Z","type":"message"}
+{"nick":"devsnek","message":"at the time of the import call","date":"2019-01-24T16:01:29.669Z","type":"message"}
+{"nick":"guybedford","message":"and the weakmap wouldn't return an object that had been disposed I guess","date":"2019-01-24T16:01:58.463Z","type":"message"}
+{"nick":"devsnek","message":"well just because they key of a weakmap has been collected doesn't mean the value is","date":"2019-01-24T16:02:20.959Z","type":"message"}
+{"nick":"devsnek","message":"`const a = {}; weak.set({}, a)`","date":"2019-01-24T16:02:30.330Z","type":"message"}
+{"nick":"guybedford","message":"ok well something is being disposed that shouldn't be is the point","date":"2019-01-24T16:02:34.744Z","type":"message"}
+{"nick":"guybedford","message":"because the refernce model simply isn't sound","date":"2019-01-24T16:02:43.949Z","type":"message"}
+{"nick":"devsnek","message":"yeah there's definitely a problem somewhere","date":"2019-01-24T16:02:53.245Z","type":"message"}
+{"nick":"guybedford","message":"so to move this PR forward it's kind of tricky because I can't see another option other than:","date":"2019-01-24T16:03:16.301Z","type":"message"}
+{"nick":"bradleymeck","message":"would it be simpler to just state that you can only make an import handler when you create a vm.Context ?","date":"2019-01-24T16:03:17.173Z","type":"message"}
+{"nick":"guybedford","message":"1. Make it a persistent memory leak ( / eternal reference)","date":"2019-01-24T16:03:31.311Z","type":"message"}
+{"nick":"guybedford","message":"2. revert vm.Script importModuleDynamically","date":"2019-01-24T16:03:41.694Z","type":"message"}
+{"nick":"guybedford","message":"3. Move forward without the importModuleDynamically callback on vm.Script","date":"2019-01-24T16:03:59.494Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: tying it to the realm means you can't use them in the main realm","date":"2019-01-24T16:04:09.777Z","type":"message"}
+{"nick":"bradleymeck","message":"sure","date":"2019-01-24T16:04:19.053Z","type":"message"}
+{"nick":"devsnek","message":"guybedford: 4. tie it to the lifetime of the actual module in v8 instead?","date":"2019-01-24T16:04:30.820Z","type":"message"}
+{"nick":"guybedford","message":"sorry I mean 3. Without the importModuleDynamically callback on vm.compileFunction","date":"2019-01-24T16:04:37.251Z","type":"message"}
+{"nick":"devsnek","message":"well compileFunction needs it","date":"2019-01-24T16:04:54.467Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: does the realms api have modules yet, or still just script eval","date":"2019-01-24T16:05:17.850Z","type":"message"}
+{"nick":"bradleymeck","message":"they are finalizing stuff, but it does not work like vm.*","date":"2019-01-24T16:05:39.990Z","type":"message"}
+{"nick":"guybedford","message":"So the v8.Module would carry the reference to the importModuleDynamically callback and vm.Script","date":"2019-01-24T16:05:40.598Z","type":"message"}
+{"nick":"guybedford","message":"I guess the next question is when is the v8.Module disposed?","date":"2019-01-24T16:06:06.865Z","type":"message"}
+{"nick":"guybedford","message":"for vm?","date":"2019-01-24T16:06:09.059Z","type":"message"}
+{"nick":"devsnek","message":"whenever v8 is done with it?","date":"2019-01-24T16:06:20.011Z","type":"message"}
+{"nick":"bradleymeck","message":"you can't make a Script/Module and get a 1st class value for it, and you cannot make one in the top Realm","date":"2019-01-24T16:06:35.349Z","type":"message"}
+{"nick":"guybedford","message":"Can v8.Module be disposed while there is module code still executing?","date":"2019-01-24T16:06:49.336Z","type":"message"}
+{"nick":"guybedford","message":"I think so, right?","date":"2019-01-24T16:06:55.008Z","type":"message"}
+{"nick":"devsnek","message":"its just a normal heap object","date":"2019-01-24T16:07:02.522Z","type":"message"}
+{"nick":"guybedford","message":"Because it is only needed to get the bindings set up?","date":"2019-01-24T16:07:09.908Z","type":"message"}
+{"nick":"guybedford","message":"although it does contain the cells for the bindings themselves","date":"2019-01-24T16:07:21.302Z","type":"message"}
+{"nick":"bradleymeck","message":"guybedford: I guess that depends, its local import map would still be alive","date":"2019-01-24T16:07:24.758Z","type":"message"}
+{"nick":"guybedford","message":"the cells are kind of crucial right?","date":"2019-01-24T16:07:35.673Z","type":"message"}
+{"nick":"guybedford","message":"for live bindings that's where they are?","date":"2019-01-24T16:07:40.761Z","type":"message"}
+{"nick":"guybedford","message":"in this module Cell* reference","date":"2019-01-24T16:07:45.831Z","type":"message"}
+{"nick":"devsnek","message":"the cells are the actual lexical environment that code runs in","date":"2019-01-24T16:07:52.927Z","type":"message"}
+{"nick":"guybedford","message":"so I don't think they do get disposed like any other heap object?","date":"2019-01-24T16:07:56.012Z","type":"message"}
+{"nick":"devsnek","message":"as long as there are references to those, it can't be collected","date":"2019-01-24T16:08:09.090Z","type":"message"}
+{"nick":"devsnek","message":"like any other heap object, if v8 clears all references it will remove it","date":"2019-01-24T16:08:51.815Z","type":"message"}
+{"nick":"devsnek","message":"it just has a different idea of references than a js object","date":"2019-01-24T16:09:03.904Z","type":"message"}
+{"nick":"guybedford","message":"I think it is more than that though?","date":"2019-01-24T16:09:14.830Z","type":"message"}
+{"nick":"guybedford","message":"because the bindings live in there like they live in a context","date":"2019-01-24T16:09:24.932Z","type":"message"}
+{"nick":"guybedford","message":"so I think v8.Module needs explicit disposal","date":"2019-01-24T16:09:31.233Z","type":"message"}
+{"nick":"devsnek","message":"yeah the bindings are also references","date":"2019-01-24T16:09:34.213Z","type":"message"}
+{"nick":"devsnek","message":"it just has more references","date":"2019-01-24T16:09:45.828Z","type":"message"}
+{"nick":"guybedford","message":"it's not a HeapObject","date":"2019-01-24T16:10:06.887Z","type":"message"}
+{"nick":"guybedford","message":"it doesn't extend from HeapObject","date":"2019-01-24T16:10:13.248Z","type":"message"}
+{"nick":"guybedford","message":"(like eg FixedArray)","date":"2019-01-24T16:10:32.196Z","type":"message"}
+{"nick":"devsnek","message":"yeah it does","date":"2019-01-24T16:10:37.186Z","type":"message"}
+{"nick":"guybedford","message":"no it doesnt","date":"2019-01-24T16:10:40.672Z","type":"message"}
+{"nick":"devsnek","message":"it extends Struct","date":"2019-01-24T16:10:46.198Z","type":"message"}
+{"nick":"guybedford","message":"https://github.com/v8/v8/blob/master/src/objects/module.h#L30","date":"2019-01-24T16:10:48.423Z","type":"message"}
+{"nick":"devsnek","message":"which extends HeapObject","date":"2019-01-24T16:10:49.559Z","type":"message"}
+{"nick":"devsnek","message":"structs are just heap objects with known named slots","date":"2019-01-24T16:11:04.771Z","type":"message"}
+{"nick":"guybedford","message":"ok... yes","date":"2019-01-24T16:11:35.846Z","type":"message"}
+{"nick":"guybedford","message":"but the issue is that if v8.Module is disposed, you lose the bindings of that module","date":"2019-01-24T16:12:01.308Z","type":"message"}
+{"nick":"guybedford","message":"for example:","date":"2019-01-24T16:12:06.040Z","type":"message"}
+{"nick":"guybedford","message":"export var p = 5;","date":"2019-01-24T16:12:13.421Z","type":"message"}
+{"nick":"devsnek","message":"yeah i get what you're saying","date":"2019-01-24T16:12:18.815Z","type":"message"}
+{"nick":"guybedford","message":"setInterval(() => { console.log(p) })","date":"2019-01-24T16:12:23.828Z","type":"message"}
+{"nick":"guybedford","message":"will break if you dispose the module object","date":"2019-01-24T16:12:28.488Z","type":"message"}
+{"nick":"devsnek","message":"indeed","date":"2019-01-24T16:12:32.722Z","type":"message"}
+{"nick":"guybedford","message":"so we are relying on the fact that the loader holds a persistent reference","date":"2019-01-24T16:12:38.856Z","type":"message"}
+{"nick":"guybedford","message":"that the execution keeps working","date":"2019-01-24T16:12:41.588Z","type":"message"}
+{"nick":"devsnek","message":"so v8 won't collect it if you do that","date":"2019-01-24T16:12:46.110Z","type":"message"}
+{"nick":"devsnek","message":"you have to lose both modules","date":"2019-01-24T16:12:57.147Z","type":"message"}
+{"nick":"guybedford","message":"won't collect the module?","date":"2019-01-24T16:12:59.523Z","type":"message"}
+{"nick":"devsnek","message":"right","date":"2019-01-24T16:13:04.844Z","type":"message"}
+{"nick":"guybedford","message":"even without a persistent reference?","date":"2019-01-24T16:13:05.194Z","type":"message"}
+{"nick":"guybedford","message":"why?","date":"2019-01-24T16:13:08.538Z","type":"message"}
+{"nick":"devsnek","message":"because it has its own internal references for the bindings","date":"2019-01-24T16:13:37.223Z","type":"message"}
+{"nick":"devsnek","message":"ok i need to run to class, will you be around later?","date":"2019-01-24T16:14:13.666Z","type":"message"}
+{"nick":"guybedford","message":"So Module -> regular_exports (FixedArray of Cells) -> Cell binding","date":"2019-01-24T16:14:39.307Z","type":"message"}
+{"nick":"guybedford","message":"where all are GC'd","date":"2019-01-24T16:14:42.663Z","type":"message"}
+{"nick":"guybedford","message":"so the cell can be held independently","date":"2019-01-24T16:14:48.592Z","type":"message"}
+{"nick":"guybedford","message":"yes I see what you are saying","date":"2019-01-24T16:14:52.061Z","type":"message"}
+{"nick":"guybedford","message":"it's all on the graph","date":"2019-01-24T16:14:57.053Z","type":"message"}
+{"nick":"guybedford","message":"sure I'll stick around here, just ping me","date":"2019-01-24T16:15:21.769Z","type":"message"}
+{"nick":"devsnek","message":"later","date":"2019-01-24T16:15:29.023Z","type":"message"}
+{"nick":"lundibundi","reason":"Ping timeout: 244 seconds","date":"2019-01-24T16:16:17.355Z","type":"quit"}
+{"nick":"DanielKrom","reason":"Quit: Connection closed for inactivity","date":"2019-01-24T16:19:46.576Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-01-24T16:26:47.715Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-24T16:30:51.577Z","type":"quit"}
+{"nick":"AtumT","date":"2019-01-24T16:39:28.834Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-24T16:44:32.136Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T16:54:51.580Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-24T16:55:38.551Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-01-24T16:55:49.486Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-24T16:55:52.064Z","type":"join"}
+{"nick":"zeds","date":"2019-01-24T17:06:11.973Z","type":"join"}
+{"nick":"zeds","reason":"Excess Flood","date":"2019-01-24T17:06:14.393Z","type":"quit"}
+{"nick":"zeds","date":"2019-01-24T17:06:36.974Z","type":"join"}
+{"nick":"zeds","date":"2019-01-24T17:07:03.097Z","type":"part"}
+{"nick":"julianduque","reason":"Quit: Lost terminal","date":"2019-01-24T17:28:51.401Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-24T17:34:38.229Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-24T17:58:48.683Z","type":"quit"}
+{"nick":"julianduque","date":"2019-01-24T18:21:39.350Z","type":"join"}
+{"nick":"gamelaster","date":"2019-01-24T18:36:55.948Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-24T18:38:26.569Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T18:45:36.887Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-24T18:50:07.330Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2019-01-24T18:58:27.475Z","type":"quit"}
+{"nick":"al-damiri","reason":"Quit: Connection closed for inactivity","date":"2019-01-24T19:12:26.086Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T19:24:54.716Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-24T19:29:26.703Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T19:45:14.268Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-24T19:50:02.020Z","type":"quit"}
+{"nick":"guybedford","reason":"Quit: Page closed","date":"2019-01-24T19:56:46.300Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T20:05:51.391Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-24T20:10:28.301Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T20:24:53.049Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-24T20:29:23.994Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-24T20:31:20.210Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-24T20:46:15.353Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-24T20:50:38.354Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 240 seconds","date":"2019-01-24T21:12:56.591Z","type":"quit"}
+{"nick":"mrkmg","date":"2019-01-24T21:23:21.768Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-01-24T21:30:39.057Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T21:36:09.806Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-24T21:40:26.582Z","type":"quit"}
+{"nick":"zeds","date":"2019-01-24T21:54:58.459Z","type":"join"}
+{"nick":"zeds","date":"2019-01-24T21:55:53.143Z","type":"part"}
+{"nick":"dbevenius","date":"2019-01-24T21:55:54.713Z","type":"join"}
+{"nick":"mrkmg","reason":"Remote host closed the connection","date":"2019-01-24T22:00:10.238Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-24T22:00:26.631Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T22:05:26.358Z","type":"join"}
+{"nick":"gamelaster","reason":"Ping timeout: 268 seconds","date":"2019-01-24T22:05:41.869Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-24T22:09:38.348Z","type":"quit"}
+{"nick":"devsnek","message":"guybedford: i'm around now if you still are","date":"2019-01-24T22:15:49.966Z","type":"message"}
+{"nick":"wawasho","date":"2019-01-24T23:10:46.636Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-24T23:18:59.694Z","type":"join"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-01-24T23:20:32.404Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-24T23:23:26.590Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-24T23:27:06.351Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-24T23:31:19.350Z","type":"quit"}
+{"nick":"trevnorris","date":"2019-01-24T23:44:11.971Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-24T23:46:01.668Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-24T23:50:28.371Z","type":"quit"}
