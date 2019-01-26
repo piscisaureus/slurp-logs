@@ -84,3 +84,299 @@
 {"nick":"guybedford","message":"2. Revert vm dynamic import","date":"2019-01-25T15:52:13.653Z","type":"message"}
 {"nick":"guybedford","message":"3. Move on in that PR regardless of what vm does","date":"2019-01-25T15:52:20.362Z","type":"message"}
 {"nick":"guybedford","message":"unless you see another option?","date":"2019-01-25T15:52:30.063Z","type":"message"}
+{"nick":"guybedford","reason":"Quit: Page closed","date":"2019-01-25T16:05:16.152Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T16:05:41.372Z","type":"join"}
+{"nick":"devsnek","message":"guybedford: I would continue without regard of v8's exact memory handling semantics","date":"2019-01-25T16:08:57.017Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-25T16:10:03.296Z","type":"quit"}
+{"nick":"julianduque","reason":"Ping timeout: 244 seconds","date":"2019-01-25T16:10:33.350Z","type":"quit"}
+{"nick":"bradleymeck","message":"wouldn't that leave it leaking","date":"2019-01-25T16:13:19.013Z","type":"message"}
+{"nick":"guybedford","date":"2019-01-25T16:14:35.258Z","type":"join"}
+{"nick":"devsnek","message":"bradleymeck: it would be tied to the vm.Context right?","date":"2019-01-25T16:14:55.890Z","type":"message"}
+{"nick":"guybedford","message":"right now it is segfaulting on these GC cases","date":"2019-01-25T16:15:04.062Z","type":"message"}
+{"nick":"guybedford","message":"we would effectively then be fixing that by making it memory leak","date":"2019-01-25T16:15:13.634Z","type":"message"}
+{"nick":"devsnek","message":"I think it's very reasonable to tie them to the context somehow","date":"2019-01-25T16:15:40.171Z","type":"message"}
+{"nick":"devsnek","message":"I don't think a dispose function would be needed","date":"2019-01-25T16:15:51.184Z","type":"message"}
+{"nick":"guybedford","message":"that does sound the right direction","date":"2019-01-25T16:15:53.375Z","type":"message"}
+{"nick":"guybedford","message":"although could the context could be disposed while its code is still executing?","date":"2019-01-25T16:16:26.781Z","type":"message"}
+{"nick":"guybedford","message":"because surely the code just holds the bindings?","date":"2019-01-25T16:16:33.289Z","type":"message"}
+{"nick":"guybedford","message":"not the whole context?","date":"2019-01-25T16:16:37.469Z","type":"message"}
+{"nick":"guybedford","message":"unless it explicitly has a \"global\" reference?","date":"2019-01-25T16:16:44.216Z","type":"message"}
+{"nick":"guybedford","message":"would be worth checking but that approach could work","date":"2019-01-25T16:17:16.692Z","type":"message"}
+{"nick":"guybedford","message":"devsnek: will you have time to work on this anytime soon?","date":"2019-01-25T16:17:36.541Z","type":"message"}
+{"nick":"devsnek","message":"probably not","date":"2019-01-25T16:17:57.620Z","type":"message"}
+{"nick":"guybedford","message":"so the question then is what we do in the mean time","date":"2019-01-25T16:18:23.420Z","type":"message"}
+{"nick":"devsnek","message":"leave the experimental flag","date":"2019-01-25T16:18:49.807Z","type":"message"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-25T16:18:56.908Z","type":"quit"}
+{"nick":"devsnek","message":"I don't think we need to remove it or anything","date":"2019-01-25T16:19:23.821Z","type":"message"}
+{"nick":"guybedford","message":"right node vm.compileFunction doesn't apply to dynamic import","date":"2019-01-25T16:19:41.739Z","type":"message"}
+{"nick":"guybedford","message":"but to move forward with that other PR you've said it should","date":"2019-01-25T16:19:56.795Z","type":"message"}
+{"nick":"guybedford","message":"but I don't think we should extend dynamicImport support until these issues are resolved","date":"2019-01-25T16:20:07.333Z","type":"message"}
+{"nick":"guybedford","message":"especially given that the memory issues expose themselves when implemented through vm.compileFunction unless an Eternal reference is explicitly created","date":"2019-01-25T16:20:29.028Z","type":"message"}
+{"nick":"devsnek","message":"I'm fine if it moves forward without the support entirely","date":"2019-01-25T16:20:30.214Z","type":"message"}
+{"nick":"devsnek","message":"I said as much in the pr","date":"2019-01-25T16:20:37.772Z","type":"message"}
+{"nick":"guybedford","message":"ok, because that is exactly what is in the PR","date":"2019-01-25T16:20:41.857Z","type":"message"}
+{"nick":"guybedford","message":"BUT","date":"2019-01-25T16:20:43.612Z","type":"message"}
+{"nick":"guybedford","message":"CommonJS supports dynamic import into ES modules with --experimental-modules","date":"2019-01-25T16:20:51.274Z","type":"message"}
+{"nick":"devsnek","message":"sorta","date":"2019-01-25T16:21:00.444Z","type":"message"}
+{"nick":"guybedford","message":"and to maintain that support we added another layer to the dynamic import support","date":"2019-01-25T16:21:02.973Z","type":"message"}
+{"nick":"devsnek","message":"we have the flag for a reason","date":"2019-01-25T16:21:12.021Z","type":"message"}
+{"nick":"guybedford","message":"which you seemed against for some reason?","date":"2019-01-25T16:21:14.260Z","type":"message"}
+{"nick":"devsnek","message":"if you've ever used harmony flags in V8, things pop up and go away all the time under flags","date":"2019-01-25T16:21:30.837Z","type":"message"}
+{"nick":"devsnek","message":"weakref API has changed like 3 times","date":"2019-01-25T16:21:41.643Z","type":"message"}
+{"nick":"AtumT","date":"2019-01-25T16:22:01.678Z","type":"join"}
+{"nick":"devsnek","message":"guybedford: yeah I'm not a fan of those changes","date":"2019-01-25T16:22:12.099Z","type":"message"}
+{"nick":"guybedford","message":"Ok, so how can we change https://github.com/nodejs/node/pull/21573 given these dynamic import issues to work in a way you are comfortable with?","date":"2019-01-25T16:22:23.121Z","type":"message"}
+{"nick":"guybedford","message":"if we drop dynamic import support in CommonJS entirely, that is a revert of that feature","date":"2019-01-25T16:22:56.311Z","type":"message"}
+{"nick":"guybedford","message":"which again seems independent of these vm dynamic import issues","date":"2019-01-25T16:23:14.092Z","type":"message"}
+{"nick":"devsnek","message":"well to be clear, it's ok to do that while it's under the flag","date":"2019-01-25T16:23:17.599Z","type":"message"}
+{"nick":"devsnek","message":"we can add it back later","date":"2019-01-25T16:23:23.581Z","type":"message"}
+{"nick":"devsnek","message":"as for what I would be ok with","date":"2019-01-25T16:23:31.179Z","type":"message"}
+{"nick":"devsnek","message":"adding the functions to the global maps the same as the scripts and modules","date":"2019-01-25T16:23:47.014Z","type":"message"}
+{"nick":"guybedford","message":"so you want us to create a new dynamic import function entry in the map for each and every commonjs module executed?","date":"2019-01-25T16:24:33.123Z","type":"message"}
+{"nick":"devsnek","message":"huh?","date":"2019-01-25T16:24:49.701Z","type":"message"}
+{"nick":"devsnek","message":"like you know the existing design","date":"2019-01-25T16:24:59.853Z","type":"message"}
+{"nick":"guybedford","message":"well the PR wraps CommonJS execution in compileFunction","date":"2019-01-25T16:25:06.789Z","type":"message"}
+{"nick":"guybedford","message":"and then it has a dynamic import callback that works out how to do dynamic import from CommonJS","date":"2019-01-25T16:25:26.597Z","type":"message"}
+{"nick":"devsnek","message":"the existing design should be extended to include vm compiled functions","date":"2019-01-25T16:25:39.055Z","type":"message"}
+{"nick":"devsnek","message":"I think ryzokuken already had code for this","date":"2019-01-25T16:25:49.447Z","type":"message"}
+{"nick":"guybedford","message":"that was the code that broke due to memory issues","date":"2019-01-25T16:26:14.591Z","type":"message"}
+{"nick":"guybedford","message":"so you're saying:","date":"2019-01-25T16:26:35.823Z","type":"message"}
+{"nick":"guybedford","message":"1. Assign an ID to all script elements","date":"2019-01-25T16:26:39.837Z","type":"message"}
+{"nick":"guybedford","message":"2. Have a map that maintains the string path for each script","date":"2019-01-25T16:26:58.420Z","type":"message"}
+{"nick":"guybedford","message":"3. Have a lookup in the context on that map","date":"2019-01-25T16:27:07.689Z","type":"message"}
+{"nick":"guybedford","message":"while we are currently adding the \"path\" into the script data directly instead of going through a map","date":"2019-01-25T16:27:27.321Z","type":"message"}
+{"nick":"guybedford","message":"is that the issue?","date":"2019-01-25T16:27:30.525Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-25T16:28:41.349Z","type":"join"}
+{"nick":"devsnek","message":"I didn't say any of those things","date":"2019-01-25T16:30:17.835Z","type":"message"}
+{"nick":"guybedford","message":"but that's what the map is right?","date":"2019-01-25T16:30:43.865Z","type":"message"}
+{"nick":"guybedford","message":"an indirection between script id and path?","date":"2019-01-25T16:30:51.049Z","type":"message"}
+{"nick":"devsnek","message":"the maps already exist","date":"2019-01-25T16:30:54.617Z","type":"message"}
+{"nick":"devsnek","message":"you just need to add a third one for compiled functions","date":"2019-01-25T16:31:10.757Z","type":"message"}
+{"nick":"devsnek","message":"the infra is already in place","date":"2019-01-25T16:31:16.061Z","type":"message"}
+{"nick":"guybedford","message":"ok so I will jump through this hoop for you, which I think is completely daft","date":"2019-01-25T16:31:42.849Z","type":"message"}
+{"nick":"guybedford","message":"but promise you will at least unblock","date":"2019-01-25T16:31:48.545Z","type":"message"}
+{"nick":"devsnek","message":"the design is in place on purpose","date":"2019-01-25T16:32:08.258Z","type":"message"}
+{"nick":"devsnek","message":"we use a higher granularity than V8 actually has","date":"2019-01-25T16:32:45.620Z","type":"message"}
+{"nick":"devsnek","message":"so it's very important that our system be sound","date":"2019-01-25T16:32:54.126Z","type":"message"}
+{"nick":"guybedford","message":"I do know a little bit about module loading thanks","date":"2019-01-25T16:33:01.280Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-25T16:33:23.326Z","type":"quit"}
+{"nick":"devsnek","message":"even if that means that it is sometimes overly verbose","date":"2019-01-25T16:33:23.501Z","type":"message"}
+{"nick":"bradleymeck","message":"did something change so the options parser now allows duplicate argv and grabs the last for std::string options?","date":"2019-01-25T16:33:47.045Z","type":"message"}
+{"nick":"devsnek","message":"did it ever not allow duplicates?","date":"2019-01-25T16:34:10.962Z","type":"message"}
+{"nick":"bradleymeck","message":"i have a test that used to pass ensuring only 1 policy is specified, i rebased and now it fails","date":"2019-01-25T16:34:41.370Z","type":"message"}
+{"nick":"bradleymeck","message":"addaleax: ^ could this be somehow related to removing the has_experimental_policy stuff somehow","date":"2019-01-25T16:35:08.657Z","type":"message"}
+{"nick":"julianduque","date":"2019-01-25T16:35:13.013Z","type":"join"}
+{"nick":"AtumT_","date":"2019-01-25T16:35:15.424Z","type":"join"}
+{"nick":"devsnek","message":"I would have sworn that node always allowed duplicates","date":"2019-01-25T16:35:20.829Z","type":"message"}
+{"nick":"AtumT","reason":"Ping timeout: 240 seconds","date":"2019-01-25T16:36:56.600Z","type":"quit"}
+{"nick":"addaleax","message":"bradleymeck: devsnek yes, I think it always allowed duplicates and still does","date":"2019-01-25T16:37:13.795Z","type":"message"}
+{"nick":"addaleax","message":"We could explicitly disallow that, yes","date":"2019-01-25T16:37:22.072Z","type":"message"}
+{"nick":"addaleax","message":"And removing the extra variable shouldn't have effected visible changes, no","date":"2019-01-25T16:37:39.198Z","type":"message"}
+{"nick":"bradleymeck","message":"i'm fine leaving it, just a bit confused as removing that boolean doesn't seem to be pertinent","date":"2019-01-25T16:37:45.938Z","type":"message"}
+{"nick":"bradleymeck","message":"i do want to explicitly fail when multiple policies are specified","date":"2019-01-25T16:38:02.993Z","type":"message"}
+{"nick":"julian_duque","date":"2019-01-25T16:38:08.355Z","type":"join"}
+{"nick":"guybedford","message":"devsnek: so the map cannot store the vm.compileFunction instance, because that is by definition a memory leak","date":"2019-01-25T16:39:23.243Z","type":"message"}
+{"nick":"julian_duque","reason":"Client Quit","date":"2019-01-25T16:39:37.920Z","type":"quit"}
+{"nick":"guybedford","message":"if the map stores the string path of the module, how is that any different to just passing the string path along on the script data?","date":"2019-01-25T16:39:42.079Z","type":"message"}
+{"nick":"guybedford","message":"(plus even just storing the string path in the map is a memory leak as well)","date":"2019-01-25T16:40:33.829Z","type":"message"}
+{"nick":"guybedford","message":"the whole map concept is one big memory leak","date":"2019-01-25T16:40:42.961Z","type":"message"}
+{"nick":"devsnek","message":"guybedford: we store ModuleWrap and ContextifyScript in global maps","date":"2019-01-25T16:40:45.763Z","type":"message"}
+{"nick":"guybedford","message":"which is a memory leak","date":"2019-01-25T16:40:56.760Z","type":"message"}
+{"nick":"bradleymeck","message":"addaleax: this might be from a bad rebase, nm","date":"2019-01-25T16:41:08.228Z","type":"message"}
+{"nick":"devsnek","message":"no because they remove themselves","date":"2019-01-25T16:41:13.623Z","type":"message"}
+{"nick":"bradleymeck","message":"but interesting that missing options still return `false`","date":"2019-01-25T16:41:22.709Z","type":"message"}
+{"nick":"guybedford","message":"but dynamic import still expects the callback","date":"2019-01-25T16:41:26.728Z","type":"message"}
+{"nick":"antsmartian","date":"2019-01-25T16:41:26.976Z","type":"join"}
+{"nick":"devsnek","message":"you can add a persistent cleanup or something","date":"2019-01-25T16:41:29.087Z","type":"message"}
+{"nick":"guybedford","message":"so needs the map","date":"2019-01-25T16:41:29.612Z","type":"message"}
+{"nick":"guybedford","message":"and we don't have a lifecycle method for that","date":"2019-01-25T16:41:37.838Z","type":"message"}
+{"nick":"guybedford","message":"if we put a local reference into the map it gets disposed already","date":"2019-01-25T16:41:49.892Z","type":"message"}
+{"nick":"guybedford","message":"for vm.compileFunction","date":"2019-01-25T16:41:52.294Z","type":"message"}
+{"nick":"guybedford","message":"the was the issue","date":"2019-01-25T16:41:55.132Z","type":"message"}
+{"nick":"ryzokuken","message":"devsnek: I do.","date":"2019-01-25T16:42:01.359Z","type":"message"}
+{"nick":"guybedford","message":"ryzokuken: have a lifecycle method!?","date":"2019-01-25T16:42:50.552Z","type":"message"}
+{"nick":"ryzokuken","message":"No, I have the code for dynamic imports.","date":"2019-01-25T16:43:16.967Z","type":"message"}
+{"nick":"ryzokuken","message":"I was summoned 😅😛","date":"2019-01-25T16:43:22.780Z","type":"message"}
+{"nick":"guybedford","message":"v good :)","date":"2019-01-25T16:43:47.820Z","type":"message"}
+{"nick":"guybedford","message":"I was looking at https://github.com/nodejs/node/pull/21573/commits/7a814eef9992028dcb36ce11ced7b009f5004749","date":"2019-01-25T16:43:50.307Z","type":"message"}
+{"nick":"guybedford","message":"is that the one you mean?","date":"2019-01-25T16:44:02.848Z","type":"message"}
+{"nick":"ryzokuken","message":"guybedford: yes.","date":"2019-01-25T16:45:52.978Z","type":"message"}
+{"nick":"devsnek","message":"that looks good to me","date":"2019-01-25T16:46:00.892Z","type":"message"}
+{"nick":"guybedford","message":"so shall we just make that Persistent<Function> and call it a day?","date":"2019-01-25T16:46:07.538Z","type":"message"}
+{"nick":"devsnek","message":"you could just register a persistent","date":"2019-01-25T16:46:07.625Z","type":"message"}
+{"nick":"guybedford","message":"memory leak be damned?","date":"2019-01-25T16:46:14.982Z","type":"message"}
+{"nick":"guybedford","message":"that every script in Node.js is now leaking?","date":"2019-01-25T16:46:21.351Z","type":"message"}
+{"nick":"guybedford","message":"because it might dynamic import in the modules case","date":"2019-01-25T16:46:33.408Z","type":"message"}
+{"nick":"devsnek","message":"modules and scripts automatically remove themselves from the maps","date":"2019-01-25T16:46:41.520Z","type":"message"}
+{"nick":"devsnek","message":"functions are the only oddity here","date":"2019-01-25T16:46:54.236Z","type":"message"}
+{"nick":"devsnek","message":"since we have to wrap thrm","date":"2019-01-25T16:47:01.832Z","type":"message"}
+{"nick":"guybedford","message":"that scripts do is the dynamic import issue","date":"2019-01-25T16:47:05.755Z","type":"message"}
+{"nick":"devsnek","message":"actually I guess we wrap scripts and modules too","date":"2019-01-25T16:47:16.057Z","type":"message"}
+{"nick":"guybedford","message":"because it dereferences for dynamic import to stop working","date":"2019-01-25T16:47:18.409Z","type":"message"}
+{"nick":"devsnek","message":"separate issue though","date":"2019-01-25T16:47:45.957Z","type":"message"}
+{"nick":"devsnek","message":"I can take a look at that in a few weeks","date":"2019-01-25T16:48:00.911Z","type":"message"}
+{"nick":"guybedford","message":"it's kind of an architectural flaw with the entire approach, when you are arguing we must use your approach","date":"2019-01-25T16:48:06.369Z","type":"message"}
+{"nick":"devsnek","message":"we can come up with a whole new approach","date":"2019-01-25T16:48:22.501Z","type":"message"}
+{"nick":"devsnek","message":"but it's out of scope of the pr I blocked","date":"2019-01-25T16:48:31.483Z","type":"message"}
+{"nick":"guybedford","message":"so we should wait on that PR for you to come up with a new approach?","date":"2019-01-25T16:48:36.463Z","type":"message"}
+{"nick":"devsnek","message":"if you want","date":"2019-01-25T16:48:49.416Z","type":"message"}
+{"nick":"devsnek","message":"I think it's fine to merge","date":"2019-01-25T16:48:54.256Z","type":"message"}
+{"nick":"ryzokuken","message":"Oof, please let me know when you reach a conclusion? Sorry, I gotta rush somewhere.","date":"2019-01-25T16:48:57.864Z","type":"message"}
+{"nick":"guybedford","message":"sure, thanks for your input ryzokuken","date":"2019-01-25T16:49:18.244Z","type":"message"}
+{"nick":"devsnek","message":"fine to merge with the persistent function handles that is","date":"2019-01-25T16:49:18.635Z","type":"message"}
+{"nick":"guybedford","message":"and work on the PR :)","date":"2019-01-25T16:49:23.187Z","type":"message"}
+{"nick":"ryzokuken","message":"But yeah, I'm okay either way. I really like the dynamic imports idea.","date":"2019-01-25T16:49:31.241Z","type":"message"}
+{"nick":"devsnek","message":"then someone can come by later and refactor the whole thing","date":"2019-01-25T16:49:43.266Z","type":"message"}
+{"nick":"ryzokuken","message":"Dunno if we should go towards even with memory leaks.","date":"2019-01-25T16:49:44.374Z","type":"message"}
+{"nick":"guybedford","message":"ok, so we just make it persistent?","date":"2019-01-25T16:49:45.608Z","type":"message"}
+{"nick":"devsnek","message":"persistent and register a callback to remove it yea","date":"2019-01-25T16:50:03.369Z","type":"message"}
+{"nick":"devsnek","message":"I think I'm this case it's v8::Global we want to use","date":"2019-01-25T16:50:24.883Z","type":"message"}
+{"nick":"ryzokuken","message":"I would be able to do it in the next few hours, I think.","date":"2019-01-25T16:50:25.760Z","type":"message"}
+{"nick":"guybedford","message":"Note the PR in https://github.com/nodejs/node/pull/21573/commits/7a814eef9992028dcb36ce11ced7b009f5004749 has no map cleanup step","date":"2019-01-25T16:50:27.142Z","type":"message"}
+{"nick":"ryzokuken","message":"Once I'm back.","date":"2019-01-25T16:50:29.285Z","type":"message"}
+{"nick":"guybedford","message":"so this WILL be a memory leak","date":"2019-01-25T16:50:32.610Z","type":"message"}
+{"nick":"guybedford","message":"that is memory ~ number of scripts executed in Node.js","date":"2019-01-25T16:50:39.371Z","type":"message"}
+{"nick":"devsnek","message":"yeah the pr needs the cleanup","date":"2019-01-25T16:50:43.024Z","type":"message"}
+{"nick":"guybedford","message":"I just can't bring myself to introduce a memory leak, I am sorry","date":"2019-01-25T16:50:51.961Z","type":"message"}
+{"nick":"devsnek","message":"which will trigger the same issue we have already","date":"2019-01-25T16:50:53.988Z","type":"message"}
+{"nick":"guybedford","message":"that's the opposite of good programming","date":"2019-01-25T16:50:58.815Z","type":"message"}
+{"nick":"devsnek","message":"it's not making it worse","date":"2019-01-25T16:51:02.655Z","type":"message"}
+{"nick":"devsnek","message":"it's keeping it the same","date":"2019-01-25T16:51:05.995Z","type":"message"}
+{"nick":"devsnek","message":"it's also the opposite of a leak","date":"2019-01-25T16:51:21.426Z","type":"message"}
+{"nick":"ryzokuken","message":"And we're working on removing the leak, aren't we?","date":"2019-01-25T16:51:24.853Z","type":"message"}
+{"nick":"guybedford","message":"doesn't the script map have a disposal?","date":"2019-01-25T16:51:29.165Z","type":"message"}
+{"nick":"ryzokuken","message":"I think someone should.","date":"2019-01-25T16:51:34.098Z","type":"message"}
+{"nick":"guybedford","message":"which is why we are segfaulting?","date":"2019-01-25T16:51:36.637Z","type":"message"}
+{"nick":"devsnek","message":"yeah","date":"2019-01-25T16:51:40.921Z","type":"message"}
+{"nick":"guybedford","message":"so this is a new memory leak","date":"2019-01-25T16:51:46.295Z","type":"message"}
+{"nick":"devsnek","message":"they release too early not too late","date":"2019-01-25T16:51:46.821Z","type":"message"}
+{"nick":"guybedford","message":"being introduced into core","date":"2019-01-25T16:51:52.608Z","type":"message"}
+{"nick":"guybedford","message":"even without using modules","date":"2019-01-25T16:51:55.231Z","type":"message"}
+{"nick":"devsnek","message":"switching to compiled functions doesn't introduce any new issues","date":"2019-01-25T16:53:37.994Z","type":"message"}
+{"nick":"devsnek","message":"I will work on a new system for mapping at some point","date":"2019-01-25T16:54:06.523Z","type":"message"}
+{"nick":"devsnek","message":"the compiled can be merged before or after that but I think it's better to do now because it has benefits the rest of the ecosystem wants","date":"2019-01-25T16:54:43.440Z","type":"message"}
+{"nick":"devsnek","message":"and the broken part is behind an experimental flag","date":"2019-01-25T16:56:13.046Z","type":"message"}
+{"nick":"guybedford","message":"we are still left where you are saying the only way you will merge it is if we introduce a memory leak though","date":"2019-01-25T16:56:32.257Z","type":"message"}
+{"nick":"devsnek","message":"it's not introducing anything","date":"2019-01-25T16:57:35.616Z","type":"message"}
+{"nick":"devsnek","message":"the memory issue already exisys","date":"2019-01-25T16:57:40.341Z","type":"message"}
+{"nick":"guybedford","message":"but it's the opposite way around","date":"2019-01-25T16:57:49.234Z","type":"message"}
+{"nick":"devsnek","message":"???","date":"2019-01-25T16:57:54.958Z","type":"message"}
+{"nick":"guybedford","message":"unless we clean up the map immediately after execution","date":"2019-01-25T16:58:00.263Z","type":"message"}
+{"nick":"guybedford","message":"to cause a segfault on dynamic import instead of a memory leak","date":"2019-01-25T16:58:06.558Z","type":"message"}
+{"nick":"guybedford","message":"(dynamic import after initial execution)","date":"2019-01-25T16:58:15.164Z","type":"message"}
+{"nick":"devsnek","message":"there is no leak","date":"2019-01-25T16:58:17.013Z","type":"message"}
+{"nick":"devsnek","message":"there's a reverse leak","date":"2019-01-25T16:58:22.714Z","type":"message"}
+{"nick":"guybedford","message":"in https://github.com/nodejs/node/pull/21573/commits/7a814eef9992028dcb36ce11ced7b009f5004749","date":"2019-01-25T16:58:26.743Z","type":"message"}
+{"nick":"guybedford","message":"there is no cleanup of the map","date":"2019-01-25T16:58:30.773Z","type":"message"}
+{"nick":"devsnek","message":"yes in the existing code","date":"2019-01-25T16:58:33.114Z","type":"message"}
+{"nick":"guybedford","message":"yes there is no map in the existing code","date":"2019-01-25T16:58:42.528Z","type":"message"}
+{"nick":"devsnek","message":"I've said like 3 times now it needs to be a persistent handle with a cleanup callback","date":"2019-01-25T16:58:46.038Z","type":"message"}
+{"nick":"guybedford","message":"I'm saying you want us to add a leak by merging that commit","date":"2019-01-25T16:58:48.892Z","type":"message"}
+{"nick":"guybedford","message":"so I add a cleanup immediately post execution?","date":"2019-01-25T16:58:58.664Z","type":"message"}
+{"nick":"devsnek","message":"the commit needs to be modified","date":"2019-01-25T16:59:03.322Z","type":"message"}
+{"nick":"devsnek","message":"no","date":"2019-01-25T16:59:04.110Z","type":"message"}
+{"nick":"devsnek","message":"persistent handles have gc callbacks","date":"2019-01-25T16:59:10.098Z","type":"message"}
+{"nick":"devsnek","message":"same as how the existing system works","date":"2019-01-25T16:59:21.304Z","type":"message"}
+{"nick":"guybedford","message":"can you please spell it out to me","date":"2019-01-25T16:59:36.341Z","type":"message"}
+{"nick":"devsnek","message":"uh","date":"2019-01-25T16:59:40.038Z","type":"message"}
+{"nick":"guybedford","message":"what you want me to change","date":"2019-01-25T16:59:41.439Z","type":"message"}
+{"nick":"devsnek","message":"make a persistent handle around the function with a finalizer callback which deletes the map entry","date":"2019-01-25T17:00:05.445Z","type":"message"}
+{"nick":"devsnek","message":"then put that handle in the map","date":"2019-01-25T17:00:19.498Z","type":"message"}
+{"nick":"guybedford","message":"what sort of finalizer callback? post-execution?","date":"2019-01-25T17:00:52.758Z","type":"message"}
+{"nick":"guybedford","message":"or some gc callback?","date":"2019-01-25T17:01:07.941Z","type":"message"}
+{"nick":"devsnek","message":"finalizer callback is part of the persistent api","date":"2019-01-25T17:01:10.048Z","type":"message"}
+{"nick":"guybedford","message":"ah ok","date":"2019-01-25T17:01:22.576Z","type":"message"}
+{"nick":"devsnek","message":"it's trigged by gc, yes","date":"2019-01-25T17:01:24.212Z","type":"message"}
+{"nick":"guybedford","message":"so that's always called on the gc iteration?","date":"2019-01-25T17:01:34.973Z","type":"message"}
+{"nick":"guybedford","message":"for all persistent handles?","date":"2019-01-25T17:01:42.003Z","type":"message"}
+{"nick":"devsnek","message":"well when they're collected","date":"2019-01-25T17:01:51.184Z","type":"message"}
+{"nick":"guybedford","message":"right","date":"2019-01-25T17:01:57.521Z","type":"message"}
+{"nick":"devsnek","message":"they're well optimized so it's not a huge perf issue","date":"2019-01-25T17:02:08.981Z","type":"message"}
+{"nick":"devsnek","message":"and I'll eventually rewrite this system","date":"2019-01-25T17:02:15.784Z","type":"message"}
+{"nick":"guybedford","message":"but if the problem was that it was being collected, won't that not alter the timing at all then?","date":"2019-01-25T17:02:18.660Z","type":"message"}
+{"nick":"guybedford","message":"I'll try it out and see","date":"2019-01-25T17:02:26.902Z","type":"message"}
+{"nick":"devsnek","message":"I have to head to a family brunch now","date":"2019-01-25T17:03:03.271Z","type":"message"}
+{"nick":"devsnek","message":"I'll should be around in a few hours","date":"2019-01-25T17:03:15.447Z","type":"message"}
+{"nick":"guybedford","message":"ok, thanks for making suggestions forward here, I hope you can appreciate it's just frustrating feeling I have to jump through hoops to get a PR merged","date":"2019-01-25T17:04:26.991Z","type":"message"}
+{"nick":"guybedford","message":"but will see what I can do later this evening as well","date":"2019-01-25T17:04:38.145Z","type":"message"}
+{"nick":"devsnek","message":"guybedford: yeah I completely agree with you that the current system is broken","date":"2019-01-25T17:04:58.848Z","type":"message"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-25T17:11:54.997Z","type":"quit"}
+{"nick":"bradleymeck","message":"joyee: what is kMaxModuleCount in test-bootstrap-modules , it seems like a curated number?","date":"2019-01-25T17:12:54.599Z","type":"message"}
+{"nick":"antsmartian","date":"2019-01-25T17:15:27.210Z","type":"join"}
+{"nick":"gamelaster","date":"2019-01-25T17:15:44.493Z","type":"join"}
+{"nick":"gamelaster","reason":"Ping timeout: 240 seconds","date":"2019-01-25T17:20:47.365Z","type":"quit"}
+{"nick":"AtumT","date":"2019-01-25T17:25:17.719Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-25T17:25:57.245Z","type":"join"}
+{"nick":"AtumT_","reason":"Ping timeout: 244 seconds","date":"2019-01-25T17:27:32.355Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-25T17:31:11.829Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-25T17:44:44.367Z","type":"join"}
+{"nick":"seishun","date":"2019-01-25T17:49:43.786Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-01-25T17:57:52.329Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T18:07:41.319Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-01-25T18:12:08.308Z","type":"quit"}
+{"nick":"julianduque","reason":"Ping timeout: 246 seconds","date":"2019-01-25T18:14:12.051Z","type":"quit"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-01-25T18:19:55.956Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T18:19:58.539Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: it’s a rough estimate of number of modules loaded after bootstrap","date":"2019-01-25T18:21:33.926Z","type":"message"}
+{"nick":"bradleymeck","message":"it actually helped fix me accidentally loading things, but was a bit confused","date":"2019-01-25T18:22:41.755Z","type":"message"}
+{"nick":"bradleymeck","message":"suddenly... very specific numbers!","date":"2019-01-25T18:23:00.337Z","type":"message"}
+{"nick":"joyee","message":"I wonder whether that can be replaced by an actual list...but probably not exactly worth it","date":"2019-01-25T18:23:01.038Z","type":"message"}
+{"nick":"joyee","message":"Sometimes people remove some modules from bootstrap and you’d have a bit of leeway","date":"2019-01-25T18:23:56.860Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-25T18:24:30.602Z","type":"quit"}
+{"nick":"AtumT","reason":"Ping timeout: 245 seconds","date":"2019-01-25T18:26:18.410Z","type":"quit"}
+{"nick":"AtumT_","date":"2019-01-25T18:26:20.705Z","type":"join"}
+{"nick":"AtumT_","reason":"Ping timeout: 240 seconds","date":"2019-01-25T18:32:56.684Z","type":"quit"}
+{"nick":"AtumT","date":"2019-01-25T18:32:57.521Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-25T18:35:59.675Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-25T18:40:26.653Z","type":"quit"}
+{"nick":"AtumT_","date":"2019-01-25T18:49:55.770Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 240 seconds","date":"2019-01-25T18:52:27.425Z","type":"quit"}
+{"nick":"seishun","reason":"Ping timeout: 240 seconds","date":"2019-01-25T18:53:56.589Z","type":"quit"}
+{"nick":"AtumT_","reason":"Ping timeout: 240 seconds","date":"2019-01-25T18:54:56.629Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T18:55:57.906Z","type":"join"}
+{"nick":"AtumT","date":"2019-01-25T18:58:47.996Z","type":"join"}
+{"nick":"julianduque","date":"2019-01-25T18:59:58.997Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-25T19:00:28.815Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2019-01-25T19:09:18.585Z","type":"quit"}
+{"nick":"seishun","date":"2019-01-25T19:10:18.982Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-25T19:16:05.419Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-25T19:20:41.353Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T19:36:51.403Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-25T19:41:38.827Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T19:56:02.353Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-25T20:00:28.351Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-25T20:05:58.426Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-25T20:16:14.667Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-25T20:20:26.582Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T20:45:53.349Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-25T20:50:35.349Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T21:06:08.843Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-25T21:10:54.788Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T21:20:09.809Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 272 seconds","date":"2019-01-25T21:25:16.977Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T21:36:17.250Z","type":"join"}
+{"nick":"seishun","reason":"Read error: Connection reset by peer","date":"2019-01-25T21:36:59.061Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-25T21:40:56.836Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 244 seconds","date":"2019-01-25T21:51:02.351Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T21:55:54.588Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-25T22:00:26.597Z","type":"quit"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-01-25T22:03:21.989Z","type":"quit"}
+{"nick":"guybedford","reason":"Ping timeout: 256 seconds","date":"2019-01-25T22:13:01.261Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T22:16:13.943Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-25T22:21:01.931Z","type":"quit"}
+{"nick":"zsoc","reason":"Ping timeout: 272 seconds","date":"2019-01-25T22:27:20.777Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T22:36:18.725Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-25T22:41:22.778Z","type":"quit"}
+{"nick":"Hu0p","reason":"Quit: Do Macbooks Dream of Electric Sheep?","date":"2019-01-25T22:53:03.807Z","type":"quit"}
+{"nick":"Hu0p","date":"2019-01-25T22:53:39.423Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-25T22:55:55.138Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-25T23:00:16.351Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T23:18:02.887Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 272 seconds","date":"2019-01-25T23:23:04.814Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-25T23:36:24.353Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-25T23:40:34.353Z","type":"quit"}
+{"nick":"Hu0p","reason":"Quit: Do Macbooks Dream of Electric Sheep?","date":"2019-01-25T23:45:07.276Z","type":"quit"}
+{"nick":"zsoc","date":"2019-01-25T23:47:18.562Z","type":"join"}
+{"nick":"zsoc","reason":"Changing host","date":"2019-01-25T23:47:18.707Z","type":"quit"}
+{"nick":"zsoc","date":"2019-01-25T23:47:18.707Z","type":"join"}
+{"nick":"Hu0p","date":"2019-01-25T23:57:29.087Z","type":"join"}
