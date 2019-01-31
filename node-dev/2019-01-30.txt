@@ -74,3 +74,98 @@
 {"nick":"bradleymeck","message":"yup","date":"2019-01-30T15:59:12.029Z","type":"message"}
 {"nick":"bradleymeck","message":"but just seeing *any* pr doing that kind of stuff (even a refactor) is exciting","date":"2019-01-30T15:59:26.172Z","type":"message"}
 {"nick":"bradleymeck","message":"though, all the bind ops make things go to the slow path for now","date":"2019-01-30T15:59:42.424Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: caitp will be working on this area in v8 this year","date":"2019-01-30T16:00:58.985Z","type":"message"}
+{"nick":"joyee","message":"Though so far the primary slow path that the v8 team is thinking about seems to be indexed property access to frozen primordials","date":"2019-01-30T16:01:55.061Z","type":"message"}
+{"nick":"bradleymeck","message":"yup, function.prototype.call.bind is kind of an odd thing","date":"2019-01-30T16:02:46.426Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: it's still harder to read code that get this defensive though, it would be nicer if the VM could provide some kind of API to switch these kind of mutability on and off...or maybe some of the Node internals can live in a separate context but I am not sure if that worths the complexity","date":"2019-01-30T16:06:46.878Z","type":"message"}
+{"nick":"bradleymeck","message":"you absolutely will have less readable code if you need to guard a different context","date":"2019-01-30T16:08:30.082Z","type":"message"}
+{"nick":"bradleymeck","message":"that is... prohibitively hard","date":"2019-01-30T16:08:36.311Z","type":"message"}
+{"nick":"bradleymeck","message":"the only real way that it is done is by whitelisting in the browser usecase","date":"2019-01-30T16:09:14.001Z","type":"message"}
+{"nick":"bradleymeck","message":"and we make lots of objects that we pass to userland from inside core, so you have to swap between the modes quite a lot","date":"2019-01-30T16:09:37.039Z","type":"message"}
+{"nick":"bradleymeck","message":"i'm not sure there really is a good alternative","date":"2019-01-30T16:10:02.533Z","type":"message"}
+{"nick":"bradleymeck","message":"firefox has lots of goofy code written in a similar dialect of JS for their self hosted fns even though they can modify the vm, and layered apis also are moving towards a similar experience","date":"2019-01-30T16:10:38.392Z","type":"message"}
+{"nick":"zeds","date":"2019-01-30T16:13:33.475Z","type":"join"}
+{"nick":"zeds","date":"2019-01-30T16:13:58.941Z","type":"part"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2019-01-30T16:26:40.890Z","type":"quit"}
+{"nick":"devsnek","message":"joyee: can we take advantage of eager snapshots to rewrite primordial accesses or something","date":"2019-01-30T16:53:00.022Z","type":"message"}
+{"nick":"joyee","message":"devsnek: eager snapshots? You mean snapshot at the point right after `primordials.js` is executed?","date":"2019-01-30T16:53:57.120Z","type":"message"}
+{"nick":"devsnek","message":"joyee: no I mean we would have to modify v8","date":"2019-01-30T16:54:13.306Z","type":"message"}
+{"nick":"devsnek","message":"the snapshot creator can detect when you access globals and it uses that to reject snapshots containing flagged features","date":"2019-01-30T16:54:41.702Z","type":"message"}
+{"nick":"devsnek","message":"but I feel like it could also use that to rewrite the accesses","date":"2019-01-30T16:55:01.429Z","type":"message"}
+{"nick":"joyee","message":"devsnek: that sounds pretty complex though","date":"2019-01-30T16:55:47.690Z","type":"message"}
+{"nick":"devsnek","message":"definitely not as easy as your pr","date":"2019-01-30T16:55:58.236Z","type":"message"}
+{"nick":"devsnek","message":"but probably more sound","date":"2019-01-30T16:56:13.048Z","type":"message"}
+{"nick":"devsnek","message":"and we would need to get to a point where we are using the snapshot creator","date":"2019-01-30T16:56:34.787Z","type":"message"}
+{"nick":"joyee","message":"You mean in  the sense of providing an API like this in V8, or using it in Node? Neither is easy, but the latter is probably much harder","date":"2019-01-30T16:56:38.114Z","type":"message"}
+{"nick":"devsnek","message":"both","date":"2019-01-30T16:57:06.899Z","type":"message"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-30T16:57:56.465Z","type":"quit"}
+{"nick":"joyee","message":"TBH I don't even know when the snapshot creator can be used in Node since there are too many cross-cutting concerns","date":"2019-01-30T16:58:01.193Z","type":"message"}
+{"nick":"joyee","message":"At the very least we need to clean up the build files otherwise we end up like https://github.com/nodejs/node/pull/22934","date":"2019-01-30T16:59:25.844Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-30T17:01:41.633Z","type":"join"}
+{"nick":"devsnek","message":"if you wait long enough eventually our minimum windows will be 10","date":"2019-01-30T17:02:41.295Z","type":"message"}
+{"nick":"devsnek","message":"which has wsl","date":"2019-01-30T17:02:46.557Z","type":"message"}
+{"nick":"devsnek","message":":P","date":"2019-01-30T17:02:50.629Z","type":"message"}
+{"nick":"joyee","message":"I don't think dropping Windows (as in, real Windows) is an option...like ever","date":"2019-01-30T17:03:10.178Z","type":"message"}
+{"nick":"joyee","message":"Judging from the downloads of nodejs.org","date":"2019-01-30T17:03:29.795Z","type":"message"}
+{"nick":"devsnek","message":"is there a benefit to using windows builds of xyz instead of unix builds of xyz in wsl","date":"2019-01-30T17:04:19.333Z","type":"message"}
+{"nick":"joyee","message":"Not every user uses WSL","date":"2019-01-30T17:04:33.081Z","type":"message"}
+{"nick":"devsnek","message":"but its just like a checkbox in features right?","date":"2019-01-30T17:04:48.248Z","type":"message"}
+{"nick":"joyee","message":"I don't think we can go telling our users to use WSL","date":"2019-01-30T17:04:52.821Z","type":"message"}
+{"nick":"joyee","message":"Also WSL has their own bugs, and they are not even officially supported by us yet","date":"2019-01-30T17:05:11.181Z","type":"message"}
+{"nick":"devsnek","message":"yeah i agree we couldn't drop windows","date":"2019-01-30T17:05:18.994Z","type":"message"}
+{"nick":"devsnek","message":"i'm just curious what makes wsl not preferable to people","date":"2019-01-30T17:05:30.990Z","type":"message"}
+{"nick":"devsnek","message":"i don't have a windows machine anymore so i'm not really caught up on it","date":"2019-01-30T17:05:39.792Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-30T17:06:06.349Z","type":"quit"}
+{"nick":"joyee","message":"I just heard someone asked how to uninstall vue on Windows in Vue.js's issue tracker...not everybody understands all these system details, especially people who mostly work on clients and are only using Node.js for tools","date":"2019-01-30T17:06:53.946Z","type":"message"}
+{"nick":"dbevenius","date":"2019-01-30T17:13:58.476Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-30T17:18:28.448Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T17:27:13.611Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 268 seconds","date":"2019-01-30T17:47:25.856Z","type":"quit"}
+{"nick":"targos","message":"I don't use WSL all the time","date":"2019-01-30T18:08:06.650Z","type":"message"}
+{"nick":"targos","message":"git status takes ages on the node repo for example","date":"2019-01-30T18:08:33.226Z","type":"message"}
+{"nick":"zsoc","reason":"Ping timeout: 240 seconds","date":"2019-01-30T18:21:56.621Z","type":"quit"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-01-30T18:32:04.106Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T18:33:04.175Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-30T18:37:51.033Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T18:50:33.541Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-30T18:55:06.875Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T19:11:04.113Z","type":"join"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2019-01-30T19:13:40.289Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-30T19:16:13.761Z","type":"quit"}
+{"nick":"lundibundi","date":"2019-01-30T19:18:42.076Z","type":"join"}
+{"nick":"zsoc","date":"2019-01-30T19:23:38.558Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-30T19:31:33.847Z","type":"join"}
+{"nick":"lundibundi","reason":"Remote host closed the connection","date":"2019-01-30T19:36:21.418Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-01-30T19:36:34.788Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T20:02:56.275Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-01-30T20:07:27.065Z","type":"quit"}
+{"nick":"slootsantos","date":"2019-01-30T20:15:44.247Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-30T20:30:43.836Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 272 seconds","date":"2019-01-30T20:35:36.820Z","type":"quit"}
+{"nick":"slootsantos","reason":"Ping timeout: 256 seconds","date":"2019-01-30T20:38:27.184Z","type":"quit"}
+{"nick":"devsnek","message":"tsc meeting","date":"2019-01-30T21:00:21.541Z","type":"message"}
+{"nick":"jcovingt","date":"2019-01-30T21:03:39.685Z","type":"join"}
+{"nick":"gamiee","date":"2019-01-30T21:13:10.955Z","type":"join"}
+{"nick":"early","reason":"Ping timeout: 244 seconds","date":"2019-01-30T21:25:28.351Z","type":"quit"}
+{"nick":"early","date":"2019-01-30T21:26:32.468Z","type":"join"}
+{"nick":"jcovingt","reason":"Remote host closed the connection","date":"2019-01-30T21:36:27.399Z","type":"quit"}
+{"nick":"yaelhe","date":"2019-01-30T21:50:06.375Z","type":"join"}
+{"nick":"dbevenius","date":"2019-01-30T21:50:59.568Z","type":"join"}
+{"nick":"AtumT","date":"2019-01-30T21:54:21.931Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 240 seconds","date":"2019-01-30T21:55:07.414Z","type":"quit"}
+{"nick":"AtumT_","date":"2019-01-30T22:08:20.587Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 250 seconds","date":"2019-01-30T22:08:22.845Z","type":"quit"}
+{"nick":"yaelhe","date":"2019-01-30T22:08:52.422Z","type":"quit"}
+{"nick":"AtumT_","reason":"Client Quit","date":"2019-01-30T22:11:27.367Z","type":"quit"}
+{"nick":"targos","message":"Just released Node.js v11.9.0: https://github.com/nodejs/node/releases/tag/v11.9.0","date":"2019-01-30T22:17:29.308Z","type":"message"}
+{"nick":"targos","message":"ljharb: ^","date":"2019-01-30T22:17:39.427Z","type":"message"}
+{"nick":"indutny","message":"+1","date":"2019-01-30T22:17:42.060Z","type":"message"}
+{"nick":"ljharb","message":"thanks!","date":"2019-01-30T22:19:08.700Z","type":"message"}
+{"nick":"ljharb","topic":"Get registered on freenode ( https://git.io/vaTS2 ) | Node.js Current: v11.9.0 | LTS: Dubnium v10.15.0, Carbon v8.15.0, Boron v6.16.0; EOL: Argon v4.9.1, v9, v7, <= v5 | -- https://nodejs.org/ -- IRC Logs: http://logs.libuv.org/node-dev/latest -- Newcomers welcome: http://nodeschool.io/ -- dev channel for all things node core","date":"2019-01-30T22:19:29.612Z","type":"topic"}
+{"nick":"ljharb","topic":"Get registered on freenode ( https://git.io/vaTS2 ) | Node.js Current: v11.9.0 | LTS: Dubnium v10.15.1, Carbon v8.15.0, Boron v6.16.0; EOL: Argon v4.9.1, v9, v7, <= v5 | -- https://nodejs.org/ -- IRC Logs: http://logs.libuv.org/node-dev/latest -- Newcomers welcome: http://nodeschool.io/ -- dev channel for all things node core","date":"2019-01-30T22:20:07.398Z","type":"topic"}
+{"nick":"rj","date":"2019-01-30T22:49:34.234Z","type":"join"}
+{"nick":"rj","reason":"Client Quit","date":"2019-01-30T22:52:54.518Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T23:01:04.351Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-01-30T23:05:42.350Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-01-30T23:40:48.582Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-01-30T23:45:26.511Z","type":"quit"}
