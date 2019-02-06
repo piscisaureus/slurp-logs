@@ -579,3 +579,782 @@
 {"nick":"realisation","date":"2019-02-06T07:59:02.800Z","type":"join"}
 {"nick":"tehopeologist","message":"hm, the problem is i don't have time right now to try and figure out what parts of the files need to be exported/exposed, etcetc.  it's global variable mess and usages that aren't properly referenced and just assumed it's there since \"i imported it\"","date":"2019-02-06T07:59:19.986Z","type":"message"}
 {"nick":"omaralva_","date":"2019-02-06T07:59:21.673Z","type":"join"}
+{"nick":"tehopeologist","message":"what you're talking about is auditing every js file in this codebase, which just won't get prioritized right now.  i have new feature work and projects this year that we can use to refactor over time to esnext, but today/this week i can only afford to make it work with the system it will inevitably use in the future.","date":"2019-02-06T08:00:47.844Z","type":"message"}
+{"nick":"tehopeologist","message":" the biggest issue is the global scope and function availability assumptions in these files thanks to these import comments","date":"2019-02-06T08:01:30.416Z","type":"message"}
+{"nick":"ljharb","message":"right","date":"2019-02-06T08:02:36.081Z","type":"message"}
+{"nick":"ljharb","message":"i don't think you can codemod your way out of that","date":"2019-02-06T08:02:43.725Z","type":"message"}
+{"nick":"omaralva_","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:03:37.720Z","type":"quit"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T08:03:45.602Z","type":"quit"}
+{"nick":"mezod","date":"2019-02-06T08:04:35.561Z","type":"join"}
+{"nick":"tehopeologist","message":"what about wrapping the contents of each file in an iife ?  wouldn't that make all of the things \"globally available\", since it's technically executed and in the global scope by the time the main file contents are executed","date":"2019-02-06T08:04:36.533Z","type":"message"}
+{"nick":"jjybspk","date":"2019-02-06T08:05:27.459Z","type":"join"}
+{"nick":"keepLearning512","date":"2019-02-06T08:05:34.292Z","type":"join"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T08:05:50.045Z","type":"join"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T08:06:15.680Z","type":"quit"}
+{"nick":"tehopeologist","message":"ljharb: these files look like this: https://gist.github.com/tehOPEologist/a8ca6a5bd79c4d8a1599fc44ceac0410","date":"2019-02-06T08:07:05.256Z","type":"message"}
+{"nick":"dlwicksell","reason":"Ping timeout: 240 seconds","date":"2019-02-06T08:07:26.659Z","type":"quit"}
+{"nick":"ljharb","message":"so if you open up bar.js, and wrap its contents in `module.exports = function () { … }`","date":"2019-02-06T08:07:35.963Z","type":"message"}
+{"nick":"ljharb","message":"then you can import the file normally and run the function","date":"2019-02-06T08:07:49.150Z","type":"message"}
+{"nick":"ljharb","message":"and you can do that with a codemod, and all of a sudden the comments are gone forever","date":"2019-02-06T08:08:05.240Z","type":"message"}
+{"nick":"morenoh149","reason":"Ping timeout: 245 seconds","date":"2019-02-06T08:08:23.354Z","type":"quit"}
+{"nick":"tehopeologist","message":"hm ok, now what about where it's importing thirdparty jquery plugins, or worseyet, something like knockout (committed to the repo.  knockout's dist.) that probably already has exports","date":"2019-02-06T08:09:45.786Z","type":"message"}
+{"nick":"Jessidhia","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T08:09:48.629Z","type":"quit"}
+{"nick":"tehopeologist","message":"i wouldn't want to double wrap it","date":"2019-02-06T08:09:52.056Z","type":"message"}
+{"nick":"rnmhdn","date":"2019-02-06T08:10:24.566Z","type":"join"}
+{"nick":"ljharb","message":"sure, you'd be codemodding the comments away","date":"2019-02-06T08:10:28.599Z","type":"message"}
+{"nick":"tehopeologist","message":"the code in those files also need to be executed in the order it is in those comments","date":"2019-02-06T08:10:32.446Z","type":"message"}
+{"nick":"ljharb","message":"the actual files you'd manually wrap","date":"2019-02-06T08:10:34.082Z","type":"message"}
+{"nick":"ljharb","message":"yeah that's fine","date":"2019-02-06T08:10:38.763Z","type":"message"}
+{"nick":"tehopeologist","message":"some files have jquery that needs to run","date":"2019-02-06T08:10:47.403Z","type":"message"}
+{"nick":"ljharb","message":"that'll just work","date":"2019-02-06T08:10:48.095Z","type":"message"}
+{"nick":"tehopeologist","message":"so module.exports will execute as well ?","date":"2019-02-06T08:10:52.872Z","type":"message"}
+{"nick":"ljharb","message":"you'll import each function, and then invoke it","date":"2019-02-06T08:10:58.458Z","type":"message"}
+{"nick":"grr12314","date":"2019-02-06T08:10:59.353Z","type":"join"}
+{"nick":"ljharb","message":"like `import bar from '~/src/bar'; bar();`","date":"2019-02-06T08:11:09.076Z","type":"message"}
+{"nick":"ljharb","message":"that achieves the effect of inlining without having to actually do it","date":"2019-02-06T08:11:21.146Z","type":"message"}
+{"nick":"tehopeologist","message":"what if it's just hundreds of jquery calls?  they're not files used, they're just executed where they are","date":"2019-02-06T08:11:45.105Z","type":"message"}
+{"nick":"Jessidhia","date":"2019-02-06T08:12:00.832Z","type":"join"}
+{"nick":"tehopeologist","message":"*functions","date":"2019-02-06T08:12:07.157Z","type":"message"}
+{"nick":"duderonomy","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T08:12:14.076Z","type":"quit"}
+{"nick":"ljharb","message":"doesn't matter","date":"2019-02-06T08:12:50.684Z","type":"message"}
+{"nick":"tehopeologist","message":"import foo from 'foo.js' only gets foo, not the jquery surrounding foo...  would i just import the whole file?  i thought that doesn't import any exports?","date":"2019-02-06T08:14:34.942Z","type":"message"}
+{"nick":"tehopeologist","message":"like import 'foo.js'","date":"2019-02-06T08:14:55.936Z","type":"message"}
+{"nick":"Jessidhia","reason":"Client Quit","date":"2019-02-06T08:14:57.123Z","type":"quit"}
+{"nick":"ljharb","message":"i said wrap them in a function","date":"2019-02-06T08:15:14.927Z","type":"message"}
+{"nick":"tehopeologist","message":"wrap the jquery calls in a function?","date":"2019-02-06T08:15:27.750Z","type":"message"}
+{"nick":"ljharb","message":"yes","date":"2019-02-06T08:15:30.198Z","type":"message"}
+{"nick":"ljharb","message":"so that you can re-evaluate the contents in each file","date":"2019-02-06T08:15:39.167Z","type":"message"}
+{"nick":"ljharb","message":"so it's the same semantic as inlining","date":"2019-02-06T08:15:44.979Z","type":"message"}
+{"nick":"Jessidhia","date":"2019-02-06T08:15:48.767Z","type":"join"}
+{"nick":"tehopeologist","message":"ok so then at that point i'm touching every file in this codebase","date":"2019-02-06T08:16:13.157Z","type":"message"}
+{"nick":"tehopeologist","message":"wrapping everything in a function","date":"2019-02-06T08:16:19.356Z","type":"message"}
+{"nick":"tehopeologist","message":"inside a module.exports","date":"2019-02-06T08:16:23.775Z","type":"message"}
+{"nick":"ljharb","message":"yes","date":"2019-02-06T08:16:26.555Z","type":"message"}
+{"nick":"tehopeologist","message":"i just don't have the time for that man","date":"2019-02-06T08:16:30.370Z","type":"message"}
+{"nick":"ljharb","message":"do that, manually, once","date":"2019-02-06T08:16:31.903Z","type":"message"}
+{"nick":"ljharb","message":"and then you can codemod all the comments","date":"2019-02-06T08:16:37.600Z","type":"message"}
+{"nick":"ljharb","message":"i *guarantee* it will be less time overall if you do it this way","date":"2019-02-06T08:16:45.739Z","type":"message"}
+{"nick":"carif","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:17:26.580Z","type":"quit"}
+{"nick":"Sharaal","date":"2019-02-06T08:17:41.361Z","type":"join"}
+{"nick":"tehopeologist","message":"an entire company with multiple sites with hundreds of files of this stuff for one person just won't happen...  and the thing is there's a bunch of shared files that need to work while each site migrates to this new version, so the files need to also function in the current old comment import style or i risk stopping feature development on the entire company.  this needs to be a cumulative deployment","date":"2019-02-06T08:18:53.049Z","type":"message"}
+{"nick":"tehopeologist","message":"*hundreds of files per site","date":"2019-02-06T08:19:17.248Z","type":"message"}
+{"nick":"ljharb","message":"i just don't know how to do that iteratively and also not leave you with the same mess you already have","date":"2019-02-06T08:19:38.257Z","type":"message"}
+{"nick":"tehopeologist","message":"it's just a metric fuckton of tech debt that i want to help and also _get_ help over time with modernizing it / replacing it with new","date":"2019-02-06T08:19:50.327Z","type":"message"}
+{"nick":"ljharb","message":"creating a framework to allow for that is a major project","date":"2019-02-06T08:20:04.320Z","type":"message"}
+{"nick":"tehopeologist","message":"i mean, a babel plugin inlining the contents of the files where the comments are didn't seem like a major project...  that sounded like i could get a prototype finished tonight lol","date":"2019-02-06T08:20:42.789Z","type":"message"}
+{"nick":"ljharb","message":"sure","date":"2019-02-06T08:21:09.658Z","type":"message"}
+{"nick":"ljharb","message":"but then you're really not making anything better imop","date":"2019-02-06T08:21:16.334Z","type":"message"}
+{"nick":"duderonomy","date":"2019-02-06T08:21:22.162Z","type":"join"}
+{"nick":"ljharb","message":"you're just moving the problem around","date":"2019-02-06T08:21:24.420Z","type":"message"}
+{"nick":"Sharaal","reason":"Ping timeout: 245 seconds","date":"2019-02-06T08:22:08.344Z","type":"quit"}
+{"nick":"tehopeologist","message":"this is step 0 for making it better.  once this is in place, EVERY js codechange will be in webpack land, which means me _and_ my team can refactor every file we work in and reject CRs that don't.","date":"2019-02-06T08:22:08.947Z","type":"message"}
+{"nick":"tehopeologist","message":"so the mechanism to ensure making stuff better is in the approval of CRs","date":"2019-02-06T08:22:35.462Z","type":"message"}
+{"nick":"ljharb","message":"if you have those commends living in your real files tho, then it's not really helping","date":"2019-02-06T08:22:37.860Z","type":"message"}
+{"nick":"rnmhdn","reason":"Ping timeout: 264 seconds","date":"2019-02-06T08:23:28.037Z","type":"quit"}
+{"nick":"tehopeologist","message":"once the plugin works like these do today, every new codechange in the codebase would refactor the comments out to use modern es6 imports and refactor the imported files to be es6-ready","date":"2019-02-06T08:23:37.835Z","type":"message"}
+{"nick":"tehopeologist","message":"ie: a proper module","date":"2019-02-06T08:23:46.826Z","type":"message"}
+{"nick":"kr5hn4","message":":l","date":"2019-02-06T08:23:50.478Z","type":"message"}
+{"nick":"truthseeker1990","reason":"Remote host closed the connection","date":"2019-02-06T08:24:35.190Z","type":"quit"}
+{"nick":"cswl","date":"2019-02-06T08:25:14.689Z","type":"join"}
+{"nick":"lundibundi","date":"2019-02-06T08:28:18.759Z","type":"join"}
+{"nick":"duderonomy","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T08:28:33.169Z","type":"quit"}
+{"nick":"cnsvc","reason":"Ping timeout: 256 seconds","date":"2019-02-06T08:28:57.893Z","type":"quit"}
+{"nick":"sunil_bansal","reason":"Remote host closed the connection","date":"2019-02-06T08:29:56.793Z","type":"quit"}
+{"nick":"kpatticha","date":"2019-02-06T08:30:21.876Z","type":"join"}
+{"nick":"playingbogart","reason":"Quit: Leaving","date":"2019-02-06T08:30:38.315Z","type":"quit"}
+{"nick":"peakhmr","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:31:18.943Z","type":"quit"}
+{"nick":"carif","date":"2019-02-06T08:32:03.461Z","type":"join"}
+{"nick":"sunil_b","date":"2019-02-06T08:32:50.104Z","type":"join"}
+{"nick":"InFlames","reason":"Ping timeout: 268 seconds","date":"2019-02-06T08:33:41.852Z","type":"quit"}
+{"nick":"kjartan","reason":"Read error: Connection reset by peer","date":"2019-02-06T08:34:04.994Z","type":"quit"}
+{"nick":"InFlames","date":"2019-02-06T08:34:22.428Z","type":"join"}
+{"nick":"kjartan","date":"2019-02-06T08:36:03.297Z","type":"join"}
+{"nick":"sunil_b","reason":"Ping timeout: 246 seconds","date":"2019-02-06T08:36:54.067Z","type":"quit"}
+{"nick":"xall","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:36:56.504Z","type":"quit"}
+{"nick":"antiPoP","date":"2019-02-06T08:38:13.228Z","type":"join"}
+{"nick":"userx","date":"2019-02-06T08:38:16.768Z","type":"join"}
+{"nick":"reber","reason":"Remote host closed the connection","date":"2019-02-06T08:39:02.444Z","type":"quit"}
+{"nick":"userx","reason":"Client Quit","date":"2019-02-06T08:39:08.409Z","type":"quit"}
+{"nick":"sunil_bansal","date":"2019-02-06T08:39:28.357Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 240 seconds","date":"2019-02-06T08:39:56.649Z","type":"quit"}
+{"nick":"Venemo","reason":"Ping timeout: 268 seconds","date":"2019-02-06T08:40:23.226Z","type":"quit"}
+{"nick":"firedfox","reason":"Ping timeout: 268 seconds","date":"2019-02-06T08:42:19.758Z","type":"quit"}
+{"nick":"sillyslux","reason":"Ping timeout: 245 seconds","date":"2019-02-06T08:45:03.409Z","type":"quit"}
+{"nick":"rmarkins","date":"2019-02-06T08:45:39.925Z","type":"join"}
+{"nick":"freetol","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:46:02.475Z","type":"quit"}
+{"nick":"wildermind","date":"2019-02-06T08:46:59.133Z","type":"join"}
+{"nick":"wildermind","message":"Hi, do you guys know of a way where I can use EventEmitter and make it *not* case sensetive when listening to events?","date":"2019-02-06T08:47:19.709Z","type":"message"}
+{"nick":"wildermind","message":"i.e that emitter.on(\"event\") and emitter.on(\"EVENT\") will be treated as the same event ?","date":"2019-02-06T08:47:49.866Z","type":"message"}
+{"nick":"mezod","date":"2019-02-06T08:48:29.378Z","type":"join"}
+{"nick":"al-damiri","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T08:48:43.429Z","type":"quit"}
+{"nick":"Sharaal","date":"2019-02-06T08:49:06.941Z","type":"join"}
+{"nick":"computerquip","message":"wildermind, could just use toLowerCase on the event string you're passing.","date":"2019-02-06T08:49:32.481Z","type":"message"}
+{"nick":"rmarkins","reason":"Ping timeout: 250 seconds","date":"2019-02-06T08:49:56.778Z","type":"quit"}
+{"nick":"wildermind","message":"computerquip: I could but the string come in Many DiFfErent wAys","date":"2019-02-06T08:50:00.754Z","type":"message"}
+{"nick":"wildermind","message":"so on the emitter side I can lower case everything, but im trying to avoid this","date":"2019-02-06T08:50:24.572Z","type":"message"}
+{"nick":"wildermind","message":"because im not writting the emitter side lbrary","date":"2019-02-06T08:50:31.381Z","type":"message"}
+{"nick":"orbitex","date":"2019-02-06T08:50:36.848Z","type":"join"}
+{"nick":"computerquip","message":"So the emitter event string itself could be weird cases?","date":"2019-02-06T08:50:47.431Z","type":"message"}
+{"nick":"pingupingu","reason":"Ping timeout: 244 seconds","date":"2019-02-06T08:51:49.363Z","type":"quit"}
+{"nick":"pingupingu","date":"2019-02-06T08:52:11.358Z","type":"join"}
+{"nick":"pingupingu","reason":"Changing host","date":"2019-02-06T08:52:11.718Z","type":"quit"}
+{"nick":"pingupingu","date":"2019-02-06T08:52:11.791Z","type":"join"}
+{"nick":"realisation","reason":"Ping timeout: 246 seconds","date":"2019-02-06T08:52:18.073Z","type":"quit"}
+{"nick":"Majiir","reason":"Ping timeout: 240 seconds","date":"2019-02-06T08:52:26.653Z","type":"quit"}
+{"nick":"omaralvaradoluna","reason":"Remote host closed the connection","date":"2019-02-06T08:53:58.098Z","type":"quit"}
+{"nick":"Sharaal","reason":"Ping timeout: 268 seconds","date":"2019-02-06T08:54:02.769Z","type":"quit"}
+{"nick":"Majiir","date":"2019-02-06T08:54:09.023Z","type":"join"}
+{"nick":"akiva","reason":"Ping timeout: 272 seconds","date":"2019-02-06T08:54:38.771Z","type":"quit"}
+{"nick":"thallada","reason":"Ping timeout: 240 seconds","date":"2019-02-06T08:54:56.615Z","type":"quit"}
+{"nick":"realisation","date":"2019-02-06T08:55:01.313Z","type":"join"}
+{"nick":"tehopeologist","reason":"Quit: Page closed","date":"2019-02-06T08:55:10.472Z","type":"quit"}
+{"nick":"thallada","date":"2019-02-06T08:56:53.375Z","type":"join"}
+{"nick":"Rashad","date":"2019-02-06T08:57:00.816Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 268 seconds","date":"2019-02-06T08:57:07.715Z","type":"quit"}
+{"nick":"Noti","date":"2019-02-06T08:58:36.096Z","type":"join"}
+{"nick":"lundibundi","date":"2019-02-06T08:59:59.489Z","type":"join"}
+{"nick":"wildermind","message":"computerquip: yes","date":"2019-02-06T09:00:08.596Z","type":"message"}
+{"nick":"wildermind","message":"the emitter side could do something like emit(\"eVenT\")  instead of (\"event\")","date":"2019-02-06T09:00:35.719Z","type":"message"}
+{"nick":"wildermind","message":"and i want to be able to catch that","date":"2019-02-06T09:00:41.448Z","type":"message"}
+{"nick":"wildermind","message":"is it possible?","date":"2019-02-06T09:00:46.486Z","type":"message"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T09:01:00.047Z","type":"join"}
+{"nick":"wildermind","message":"I'm looking at the docs but I didn't find anything so fat","date":"2019-02-06T09:01:06.888Z","type":"message"}
+{"nick":"wildermind","message":"far**","date":"2019-02-06T09:01:09.798Z","type":"message"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T09:01:17.854Z","type":"quit"}
+{"nick":"Booster2ooo","date":"2019-02-06T09:01:31.017Z","type":"join"}
+{"nick":"mezod","date":"2019-02-06T09:01:50.716Z","type":"join"}
+{"nick":"omaralva_","date":"2019-02-06T09:01:59.040Z","type":"join"}
+{"nick":"firedfox","date":"2019-02-06T09:02:31.356Z","type":"join"}
+{"nick":"Sharaal","date":"2019-02-06T09:03:19.362Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T09:03:19.471Z","type":"join"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T09:03:47.876Z","type":"quit"}
+{"nick":"omaralvaradoluna","reason":"Ping timeout: 264 seconds","date":"2019-02-06T09:05:28.063Z","type":"quit"}
+{"nick":"Rashad","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T09:05:28.621Z","type":"quit"}
+{"nick":"setpill","date":"2019-02-06T09:05:34.970Z","type":"join"}
+{"nick":"kakashiAL","date":"2019-02-06T09:06:18.278Z","type":"join"}
+{"nick":"omaralva_","reason":"Ping timeout: 264 seconds","date":"2019-02-06T09:06:40.007Z","type":"quit"}
+{"nick":"firedfox","reason":"Ping timeout: 244 seconds","date":"2019-02-06T09:06:48.356Z","type":"quit"}
+{"nick":"w0ng","date":"2019-02-06T09:07:03.342Z","type":"join"}
+{"nick":"Sharaal","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:07:28.327Z","type":"quit"}
+{"nick":"thallada","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:08:31.810Z","type":"quit"}
+{"nick":"saraf","reason":"Read error: Connection reset by peer","date":"2019-02-06T09:10:12.570Z","type":"quit"}
+{"nick":"saraf","date":"2019-02-06T09:10:31.920Z","type":"join"}
+{"nick":"saraf","reason":"Read error: Connection reset by peer","date":"2019-02-06T09:10:33.064Z","type":"quit"}
+{"nick":"thallada","date":"2019-02-06T09:12:01.961Z","type":"join"}
+{"nick":"orbitex","reason":"Ping timeout: 272 seconds","date":"2019-02-06T09:12:22.808Z","type":"quit"}
+{"nick":"thallada","reason":"Ping timeout: 250 seconds","date":"2019-02-06T09:17:40.912Z","type":"quit"}
+{"nick":"grr12314","message":"wildermind there are alternative eventemitter implementations that allow wildcard event handlers","date":"2019-02-06T09:19:37.331Z","type":"message"}
+{"nick":"carif","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:19:43.309Z","type":"quit"}
+{"nick":"grr12314","message":"also you could just monkeypatch .emit","date":"2019-02-06T09:19:46.390Z","type":"message"}
+{"nick":"howdoi","message":"due to dino effect lot many node modules are getting ported to ts for the dino land","date":"2019-02-06T09:20:15.554Z","type":"message"}
+{"nick":"wildermind","message":"grr12314: how would you monkey patch it ?","date":"2019-02-06T09:20:33.731Z","type":"message"}
+{"nick":"grr12314","message":".emit = myfunction lol","date":"2019-02-06T09:21:38.424Z","type":"message"}
+{"nick":"thallada","date":"2019-02-06T09:23:19.361Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T09:23:43.983Z","type":"join"}
+{"nick":"Sharaal","date":"2019-02-06T09:24:06.384Z","type":"join"}
+{"nick":"wildermind","message":"oh","date":"2019-02-06T09:24:42.930Z","type":"message"}
+{"nick":"wildermind","message":"grr12314: ok thanks :-)","date":"2019-02-06T09:25:16.340Z","type":"message"}
+{"nick":"antiPoP","reason":"Quit: Leaving","date":"2019-02-06T09:25:27.701Z","type":"quit"}
+{"nick":"gambl0r3","reason":"Remote host closed the connection","date":"2019-02-06T09:25:53.542Z","type":"quit"}
+{"nick":"gambl0r3","date":"2019-02-06T09:26:49.070Z","type":"join"}
+{"nick":"realisation","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:26:57.067Z","type":"quit"}
+{"nick":"Sharaal","reason":"Remote host closed the connection","date":"2019-02-06T09:27:02.319Z","type":"quit"}
+{"nick":"Sharaal","date":"2019-02-06T09:27:14.954Z","type":"join"}
+{"nick":"thallada","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:28:42.098Z","type":"quit"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T09:30:24.905Z","type":"join"}
+{"nick":"Ergo","date":"2019-02-06T09:31:25.333Z","type":"join"}
+{"nick":"morenoh149","date":"2019-02-06T09:35:04.404Z","type":"join"}
+{"nick":"keepLearning512","reason":"Remote host closed the connection","date":"2019-02-06T09:35:44.432Z","type":"quit"}
+{"nick":"thallada","date":"2019-02-06T09:38:37.998Z","type":"join"}
+{"nick":"morenoh149","reason":"Ping timeout: 240 seconds","date":"2019-02-06T09:39:07.453Z","type":"quit"}
+{"nick":"kakashiAL","reason":"Ping timeout: 245 seconds","date":"2019-02-06T09:39:38.789Z","type":"quit"}
+{"nick":"slajax","date":"2019-02-06T09:39:54.358Z","type":"join"}
+{"nick":"orbitex","date":"2019-02-06T09:41:18.492Z","type":"join"}
+{"nick":"mezod","date":"2019-02-06T09:43:21.940Z","type":"join"}
+{"nick":"thallada","reason":"Ping timeout: 246 seconds","date":"2019-02-06T09:43:52.349Z","type":"quit"}
+{"nick":"InFlames","reason":"Ping timeout: 245 seconds","date":"2019-02-06T09:44:13.390Z","type":"quit"}
+{"nick":"keepLearning512","date":"2019-02-06T09:45:43.784Z","type":"join"}
+{"nick":"beowulf","date":"2019-02-06T09:47:19.759Z","type":"join"}
+{"nick":"InFlames","date":"2019-02-06T09:47:48.388Z","type":"join"}
+{"nick":"marthinal","date":"2019-02-06T09:49:05.307Z","type":"quit"}
+{"nick":"thallada","date":"2019-02-06T09:49:51.605Z","type":"join"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T09:50:07.926Z","type":"quit"}
+{"nick":"xall","date":"2019-02-06T09:50:22.756Z","type":"join"}
+{"nick":"marthinal","date":"2019-02-06T09:52:09.078Z","type":"join"}
+{"nick":"Venemo","date":"2019-02-06T09:53:29.532Z","type":"join"}
+{"nick":"lpin","reason":"Ping timeout: 268 seconds","date":"2019-02-06T09:54:28.874Z","type":"quit"}
+{"nick":"tvs_","date":"2019-02-06T09:54:58.750Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 250 seconds","date":"2019-02-06T09:57:06.582Z","type":"quit"}
+{"nick":"lpin","date":"2019-02-06T09:57:45.331Z","type":"join"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T09:58:34.768Z","type":"quit"}
+{"nick":"xall","reason":"Quit: xall","date":"2019-02-06T09:58:40.176Z","type":"quit"}
+{"nick":"mezod","date":"2019-02-06T09:59:15.786Z","type":"join"}
+{"nick":"pingupingu","reason":"Quit: Ta","date":"2019-02-06T09:59:42.014Z","type":"quit"}
+{"nick":"Arcaelyx","reason":"Ping timeout: 240 seconds","date":"2019-02-06T10:00:56.720Z","type":"quit"}
+{"nick":"wildermind","message":"anyone knows why there must passed a reference to the handler when doing ubsuscribe with EventEmitter?","date":"2019-02-06T10:02:26.096Z","type":"message"}
+{"nick":"wildermind","message":"https://nodejs.org/api/events.html#events_emitter_removelistener_eventname_listener","date":"2019-02-06T10:02:26.755Z","type":"message"}
+{"nick":"wildermind","message":"When subscribed I passed annonymous callback i implemented in place","date":"2019-02-06T10:02:54.445Z","type":"message"}
+{"nick":"wildermind","message":"now it requires me to keep a reference to it in order ro removeListener?","date":"2019-02-06T10:03:05.050Z","type":"message"}
+{"nick":"ffx_","date":"2019-02-06T10:04:45.351Z","type":"join"}
+{"nick":"Gazooo","reason":"Quit: The Lounge - https://thelounge.chat","date":"2019-02-06T10:05:01.730Z","type":"quit"}
+{"nick":"Gazooo","date":"2019-02-06T10:06:59.437Z","type":"join"}
+{"nick":"lexileo","reason":"Ping timeout: 246 seconds","date":"2019-02-06T10:07:40.339Z","type":"quit"}
+{"nick":"Jervis_","date":"2019-02-06T10:07:47.248Z","type":"join"}
+{"nick":"kannarfr","date":"2019-02-06T10:08:06.728Z","type":"join"}
+{"nick":"dylancole","date":"2019-02-06T10:08:07.199Z","type":"join"}
+{"nick":"kannar","reason":"Read error: Connection reset by peer","date":"2019-02-06T10:08:28.581Z","type":"quit"}
+{"nick":"zava","date":"2019-02-06T10:09:51.771Z","type":"join"}
+{"nick":"enoq","reason":"Quit: enoq","date":"2019-02-06T10:11:04.626Z","type":"quit"}
+{"nick":"cdunklau","message":"wildermind: how would it know otherwise which listener to remove?","date":"2019-02-06T10:11:23.087Z","type":"message"}
+{"nick":"wildermind","message":"What if I want to stop listening to that event?","date":"2019-02-06T10:11:47.833Z","type":"message"}
+{"nick":"wildermind","message":"I mean I did at some point in time \"emitter.on(\"some_event\" ,()=>{/../}) \" and now i dont to listen to \"some_event\" anymore 0_o","date":"2019-02-06T10:12:37.124Z","type":"message"}
+{"nick":"wildermind","message":"cdunklau: ^^","date":"2019-02-06T10:12:40.296Z","type":"message"}
+{"nick":"wildermind","message":"what if I dont have a reference to that callback i passed when subscribed?","date":"2019-02-06T10:13:06.895Z","type":"message"}
+{"nick":"cdunklau","message":"wildermind: then you're screwed, you can't unlisten","date":"2019-02-06T10:13:16.549Z","type":"message"}
+{"nick":"slajax","reason":"Ping timeout: 245 seconds","date":"2019-02-06T10:13:23.448Z","type":"quit"}
+{"nick":"wildermind","message":"what why 0_0","date":"2019-02-06T10:13:29.437Z","type":"message"}
+{"nick":"wildermind","message":"is this the code i need to change https://github.com/nodejs/node/blob/3732d7786bcb5722b9a4345e1345ff5ad81a7888/lib/events.js#L313 ?","date":"2019-02-06T10:13:46.177Z","type":"message"}
+{"nick":"cdunklau","message":"wildermind: what i'm wondering is how you expect the event emitter to know which listener you want to remove when you call removeListener, if you don't give it the listener?","date":"2019-02-06T10:13:47.696Z","type":"message"}
+{"nick":"enoq","date":"2019-02-06T10:13:47.954Z","type":"join"}
+{"nick":"omaralvaradoluna","reason":"Remote host closed the connection","date":"2019-02-06T10:13:49.785Z","type":"quit"}
+{"nick":"wildermind","message":"cdunklau: ^^","date":"2019-02-06T10:13:52.107Z","type":"message"}
+{"nick":"enoq","reason":"Remote host closed the connection","date":"2019-02-06T10:14:02.927Z","type":"quit"}
+{"nick":"wildermind","message":"Well, its not about removing the listener its about the fact that i dont want to get anymore notifications for some event, so lets say there's 5000 listeners subscribed to that event, just stop emitting it, no?","date":"2019-02-06T10:14:48.041Z","type":"message"}
+{"nick":"kakashiAL","date":"2019-02-06T10:14:56.347Z","type":"join"}
+{"nick":"enoq","date":"2019-02-06T10:15:03.512Z","type":"join"}
+{"nick":"cdunklau","message":"wildermind: or remove them all https://nodejs.org/api/events.html#events_emitter_removealllisteners_eventname","date":"2019-02-06T10:15:39.288Z","type":"message"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T10:16:13.114Z","type":"join"}
+{"nick":"cdunklau","message":"but this could be dangerous unless your code is the only thing that added those listeners","date":"2019-02-06T10:16:24.282Z","type":"message"}
+{"nick":"cdunklau","message":"wildermind: so you're just concerned about needing to keep refs to a LOT of listeners so you can remove them later?","date":"2019-02-06T10:17:09.086Z","type":"message"}
+{"nick":"feelextra","date":"2019-02-06T10:17:18.425Z","type":"join"}
+{"nick":"cdunklau","message":"wildermind: if that's the case, maybe a decent idea would be to make your own emitter, add your listeners to _that_, and add a _single_ listener to the original emitter that triggers events on the \"proxy\" emitter","date":"2019-02-06T10:18:36.406Z","type":"message"}
+{"nick":"cdunklau","message":"then to stop the bunch of listeners from getting stuff, you can just keep a ref to the proxy listener, and remove it from the original emitter","date":"2019-02-06T10:19:23.857Z","type":"message"}
+{"nick":"kakashiAL","reason":"Ping timeout: 250 seconds","date":"2019-02-06T10:19:38.780Z","type":"quit"}
+{"nick":"ed209","reason":"Remote host closed the connection","date":"2019-02-06T10:20:00.906Z","type":"quit"}
+{"nick":"ed209","date":"2019-02-06T10:20:07.373Z","type":"join"}
+{"nick":"sunil_bansal","reason":"Remote host closed the connection","date":"2019-02-06T10:20:53.850Z","type":"quit"}
+{"nick":"wildermind","message":"cdunklau: thats not a bad idea actually, its just that my problem begins here https://github.com/ipfs/interface-js-ipfs-core/blob/master/SPEC/PUBSUB.md#pubsubunsubscribe","date":"2019-02-06T10:21:15.517Z","type":"message"}
+{"nick":"wildermind","message":"its a library that i use and their `unsubscribe` methods calls `removeListener` from EventEmitter which it inherits","date":"2019-02-06T10:21:44.956Z","type":"message"}
+{"nick":"wildermind","message":"and its all based on the EventEmitter","date":"2019-02-06T10:21:52.374Z","type":"message"}
+{"nick":"firedfox","date":"2019-02-06T10:22:38.311Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T10:25:31.480Z","type":"join"}
+{"nick":"sunil_bansal","date":"2019-02-06T10:25:50.351Z","type":"join"}
+{"nick":"firedfox","reason":"Ping timeout: 245 seconds","date":"2019-02-06T10:27:08.376Z","type":"quit"}
+{"nick":"cdunklau","message":"wildermind: seems like `handler` there could just be the single \"dump event into proxy emitter\" listener","date":"2019-02-06T10:27:36.352Z","type":"message"}
+{"nick":"wildermind","message":"cdunklau: really? I'll give it a test, thanks!!","date":"2019-02-06T10:29:57.768Z","type":"message"}
+{"nick":"cdunklau","message":"wildermind: sure, and this makes it easy to encapsulate","date":"2019-02-06T10:31:13.405Z","type":"message"}
+{"nick":"cdunklau","message":"call it DispatchingEmitter or something, use your imagination :)","date":"2019-02-06T10:31:33.809Z","type":"message"}
+{"nick":"^esc","date":"2019-02-06T10:32:32.584Z","type":"quit"}
+{"nick":"^esc","date":"2019-02-06T10:33:27.340Z","type":"join"}
+{"nick":"rnmhdn","date":"2019-02-06T10:34:24.878Z","type":"join"}
+{"nick":"v01d4lph4","reason":"Remote host closed the connection","date":"2019-02-06T10:35:22.414Z","type":"quit"}
+{"nick":"v01d4lph4","date":"2019-02-06T10:35:53.448Z","type":"join"}
+{"nick":"v01d4lph4","reason":"Remote host closed the connection","date":"2019-02-06T10:36:09.114Z","type":"quit"}
+{"nick":"v01d4lph4","date":"2019-02-06T10:36:30.768Z","type":"join"}
+{"nick":"v01d4lph4","reason":"Remote host closed the connection","date":"2019-02-06T10:37:32.556Z","type":"quit"}
+{"nick":"v01d4lph4","date":"2019-02-06T10:37:46.333Z","type":"join"}
+{"nick":"v01d4lph4","reason":"Read error: Connection reset by peer","date":"2019-02-06T10:38:11.372Z","type":"quit"}
+{"nick":"v01d4lph4","date":"2019-02-06T10:38:44.940Z","type":"join"}
+{"nick":"sauvin","reason":"Ping timeout: 245 seconds","date":"2019-02-06T10:39:13.609Z","type":"quit"}
+{"nick":"carif","reason":"Ping timeout: 245 seconds","date":"2019-02-06T10:40:03.328Z","type":"quit"}
+{"nick":"arunkumar413","date":"2019-02-06T10:40:26.944Z","type":"join"}
+{"nick":"eb0t","date":"2019-02-06T10:40:30.886Z","type":"join"}
+{"nick":"sauvin","date":"2019-02-06T10:41:26.503Z","type":"join"}
+{"nick":"keepLearning512","reason":"Remote host closed the connection","date":"2019-02-06T10:42:50.579Z","type":"quit"}
+{"nick":"sunil_bansal","reason":"Remote host closed the connection","date":"2019-02-06T10:44:42.192Z","type":"quit"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T10:44:50.002Z","type":"quit"}
+{"nick":"rmarkins","date":"2019-02-06T10:46:27.872Z","type":"join"}
+{"nick":"eb0t","reason":"\"WeeChat 2.3\"","date":"2019-02-06T10:46:46.407Z","type":"part"}
+{"nick":"plutoniix","reason":"Quit: Leaving","date":"2019-02-06T10:48:00.032Z","type":"quit"}
+{"nick":"sunil_bansal","date":"2019-02-06T10:49:01.443Z","type":"join"}
+{"nick":"dylancole","date":"2019-02-06T10:50:10.889Z","type":"join"}
+{"nick":"rmarkins","reason":"Ping timeout: 268 seconds","date":"2019-02-06T10:51:12.734Z","type":"quit"}
+{"nick":"burzuk","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T10:53:01.140Z","type":"quit"}
+{"nick":"igemnace_","date":"2019-02-06T10:53:13.756Z","type":"join"}
+{"nick":"gambl0r3","reason":"Read error: Connection reset by peer","date":"2019-02-06T10:54:02.881Z","type":"quit"}
+{"nick":"dylancole","reason":"Ping timeout: 240 seconds","date":"2019-02-06T10:54:27.380Z","type":"quit"}
+{"nick":"igemnace","reason":"Ping timeout: 244 seconds","date":"2019-02-06T10:55:18.389Z","type":"quit"}
+{"nick":"gambl0r3","date":"2019-02-06T10:55:25.682Z","type":"join"}
+{"nick":"gambl0r3","reason":"Read error: Connection reset by peer","date":"2019-02-06T10:56:46.854Z","type":"quit"}
+{"nick":"omaralvaradoluna","reason":"Remote host closed the connection","date":"2019-02-06T10:58:07.208Z","type":"quit"}
+{"nick":"milivoj","reason":"Ping timeout: 250 seconds","date":"2019-02-06T11:00:22.907Z","type":"quit"}
+{"nick":"dylancole","date":"2019-02-06T11:01:23.272Z","type":"join"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T11:02:26.913Z","type":"quit"}
+{"nick":"dylancole","date":"2019-02-06T11:02:40.900Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T11:03:26.228Z","type":"join"}
+{"nick":"CTMGame","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T11:05:34.988Z","type":"quit"}
+{"nick":"sxa","date":"2019-02-06T11:06:18.141Z","type":"join"}
+{"nick":"dapk","date":"2019-02-06T11:07:03.220Z","type":"join"}
+{"nick":"marthinal","date":"2019-02-06T11:11:53.820Z","type":"quit"}
+{"nick":"marthinal","date":"2019-02-06T11:13:22.845Z","type":"join"}
+{"nick":"goodenough","reason":"Remote host closed the connection","date":"2019-02-06T11:13:45.636Z","type":"quit"}
+{"nick":"dapk","reason":"Ping timeout: 256 seconds","date":"2019-02-06T11:13:55.223Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 250 seconds","date":"2019-02-06T11:14:14.462Z","type":"quit"}
+{"nick":"bunny3","date":"2019-02-06T11:15:25.643Z","type":"join"}
+{"nick":"amarashov","date":"2019-02-06T11:15:48.963Z","type":"join"}
+{"nick":"b44","date":"2019-02-06T11:18:03.215Z","type":"join"}
+{"nick":"b44","reason":"Client Quit","date":"2019-02-06T11:18:11.452Z","type":"quit"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T11:19:00.195Z","type":"join"}
+{"nick":"milivoj","date":"2019-02-06T11:21:27.595Z","type":"join"}
+{"nick":"apparition","reason":"Quit: My iMac has gone to sleep. ZZZzzz…","date":"2019-02-06T11:21:48.929Z","type":"quit"}
+{"nick":"bradfordli123","date":"2019-02-06T11:22:43.387Z","type":"quit"}
+{"nick":"omaralvaradoluna","reason":"Ping timeout: 250 seconds","date":"2019-02-06T11:23:11.289Z","type":"quit"}
+{"nick":"CrazyLazyDazy","date":"2019-02-06T11:25:23.799Z","type":"join"}
+{"nick":"ahmed_elgabri","date":"2019-02-06T11:27:04.527Z","type":"join"}
+{"nick":"lundibundi","date":"2019-02-06T11:27:57.399Z","type":"join"}
+{"nick":"Arcaelyx","date":"2019-02-06T11:29:11.956Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 244 seconds","date":"2019-02-06T11:29:24.355Z","type":"quit"}
+{"nick":"luminalle","date":"2019-02-06T11:29:44.206Z","type":"join"}
+{"nick":"ahmedelgabri","reason":"Ping timeout: 268 seconds","date":"2019-02-06T11:29:58.275Z","type":"quit"}
+{"nick":"luminalle","message":"is it safe to call fs.appendFile() multiple times for same file without waiting for promise to resolve?","date":"2019-02-06T11:31:07.825Z","type":"message"}
+{"nick":"Dbugger","date":"2019-02-06T11:32:14.206Z","type":"join"}
+{"nick":"Booster2ooo|2","date":"2019-02-06T11:34:33.363Z","type":"join"}
+{"nick":"rnmhdn","reason":"Ping timeout: 246 seconds","date":"2019-02-06T11:35:24.044Z","type":"quit"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T11:36:26.593Z","type":"join"}
+{"nick":"Booster2ooo","reason":"Ping timeout: 250 seconds","date":"2019-02-06T11:38:04.543Z","type":"quit"}
+{"nick":"omaralvaradoluna","reason":"Ping timeout: 240 seconds","date":"2019-02-06T11:40:26.676Z","type":"quit"}
+{"nick":"carif","date":"2019-02-06T11:43:53.775Z","type":"join"}
+{"nick":"keepLearning512","date":"2019-02-06T11:43:59.251Z","type":"join"}
+{"nick":"darkSeid","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T11:45:16.893Z","type":"quit"}
+{"nick":"geirha","message":"for small enough data, probably, but I wouldn't rely on it","date":"2019-02-06T11:46:33.075Z","type":"message"}
+{"nick":"grr12314","message":"test","date":"2019-02-06T11:48:24.658Z","type":"message"}
+{"nick":"grr12314","message":"https://runkit.com/5c0541ae0163df0012429878/5c5ac850e4b0c9001357087f","date":"2019-02-06T11:48:26.259Z","type":"message"}
+{"nick":"grr12314","message":"apparently it isnt","date":"2019-02-06T11:48:31.564Z","type":"message"}
+{"nick":"keepLearning512","reason":"Remote host closed the connection","date":"2019-02-06T11:50:34.543Z","type":"quit"}
+{"nick":"xxxx_","reason":"Ping timeout: 250 seconds","date":"2019-02-06T11:50:38.814Z","type":"quit"}
+{"nick":"amrgad","date":"2019-02-06T11:52:25.736Z","type":"join"}
+{"nick":"apparition","date":"2019-02-06T11:52:46.789Z","type":"join"}
+{"nick":"amrgad","reason":"Read error: Connection reset by peer","date":"2019-02-06T11:53:25.824Z","type":"quit"}
+{"nick":"Noti","reason":"Quit: Konversation terminated!","date":"2019-02-06T12:00:11.092Z","type":"quit"}
+{"nick":"milivoj","reason":"Quit: milivoj","date":"2019-02-06T12:00:15.272Z","type":"quit"}
+{"nick":"milivoj","date":"2019-02-06T12:00:40.485Z","type":"join"}
+{"nick":"kakashiAL","date":"2019-02-06T12:02:16.073Z","type":"join"}
+{"nick":"lmorchard","reason":"Ping timeout: 240 seconds","date":"2019-02-06T12:04:07.428Z","type":"quit"}
+{"nick":"carif","reason":"Ping timeout: 250 seconds","date":"2019-02-06T12:04:07.757Z","type":"quit"}
+{"nick":"milivoj","reason":"Client Quit","date":"2019-02-06T12:04:48.336Z","type":"quit"}
+{"nick":"lmorchard","date":"2019-02-06T12:04:59.949Z","type":"join"}
+{"nick":"milivoj","date":"2019-02-06T12:05:10.536Z","type":"join"}
+{"nick":"cswl","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T12:05:35.381Z","type":"quit"}
+{"nick":"keepLearning512","date":"2019-02-06T12:08:22.097Z","type":"join"}
+{"nick":"craigo","reason":"Remote host closed the connection","date":"2019-02-06T12:09:30.015Z","type":"quit"}
+{"nick":"craigo","date":"2019-02-06T12:09:55.093Z","type":"join"}
+{"nick":"slajax","date":"2019-02-06T12:10:08.048Z","type":"join"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T12:13:12.408Z","type":"quit"}
+{"nick":"Arcaelyx","reason":"Ping timeout: 245 seconds","date":"2019-02-06T12:14:13.451Z","type":"quit"}
+{"nick":"kapil____","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T12:14:14.446Z","type":"quit"}
+{"nick":"Noti","date":"2019-02-06T12:16:49.120Z","type":"join"}
+{"nick":"gli","date":"2019-02-06T12:19:32.505Z","type":"join"}
+{"nick":"joepie91","message":"luminalle: no; it is 100% possible to be corrupting a file through concurrent write operations","date":"2019-02-06T12:19:44.164Z","type":"message"}
+{"nick":"carif","date":"2019-02-06T12:19:56.561Z","type":"join"}
+{"nick":"gli","reason":"Remote host closed the connection","date":"2019-02-06T12:20:02.186Z","type":"quit"}
+{"nick":"b44","date":"2019-02-06T12:20:08.963Z","type":"join"}
+{"nick":"joepie91","message":"(this also applies when dealing with multiple processes, not just multiple async append calls within the same process)","date":"2019-02-06T12:20:11.543Z","type":"message"}
+{"nick":"joepie91","message":"if you have concurrency requirements like that, chances are that what you actually want is a database, not a file :)","date":"2019-02-06T12:20:29.851Z","type":"message"}
+{"nick":"jottr","date":"2019-02-06T12:24:31.922Z","type":"join"}
+{"nick":"mezod","date":"2019-02-06T12:25:20.250Z","type":"join"}
+{"nick":"jimlei","reason":"Ping timeout: 240 seconds","date":"2019-02-06T12:25:56.634Z","type":"quit"}
+{"nick":"jottr_","reason":"Ping timeout: 245 seconds","date":"2019-02-06T12:26:18.509Z","type":"quit"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T12:26:18.683Z","type":"quit"}
+{"nick":"carif","reason":"Ping timeout: 268 seconds","date":"2019-02-06T12:29:15.767Z","type":"quit"}
+{"nick":"Jervis_","date":"2019-02-06T12:29:59.731Z","type":"quit"}
+{"nick":"lexileo","date":"2019-02-06T12:32:11.334Z","type":"join"}
+{"nick":"luminalle","message":"thanks for answers","date":"2019-02-06T12:33:01.755Z","type":"message"}
+{"nick":"milivoj","reason":"Quit: milivoj","date":"2019-02-06T12:35:14.275Z","type":"quit"}
+{"nick":"milivoj","date":"2019-02-06T12:35:40.541Z","type":"join"}
+{"nick":"luminalle","message":"I'm a proud user of appendFileSync now then","date":"2019-02-06T12:36:59.987Z","type":"message"}
+{"nick":"dylancole","date":"2019-02-06T12:37:38.251Z","type":"join"}
+{"nick":"arunkumar413","reason":"Quit: Leaving","date":"2019-02-06T12:37:43.971Z","type":"quit"}
+{"nick":"^la","message":"Hi, can somebody recommend we a way for testing lambda@edge code locally? I've tried aws-sam-cli but it's too slow for me","date":"2019-02-06T12:39:19.310Z","type":"message"}
+{"nick":"milivoj","reason":"Client Quit","date":"2019-02-06T12:39:48.604Z","type":"quit"}
+{"nick":"milivoj","date":"2019-02-06T12:40:12.635Z","type":"join"}
+{"nick":"trevor","date":"2019-02-06T12:40:42.521Z","type":"join"}
+{"nick":"rnmhdn","date":"2019-02-06T12:41:57.284Z","type":"join"}
+{"nick":"grr12314","message":"thats nothing to be proud of luminalle","date":"2019-02-06T12:42:27.572Z","type":"message"}
+{"nick":"joepie91","message":"luminalle: that still will not prevent corruption when you eg. accidentally run multiple processes, and it will introduce a lot of new issues by blocking your *entire* process","date":"2019-02-06T12:43:15.534Z","type":"message"}
+{"nick":"carif","date":"2019-02-06T12:43:42.322Z","type":"join"}
+{"nick":"slajax","reason":"Ping timeout: 264 seconds","date":"2019-02-06T12:43:51.988Z","type":"quit"}
+{"nick":"kjartan","reason":"Read error: Connection reset by peer","date":"2019-02-06T12:44:29.807Z","type":"quit"}
+{"nick":"luminalle","message":"so I need to lock also? Only my master process is writing and I figured since it's js, there is no way to block with sync, but I guess it's better be safe","date":"2019-02-06T12:44:58.554Z","type":"message"}
+{"nick":"jimlei","date":"2019-02-06T12:45:18.306Z","type":"join"}
+{"nick":"salad","reason":"Quit: salad","date":"2019-02-06T12:45:41.150Z","type":"quit"}
+{"nick":"kjartan","date":"2019-02-06T12:46:52.556Z","type":"join"}
+{"nick":"rmarkins","date":"2019-02-06T12:47:19.872Z","type":"join"}
+{"nick":"cdunklau","message":"luminalle: just use a db ffs :D","date":"2019-02-06T12:47:24.514Z","type":"message"}
+{"nick":"cdunklau","message":"luminalle: but if you must, you just need to be sure to serialize writes","date":"2019-02-06T12:47:40.149Z","type":"message"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T12:48:14.973Z","type":"quit"}
+{"nick":"luminalle","message":"actually you are right. At the first db was overkill but things have changed","date":"2019-02-06T12:48:52.224Z","type":"message"}
+{"nick":"joepie91","message":"luminalle: what's your usecase exactly?","date":"2019-02-06T12:49:29.657Z","type":"message"}
+{"nick":"luminalle","message":"it's number cruncher and I have used file to save the progress/what number has been reached","date":"2019-02-06T12:50:09.850Z","type":"message"}
+{"nick":"luminalle","message":"but now there is more data anyway","date":"2019-02-06T12:50:35.201Z","type":"message"}
+{"nick":"joepie91","message":"luminalle: ah, then a tiny SQLite DB will probably be easiest, and not require a separate daemon","date":"2019-02-06T12:50:38.042Z","type":"message"}
+{"nick":"cdunklau","message":"ongoing storage of data -> use a db","date":"2019-02-06T12:50:45.571Z","type":"message"}
+{"nick":"darkSeid","date":"2019-02-06T12:50:51.710Z","type":"join"}
+{"nick":"grr12314","message":"sqlite ftw","date":"2019-02-06T12:50:56.796Z","type":"message"}
+{"nick":"luminalle","message":"yeah sqlite will be the one, only one I can use on the computer","date":"2019-02-06T12:50:59.496Z","type":"message"}
+{"nick":"cdunklau","message":"discrete chunk serialization -> maybe not a db","date":"2019-02-06T12:51:31.602Z","type":"message"}
+{"nick":"rmarkins","reason":"Ping timeout: 268 seconds","date":"2019-02-06T12:52:05.022Z","type":"quit"}
+{"nick":"banseljaj","reason":"Quit: Connection closed for inactivity","date":"2019-02-06T12:52:59.557Z","type":"quit"}
+{"nick":"morenoh149","date":"2019-02-06T12:53:13.723Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 246 seconds","date":"2019-02-06T12:54:37.274Z","type":"quit"}
+{"nick":"Noti","reason":"Quit: Konversation terminated!","date":"2019-02-06T12:55:45.702Z","type":"quit"}
+{"nick":"Roughy","date":"2019-02-06T12:57:53.920Z","type":"join"}
+{"nick":"morenoh149","reason":"Ping timeout: 268 seconds","date":"2019-02-06T12:58:14.704Z","type":"quit"}
+{"nick":"julianduque","reason":"Ping timeout: 250 seconds","date":"2019-02-06T13:03:26.459Z","type":"quit"}
+{"nick":"jfbourdeau","reason":"Quit: Leaving","date":"2019-02-06T13:06:58.134Z","type":"quit"}
+{"nick":"jfbourdeau","date":"2019-02-06T13:07:29.816Z","type":"join"}
+{"nick":"jfbourdeau1","date":"2019-02-06T13:09:44.255Z","type":"join"}
+{"nick":"jfbourdeau","reason":"Client Quit","date":"2019-02-06T13:10:00.610Z","type":"quit"}
+{"nick":"carif","date":"2019-02-06T13:10:12.412Z","type":"join"}
+{"nick":"dylancole","date":"2019-02-06T13:12:41.586Z","type":"join"}
+{"nick":"|RicharD|","date":"2019-02-06T13:14:47.961Z","type":"join"}
+{"nick":"paulcarroty","reason":"Remote host closed the connection","date":"2019-02-06T13:18:00.831Z","type":"quit"}
+{"nick":"carif","reason":"Ping timeout: 246 seconds","date":"2019-02-06T13:19:28.340Z","type":"quit"}
+{"nick":"dka__","date":"2019-02-06T13:20:20.245Z","type":"join"}
+{"nick":"dka__","message":"I want to use [react-loadable](https://github.com/jamiebuilds/react-loadable), but I want to be able to use the context to pass the loading component. It sounds easy but after trying, I am close to thing this is impossible. any idea how I could do ?","date":"2019-02-06T13:21:05.879Z","type":"message"}
+{"nick":"jfbourdeau1","reason":"Quit: Leaving","date":"2019-02-06T13:21:33.652Z","type":"quit"}
+{"nick":"bunny3","message":"I installed a package with npm. package.json got modified but I restored it via git. Does this mean that I have to install the module again?","date":"2019-02-06T13:21:39.200Z","type":"message"}
+{"nick":"xxxx_","date":"2019-02-06T13:22:42.083Z","type":"join"}
+{"nick":"jfbourdeau","date":"2019-02-06T13:23:59.357Z","type":"join"}
+{"nick":"milivoj","reason":"Quit: milivoj","date":"2019-02-06T13:25:14.215Z","type":"quit"}
+{"nick":"ffx_","reason":"Remote host closed the connection","date":"2019-02-06T13:29:10.962Z","type":"quit"}
+{"nick":"milivoj","date":"2019-02-06T13:30:11.598Z","type":"join"}
+{"nick":"jimlei","reason":"Ping timeout: 268 seconds","date":"2019-02-06T13:31:32.867Z","type":"quit"}
+{"nick":"carif","date":"2019-02-06T13:35:03.530Z","type":"join"}
+{"nick":"jimlei","date":"2019-02-06T13:35:26.346Z","type":"join"}
+{"nick":"sunil_bansal","reason":"Remote host closed the connection","date":"2019-02-06T13:36:57.836Z","type":"quit"}
+{"nick":"sunil_bansal","date":"2019-02-06T13:38:52.353Z","type":"join"}
+{"nick":"Sharaal","message":"bunny3: you can just reinstall it with the save option","date":"2019-02-06T13:40:33.751Z","type":"message"}
+{"nick":"Sharaal","message":"bunny3: alternatively you could also manually edit the package.json, but just reinstall is easier","date":"2019-02-06T13:40:53.412Z","type":"message"}
+{"nick":"Toto_","date":"2019-02-06T13:41:41.188Z","type":"join"}
+{"nick":"Toto_","date":"2019-02-06T13:41:46.508Z","type":"part"}
+{"nick":"Toto_","date":"2019-02-06T13:42:04.218Z","type":"join"}
+{"nick":"Toto_","reason":"Client Quit","date":"2019-02-06T13:42:36.083Z","type":"quit"}
+{"nick":"sunil_bansal","reason":"Ping timeout: 244 seconds","date":"2019-02-06T13:43:13.350Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-02-06T13:43:25.039Z","type":"join"}
+{"nick":"gregf_","date":"2019-02-06T13:43:49.639Z","type":"join"}
+{"nick":"keepLearning512","reason":"Read error: Connection reset by peer","date":"2019-02-06T13:44:05.012Z","type":"quit"}
+{"nick":"Jetimon","reason":"Read error: Connection reset by peer","date":"2019-02-06T13:47:28.492Z","type":"quit"}
+{"nick":"blaguvest","reason":"Remote host closed the connection","date":"2019-02-06T13:48:54.450Z","type":"quit"}
+{"nick":"joepie91","message":"bunny3: a somewhat deeper answer: package.json is the authorative source for \"what things does this project depend on?\" -- node_modules is effectively just a temporary storage folder, that you should assume to be in line with whatever package.json says, even if it sometimes temporarily can be out of sync","date":"2019-02-06T13:49:19.161Z","type":"message"}
+{"nick":"Nuggernogger_","date":"2019-02-06T13:49:20.023Z","type":"join"}
+{"nick":"Nuggernogger_","reason":"Changing host","date":"2019-02-06T13:49:20.110Z","type":"quit"}
+{"nick":"Nuggernogger_","date":"2019-02-06T13:49:20.181Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 268 seconds","date":"2019-02-06T13:49:25.922Z","type":"quit"}
+{"nick":"joepie91","message":"bunny3: in other words: if your code depends on a Thing, then that Thing *must* be declared in package.json","date":"2019-02-06T13:49:33.162Z","type":"message"}
+{"nick":"joepie91","message":"and you can always run `npm install` (or `yarn`) to synchronize your node_modules with what package.json declares","date":"2019-02-06T13:49:58.252Z","type":"message"}
+{"nick":"joepie91","message":"but that will also automatically happen on many other operations","date":"2019-02-06T13:50:10.574Z","type":"message"}
+{"nick":"blaguvest","date":"2019-02-06T13:51:33.061Z","type":"join"}
+{"nick":"Jetimon","date":"2019-02-06T13:51:34.435Z","type":"join"}
+{"nick":"bunny3","message":"I see, thansk","date":"2019-02-06T13:52:02.721Z","type":"message"}
+{"nick":"bunny3","message":"\\thanks","date":"2019-02-06T13:52:09.435Z","type":"message"}
+{"nick":"blaguvest","reason":"Read error: Connection reset by peer","date":"2019-02-06T13:52:29.293Z","type":"quit"}
+{"nick":"Nuggernogger","reason":"Ping timeout: 246 seconds","date":"2019-02-06T13:52:43.294Z","type":"quit"}
+{"nick":"Nuggernogger_","new_nick":"Nuggernogger","date":"2019-02-06T13:52:43.401Z","type":"nick"}
+{"nick":"blaguvest","date":"2019-02-06T13:52:54.989Z","type":"join"}
+{"nick":"trevor","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T13:53:25.383Z","type":"quit"}
+{"nick":"blaguvest","reason":"Max SendQ exceeded","date":"2019-02-06T13:53:39.963Z","type":"quit"}
+{"nick":"AtumT","date":"2019-02-06T13:54:15.923Z","type":"join"}
+{"nick":"luminalle","message":"umm, sqlite3 has 3 dependencies but somehow my before empty package file now looks like this https://pastebin.com/yR9k1gUL","date":"2019-02-06T13:56:41.093Z","type":"message"}
+{"nick":"luminalle","message":"oh I guess the deps had deps","date":"2019-02-06T13:56:57.534Z","type":"message"}
+{"nick":"luminalle","message":"this is almost bad","date":"2019-02-06T13:57:27.786Z","type":"message"}
+{"nick":"ahmed_elgabri","reason":"Ping timeout: 264 seconds","date":"2019-02-06T13:58:16.047Z","type":"quit"}
+{"nick":"|RicharD|","reason":"Quit: This computer has gone to sleep","date":"2019-02-06T13:58:22.944Z","type":"quit"}
+{"nick":"sQVe","reason":"Ping timeout: 250 seconds","date":"2019-02-06T13:58:28.911Z","type":"quit"}
+{"nick":"darkSeid","message":"the deps always got deps","date":"2019-02-06T13:59:33.359Z","type":"message"}
+{"nick":"darkSeid","message":"deps on deps on deps","date":"2019-02-06T13:59:38.308Z","type":"message"}
+{"nick":"marthinal","reason":"Remote host closed the connection","date":"2019-02-06T13:59:59.750Z","type":"quit"}
+{"nick":"joepie91","message":"luminalle: transitive dependencies are pretty normal; this is not something to worry about","date":"2019-02-06T14:00:17.644Z","type":"message"}
+{"nick":"joepie91","message":"luminalle: the dependency count is higher in JS than you might see in other languages, because the dependencies themselves are much much smaller (usually single-responsibility), leading to less overall complexity","date":"2019-02-06T14:00:44.442Z","type":"message"}
+{"nick":"joepie91","message":"a lot of small pieces instead of one giant chunk","date":"2019-02-06T14:00:57.247Z","type":"message"}
+{"nick":"ahmed_elgabri","date":"2019-02-06T14:02:51.288Z","type":"join"}
+{"nick":"luminalle","message":"I wonder what is the minimum amount of packages you need have so that every package is depended","date":"2019-02-06T14:03:31.059Z","type":"message"}
+{"nick":"carif","date":"2019-02-06T14:03:41.516Z","type":"join"}
+{"nick":"darkSeid","message":"what do you mean","date":"2019-02-06T14:04:12.928Z","type":"message"}
+{"nick":"luminalle","message":"the number must be a lot less than total number of packages","date":"2019-02-06T14:04:33.847Z","type":"message"}
+{"nick":"darkSeid","message":"I don't know what you mean","date":"2019-02-06T14:04:42.954Z","type":"message"}
+{"nick":"luminalle","message":"I wonder how many packages you need to pick so that their deps or their deps etc. include the set of all packages","date":"2019-02-06T14:05:16.224Z","type":"message"}
+{"nick":"kr5hn4","reason":"Quit: WeeChat 2.3","date":"2019-02-06T14:05:42.092Z","type":"quit"}
+{"nick":"joepie91","message":"luminalle: somebody has already at one point published a package that depended on everything else","date":"2019-02-06T14:05:49.554Z","type":"message"}
+{"nick":"joepie91","message":":p","date":"2019-02-06T14:05:50.977Z","type":"message"}
+{"nick":"darkSeid","message":"_all_ packages?","date":"2019-02-06T14:05:53.097Z","type":"message"}
+{"nick":"joepie91","message":"so... 1","date":"2019-02-06T14:05:56.756Z","type":"message"}
+{"nick":"darkSeid","message":"on npm?","date":"2019-02-06T14:06:00.068Z","type":"message"}
+{"nick":"cdunklau","message":"joepie91: well damn it's a good thing npm dedups now!","date":"2019-02-06T14:06:28.408Z","type":"message"}
+{"nick":"luminalle","message":"what a suprising result :D","date":"2019-02-06T14:06:32.513Z","type":"message"}
+{"nick":"cdunklau","message":":3","date":"2019-02-06T14:06:33.966Z","type":"message"}
+{"nick":"darkSeid","message":"and the size of that package is...","date":"2019-02-06T14:06:43.161Z","type":"message"}
+{"nick":"joepie91","message":"deduping doesn't help much if you're intentionally depending on everything lol","date":"2019-02-06T14:06:49.164Z","type":"message"}
+{"nick":"joepie91","message":"darkSeid: afaik it was literally just a package.json","date":"2019-02-06T14:06:53.228Z","type":"message"}
+{"nick":"darkSeid","message":"(including deps...)","date":"2019-02-06T14:06:54.145Z","type":"message"}
+{"nick":"joepie91","message":"with a full list of all deps in the registry","date":"2019-02-06T14:06:58.963Z","type":"message"}
+{"nick":"keepLearning512","date":"2019-02-06T14:07:01.233Z","type":"join"}
+{"nick":"joepie91","message":"it was removed though :P","date":"2019-02-06T14:07:06.466Z","type":"message"}
+{"nick":"darkSeid","message":"yeah, i mean i wanna know how big that node_modules would be if you ran npm install lol","date":"2019-02-06T14:07:10.342Z","type":"message"}
+{"nick":"joepie91","message":"I think it broke some stuff on npm's side","date":"2019-02-06T14:07:12.992Z","type":"message"}
+{"nick":"darkSeid","message":"i thought there was like, hundreds of K's of packages","date":"2019-02-06T14:07:35.251Z","type":"message"}
+{"nick":"cdunklau","message":"joepie91: did they have a 640KB package.json size limit","date":"2019-02-06T14:07:42.875Z","type":"message"}
+{"nick":"joepie91","message":"\"800,000\" says the marketing copy on the npm site","date":"2019-02-06T14:07:58.846Z","type":"message"}
+{"nick":"v01d4lph4","reason":"Remote host closed the connection","date":"2019-02-06T14:08:08.112Z","type":"quit"}
+{"nick":"cdunklau","message":"forgot to load HIPKGS.sys","date":"2019-02-06T14:08:12.994Z","type":"message"}
+{"nick":"joepie91","message":"cdunklau: dunno","date":"2019-02-06T14:08:13.166Z","type":"message"}
+{"nick":"joepie91","message":"I don't recall the specifics","date":"2019-02-06T14:08:16.022Z","type":"message"}
+{"nick":"joepie91","message":":p","date":"2019-02-06T14:08:17.551Z","type":"message"}
+{"nick":"leatherface416","date":"2019-02-06T14:08:19.939Z","type":"join"}
+{"nick":"enoq","reason":"Quit: enoq","date":"2019-02-06T14:08:35.939Z","type":"quit"}
+{"nick":"v01d4lph4","date":"2019-02-06T14:08:37.340Z","type":"join"}
+{"nick":"setpill","reason":"Quit: o/","date":"2019-02-06T14:10:13.911Z","type":"quit"}
+{"nick":"salad","date":"2019-02-06T14:10:18.377Z","type":"join"}
+{"nick":"sxa","reason":"Ping timeout: 246 seconds","date":"2019-02-06T14:11:51.077Z","type":"quit"}
+{"nick":"sQVe","date":"2019-02-06T14:13:17.237Z","type":"join"}
+{"nick":"firedfox","date":"2019-02-06T14:13:40.154Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 250 seconds","date":"2019-02-06T14:14:04.810Z","type":"quit"}
+{"nick":"v01d4lph4","reason":"Ping timeout: 268 seconds","date":"2019-02-06T14:14:05.838Z","type":"quit"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T14:14:18.358Z","type":"join"}
+{"nick":"Antares268","date":"2019-02-06T14:14:31.188Z","type":"join"}
+{"nick":"Antares268","reason":"Remote host closed the connection","date":"2019-02-06T14:14:33.464Z","type":"quit"}
+{"nick":"Antares268","date":"2019-02-06T14:15:04.139Z","type":"join"}
+{"nick":"sQVe","reason":"Client Quit","date":"2019-02-06T14:15:17.711Z","type":"quit"}
+{"nick":"iLoVue","date":"2019-02-06T14:15:26.357Z","type":"join"}
+{"nick":"sQVe","date":"2019-02-06T14:15:50.122Z","type":"join"}
+{"nick":"Antares268","reason":"Client Quit","date":"2019-02-06T14:16:20.007Z","type":"quit"}
+{"nick":"firedfox","reason":"Ping timeout: 246 seconds","date":"2019-02-06T14:17:48.069Z","type":"quit"}
+{"nick":"sxa","date":"2019-02-06T14:19:14.484Z","type":"join"}
+{"nick":"omaralvaradoluna","reason":"Ping timeout: 264 seconds","date":"2019-02-06T14:19:16.016Z","type":"quit"}
+{"nick":"kerrang","date":"2019-02-06T14:21:24.328Z","type":"join"}
+{"nick":"dylancole","reason":"Remote host closed the connection","date":"2019-02-06T14:24:56.135Z","type":"quit"}
+{"nick":"carif","date":"2019-02-06T14:29:00.465Z","type":"join"}
+{"nick":"feelextra","reason":"Ping timeout: 240 seconds","date":"2019-02-06T14:30:47.376Z","type":"quit"}
+{"nick":"sunil_bansal","date":"2019-02-06T14:31:22.861Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-02-06T14:31:34.816Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-02-06T14:32:09.406Z","type":"join"}
+{"nick":"astrayos","date":"2019-02-06T14:34:52.850Z","type":"join"}
+{"nick":"marthinal","date":"2019-02-06T14:35:06.655Z","type":"join"}
+{"nick":"luminalle","message":"https://cdn-images-1.medium.com/max/800/1*tLmdca91O3WXf_ZTiy8JFA.jpeg","date":"2019-02-06T14:35:51.990Z","type":"message"}
+{"nick":"Mattiaslndstrm","date":"2019-02-06T14:35:59.987Z","type":"join"}
+{"nick":"sunil_bansal","reason":"Ping timeout: 268 seconds","date":"2019-02-06T14:36:17.704Z","type":"quit"}
+{"nick":"joepie91","message":"luminalle: trust me, all the memes have been seen here, and they stopped being funny long ago","date":"2019-02-06T14:36:33.863Z","type":"message"}
+{"nick":"joepie91","message":"especially because too many people take them seriously","date":"2019-02-06T14:36:47.383Z","type":"message"}
+{"nick":"munsterberg","date":"2019-02-06T14:37:51.783Z","type":"join"}
+{"nick":"jjybspk","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T14:39:26.376Z","type":"quit"}
+{"nick":"marthinal","reason":"Ping timeout: 240 seconds","date":"2019-02-06T14:39:56.669Z","type":"quit"}
+{"nick":"slajax","date":"2019-02-06T14:40:20.623Z","type":"join"}
+{"nick":"morenoh149","date":"2019-02-06T14:41:28.822Z","type":"join"}
+{"nick":"devc_","reason":"Ping timeout: 256 seconds","date":"2019-02-06T14:41:49.914Z","type":"quit"}
+{"nick":"feelextra","date":"2019-02-06T14:43:30.360Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 240 seconds","date":"2019-02-06T14:43:56.596Z","type":"quit"}
+{"nick":"X-51","date":"2019-02-06T14:44:22.404Z","type":"join"}
+{"nick":"R0b0t-X_","date":"2019-02-06T14:44:56.460Z","type":"join"}
+{"nick":"|RicharD|","date":"2019-02-06T14:45:03.353Z","type":"join"}
+{"nick":"morenoh149","reason":"Ping timeout: 250 seconds","date":"2019-02-06T14:45:42.793Z","type":"quit"}
+{"nick":"Soopaman","date":"2019-02-06T14:46:06.470Z","type":"join"}
+{"nick":"devc_","date":"2019-02-06T14:47:36.106Z","type":"join"}
+{"nick":"rmarkins","date":"2019-02-06T14:48:10.545Z","type":"join"}
+{"nick":"X-51","reason":"Ping timeout: 264 seconds","date":"2019-02-06T14:49:16.051Z","type":"quit"}
+{"nick":"Sharaal","message":"I create automatically a badge in the README.md show me the amount of deps in the package.json and the total amount of packages got installed with all deep deps, very interesting and sometimes helpful :)","date":"2019-02-06T14:49:44.387Z","type":"message"}
+{"nick":"trevor","date":"2019-02-06T14:50:26.314Z","type":"join"}
+{"nick":"joepie91","message":"Sharaal: I'd probably avoid doing that :/ it reinforces the idea with people that dependency count matters, which it really doesn't...","date":"2019-02-06T14:51:04.364Z","type":"message"}
+{"nick":"joepie91","message":"and thus takes away attention from the things that *do* matter","date":"2019-02-06T14:51:16.642Z","type":"message"}
+{"nick":"joepie91","message":"(like how many authors you trust, how much total complexity there is, the scope of dependencies, the code quality of dependencies, ...)","date":"2019-02-06T14:51:51.379Z","type":"message"}
+{"nick":"Sharaal","message":"well the size matters sometimes if there is a limit (e.g. aws lambda)","date":"2019-02-06T14:52:08.739Z","type":"message"}
+{"nick":"joepie91","message":"Sharaal: size isn't the same as dependency count though","date":"2019-02-06T14:52:28.460Z","type":"message"}
+{"nick":"rmarkins","reason":"Ping timeout: 250 seconds","date":"2019-02-06T14:52:38.480Z","type":"quit"}
+{"nick":"joepie91","message":"(also, what, lambda has a size limit?)","date":"2019-02-06T14:52:39.196Z","type":"message"}
+{"nick":"Sharaal","message":"yes, but to have a rough overview isn't bad","date":"2019-02-06T14:52:52.051Z","type":"message"}
+{"nick":"joepie91","message":"plus, the size isn't even computable without considering the full package set","date":"2019-02-06T14:52:59.011Z","type":"message"}
+{"nick":"joepie91","message":"Sharaal: it's bad when the \"overview\" is misleading","date":"2019-02-06T14:53:07.923Z","type":"message"}
+{"nick":"devc_","reason":"Ping timeout: 256 seconds","date":"2019-02-06T14:53:09.871Z","type":"quit"}
+{"nick":"joepie91","message":"showing total dependency size *can* be useful, but dependency *count* is not","date":"2019-02-06T14:53:20.653Z","type":"message"}
+{"nick":"Sharaal","message":"especially if the direct number increase 1 and the total deeps increase thousands of new deps","date":"2019-02-06T14:53:22.511Z","type":"message"}
+{"nick":"joepie91","message":"because it measures something totally different that doesn't relate to what you actually care about","date":"2019-02-06T14:53:28.956Z","type":"message"}
+{"nick":"joepie91","message":"Sharaal: again, that literally doesn't matter","date":"2019-02-06T14:53:34.972Z","type":"message"}
+{"nick":"avu","message":"the size limit is 250MB.. :)","date":"2019-02-06T14:53:47.637Z","type":"message"}
+{"nick":"joepie91","message":"\"thousands of deps\" isn't a metric that tells you anything meaningful whatsoever","date":"2019-02-06T14:54:05.523Z","type":"message"}
+{"nick":"joepie91","message":"it has no relevance to anything that actually matters","date":"2019-02-06T14:54:14.572Z","type":"message"}
+{"nick":"Sharaal","message":"ok","date":"2019-02-06T14:54:31.976Z","type":"message"}
+{"nick":"joepie91","message":"(and it doesn't correlate to dependency *size* either)","date":"2019-02-06T14:54:36.124Z","type":"message"}
+{"nick":"joepie91","message":"like I said, showing the total *size* of all dependencies can make sense, even if you still need to understand it within context","date":"2019-02-06T14:55:10.623Z","type":"message"}
+{"nick":"joepie91","message":"just not the package count :P","date":"2019-02-06T14:55:18.088Z","type":"message"}
+{"nick":"joepie91","message":"avu: that's... quite low","date":"2019-02-06T14:55:35.147Z","type":"message"}
+{"nick":"bitmask","date":"2019-02-06T14:55:40.459Z","type":"join"}
+{"nick":"joepie91","message":"it's not hard to find single data sets that far exceed that","date":"2019-02-06T14:55:58.826Z","type":"message"}
+{"nick":"avu","message":"joepie91: not for the use-cases where lambda actually makes sense, at least we've never had problems with it","date":"2019-02-06T14:56:04.841Z","type":"message"}
+{"nick":"joepie91","message":"I mean, I disagree that lambda makes sense *at all*, but within the context of where Amazon and other people *claim* it makes sense, it would be totally reasonable to have a service that looks up stuff in 2GB static data set","date":"2019-02-06T14:57:04.377Z","type":"message"}
+{"nick":"avu","message":"sure, if you want to use a lambda function as your one backend for your whole complex application it might be a problem but in that case you're doing it wrong[tm] anyway","date":"2019-02-06T14:57:04.853Z","type":"message"}
+{"nick":"avu","message":"joepie91: you don't ship static data with your lambda function","date":"2019-02-06T14:57:44.832Z","type":"message"}
+{"nick":"joepie91","message":"unless that static data is packaged on npm of course","date":"2019-02-06T14:58:26.661Z","type":"message"}
+{"nick":"avu","message":"if you use lambda to operate on data, you use other services (s3 in the simplest case or sqs or whatever) to feed it to your function","date":"2019-02-06T14:58:29.247Z","type":"message"}
+{"nick":"Komi","date":"2019-02-06T14:58:41.721Z","type":"join"}
+{"nick":"joepie91","message":"avu: those have wildly different performant characteristics from a local static data lookup","date":"2019-02-06T14:58:41.998Z","type":"message"}
+{"nick":"apparition","reason":"Quit: Bye","date":"2019-02-06T14:58:56.314Z","type":"quit"}
+{"nick":"avu","message":"absolutely","date":"2019-02-06T14:58:57.460Z","type":"message"}
+{"nick":"joepie91","message":"ie. not substitutable","date":"2019-02-06T14:59:06.666Z","type":"message"}
+{"nick":"avu","message":"well, those are the things where lambda makes sense","date":"2019-02-06T14:59:16.381Z","type":"message"}
+{"nick":"joepie91","message":"anyway, I feel like this discussion is probably going to drag on for way too long given that I don't recognize the premise of lambda as valid to begin with :)","date":"2019-02-06T14:59:23.961Z","type":"message"}
+{"nick":"joepie91","message":"(and I'm pretty much of the opinion that it's a con)","date":"2019-02-06T14:59:37.943Z","type":"message"}
+{"nick":"carif","date":"2019-02-06T15:00:01.505Z","type":"join"}
+{"nick":"avu","message":"sure, if you evaluate it using use cases where it's crap, it's going to look like crap :)","date":"2019-02-06T15:00:07.080Z","type":"message"}
+{"nick":"ubuntuisloved","date":"2019-02-06T15:00:56.706Z","type":"join"}
+{"nick":"avu","message":"not that I'm much of a fan mind you but most of the stuff I read from people hating on it are just people that evaluate it for \"wrong\" use cases (like website backends and stuff like that)","date":"2019-02-06T15:01:14.235Z","type":"message"}
+{"nick":"omaralvaradoluna","date":"2019-02-06T15:01:20.631Z","type":"join"}
+{"nick":"marthinal","date":"2019-02-06T15:01:56.362Z","type":"join"}
+{"nick":"joepie91","message":"avu: I'm not arguing from ignorance; I understand exactly how it works, and what it is marketed as, and it is *based on that information* that I am concluding it to effectively be a con with an invalid premise and no real-world utility over pre-existing solutions","date":"2019-02-06T15:01:58.425Z","type":"message"}
+{"nick":"avu","message":"\"what it is marketed as\" and \"what it is good for\" are two completely different things of course.","date":"2019-02-06T15:02:24.615Z","type":"message"}
+{"nick":"ubuntuisloved","message":"If I'm using node and es6 server side  I'd imagine webpack is not really needed?","date":"2019-02-06T15:02:31.231Z","type":"message"}
+{"nick":"joepie91","message":"but I need to go, and this is inevitably going to be an hour of back-and-forth with example usecases and me explaining how you could've done that easier with something else and then somebody questioning my statement about distributed systems being harder etc. etc. etc. :)","date":"2019-02-06T15:02:35.098Z","type":"message"}
+{"nick":"joepie91","message":"so I think I'll step out of the discussion at this point","date":"2019-02-06T15:02:53.225Z","type":"message"}
+{"nick":"Mattiaslndstrm","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-02-06T15:03:57.185Z","type":"quit"}
+{"nick":"avu","message":"\"and me explaining how you could've done that easier with something else\" - you assuming that you're going to be right all the time before even going into a discussion like this is the main reason you will continue to think that you're always right about such things I think :)","date":"2019-02-06T15:04:31.276Z","type":"message"}
+{"nick":"morenoh149","date":"2019-02-06T15:04:38.895Z","type":"join"}
+{"nick":"thunor","date":"2019-02-06T15:04:41.311Z","type":"join"}
+{"nick":"devc_","date":"2019-02-06T15:04:45.165Z","type":"join"}
+{"nick":"avu","message":"You're *way* too young to be so arrogant :P","date":"2019-02-06T15:04:51.761Z","type":"message"}
+{"nick":"joepie91","message":"avu: I've had this discussion many many times before and that is how it invariably turns out, because no matter how well I can argue that the fundamental premise is broken, people will always try to bring up supposed examples of that rule being false","date":"2019-02-06T15:05:11.194Z","type":"message"}
+{"nick":"omaralvaradoluna","reason":"Ping timeout: 240 seconds","date":"2019-02-06T15:05:26.673Z","type":"quit"}
+{"nick":"joepie91","message":"avu: it has nothing to do with arrogance, and everything with the above and with people rarely ever taking fundamental criticism as valid","date":"2019-02-06T15:05:35.962Z","type":"message"}
+{"nick":"thunor","message":"everything i need to do is in the http.createServer function, but the server is already created, so what function do i need?","date":"2019-02-06T15:05:39.237Z","type":"message"}
+{"nick":"joepie91","message":"so this is just an optimization to reduce repeat discussions :)","date":"2019-02-06T15:06:04.482Z","type":"message"}
+{"nick":"tga","date":"2019-02-06T15:06:14.981Z","type":"join"}
+{"nick":"joepie91","message":"I only have this discussion when people show, by themselves, some understanding of the fundamental principle and make an argument on that basis","date":"2019-02-06T15:06:22.551Z","type":"message"}
+{"nick":"tga","message":"greetings","date":"2019-02-06T15:06:28.475Z","type":"message"}
+{"nick":"Sharaal","message":"joepie91: maybe write a blog article, so you can link to it instead of start a discussion ;)","date":"2019-02-06T15:06:32.160Z","type":"message"}
+{"nick":"joepie91","message":"have this discussion anymore*","date":"2019-02-06T15:06:34.659Z","type":"message"}
+{"nick":"joepie91","message":"Sharaal: sure, I'll get to it right after the other 20 blog articles people told me to write :)","date":"2019-02-06T15:06:47.081Z","type":"message"}
+{"nick":"tga","message":"as a quick poll, if you had to write a backend and a webapp from scratch, which libs/frameworks would you go for?","date":"2019-02-06T15:07:05.364Z","type":"message"}
+{"nick":"joepie91","message":"there's only so much time in a day","date":"2019-02-06T15:07:05.850Z","type":"message"}
+{"nick":"joepie91","message":"and even *after* I write a blog post about something, people still routinely question the claims therein with arguments that were addressed in the very blog post they're questioning","date":"2019-02-06T15:07:43.491Z","type":"message"}
+{"nick":"joepie91","message":"as can be seen in the regular MongoDB and JWT discussions in here...","date":"2019-02-06T15:07:50.562Z","type":"message"}
+{"nick":"joepie91","message":"so it doesn't exactly save me much time in the end","date":"2019-02-06T15:07:55.844Z","type":"message"}
+{"nick":"devc","date":"2019-02-06T15:08:11.310Z","type":"join"}
+{"nick":"joepie91","message":"the only way to reduce the time and effort I spend on discussing things with people, is to.. not discuss them, unless I have some concrete reason to believe that /this/ discussion is going to be different (which sometimes happens! but rarely)","date":"2019-02-06T15:08:25.167Z","type":"message"}
+{"nick":"Sharaal","message":"tga: backend api express, maybe adding graphql layer, pg as database driver, maybe with knex","date":"2019-02-06T15:08:35.448Z","type":"message"}
+{"nick":"joepie91","message":"tga: completely dependent on what the project is","date":"2019-02-06T15:08:44.142Z","type":"message"}
+{"nick":"tga","message":"thanks","date":"2019-02-06T15:09:03.981Z","type":"message"}
+{"nick":"devc_","reason":"Ping timeout: 256 seconds","date":"2019-02-06T15:09:35.906Z","type":"quit"}
+{"nick":"tga","message":"of course, I'm curious about go to options in here. one scenario is rest/graphql api only, one scenario is old school serverside web app, with templates and such","date":"2019-02-06T15:09:43.404Z","type":"message"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-02-06T15:09:44.613Z","type":"quit"}
+{"nick":"joepie91","message":"tga: default to the latter","date":"2019-02-06T15:09:57.776Z","type":"message"}
+{"nick":"Sharaal","message":"Oh I tried also the JWT discussion using as session token and lost against \"but it saves lockups getting the user id\" :)","date":"2019-02-06T15:10:00.055Z","type":"message"}
+{"nick":"joepie91","message":"tga: build an SPA only if you can't reasonably express your project as a request/response thiing","date":"2019-02-06T15:10:11.225Z","type":"message"}
+{"nick":"Sharaal","message":"tga: for templates I pref handlebars","date":"2019-02-06T15:10:27.283Z","type":"message"}
+{"nick":"joepie91","message":"tga: (because SPAs are more expensive and difficult to build, more demanding of the client device, more fragile, slower, and just generally technically worse; but in some projects you just don't have a choice, like eg. a chat app)","date":"2019-02-06T15:10:46.541Z","type":"message"}
+{"nick":"joepie91","message":"oh, and I forgot \"less accessible\" in that list","date":"2019-02-06T15:11:07.467Z","type":"message"}
+{"nick":"tga","message":"agreed with you on that one, the question was about default tools in each case","date":"2019-02-06T15:11:13.506Z","type":"message"}
+{"nick":"carif","reason":"Ping timeout: 245 seconds","date":"2019-02-06T15:11:18.443Z","type":"quit"}
+{"nick":"joepie91","message":"ah, I thought the question was about which of the two scenarios to pick :)","date":"2019-02-06T15:11:26.673Z","type":"message"}
+{"nick":"grr12314","reason":"Remote host closed the connection","date":"2019-02-06T15:11:27.543Z","type":"quit"}
+{"nick":"joepie91","message":"apologies, I misunderstood then","date":"2019-02-06T15:11:29.974Z","type":"message"}
+{"nick":"tga","message":"I'm packaging up a bootstrap/cookbook package, I want to see whether I can sell something like that instead of my time implementing the same thing over and over again","date":"2019-02-06T15:12:01.314Z","type":"message"}
+{"nick":"joepie91","message":"I frequently use Express with either Pug or React (via express-views-react, ie. server-side) but same as above, it depends on the project, there's no one-size-fits-all solution","date":"2019-02-06T15:12:17.173Z","type":"message"}
+{"nick":"joepie91","message":"tga: I'd recommend instead just packaging up things you commonly do as independent modules, and using those in your project as-needed","date":"2019-02-06T15:12:42.017Z","type":"message"}
+{"nick":"tga","message":"I was happy with hapi in a couple of projects, but it looks like it's no so common out there","date":"2019-02-06T15:12:51.455Z","type":"message"}
+{"nick":"joepie91","message":"that saves you reimplementation work *without* shoehorning things into a one-size-fits-all model :)","date":"2019-02-06T15:12:52.745Z","type":"message"}
+{"nick":"tga","message":"hmm that could work, with an admin panel to add in the right modules","date":"2019-02-06T15:13:42.700Z","type":"message"}
+{"nick":"joepie91","message":"tga: be very careful of trying to build what's essentially a general-purpose CMS: it's not really possible to do well, because a CMS by design can't capture all the possible requirements without cutting corners somewhere","date":"2019-02-06T15:14:30.340Z","type":"message"}
+{"nick":"joepie91","message":"admin panels can help for making certain parts of the system easier to manage, but trying to use them as a full replacement for code generally ends badly :)","date":"2019-02-06T15:14:53.339Z","type":"message"}
+{"nick":"slajax","reason":"Ping timeout: 240 seconds","date":"2019-02-06T15:14:56.675Z","type":"quit"}
+{"nick":"igemnace_","new_nick":"igemnace","date":"2019-02-06T15:14:58.320Z","type":"nick"}
+{"nick":"tga","message":"I'm thinking more like a goodie bag with drop-in solutions for common functionality","date":"2019-02-06T15:15:07.859Z","type":"message"}
+{"nick":"tga","message":"http://spark.laravel.com kind of thing","date":"2019-02-06T15:15:15.533Z","type":"message"}
+{"nick":"joepie91","message":"the problem is that almost no application is made up purely of common functionality, nearly everything has some sort of weird edge case that you need to support","date":"2019-02-06T15:15:27.693Z","type":"message"}
+{"nick":"Sharaal","message":"I think the package.json is the right \"admin panel\" to manage the modules","date":"2019-02-06T15:15:29.712Z","type":"message"}
+{"nick":"joepie91","message":"sometimes requiring architectural changes","date":"2019-02-06T15:15:39.484Z","type":"message"}
+{"nick":"joepie91","message":"tga: Spark looks like exactly the kind of thing I would recommend people to avoid :)","date":"2019-02-06T15:16:15.702Z","type":"message"}
+{"nick":"tga","message":"one of the challenges is narrowing down the common base, if a project is using hapi then my express-based authentication won't be much good","date":"2019-02-06T15:16:23.022Z","type":"message"}
+{"nick":"joepie91","message":"tga: so generalization of tools is one of those things where it's easy to do it 95% of the way, but virtually impossible to get to 99% or even 100%","date":"2019-02-06T15:16:49.240Z","type":"message"}
+{"nick":"joepie91","message":"a proper module system + declarative dependencies, like what you get with Node.js and package.json, is pretty much that 95%","date":"2019-02-06T15:17:06.728Z","type":"message"}
+{"nick":"joepie91","message":"you can encapsulate most logic into solid non-leaky abstractions","date":"2019-02-06T15:17:30.447Z","type":"message"}
+{"nick":"joepie91","message":"and then write code to tie them together, and the glue code isn't going to be terribly much work, in the bigger picture","date":"2019-02-06T15:17:42.248Z","type":"message"}
+{"nick":"joepie91","message":"at that point there's not much left to optimize","date":"2019-02-06T15:18:02.069Z","type":"message"}
+{"nick":"joepie91","message":"and trying to get those last 4-5% is just going to add a ton of technical tradeoffs, engineering effort, and general frustration because you can't fully encode all the possible functionality into a single interoperable model that's simpler than \"a programming language\"","date":"2019-02-06T15:18:29.863Z","type":"message"}
+{"nick":"joepie91","message":"so you're going to end up with things that are either not magically interoperable like you wanted, or things that cut corners from a technical perspective to shoehorn them into the (incomplete) interoperability model (\"plugin API\") that you've designed","date":"2019-02-06T15:19:18.204Z","type":"message"}
+{"nick":"joepie91","message":"that happens pretty much no matter how much effort you put into it","date":"2019-02-06T15:19:33.171Z","type":"message"}
+{"nick":"tga","message":"it's just that I see a lot of boring functionality like account management reimplemented (poorly) over and over","date":"2019-02-06T15:19:36.987Z","type":"message"}
+{"nick":"firedfox","date":"2019-02-06T15:19:51.466Z","type":"join"}
+{"nick":"tga","message":"for projects that only need to check that box","date":"2019-02-06T15:19:53.447Z","type":"message"}
+{"nick":"joepie91","message":"right, I understand the frustration, but there are aspects of it that just aren't generalizable like that :P","date":"2019-02-06T15:19:57.133Z","type":"message"}
+{"nick":"tga","message":"yeah, authentication is a happy case","date":"2019-02-06T15:20:10.092Z","type":"message"}
+{"nick":"joepie91","message":"so you're better off modularizing the independently generalizable parts of it - password hashing, ACL list checks, etc. - into a bunch of different modules","date":"2019-02-06T15:20:20.853Z","type":"message"}
+{"nick":"tga","message":"authorization gets hairier","date":"2019-02-06T15:20:35.543Z","type":"message"}
+{"nick":"joepie91","message":"and then spending an hour gluing the existing implementations together for the specific set of requirements and DB structure you have for a given application","date":"2019-02-06T15:20:40.773Z","type":"message"}
+{"nick":"joepie91","message":"yeah, there's no one-size-fits-all authorization model","date":"2019-02-06T15:20:46.645Z","type":"message"}
+{"nick":"joepie91","message":"but you *can* write generalized implementations of specific authorization models","date":"2019-02-06T15:20:55.659Z","type":"message"}
+{"nick":"joepie91","message":"and use whichever one is appropriate for the project","date":"2019-02-06T15:21:02.769Z","type":"message"}
+{"nick":"tga","message":"billing is also happy, because it plugs in nicely into authentication and doesn't interact much with users","date":"2019-02-06T15:21:12.603Z","type":"message"}
+{"nick":"tga","message":"trouble is, teams and plans and such heavily influence authorization","date":"2019-02-06T15:21:46.117Z","type":"message"}
+{"nick":"antsmartian","date":"2019-02-06T15:21:57.417Z","type":"join"}
+{"nick":"tga","message":"and rely on the database access layer","date":"2019-02-06T15:22:08.606Z","type":"message"}
+{"nick":"joepie91","message":"my laptop is nearly done charging so I need to go now, but TL;DR: loosely coupled independently packaged abstractions that are glued together with some JS is pretty much the optimum for this kind of thing, try to generalize beyond that and you'll run into trouble","date":"2019-02-06T15:22:12.853Z","type":"message"}
+{"nick":"tga","message":"thanks for the input","date":"2019-02-06T15:22:29.907Z","type":"message"}
+{"nick":"joepie91","message":"and it'll end up much more difficult and less magical than you were hoping for :P","date":"2019-02-06T15:22:30.560Z","type":"message"}
+{"nick":"joepie91","message":"(been there, done that, unfortunately..)","date":"2019-02-06T15:22:37.689Z","type":"message"}
+{"nick":"tga","message":"the big test will be trying to sell my frankenstein either as a service or as a standalone package","date":"2019-02-06T15:23:06.455Z","type":"message"}
+{"nick":"firedfox","reason":"Ping timeout: 250 seconds","date":"2019-02-06T15:24:16.614Z","type":"quit"}
+{"nick":"kapil____","date":"2019-02-06T15:24:44.111Z","type":"join"}
+{"nick":"deviantfero","date":"2019-02-06T15:26:28.161Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T15:26:56.386Z","type":"join"}
+{"nick":"Komi","reason":"Quit: Page closed","date":"2019-02-06T15:27:26.637Z","type":"quit"}
+{"nick":"hollusion","date":"2019-02-06T15:27:34.442Z","type":"join"}
+{"nick":"hph^","date":"2019-02-06T15:30:40.772Z","type":"join"}
+{"nick":"carif","reason":"Ping timeout: 246 seconds","date":"2019-02-06T15:31:18.033Z","type":"quit"}
+{"nick":"|RicharD|","reason":"Quit: This computer has gone to sleep","date":"2019-02-06T15:31:24.893Z","type":"quit"}
+{"nick":"ffx_","date":"2019-02-06T15:31:49.314Z","type":"join"}
+{"nick":"lundibundi","reason":"Ping timeout: 240 seconds","date":"2019-02-06T15:32:07.400Z","type":"quit"}
+{"nick":"jottr","reason":"Read error: Connection reset by peer","date":"2019-02-06T15:33:24.777Z","type":"quit"}
+{"nick":"jottr","date":"2019-02-06T15:34:12.988Z","type":"join"}
+{"nick":"firedfox","date":"2019-02-06T15:36:13.586Z","type":"join"}
+{"nick":"Alberix","date":"2019-02-06T15:39:21.785Z","type":"join"}
+{"nick":"julianduque","date":"2019-02-06T15:40:24.017Z","type":"join"}
+{"nick":"cswl","date":"2019-02-06T15:41:25.222Z","type":"join"}
+{"nick":"Alberix","reason":"Client Quit","date":"2019-02-06T15:42:11.343Z","type":"quit"}
+{"nick":"thunor","message":"i'm using app.use(express.static(path)); and then response.write(markup) where the markup html is dependant on the path files, doesn't seem to release the files though","date":"2019-02-06T15:44:22.459Z","type":"message"}
+{"nick":"thunor","message":"any suggestions?","date":"2019-02-06T15:44:38.755Z","type":"message"}
+{"nick":"bunny3","message":"running a basically empty script or something that just logs something in the console will just run and finish when you run it with nodejs. But what keeps nodejs spinning when you do a http.listsen(80)?","date":"2019-02-06T15:45:36.678Z","type":"message"}
+{"nick":"hph^","reason":"Ping timeout: 246 seconds","date":"2019-02-06T15:45:46.301Z","type":"quit"}
+{"nick":"duderonomy","date":"2019-02-06T15:45:58.049Z","type":"join"}
+{"nick":"carif","date":"2019-02-06T15:46:19.415Z","type":"join"}
+{"nick":"zsoc","message":"bunny3: http.listen() creates an event handler","date":"2019-02-06T15:48:20.954Z","type":"message"}
+{"nick":"zsoc","message":"because it's listening for incoming http connections","date":"2019-02-06T15:48:31.134Z","type":"message"}
+{"nick":"jmz007","date":"2019-02-06T15:48:45.198Z","type":"join"}
+{"nick":"zsoc","message":"node doesn't exit while there's async work going on (including like, a promise handler, or an event listener)","date":"2019-02-06T15:48:53.089Z","type":"message"}
+{"nick":"zsoc","message":"unless you specifically mark that event listener / timer as unref'd","date":"2019-02-06T15:49:03.802Z","type":"message"}
+{"nick":"zsoc","message":"for that same application doing http.listen(), it will exit when you do server.close()","date":"2019-02-06T15:49:55.895Z","type":"message"}
+{"nick":"ghome","date":"2019-02-06T15:50:05.247Z","type":"join"}
+{"nick":"jmz007","reason":"Client Quit","date":"2019-02-06T15:50:29.119Z","type":"quit"}
+{"nick":"bunny3","message":"aha","date":"2019-02-06T15:50:30.002Z","type":"message"}
+{"nick":"zsoc","message":"(well, it will exit *eventually* as it waits for all current connections to be closed... which is nice)","date":"2019-02-06T15:50:30.362Z","type":"message"}
+{"nick":"keepLearning512","reason":"Remote host closed the connection","date":"2019-02-06T15:50:47.167Z","type":"quit"}
+{"nick":"R0b0t-X_","reason":"Remote host closed the connection","date":"2019-02-06T15:51:02.331Z","type":"quit"}
+{"nick":"zsoc","message":"it's the underlying hooks that's used to \"warm\" reload instances... basically where it stops accepting new connections and waits for existing connections to die","date":"2019-02-06T15:51:03.688Z","type":"message"}
+{"nick":"keepLearning512","date":"2019-02-06T15:51:44.640Z","type":"join"}
+{"nick":"zsoc","message":"You can also do server.unref() apparently if you don't want that particular server keeping your application open :p TIL","date":"2019-02-06T15:51:56.655Z","type":"message"}
+{"nick":"dudeskywalker","date":"2019-02-06T15:52:16.401Z","type":"join"}
+{"nick":"hvemvet","date":"2019-02-06T15:52:19.868Z","type":"join"}
+{"nick":"bunny3","message":"There are plenty of modules out there. unless you really know the framework well there's a high risk for security holes if it's some hobby project that a kid put up the other day. How do you navigate through the module jungle?","date":"2019-02-06T15:53:20.152Z","type":"message"}
+{"nick":"zsoc","message":"Vet the author instead of the module","date":"2019-02-06T15:53:36.088Z","type":"message"}
+{"nick":"dudeskywalker","reason":"Client Quit","date":"2019-02-06T15:54:09.446Z","type":"quit"}
+{"nick":"zsoc","message":"I mean ultimately the onus is on you to audit everything. But the trustworthiness of the author/maintainer goes a very long way to choosing the right modules. Asking around helps too.","date":"2019-02-06T15:54:13.250Z","type":"message"}
+{"nick":"zsoc","message":"Many times when someone asks \"How do I do X\" in here, they really mean \"How do I decided which library to use for X\" :p","date":"2019-02-06T15:54:27.481Z","type":"message"}
+{"nick":"dlwicksell","date":"2019-02-06T15:54:38.478Z","type":"join"}
+{"nick":"zsoc","message":"But knowing an author that uses best practices and avoids hype-of-the-day coding practices instills more confidence that their one-off modules won't have a random vuln discovered a year from now","date":"2019-02-06T15:55:07.306Z","type":"message"}
+{"nick":"bunny3","message":"yeah, and it seems like that time you are supposed to save gets used up on auditing the libraries instead, am I right? .p","date":"2019-02-06T15:55:10.297Z","type":"message"}
+{"nick":"zsoc","message":"It's not about saving time","date":"2019-02-06T15:55:21.105Z","type":"message"}
+{"nick":"hvemvet","reason":"Client Quit","date":"2019-02-06T15:55:32.009Z","type":"quit"}
+{"nick":"zsoc","message":"Well - it is - it's not about saving time *initially*","date":"2019-02-06T15:55:34.884Z","type":"message"}
+{"nick":"morenoh149","reason":"Ping timeout: 250 seconds","date":"2019-02-06T15:55:54.961Z","type":"quit"}
+{"nick":"hph^","date":"2019-02-06T15:56:03.912Z","type":"join"}
+{"nick":"zsoc","message":"It's about saving time in the long run. Building your application from lego blocks ensures a long term solution with less random compatibility issues. If some sub module of a module is broken or there's a vuln or w/e you can swap out just that one module","date":"2019-02-06T15:56:26.094Z","type":"message"}
+{"nick":"sunil_bansal","date":"2019-02-06T15:56:27.391Z","type":"join"}
+{"nick":"ghome","reason":"Quit: Leaving","date":"2019-02-06T15:56:27.557Z","type":"quit"}
+{"nick":"|RicharD|","date":"2019-02-06T15:56:30.423Z","type":"join"}
+{"nick":"dlwicksell","reason":"Client Quit","date":"2019-02-06T15:56:38.376Z","type":"quit"}
+{"nick":"zsoc","message":"(or fork it - or w/e) while keeping your general application architecture the same","date":"2019-02-06T15:57:05.187Z","type":"message"}
+{"nick":"bunny3","message":"I known very little about angularjs and jquery, but I'd trust them since they are well known libraries.","date":"2019-02-06T15:57:12.402Z","type":"message"}
+{"nick":"zsoc","message":"trust them to.. what?","date":"2019-02-06T15:57:22.293Z","type":"message"}
+{"nick":"zsoc","message":"angular is garbage :)","date":"2019-02-06T15:57:26.688Z","type":"message"}
+{"nick":"bunny3","message":"probably is :P","date":"2019-02-06T15:57:32.826Z","type":"message"}
+{"nick":"zsoc","message":"And garbage is often times where the worst vulnerabilities rear their heads (if this is purely a security concern)","date":"2019-02-06T15:58:00.215Z","type":"message"}
+{"nick":"bunny3","message":"but I buy your point","date":"2019-02-06T15:58:01.121Z","type":"message"}
+{"nick":"dman777","date":"2019-02-06T15:58:18.440Z","type":"join"}
+{"nick":"|RicharD|","reason":"Client Quit","date":"2019-02-06T15:58:57.477Z","type":"quit"}
+{"nick":"mezod","reason":"Remote host closed the connection","date":"2019-02-06T15:59:12.043Z","type":"quit"}
+{"nick":"zsoc","message":"it's not a perfect system, far far from it. Some of that is how npm governed. But some of it is also just... the trade-offs of actual modules / modularity level - not everything is purely better, but the things that are worse are worth it imo","date":"2019-02-06T15:59:22.376Z","type":"message"}
