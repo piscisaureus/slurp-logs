@@ -94,3 +94,132 @@
 {"nick":"bradleymeck","message":"i still wish there was a way to spin up a loader with access to internals","date":"2019-02-14T15:37:31.423Z","type":"message"}
 {"nick":"bradleymeck","message":"addaleax: would it be bad to make a sneaky way to do that ^? right now we directly expose the internal Worker class, but I could add a weakmap or something and subclass that lets you create ones w/ access to internalBinding etc?","date":"2019-02-14T15:38:26.124Z","type":"message"}
 {"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-02-14T15:44:08.968Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T16:11:29.988Z","type":"join"}
+{"nick":"Hu0p","date":"2019-02-14T16:12:57.354Z","type":"join"}
+{"nick":"antsmartian","date":"2019-02-14T16:13:11.997Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-02-14T16:46:50.086Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-02-14T16:47:09.453Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-02-14T16:47:33.753Z","type":"quit"}
+{"nick":"bradleymeck","message":"also interesting that if the esm loader fails to init, the process keeps booting up","date":"2019-02-14T16:58:05.790Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: anna recently changed it to trigger a fatal exception if loading the esm entrypoint fails","date":"2019-02-14T16:58:57.688Z","type":"message"}
+{"nick":"devsnek","message":"before it called process.exit(1)","date":"2019-02-14T16:59:05.517Z","type":"message"}
+{"nick":"bradleymeck","message":"why do we want to catch the error instead of bailing?","date":"2019-02-14T16:59:27.558Z","type":"message"}
+{"nick":"devsnek","message":"it makes it behave the same as failing to load a cjs entrypoint","date":"2019-02-14T17:00:22.363Z","type":"message"}
+{"nick":"bradleymeck","message":"but this is more like failing to load the CJS module system?","date":"2019-02-14T17:01:13.380Z","type":"message"}
+{"nick":"bradleymeck","message":"the entrypoint I'm not super concerned with","date":"2019-02-14T17:01:44.732Z","type":"message"}
+{"nick":"devsnek","message":"wait what do you mean","date":"2019-02-14T17:02:44.141Z","type":"message"}
+{"nick":"devsnek","message":"oh do you mean if the hooks throw?","date":"2019-02-14T17:04:40.678Z","type":"message"}
+{"nick":"bradleymeck","message":"if loaderPromise rejects, REPL/--require still go forward etc.","date":"2019-02-14T17:04:46.657Z","type":"message"}
+{"nick":"devsnek","message":"i think adding a `loaderPromise.catch(fatalException)` would fix that","date":"2019-02-14T17:04:53.832Z","type":"message"}
+{"nick":"bradleymeck","message":"and if it is a CJS entrypoint it seems to still fire?","date":"2019-02-14T17:04:58.196Z","type":"message"}
+{"nick":"bradleymeck","message":"yea i'm just noticing since I'm rebasing my loader PR","date":"2019-02-14T17:05:17.002Z","type":"message"}
+{"nick":"devsnek","message":"triggerFatalException for internalBinding('util') if you wanna patch it in","date":"2019-02-14T17:05:25.940Z","type":"message"}
+{"nick":"bradleymeck","message":"unsure where to do that for workers XD, but i will be","date":"2019-02-14T17:05:48.380Z","type":"message"}
+{"nick":"bradleymeck","message":"i assume workers shouldn't kill the whole process","date":"2019-02-14T17:06:02.615Z","type":"message"}
+{"nick":"devsnek","message":"workers only kill the process if oom","date":"2019-02-14T17:06:22.384Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: any problems if we await prepareMainThreadExecution to wait for ESM loader init?","date":"2019-02-14T17:08:50.068Z","type":"message"}
+{"nick":"devsnek","message":"sounds like lost startup time","date":"2019-02-14T17:09:10.079Z","type":"message"}
+{"nick":"bradleymeck","message":"probably, unsure how to get it to bail properly though","date":"2019-02-14T17:10:14.654Z","type":"message"}
+{"nick":"bradleymeck","message":"we could make loaders not intercept the main, but that seems... odd","date":"2019-02-14T17:10:29.349Z","type":"message"}
+{"nick":"devsnek","message":"i'd probably avoid using promises here","date":"2019-02-14T17:10:35.277Z","type":"message"}
+{"nick":"devsnek","message":"atomics in the main thread :P","date":"2019-02-14T17:10:40.996Z","type":"message"}
+{"nick":"bradleymeck","message":"won't help?","date":"2019-02-14T17:10:46.896Z","type":"message"}
+{"nick":"bradleymeck","message":"what would they give us?","date":"2019-02-14T17:10:55.711Z","type":"message"}
+{"nick":"devsnek","message":"aren't you trying to wait for the workers to run?","date":"2019-02-14T17:11:03.264Z","type":"message"}
+{"nick":"bradleymeck","message":"yea, but they can send us messages and idk which worker fails first","date":"2019-02-14T17:11:20.550Z","type":"message"}
+{"nick":"bradleymeck","message":"i would need to block on multiple workers potentially which atomics isn't great at","date":"2019-02-14T17:11:37.294Z","type":"message"}
+{"nick":"devsnek","message":"😥","date":"2019-02-14T17:11:50.962Z","type":"message"}
+{"nick":"bradleymeck","message":"basically if we have 3 threads a,b,c Atomics doesn't have a good way of allowing all of them to ping the main thread that something is wrong, instead the main thread waits on 1 at a time","date":"2019-02-14T17:12:52.278Z","type":"message"}
+{"nick":"devsnek","message":"yeah that makes sense","date":"2019-02-14T17:13:13.441Z","type":"message"}
+{"nick":"bradleymeck","message":"loaders are already going to ruin startup perf due to worker spinup time","date":"2019-02-14T17:13:34.010Z","type":"message"}
+{"nick":"bradleymeck","message":"doing it all in parallel kind of mitigates it to 2x normal startup time (yikes)","date":"2019-02-14T17:14:15.876Z","type":"message"}
+{"nick":"bradleymeck","message":"and userland IO to spin up the hooks also overshadows the worker startup so 🤷","date":"2019-02-14T17:15:01.574Z","type":"message"}
+{"nick":"bradleymeck","message":"on the plus side, multiple workers tend to startup overall faster since we don't slam one thread with evals","date":"2019-02-14T17:17:38.040Z","type":"message"}
+{"nick":"bradleymeck","message":"overall still a net loss of perf unless you do tricks since it does do message passing","date":"2019-02-14T17:18:42.334Z","type":"message"}
+{"nick":"devsnek","message":"use ai to guess what the messages will be /s","date":"2019-02-14T17:27:35.949Z","type":"message"}
+{"nick":"bradleymeck","message":"sending Errors across threads is weird","date":"2019-02-14T17:43:13.165Z","type":"message"}
+{"nick":"bradleymeck","message":"or maybe its using process._fatalException inside of a \"main/\" module?","date":"2019-02-14T17:49:33.702Z","type":"message"}
+{"nick":"addaleax","message":"bradleymeck: two things: worker startup was recently switched to happening on the thread fully, so there's lower overhead in that.. and I don't think making internals accessible to internal Workers wouldn't be a big thing","date":"2019-02-14T17:52:57.172Z","type":"message"}
+{"nick":"bradleymeck","message":"i have it working using a subclass that isn't exposed publicly pretty easily","date":"2019-02-14T17:53:28.833Z","type":"message"}
+{"nick":"bradleymeck","message":"i was more wondering about if there are concerns of having a loader load an \"internal\" file instead of one off disk","date":"2019-02-14T17:53:54.216Z","type":"message"}
+{"nick":"bradleymeck","message":"new InternalWorker('lib/internal/...', {...})","date":"2019-02-14T17:54:49.681Z","type":"message"}
+{"nick":"addaleax","message":"Not as far as I am concerned","date":"2019-02-14T17:55:07.464Z","type":"message"}
+{"nick":"devsnek","message":"seems reasonable","date":"2019-02-14T17:56:51.412Z","type":"message"}
+{"nick":"bradleymeck","message":"unsure how _fatalException is swallowing error...","date":"2019-02-14T17:58:08.175Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: you can't call _fatalException","date":"2019-02-14T17:59:12.418Z","type":"message"}
+{"nick":"devsnek","message":"you have to use triggerFatalException from internalBinding('util')","date":"2019-02-14T17:59:27.545Z","type":"message"}
+{"nick":"bradleymeck","message":"i can in some places like Workers it seems","date":"2019-02-14T17:59:29.032Z","type":"message"}
+{"nick":"bradleymeck","message":"ah","date":"2019-02-14T17:59:32.824Z","type":"message"}
+{"nick":"devsnek","message":"i mean","date":"2019-02-14T17:59:35.293Z","type":"message"}
+{"nick":"devsnek","message":"you can call the function","date":"2019-02-14T17:59:38.865Z","type":"message"}
+{"nick":"devsnek","message":"it won't do anything","date":"2019-02-14T17:59:41.086Z","type":"message"}
+{"nick":"bradleymeck","message":"seems like it shouldn't be exposed then XD","date":"2019-02-14T17:59:54.038Z","type":"message"}
+{"nick":"devsnek","message":"its a side effect of the actual fatal exception stuff","date":"2019-02-14T18:00:00.357Z","type":"message"}
+{"nick":"devsnek","message":"its exposed so you can change the behaviour or something weird like that","date":"2019-02-14T18:00:09.028Z","type":"message"}
+{"nick":"devsnek","message":"i made the same mistake when adding queueMicrotask","date":"2019-02-14T18:00:27.687Z","type":"message"}
+{"nick":"bradleymeck","message":"devsnek: that fixed it!","date":"2019-02-14T18:01:52.744Z","type":"message"}
+{"nick":"bradleymeck","message":"whew","date":"2019-02-14T18:01:56.275Z","type":"message"}
+{"nick":"devsnek","message":"🎉","date":"2019-02-14T18:01:58.518Z","type":"message"}
+{"nick":"addaleax","message":"devsnek: bradleymeck: process._fatalException being exposed to userland was not done on purpose, I would assume","date":"2019-02-14T18:02:33.751Z","type":"message"}
+{"nick":"devsnek","message":"it was supposed to be private","date":"2019-02-14T18:02:59.775Z","type":"message"}
+{"nick":"devsnek","message":"but userland messes with it","date":"2019-02-14T18:03:03.498Z","type":"message"}
+{"nick":"devsnek","message":"so we can't change it","date":"2019-02-14T18:03:06.391Z","type":"message"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-02-14T18:34:44.131Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2019-02-14T18:46:03.850Z","type":"quit"}
+{"nick":"julianduque","reason":"Quit: Lost terminal","date":"2019-02-14T18:47:22.321Z","type":"quit"}
+{"nick":"julianduque","date":"2019-02-14T18:50:57.428Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: it should be fine to await the ESM loader in the pre-execution part, would be better if it’s done as the last step and gets separated from normal CJS startup though","date":"2019-02-14T18:54:15.723Z","type":"message"}
+{"nick":"joyee","message":"But I assume the ESM flag will be removed at some point so....back to the “how do you know you are loading ESM” problem again","date":"2019-02-14T18:55:33.892Z","type":"message"}
+{"nick":"dbevenius","date":"2019-02-14T18:57:39.084Z","type":"join"}
+{"nick":"joyee","message":"bradleymeck: Anyway the idea is, only everything done in context.js, primordials.js, loaders.js and node.js needs to be careful not to depend on environment and not to do anything async during execution, in pre_execute.js you just need to pay attention to the order of the preparation","date":"2019-02-14T18:59:04.231Z","type":"message"}
+{"nick":"joyee","message":"loaders.js can be merged with node.js at this point I assume, but no rush until node.js is more environment-independent","date":"2019-02-14T19:02:14.698Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-14T19:02:24.947Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T19:18:01.395Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 272 seconds","date":"2019-02-14T19:22:36.858Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T19:38:47.580Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-02-14T19:42:56.350Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T20:03:02.070Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-14T20:07:24.901Z","type":"quit"}
+{"nick":"bradleymeck","message":"joyee: yea, i was just doing it in the same position as now, before preload modules","date":"2019-02-14T20:10:15.131Z","type":"message"}
+{"nick":"dbevenius","date":"2019-02-14T20:19:01.653Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-02-14T20:23:23.368Z","type":"quit"}
+{"nick":"bradleymeck","message":"i don't think I subclassed Worker properly... it seems the stdio streams are being ref'd and how to go unrefing is unclear","date":"2019-02-14T20:27:59.662Z","type":"message"}
+{"nick":"bradleymeck","message":"i can't unref inside or outside","date":"2019-02-14T20:28:13.337Z","type":"message"}
+{"nick":"dbevenius","date":"2019-02-14T20:40:00.201Z","type":"join"}
+{"nick":"bradleymeck","message":"yup i did it wrong by adding message events after","date":"2019-02-14T20:40:22.918Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-02-14T20:44:27.056Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T20:58:04.205Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-02-14T21:02:53.761Z","type":"quit"}
+{"nick":"bradleymeck","message":"or maybe it is something about unrefing the port while msgs are pending?","date":"2019-02-14T21:08:09.835Z","type":"message"}
+{"nick":"bradleymeck","message":"very confused by https://github.com/bmeck/ecmascript-modules/blob/fa609f0288be14ab8bad3568790458dcc59d66db/lib/internal/modules/esm/threaded_loader.js#L143","date":"2019-02-14T21:10:54.321Z","type":"message"}
+{"nick":"bradleymeck","message":"if i unref the worker, it stops the message channels I xfer to it from keeping it open","date":"2019-02-14T21:11:19.366Z","type":"message"}
+{"nick":"bradleymeck","message":"and it dies early?","date":"2019-02-14T21:11:28.267Z","type":"message"}
+{"nick":"devsnek","message":"afaik you need to explicitly kill workers when you're done with them","date":"2019-02-14T21:12:35.200Z","type":"message"}
+{"nick":"bradleymeck","message":"worker.unref lets the main thread die","date":"2019-02-14T21:13:01.446Z","type":"message"}
+{"nick":"devsnek","message":"I'm pretty sure you can kill it from both sides too","date":"2019-02-14T21:13:37.926Z","type":"message"}
+{"nick":"bradleymeck","message":"yea, i'm just not sure why the thread stops getting messages, so it dies","date":"2019-02-14T21:14:05.549Z","type":"message"}
+{"nick":"bradleymeck","message":"my brain hurts","date":"2019-02-14T21:15:13.564Z","type":"message"}
+{"nick":"devsnek","message":"threads tend to do that","date":"2019-02-14T21:15:50.014Z","type":"message"}
+{"nick":"devsnek","message":"in any language","date":"2019-02-14T21:15:52.351Z","type":"message"}
+{"nick":"dbevenius","date":"2019-02-14T21:39:00.252Z","type":"join"}
+{"nick":"bradleymeck","message":"well reffing workers instead of ports fixed it...","date":"2019-02-14T21:40:06.793Z","type":"message"}
+{"nick":"bradleymeck","message":"or not","date":"2019-02-14T21:42:35.712Z","type":"message"}
+{"nick":"dbevenius","reason":"Ping timeout: 259 seconds","date":"2019-02-14T21:43:31.110Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T22:01:10.784Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-14T22:05:42.781Z","type":"quit"}
+{"nick":"devsnek","message":"new feature dance time https://github.blog/2019-02-14-introducing-draft-pull-requests/","date":"2019-02-14T22:11:34.996Z","type":"message"}
+{"nick":"dbevenius","date":"2019-02-14T22:18:11.019Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-02-14T22:22:27.080Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T22:41:42.871Z","type":"join"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-02-14T22:43:48.779Z","type":"quit"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-14T22:46:26.910Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T22:58:04.350Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 244 seconds","date":"2019-02-14T23:02:22.350Z","type":"quit"}
+{"nick":"targos","message":"ljharb: new release v11.10.0 is out: https://github.com/nodejs/node/releases/tag/v11.10.0","date":"2019-02-14T23:05:51.738Z","type":"message"}
+{"nick":"ljharb","message":"targos: ty!","date":"2019-02-14T23:12:38.814Z","type":"message"}
+{"nick":"ljharb","topic":"Get registered on freenode ( https://git.io/vaTS2 ) | Node.js Current: v11.10.0 | LTS: Dubnium v10.15.1, Carbon v8.15.0, Boron v6.16.0; EOL: Argon v4.9.1, v9, v7, <= v5 | -- https://nodejs.org/ -- IRC Logs: http://logs.libuv.org/node-dev/latest -- Newcomers welcome: http://nodeschool.io/ -- dev channel for all things node core","date":"2019-02-14T23:12:49.182Z","type":"topic"}
+{"nick":"dbevenius","date":"2019-02-14T23:16:56.465Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-14T23:21:32.772Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T23:38:08.352Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 268 seconds","date":"2019-02-14T23:43:13.786Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-14T23:59:05.502Z","type":"join"}
