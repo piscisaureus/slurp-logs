@@ -147,3 +147,125 @@
 {"nick":"julianduque","date":"2019-02-19T15:12:42.443Z","type":"join"}
 {"nick":"lundibundi","reason":"Ping timeout: 245 seconds","date":"2019-02-19T15:30:28.381Z","type":"quit"}
 {"nick":"Trott","message":"hemx To get coverage, I think you have to re-build.  Like, `make coverage-build` or something like that. But I'm not sure as I've never done coverage for a single file. bcoe is the person who's done the most with coverage lately, but they don't hang out on IRC AFAIK.","date":"2019-02-19T15:57:28.834Z","type":"message"}
+{"nick":"antsmartian","date":"2019-02-19T16:14:23.434Z","type":"join"}
+{"nick":"bradleymeck","message":"synthetic modules for loaders get weird, like what do you do when a CJS source isn't from a file, for now throwing seems fine","date":"2019-02-19T16:14:52.872Z","type":"message"}
+{"nick":"bradleymeck","message":"but like... what will happen to people if they expect to reach into require.cache and see they don't exist","date":"2019-02-19T16:15:15.179Z","type":"message"}
+{"nick":"bradleymeck","message":"cjs is such a wild place though already, maybe it is fine to just have __filename/__dirname be undefined?","date":"2019-02-19T16:16:44.434Z","type":"message"}
+{"nick":"ljharb","message":"in a CJS module?","date":"2019-02-19T16:22:43.377Z","type":"message"}
+{"nick":"bradleymeck","message":"yea, in general Synthetic modules don't quite mimic host modules since they are not coming from the host, they are coming from userland","date":"2019-02-19T16:23:52.029Z","type":"message"}
+{"nick":"bradleymeck","message":"loaders have to setup the envs to mimic stuff if they want because host doesn't know what to do","date":"2019-02-19T16:24:14.458Z","type":"message"}
+{"nick":"bradleymeck","message":"like if you return a CJS module with src `exports.foo = 1` but it isn't mapped to a host known path, host doesn't know where to put that thing","date":"2019-02-19T16:25:02.772Z","type":"message"}
+{"nick":"bradleymeck","message":"so a loader would have to ensure it gets added to require.cache wherever it expects","date":"2019-02-19T16:25:22.544Z","type":"message"}
+{"nick":"bradleymeck","message":"but even then it might not make sense and the loader might not be putting it in the cache since it is synthetic","date":"2019-02-19T16:25:40.791Z","type":"message"}
+{"nick":"ljharb","message":"ah ok sure, so te loader has to inject the location and related info","date":"2019-02-19T16:25:44.182Z","type":"message"}
+{"nick":"bradleymeck","message":"inject it via source, since it varies pretty wildly","date":"2019-02-19T16:25:58.177Z","type":"message"}
+{"nick":"bradleymeck","message":"yea","date":"2019-02-19T16:26:01.145Z","type":"message"}
+{"nick":"ljharb","message":"what is __dirname etc in `node -e`?","date":"2019-02-19T16:26:03.218Z","type":"message"}
+{"nick":"bradleymeck","message":"cwd, __filename = cwd + '[eval]'","date":"2019-02-19T16:26:20.238Z","type":"message"}
+{"nick":"ljharb","message":"seems like that should be the default then, and loaders could choose to override it","date":"2019-02-19T16:26:35.383Z","type":"message"}
+{"nick":"bradleymeck","message":"or filename is [eval] not cwd+[eval]","date":"2019-02-19T16:26:41.896Z","type":"message"}
+{"nick":"bradleymeck","message":"no cause it has collisions if we actually provide values and --eval does all sorts of odd setup","date":"2019-02-19T16:27:03.791Z","type":"message"}
+{"nick":"bradleymeck","message":"makes globals etc","date":"2019-02-19T16:27:07.560Z","type":"message"}
+{"nick":"ljharb","message":"i don’t mean, follow eval - i just mean those two vars","date":"2019-02-19T16:27:28.900Z","type":"message"}
+{"nick":"ljharb","message":"like it seems a reasonable case for code to have to handle already","date":"2019-02-19T16:27:44.588Z","type":"message"}
+{"nick":"bradleymeck","message":"why? those are really incorrect values most of the time?","date":"2019-02-19T16:27:46.652Z","type":"message"}
+{"nick":"ljharb","message":"more correct than being missing imo","date":"2019-02-19T16:27:59.174Z","type":"message"}
+{"nick":"bradleymeck","message":"how so?","date":"2019-02-19T16:28:07.059Z","type":"message"}
+{"nick":"bradleymeck","message":"they are missing because the host doesn't know a good value","date":"2019-02-19T16:28:14.433Z","type":"message"}
+{"nick":"bradleymeck","message":"empty strings are at least invalid paths","date":"2019-02-19T16:28:25.276Z","type":"message"}
+{"nick":"ljharb","message":"code expects them to be always present, and currently they are","date":"2019-02-19T16:28:25.348Z","type":"message"}
+{"nick":"bradleymeck","message":"they are not always present actually","date":"2019-02-19T16:28:34.465Z","type":"message"}
+{"nick":"ljharb","message":"oh you’re suggesting present but empty string","date":"2019-02-19T16:28:35.771Z","type":"message"}
+{"nick":"ljharb","message":"when are they not?","date":"2019-02-19T16:28:45.660Z","type":"message"}
+{"nick":"bradleymeck","message":"people mucking with require('module')","date":"2019-02-19T16:28:56.382Z","type":"message"}
+{"nick":"bradleymeck","message":"which is... many","date":"2019-02-19T16:29:00.972Z","type":"message"}
+{"nick":"ljharb","message":"sure but those people then know what they’re getting into :-)","date":"2019-02-19T16:29:19.444Z","type":"message"}
+{"nick":"bradleymeck","message":"lots of test frameworks etc can make intermediary modules or muck with the cache in weird ways","date":"2019-02-19T16:29:20.427Z","type":"message"}
+{"nick":"bradleymeck","message":"ljharb: they do not","date":"2019-02-19T16:29:27.617Z","type":"message"}
+{"nick":"bradleymeck","message":"they think if it is exposed it is safe","date":"2019-02-19T16:29:35.015Z","type":"message"}
+{"nick":"ljharb","message":"most modules are written to assume those dirname/filename vars exist, i think","date":"2019-02-19T16:29:40.202Z","type":"message"}
+{"nick":"ljharb","message":"not making a claim about all the other stuff","date":"2019-02-19T16:29:50.276Z","type":"message"}
+{"nick":"bradleymeck","message":"the variables will exist, but the values are non-sensical for modules made from in-mem resources","date":"2019-02-19T16:30:54.565Z","type":"message"}
+{"nick":"bradleymeck","message":"ljharb: for now banning them seems fine, can remove throw later","date":"2019-02-19T16:32:19.456Z","type":"message"}
+{"nick":"bradleymeck","message":"https://github.com/bmeck/ecmascript-modules/blob/thready-loaders/lib/internal/modules/esm/translators.js#L71","date":"2019-02-19T16:32:21.637Z","type":"message"}
+{"nick":"julianduque","reason":"Read error: Connection reset by peer","date":"2019-02-19T16:35:52.631Z","type":"quit"}
+{"nick":"julianduque","date":"2019-02-19T16:36:10.391Z","type":"join"}
+{"nick":"jesopo","reason":"Changing host","date":"2019-02-19T16:38:28.649Z","type":"quit"}
+{"nick":"jesopo","date":"2019-02-19T16:38:28.759Z","type":"join"}
+{"nick":"AtumT","date":"2019-02-19T16:45:22.952Z","type":"join"}
+{"nick":"devsnek","message":"oh the fork was named ecmascript-modules","date":"2019-02-19T16:48:29.667Z","type":"message"}
+{"nick":"devsnek","message":"bradleymeck: why would there be synthetic cjs","date":"2019-02-19T16:54:03.256Z","type":"message"}
+{"nick":"bradleymeck","message":"someone returns application/node as the content type. just filling out the translators","date":"2019-02-19T16:54:31.647Z","type":"message"}
+{"nick":"bradleymeck","message":"we still have cjs translators in the kernel","date":"2019-02-19T16:54:48.536Z","type":"message"}
+{"nick":"devsnek","message":"ah read the link now, makes sense","date":"2019-02-19T16:55:36.366Z","type":"message"}
+{"nick":"jesopo","reason":"Quit: et nos unum sumus","date":"2019-02-19T17:06:14.524Z","type":"quit"}
+{"nick":"jesopo","date":"2019-02-19T17:09:38.842Z","type":"join"}
+{"nick":"jesopo","reason":"Changing host","date":"2019-02-19T17:09:38.842Z","type":"quit"}
+{"nick":"jesopo","date":"2019-02-19T17:09:38.842Z","type":"join"}
+{"nick":"bradleymeck","message":"devsnek: the worst change to fix a mem leak is still needed for that loader though, attaching lifetimes/pre-allocating locations for synthetic resources. so that you can actually make a sane synthetic loader graph :(","date":"2019-02-19T17:12:33.783Z","type":"message"}
+{"nick":"bradleymeck","message":"most of the stuff we do has leaks from making things last forever, and/or not being able to allocate locations that have lifetimes","date":"2019-02-19T17:13:01.918Z","type":"message"}
+{"nick":"bradleymeck","message":"so, make the location reify to an object with GC for synthetic stuff and use identity","date":"2019-02-19T17:13:27.185Z","type":"message"}
+{"nick":"bradleymeck","message":"thats a rather big change though, but other than that loaders are workable","date":"2019-02-19T17:13:40.590Z","type":"message"}
+{"nick":"bradleymeck","message":"still perf problems though","date":"2019-02-19T17:13:47.810Z","type":"message"}
+{"nick":"bradleymeck","message":"kind of expected","date":"2019-02-19T17:13:55.311Z","type":"message"}
+{"nick":"devsnek","message":"who needs performance when you have imparative loaders","date":"2019-02-19T17:17:05.643Z","type":"message"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-02-19T17:45:16.364Z","type":"quit"}
+{"nick":"bradleymeck","message":"devsnek: if we just expose lower level features, we will make it better, definitely not make it harder to optimize","date":"2019-02-19T17:48:10.296Z","type":"message"}
+{"nick":"bradleymeck","action":"shudders","date":"2019-02-19T17:48:18.270Z","type":"action"}
+{"nick":"devsnek","message":"how can we represent this with nothing but posix syscalls /s","date":"2019-02-19T17:49:02.211Z","type":"message"}
+{"nick":"jesopo","reason":"Remote host closed the connection","date":"2019-02-19T17:53:32.381Z","type":"quit"}
+{"nick":"jesopo","date":"2019-02-19T17:53:47.078Z","type":"join"}
+{"nick":"lundibundi","date":"2019-02-19T18:09:06.151Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-02-19T18:48:59.333Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T19:18:16.887Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 250 seconds","date":"2019-02-19T19:23:02.561Z","type":"quit"}
+{"nick":"lpin","reason":"Quit: Textual IRC Client: www.textualapp.com","date":"2019-02-19T19:25:44.811Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T19:45:25.103Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-02-19T19:49:49.323Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T19:59:34.986Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 255 seconds","date":"2019-02-19T20:04:14.834Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T20:39:56.638Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 246 seconds","date":"2019-02-19T20:44:04.313Z","type":"quit"}
+{"nick":"hemx","date":"2019-02-19T20:48:53.249Z","type":"join"}
+{"nick":"hemx","message":"Hi, how to run a single unit test with coverage on the node.js url parser module?","date":"2019-02-19T20:50:32.911Z","type":"message"}
+{"nick":"AtumT_","date":"2019-02-19T21:27:10.883Z","type":"join"}
+{"nick":"AtumT","reason":"Ping timeout: 250 seconds","date":"2019-02-19T21:30:26.886Z","type":"quit"}
+{"nick":"AtumT","date":"2019-02-19T21:41:01.945Z","type":"join"}
+{"nick":"AtumT_","reason":"Ping timeout: 246 seconds","date":"2019-02-19T21:41:42.046Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-02-19T21:43:27.056Z","type":"quit"}
+{"nick":"hemx","reason":"Quit: Page closed","date":"2019-02-19T22:15:14.161Z","type":"quit"}
+{"nick":"gamelaster","date":"2019-02-19T22:25:08.368Z","type":"join"}
+{"nick":"ljharb","message":"um, how long have node promises had a `.domain` on them","date":"2019-02-19T22:28:50.694Z","type":"message"}
+{"nick":"bradleymeck","message":"4x?","date":"2019-02-19T22:29:59.299Z","type":"message"}
+{"nick":"ljharb","message":"and what on earth is the thing that's a `Symbol(kWeak)` on them???","date":"2019-02-19T22:41:22.749Z","type":"message"}
+{"nick":"ljharb","message":"invoking its constructor kills the repl with abort trap 6, lulz","date":"2019-02-19T22:41:44.128Z","type":"message"}
+{"nick":"devsnek","message":"ljharb: it only happens when domains are active","date":"2019-02-19T22:44:09.478Z","type":"message"}
+{"nick":"devsnek","message":"if you use the prototype repl it's not a problem","date":"2019-02-19T22:44:41.104Z","type":"message"}
+{"nick":"ljharb","message":"devsnek: i just typed `node`. why would domains be active","date":"2019-02-19T22:45:05.473Z","type":"message"}
+{"nick":"ljharb","message":"or you mean the abort trap","date":"2019-02-19T22:45:08.161Z","type":"message"}
+{"nick":"ljharb","message":"so why is there a `.domain` property when domains are not active?","date":"2019-02-19T22:45:17.788Z","type":"message"}
+{"nick":"devsnek","message":"the repl uses domains","date":"2019-02-19T22:45:24.196Z","type":"message"}
+{"nick":"devsnek","message":"to catch errors","date":"2019-02-19T22:45:27.657Z","type":"message"}
+{"nick":"ljharb","message":"oof, ok","date":"2019-02-19T22:45:30.245Z","type":"message"}
+{"nick":"devsnek","message":"ikr","date":"2019-02-19T22:45:33.499Z","type":"message"}
+{"nick":"ljharb","message":"so real node doesn't?","date":"2019-02-19T22:45:34.366Z","type":"message"}
+{"nick":"devsnek","message":"real node does not","date":"2019-02-19T22:45:43.271Z","type":"message"}
+{"nick":"devsnek","message":"but the repl does","date":"2019-02-19T22:45:46.639Z","type":"message"}
+{"nick":"devsnek","message":"it confused me for a while too lol","date":"2019-02-19T22:45:53.373Z","type":"message"}
+{"nick":"ljharb","message":"phew, ok","date":"2019-02-19T22:54:07.211Z","type":"message"}
+{"nick":"devsnek","message":"I wish the property wasnt enumerable","date":"2019-02-19T23:00:01.492Z","type":"message"}
+{"nick":"devsnek","message":"would be a good pr tbh","date":"2019-02-19T23:00:07.934Z","type":"message"}
+{"nick":"gamelaster","reason":"Ping timeout: 244 seconds","date":"2019-02-19T23:06:46.355Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T23:25:25.674Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 245 seconds","date":"2019-02-19T23:29:38.357Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-02-19T23:41:04.488Z","type":"join"}
+{"nick":"dbevenius","reason":"Ping timeout: 258 seconds","date":"2019-02-19T23:45:34.133Z","type":"quit"}
+{"nick":"ljharb","message":"devsnek: lol can you link me to where it's added","date":"2019-02-19T23:48:28.200Z","type":"message"}
+{"nick":"devsnek","message":"ljharb: I've absolutely no idea :p","date":"2019-02-19T23:49:04.723Z","type":"message"}
+{"nick":"devsnek","message":"if you want to go down the rabbit hole start with domain.js","date":"2019-02-19T23:49:21.888Z","type":"message"}
+{"nick":"ljharb","message":"devsnek: ok i'm going to regret saying this but \"looks like an easy net-one-character change!\"","date":"2019-02-19T23:54:12.482Z","type":"message"}
+{"nick":"devsnek","message":"lol","date":"2019-02-19T23:54:31.943Z","type":"message"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-02-19T23:54:46.242Z","type":"quit"}
+{"nick":"ljharb","message":"ok i already regret it, i was looking at the wrong line","date":"2019-02-19T23:56:36.073Z","type":"message"}
+{"nick":"ljharb","message":"ok it's here - https://github.com/nodejs/node/blob/master/lib/domain.js#L61 - but i suspect folks would object to making it non-enumerable everywhere","date":"2019-02-19T23:57:26.162Z","type":"message"}
+{"nick":"devsnek","message":"🤷","date":"2019-02-19T23:58:46.662Z","type":"message"}
