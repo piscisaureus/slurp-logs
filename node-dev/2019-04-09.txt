@@ -39,3 +39,153 @@
 {"nick":"lundibundi","date":"2019-04-09T07:05:20.085Z","type":"join"}
 {"nick":"mgol","date":"2019-04-09T07:14:02.154Z","type":"join"}
 {"nick":"gamiee","reason":"Ping timeout: 255 seconds","date":"2019-04-09T07:43:30.705Z","type":"quit"}
+{"nick":"targos","message":"hey everyone!","date":"2019-04-09T08:18:25.676Z","type":"message"}
+{"nick":"targos","message":"how can I debug a hard crash when Node starts up?","date":"2019-04-09T08:18:58.981Z","type":"message"}
+{"nick":"targos","message":"I only changed JS files","date":"2019-04-09T08:19:10.715Z","type":"message"}
+{"nick":"targos","message":"and I get `./node[8199]: ../src/node_errors.cc:779:void node::FatalException(v8::Isolate*, v8::Local<v8::Value>, v8::Local<v8::Message>): Assertion `(env) != nullptr' failed`","date":"2019-04-09T08:19:30.355Z","type":"message"}
+{"nick":"joyee","message":"targos try gdb or lldb","date":"2019-04-09T08:19:45.285Z","type":"message"}
+{"nick":"targos","message":"what function should I be looking at?","date":"2019-04-09T08:20:17.903Z","type":"message"}
+{"nick":"joyee","message":"Or build with ./configure —debug and use the gdb macros from deps/v8/gdbinit","date":"2019-04-09T08:20:21.064Z","type":"message"}
+{"nick":"targos","message":"I only know about `bt` xD","date":"2019-04-09T08:20:25.371Z","type":"message"}
+{"nick":"joyee","message":"bt should already give you some useful stack traces..","date":"2019-04-09T08:20:46.541Z","type":"message"}
+{"nick":"joyee","message":"To see the JS stack I would use the v8 gdb macro","date":"2019-04-09T08:21:04.665Z","type":"message"}
+{"nick":"joyee","message":"You can just call the function in the macro manually in gdb","date":"2019-04-09T08:21:27.470Z","type":"message"}
+{"nick":"joyee","message":"That’s what I use in lldb","date":"2019-04-09T08:21:50.736Z","type":"message"}
+{"nick":"joyee","message":"The function is only useful in debug builds","date":"2019-04-09T08:22:29.302Z","type":"message"}
+{"nick":"joyee","message":"If you are hitting a crash, set a C++ break point at the place of the crash (which could be found in the C++ stack trace), and when it’s hit, call the v8 internal function to print the current JS stack","date":"2019-04-09T08:24:29.170Z","type":"message"}
+{"nick":"targos","message":"The C++ stack trace mentions node::NewContext","date":"2019-04-09T08:24:41.553Z","type":"message"}
+{"nick":"joyee","message":"It looks like you are calling something in the per context script that invokes bindings that expect the Environment in the callback data?","date":"2019-04-09T08:26:04.522Z","type":"message"}
+{"nick":"joyee","message":"Note that you can’t do that there since Environment is not available at that point","date":"2019-04-09T08:26:35.520Z","type":"message"}
+{"nick":"targos","message":"I'm not doing anything fancy","date":"2019-04-09T08:26:47.723Z","type":"message"}
+{"nick":"joyee","message":"So you can’t e.g. Environment::GetCurrent","date":"2019-04-09T08:26:51.692Z","type":"message"}
+{"nick":"targos","message":"I just added some `const { Object } = primordials` statements","date":"2019-04-09T08:27:03.855Z","type":"message"}
+{"nick":"targos","message":"Am I not allowed to do that in specific files?","date":"2019-04-09T08:27:14.825Z","type":"message"}
+{"nick":"joyee","message":"that’s strange...I think that should be JS only","date":"2019-04-09T08:27:45.754Z","type":"message"}
+{"nick":"targos","message":"let me confirm that my base branch is working...","date":"2019-04-09T08:28:10.320Z","type":"message"}
+{"nick":"targos","message":"OK, it is","date":"2019-04-09T08:28:49.779Z","type":"message"}
+{"nick":"joyee","message":"oh but maybe you are hitting an JS error and the scripts are not capable of handling errors properly. I remember I ran into that once with a funny infinite recursion  but I didn’t remember to fix it","date":"2019-04-09T08:29:01.346Z","type":"message"}
+{"nick":"joyee","message":"FatalError has a bug IIRC","date":"2019-04-09T08:29:27.358Z","type":"message"}
+{"nick":"targos","message":"I'll do a debug build","date":"2019-04-09T08:29:31.076Z","type":"message"}
+{"nick":"targos","message":"It would be so cool to have the JS stack trace in the error output :)","date":"2019-04-09T08:29:47.458Z","type":"message"}
+{"nick":"joyee","message":"Wait I just added that","date":"2019-04-09T08:30:03.704Z","type":"message"}
+{"nick":"joyee","message":"There is a function you can call to print it","date":"2019-04-09T08:30:18.744Z","type":"message"}
+{"nick":"targos","message":"oh?","date":"2019-04-09T08:30:25.183Z","type":"message"}
+{"nick":"joyee","message":"Can’t remember rn, I am on the subway","date":"2019-04-09T08:30:30.129Z","type":"message"}
+{"nick":"joyee","message":"I added it in the “display errors when ToggleAsyncHooks fails” patch","date":"2019-04-09T08:30:57.782Z","type":"message"}
+{"nick":"joyee","message":"Or you can also try node report","date":"2019-04-09T08:31:40.322Z","type":"message"}
+{"nick":"joyee","message":"it should print that also","date":"2019-04-09T08:31:48.661Z","type":"message"}
+{"nick":"targos","message":"Should I do `./node --experimental-report --diagnostic-report-on-fatalerror` ?","date":"2019-04-09T08:33:17.675Z","type":"message"}
+{"nick":"targos","message":"I think node report is not initialized yet when it fails","date":"2019-04-09T08:33:31.268Z","type":"message"}
+{"nick":"joyee","message":"I think that should do the job","date":"2019-04-09T08:33:33.685Z","type":"message"}
+{"nick":"joyee","message":"Urrr....you are right","date":"2019-04-09T08:33:48.076Z","type":"message"}
+{"nick":"joyee","message":"(Facepalm)","date":"2019-04-09T08:34:00.537Z","type":"message"}
+{"nick":"joyee","message":"Can you paste the full stack trace?","date":"2019-04-09T08:35:02.283Z","type":"message"}
+{"nick":"targos","message":"https://www.irccloud.com/pastebin/gvp6Q67o/","date":"2019-04-09T08:35:33.861Z","type":"message"}
+{"nick":"joyee","message":"Can you run it with gdb or lldb, then get the stack trace again? That should give you some line numbers instead of just the object name","date":"2019-04-09T08:37:12.936Z","type":"message"}
+{"nick":"targos","message":"I think I need the debug build for that?","date":"2019-04-09T08:37:51.949Z","type":"message"}
+{"nick":"joyee","message":"It’s gdb — ./node, then run, then by","date":"2019-04-09T08:37:52.712Z","type":"message"}
+{"nick":"targos","message":"it's compiling","date":"2019-04-09T08:37:55.864Z","type":"message"}
+{"nick":"joyee","message":"You can also get some line numbers if it’s not inclined","date":"2019-04-09T08:38:10.921Z","type":"message"}
+{"nick":"joyee","message":"In release build","date":"2019-04-09T08:38:21.004Z","type":"message"}
+{"nick":"joyee","message":" Because we don’t strip the symbols","date":"2019-04-09T08:38:34.144Z","type":"message"}
+{"nick":"targos","message":"I only have this:","date":"2019-04-09T08:38:46.851Z","type":"message"}
+{"nick":"targos","message":"https://www.irccloud.com/pastebin/zKmiGHsR/","date":"2019-04-09T08:38:50.890Z","type":"message"}
+{"nick":"joyee","message":"Um, I think you are hitting the bug in FatalError in that it expects Environment to be ready (which is not true during context creation)","date":"2019-04-09T08:40:56.415Z","type":"message"}
+{"nick":"joyee","message":"But just from the stack I can’t tell, It will be about an hour before I can open my laptop","date":"2019-04-09T08:41:51.040Z","type":"message"}
+{"nick":"joyee","message":"With the debug stack I think I can tell but that probably takes you half an hour or so to compile","date":"2019-04-09T08:42:32.671Z","type":"message"}
+{"nick":"targos","message":"it's almost compiled","date":"2019-04-09T08:43:18.977Z","type":"message"}
+{"nick":"joyee","message":"0.0","date":"2019-04-09T08:43:39.219Z","type":"message"}
+{"nick":"targos","message":"I'm on a 12 core","date":"2019-04-09T08:44:04.708Z","type":"message"}
+{"nick":"targos","message":"OK lol there's a sort of infinite recursion","date":"2019-04-09T08:46:39.446Z","type":"message"}
+{"nick":"targos","message":"in C++","date":"2019-04-09T08:46:48.460Z","type":"message"}
+{"nick":"targos","message":"FATAL ERROR: v8::Context::GetAlignedPointerFromEmbedderData() Index too large","date":"2019-04-09T08:47:07.243Z","type":"message"}
+{"nick":"joyee","message":"You are probably hitting what I have got","date":"2019-04-09T08:47:10.371Z","type":"message"}
+{"nick":"joyee","message":"Oh yes","date":"2019-04-09T08:47:13.589Z","type":"message"}
+{"nick":"joyee","message":"That’s the one","date":"2019-04-09T08:47:17.598Z","type":"message"}
+{"nick":"joyee","message":"Wait I don’t remember how I got rid of it","date":"2019-04-09T08:47:34.654Z","type":"message"}
+{"nick":"joyee","message":"Um right, you are having usual JS errors in your changes","date":"2019-04-09T08:48:43.018Z","type":"message"}
+{"nick":"targos","message":"I suspected that","date":"2019-04-09T08:49:02.944Z","type":"message"}
+{"nick":"targos","message":"But I don't know in which file","date":"2019-04-09T08:49:10.059Z","type":"message"}
+{"nick":"targos","message":"I changed 84 files","date":"2019-04-09T08:49:31.683Z","type":"message"}
+{"nick":"joyee","message":"The funny part is we don’t deal with JS errors correctly sometimes in FatalErrors so it tries to get Environment from internal slots to invoke some fancy decoration, but Environment is not there, then v8 calls the Fatal error handler to tell you it’s not there, then you have recursion","date":"2019-04-09T08:50:42.827Z","type":"message"}
+{"nick":"targos","message":"haha","date":"2019-04-09T08:51:57.323Z","type":"message"}
+{"nick":"joyee","message":"The correct fix is not to trigger anything that can invoke the fatal error handler in the fatal error handler","date":"2019-04-09T08:52:05.202Z","type":"message"}
+{"nick":"targos","message":"so, I copied gdbinit to ~/.gdbinit","date":"2019-04-09T08:52:07.122Z","type":"message"}
+{"nick":"targos","message":"can you help me to get the JS stack?","date":"2019-04-09T08:52:15.421Z","type":"message"}
+{"nick":"joyee","message":"I think jst is the command in the gdbinit","date":"2019-04-09T08:53:16.077Z","type":"message"}
+{"nick":"joyee","message":"or you can search for stack","date":"2019-04-09T08:53:30.341Z","type":"message"}
+{"nick":"targos","message":"yeah but I don't know where I should break","date":"2019-04-09T08:53:46.699Z","type":"message"}
+{"nick":"targos","message":"At the segfault site it's too late","date":"2019-04-09T08:53:56.876Z","type":"message"}
+{"nick":"targos","message":"Cannot access memory at address 0x7ffffa6c6e1f","date":"2019-04-09T08:54:03.172Z","type":"message"}
+{"nick":"joyee","message":"What’s the stack you get from the debug build? There should be some line numbers","date":"2019-04-09T08:54:07.774Z","type":"message"}
+{"nick":"joyee","message":"ignore the recursion part of course","date":"2019-04-09T08:55:01.968Z","type":"message"}
+{"nick":"targos","message":"ok, it's going down the stack...","date":"2019-04-09T08:56:40.192Z","type":"message"}
+{"nick":"targos","message":"40k lines printed so far","date":"2019-04-09T08:56:55.284Z","type":"message"}
+{"nick":"joyee","message":"Um yeah...when I ran into this in lldb it just told me enough is enough and stopped at the 160k frame or so","date":"2019-04-09T08:57:32.826Z","type":"message"}
+{"nick":"targos","message":"Isn't there a way to run a program with a stack limit? :p","date":"2019-04-09T08:58:56.427Z","type":"message"}
+{"nick":"targos","message":"ok it stopped at 140k","date":"2019-04-09T08:59:09.475Z","type":"message"}
+{"nick":"targos","message":"https://www.irccloud.com/pastebin/7e8A6Y2d/","date":"2019-04-09T08:59:30.632Z","type":"message"}
+{"nick":"joyee","message":"Can you try removing the fatal error handler setup ? I believe it’s in NewContext","date":"2019-04-09T09:00:49.103Z","type":"message"}
+{"nick":"joyee","message":"Then it should invoke some default v8 handler instead","date":"2019-04-09T09:01:14.910Z","type":"message"}
+{"nick":"joyee","message":"and won’t incur the recursion","date":"2019-04-09T09:01:39.382Z","type":"message"}
+{"nick":"targos","message":"sure","date":"2019-04-09T09:01:45.272Z","type":"message"}
+{"nick":"joyee","message":"Or maybe it’s in NewIsolate","date":"2019-04-09T09:02:40.269Z","type":"message"}
+{"nick":"targos","message":"https://www.irccloud.com/pastebin/SHsaqaXf/","date":"2019-04-09T09:03:39.493Z","type":"message"}
+{"nick":"joyee","message":"https://github.com/nodejs/node/pull/26859/files","date":"2019-04-09T09:05:50.345Z","type":"message"}
+{"nick":"joyee","message":"Maybe try doing something similar to PrintCaughtException here in FatalError, you already have the error and the message there","date":"2019-04-09T09:06:43.311Z","type":"message"}
+{"nick":"joyee","message":"At the beginning of FatalError, then it should print something to stderr first","date":"2019-04-09T09:07:36.239Z","type":"message"}
+{"nick":"joyee","message":"And you can break at FatalError","date":"2019-04-09T09:07:44.489Z","type":"message"}
+{"nick":"targos","message":"jst prints nothing :(","date":"2019-04-09T09:12:17.810Z","type":"message"}
+{"nick":"targos","message":"with a breakpoint in node::FatalException","date":"2019-04-09T09:12:37.215Z","type":"message"}
+{"nick":"targos","message":"I'll try to print the stack as you suggested, thanks","date":"2019-04-09T09:12:50.497Z","type":"message"}
+{"nick":"joyee","message":"(We should really sort out all these dances done in the exception handler)","date":"2019-04-09T09:13:52.101Z","type":"message"}
+{"nick":"targos","message":"(Not me)","date":"2019-04-09T09:15:45.603Z","type":"message"}
+{"nick":"targos","message":"(This is me with C++: https://media0.giphy.com/media/VXCPgZwEP7f1e/giphy.gif?cid=790b76115cac62a4535a517536630a3a)","date":"2019-04-09T09:15:53.384Z","type":"message"}
+{"nick":"targos","message":"Perfect -_-","date":"2019-04-09T09:17:56.294Z","type":"message"}
+{"nick":"targos","message":"https://www.irccloud.com/pastebin/fMXDejRJ/","date":"2019-04-09T09:17:58.683Z","type":"message"}
+{"nick":"joyee","message":"(Facepalm)","date":"2019-04-09T09:20:07.857Z","type":"message"}
+{"nick":"joyee","message":"Can you save your branch somewhere? I will go digging into it when I am back home","date":"2019-04-09T09:21:39.942Z","type":"message"}
+{"nick":"joyee","message":"And try to make it fail less disastrously (at least don’t trigger recursion)","date":"2019-04-09T09:22:22.781Z","type":"message"}
+{"nick":"targos","message":"https://github.com/targos/node/commits/primordial-object","date":"2019-04-09T09:22:55.847Z","type":"message"}
+{"nick":"targos","message":"Thanks for your help <3","date":"2019-04-09T09:23:04.020Z","type":"message"}
+{"nick":"targos","message":"At least I managed to print the error message","date":"2019-04-09T09:26:28.525Z","type":"message"}
+{"nick":"targos","message":"ReferenceError: primordials is not defined","date":"2019-04-09T09:26:29.113Z","type":"message"}
+{"nick":"targos","message":"OK I found the file that doesn't have `primordials` in its scope","date":"2019-04-09T09:29:01.165Z","type":"message"}
+{"nick":"targos","message":"it's `lib/internal/per_context/domexception.js`","date":"2019-04-09T09:29:19.193Z","type":"message"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-04-09T09:29:51.077Z","type":"quit"}
+{"nick":"joyee","message":"Cool!","date":"2019-04-09T09:30:31.848Z","type":"message"}
+{"nick":"targos","message":"do you think we can inject it there?","date":"2019-04-09T09:30:51.623Z","type":"message"}
+{"nick":"joyee","message":"Probably should unify the compilation of these scripts at least by folder","date":"2019-04-09T09:30:54.884Z","type":"message"}
+{"nick":"joyee","message":"Yes it should be safe","date":"2019-04-09T09:31:02.401Z","type":"message"}
+{"nick":"joyee","message":"Oh wait","date":"2019-04-09T09:31:20.234Z","type":"message"}
+{"nick":"targos","message":"I don't know exactly in which order things are executed","date":"2019-04-09T09:31:25.067Z","type":"message"}
+{"nick":"joyee","message":"Primordials is only present in bootstrapped contexts","date":"2019-04-09T09:31:33.625Z","type":"message"}
+{"nick":"joyee","message":"so you will have to move make it run per context if you want to do that","date":"2019-04-09T09:32:06.424Z","type":"message"}
+{"nick":"targos","message":"does it make sense?","date":"2019-04-09T09:32:28.420Z","type":"message"}
+{"nick":"joyee","message":"I believe so, at least I thought about that before but got lazy","date":"2019-04-09T09:32:48.840Z","type":"message"}
+{"nick":"targos","message":"OK I'll look into it","date":"2019-04-09T09:33:03.723Z","type":"message"}
+{"nick":"joyee","message":"It makes sense to do it per context, modulo overhead, but then domexception is run per context (shrug)","date":"2019-04-09T09:33:25.995Z","type":"message"}
+{"nick":"targos","message":"no we have an easy repro for the fatal error thing: introduce an error in per_context","date":"2019-04-09T09:33:28.102Z","type":"message"}
+{"nick":"targos","message":"now*","date":"2019-04-09T09:33:38.453Z","type":"message"}
+{"nick":"joyee","message":"Yeah :)","date":"2019-04-09T09:33:41.696Z","type":"message"}
+{"nick":"gamiee","date":"2019-04-09T11:31:38.675Z","type":"join"}
+{"nick":"lundibundi","date":"2019-04-09T11:40:05.090Z","type":"join"}
+{"nick":"targos","message":"moving that code is out of my abilities","date":"2019-04-09T11:50:19.970Z","type":"message"}
+{"nick":"targos","message":"I'll disable the eslint rul on domexception for now","date":"2019-04-09T11:50:42.899Z","type":"message"}
+{"nick":"richardlau_","date":"2019-04-09T12:01:53.737Z","type":"join"}
+{"nick":"richardlau","reason":"Ping timeout: 240 seconds","date":"2019-04-09T12:04:27.330Z","type":"quit"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2019-04-09T13:11:07.412Z","type":"quit"}
+{"nick":"lundibundi","reason":"Ping timeout: 246 seconds","date":"2019-04-09T13:28:12.036Z","type":"quit"}
+{"nick":"gamiee","reason":"Ping timeout: 252 seconds","date":"2019-04-09T13:32:41.610Z","type":"quit"}
+{"nick":"octetcloud","date":"2019-04-09T13:43:41.091Z","type":"join"}
+{"nick":"shree","date":"2019-04-09T14:32:13.000Z","type":"join"}
+{"nick":"richardlau_","reason":"Quit: http://quassel-irc.org - Chat comfortably. Anywhere.","date":"2019-04-09T14:32:30.425Z","type":"quit"}
+{"nick":"richardlau","date":"2019-04-09T14:32:47.349Z","type":"join"}
+{"nick":"wawasho","reason":"Remote host closed the connection","date":"2019-04-09T14:47:20.393Z","type":"quit"}
+{"nick":"joepie91","new_nick":"joepie912","date":"2019-04-09T15:02:09.997Z","type":"nick"}
+{"nick":"joepie912","new_nick":"joepie91","date":"2019-04-09T15:02:12.237Z","type":"nick"}
+{"nick":"gamiee","date":"2019-04-09T15:43:50.192Z","type":"join"}
+{"nick":"dbevenius","reason":"Remote host closed the connection","date":"2019-04-09T15:48:08.162Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-04-09T15:51:48.919Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-04-09T15:52:11.658Z","type":"quit"}
+{"nick":"dbevenius","date":"2019-04-09T15:56:27.853Z","type":"join"}
