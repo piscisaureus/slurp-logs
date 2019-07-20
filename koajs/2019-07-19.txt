@@ -1,0 +1,46 @@
+{"nick":"devscodebox","date":"2019-07-19T22:05:10.739Z","type":"join"}
+{"nick":"devscodebox","message":"heya any koa experts here? im running into an odd case where ctx.status isnt getting set. ive checked all the cases listed: https://github.com/koajs/koa/blob/master/docs/troubleshooting.md#my-response-or-context-changes-have-no-effect","date":"2019-07-19T22:05:53.569Z","type":"message"}
+{"nick":"danopia","message":"devscodebox: what did the middleware & body logging reveal?","date":"2019-07-19T22:29:46.570Z","type":"message"}
+{"nick":"devscodebox","message":"```","date":"2019-07-19T22:31:30.049Z","type":"message"}
+{"nick":"devscodebox","message":"oops","date":"2019-07-19T22:31:32.347Z","type":"message"}
+{"nick":"devscodebox","message":"{ prv_sset: 404 }{ intermediate_status: 200 }{ new_status: 200 }body set{ post_set: 404 }Middleware done","date":"2019-07-19T22:31:37.830Z","type":"message"}
+{"nick":"devscodebox","message":"uhh how can i make a code snippet here thats easily parsable","date":"2019-07-19T22:31:49.937Z","type":"message"}
+{"nick":"devscodebox","message":"pretty newb at irc sorry","date":"2019-07-19T22:32:00.294Z","type":"message"}
+{"nick":"danopia","message":"IRC doesnt have multiline support, the general recommendation is using a pastebin like gist","date":"2019-07-19T22:32:25.552Z","type":"message"}
+{"nick":"devscodebox","message":"gotcha lemme set one up real quickly.","date":"2019-07-19T22:32:41.239Z","type":"message"}
+{"nick":"danopia","message":"Interesting, so your stuff runs in the right order, but the status set just doesn't work?","date":"2019-07-19T22:32:54.806Z","type":"message"}
+{"nick":"devscodebox","message":"correct","date":"2019-07-19T22:33:01.211Z","type":"message"}
+{"nick":"devscodebox","message":"https://gist.github.com/DevsCodebox/e8835fd7eacb4913d83f0f748fbd8f59","date":"2019-07-19T22:33:31.706Z","type":"message"}
+{"nick":"devscodebox","message":"heres the context setter that im using","date":"2019-07-19T22:33:37.159Z","type":"message"}
+{"nick":"devscodebox","message":"its the last middleware that is in my app.js","date":"2019-07-19T22:33:43.455Z","type":"message"}
+{"nick":"devscodebox","message":"as you can see im trying very hard to make sure im not accidentally setting it to 404","date":"2019-07-19T22:34:37.783Z","type":"message"}
+{"nick":"danopia","message":"Does the body work?","date":"2019-07-19T22:35:53.986Z","type":"message"}
+{"nick":"devscodebox","message":"yeah","date":"2019-07-19T22:36:14.368Z","type":"message"}
+{"nick":"devscodebox","message":"im seeing the response in a browser have a 404. but the proper body","date":"2019-07-19T22:36:21.964Z","type":"message"}
+{"nick":"devscodebox","message":"i found the code path that causes this to happen but im not aware of anywhere we're touching ctx.* in that code path","date":"2019-07-19T22:37:01.225Z","type":"message"}
+{"nick":"danopia","message":"That's crazy. It seems like some weird interactions within your code. This looks like a middleware, but it sets the body and all before even calling next - do you have anything registered after it?? Eg routes?","date":"2019-07-19T22:48:12.454Z","type":"message"}
+{"nick":"danopia","message":"If not, maybe try removing the next call?","date":"2019-07-19T22:49:35.686Z","type":"message"}
+{"nick":"devscodebox","message":"sorry was afk for a sec.","date":"2019-07-19T22:53:56.565Z","type":"message"}
+{"nick":"devscodebox","message":"no there ar eno routes after it.","date":"2019-07-19T22:54:08.030Z","type":"message"}
+{"nick":"devscodebox","message":"function init(app: Koa) {  app.proxy = true ;  app.use(SessionSetter);  app.use(Logger());  app.use(Error_catcher);  app.use(BodyParser({formLimit: '50mb', jsonLimit: '50mb'}));  KoaQS(app,'extended');  app.use(Cors);  app.use(Router.routes());  app.use(Router.allowedMethods()) ;  app.use(ContextSetter);}","date":"2019-07-19T22:54:15.361Z","type":"message"}
+{"nick":"devscodebox","message":"is my app.js","date":"2019-07-19T22:54:18.682Z","type":"message"}
+{"nick":"danopia","message":"Nw you're getting a hang of IRC perfectly ;)","date":"2019-07-19T22:54:18.914Z","type":"message"}
+{"nick":"devscodebox","message":"you can see its after router","date":"2019-07-19T22:54:26.649Z","type":"message"}
+{"nick":"devscodebox","message":"illt ry removing hte next and see what happens now.","date":"2019-07-19T22:57:02.449Z","type":"message"}
+{"nick":"devscodebox","message":"still happens","date":"2019-07-19T22:57:48.654Z","type":"message"}
+{"nick":"danopia","message":"Hmm, I think I have to bow out here, as I'm not familiar enough with the modules in use. Maybe someone else will see this and know","date":"2019-07-19T23:00:25.772Z","type":"message"}
+{"nick":"devscodebox","message":"unfortunate thanks for hte attempt!","date":"2019-07-19T23:00:43.966Z","type":"message"}
+{"nick":"devscodebox","message":"do you know of anyh chance of async shenanigans happening","date":"2019-07-19T23:01:18.874Z","type":"message"}
+{"nick":"devscodebox","message":"before it hits that last contextSetter module/middleware","date":"2019-07-19T23:01:27.437Z","type":"message"}
+{"nick":"devscodebox","message":"causing this?","date":"2019-07-19T23:01:29.270Z","type":"message"}
+{"nick":"devscodebox","message":"or am is safe in term so fthat since it gets there successfully","date":"2019-07-19T23:01:37.592Z","type":"message"}
+{"nick":"danopia","message":"Getting there successfully means little. a test I used was to await a timeout in my API - if the response came back to curl before the API was done, there was definitely a missing await. However, it seems your middlewares are mostly standard, so it's hard to call. Every middleware has a chance of changing the response - I suspect your router tbh","date":"2019-07-19T23:04:50.085Z","type":"message"}
+{"nick":"danopia","message":"Like, are you hitting a route that the router has registered? If not, changing the status to 404 doesn't sound too crazy","date":"2019-07-19T23:05:30.434Z","type":"message"}
+{"nick":"danopia","message":"Anyway, I'm out","date":"2019-07-19T23:05:37.608Z","type":"message"}
+{"nick":"devscodebox","message":"thanks again!","date":"2019-07-19T23:05:58.655Z","type":"message"}
+{"nick":"devscodebox","message":"found it!","date":"2019-07-19T23:48:05.118Z","type":"message"}
+{"nick":"devscodebox","message":"we had a keep-alive","date":"2019-07-19T23:48:11.197Z","type":"message"}
+{"nick":"devscodebox","message":"that was doing a ctx.res.write(' ')","date":"2019-07-19T23:48:19.586Z","type":"message"}
+{"nick":"devscodebox","message":"on a set interval so on any request that toook too long","date":"2019-07-19T23:48:27.799Z","type":"message"}
+{"nick":"devscodebox","message":"the headers were alreayd sent","date":"2019-07-19T23:48:31.322Z","type":"message"}
+{"nick":"devscodebox","message":"nyone got a good solution for keep-alives that dont have this issue?","date":"2019-07-19T23:48:42.704Z","type":"message"}
