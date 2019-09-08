@@ -1,0 +1,273 @@
+{"nick":"ThePendulum","message":"although I'd still lose the foreign key","date":"2019-09-08T00:00:24.486Z","type":"message"}
+{"nick":"jaawerth","message":"ThePendulum: is this postgres?","date":"2019-09-08T00:00:34.065Z","type":"message"}
+{"nick":"ThePendulum","message":"yes","date":"2019-09-08T00:00:40.360Z","type":"message"}
+{"nick":"ThePendulum","message":"writing a knex migration","date":"2019-09-08T00:00:45.114Z","type":"message"}
+{"nick":"not-ilbelkyr","date":"2019-09-08T00:01:20.009Z","type":"join"}
+{"nick":"ThePendulum","message":"would be nice if I could have a dynamic foreign key haha, one column targeting the table, the other the column/data","date":"2019-09-08T00:01:30.389Z","type":"message"}
+{"nick":"not-ilbelkyr","date":"2019-09-08T00:01:31.426Z","type":"part"}
+{"nick":"not-ilbelkyr","date":"2019-09-08T00:02:00.287Z","type":"join"}
+{"nick":"not-ilbelkyr","reason":"Remote host closed the connection","date":"2019-09-08T00:02:02.960Z","type":"quit"}
+{"nick":"jaawerth","message":"so like - if you think about what can \"own\" the association, that's sort of like a role. you could do something like have each other entity inherit from a \"role\" table, with a unique role_id (which you'd have to do some legwork to make truly unique since you can't have inherited primary key/unique constraint)","date":"2019-09-08T00:02:57.297Z","type":"message"}
+{"nick":"jaawerth","message":"and then each inheriting table could have a type column so you can tell the difference","date":"2019-09-08T00:03:24.964Z","type":"message"}
+{"nick":"jaawerth","message":"something like that","date":"2019-09-08T00:03:28.605Z","type":"message"}
+{"nick":"jaawerth","message":"there might be a better way folks in #postgresql could suggest","date":"2019-09-08T00:03:59.306Z","type":"message"}
+{"nick":"thisisbenji","date":"2019-09-08T00:04:29.006Z","type":"join"}
+{"nick":"ThePendulum","message":"interesting approach","date":"2019-09-08T00:04:35.655Z","type":"message"}
+{"nick":"pknull","reason":"Quit: Departing.","date":"2019-09-08T00:05:35.768Z","type":"quit"}
+{"nick":"pknull","date":"2019-09-08T00:05:54.735Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 240 seconds","date":"2019-09-08T00:16:34.699Z","type":"quit"}
+{"nick":"pknull","reason":"Quit: Departing.","date":"2019-09-08T00:20:54.326Z","type":"quit"}
+{"nick":"ThePendulum","message":"hmm I have some seed files, say one that inserts IRC networks, and another that inserts IRC channels","date":"2019-09-08T00:21:28.965Z","type":"message"}
+{"nick":"pknull","date":"2019-09-08T00:21:30.992Z","type":"join"}
+{"nick":"ThePendulum","message":"but they have an incremental ID. how can I associate the IRC channels to the correct network if I don't know what the ID is going to be?","date":"2019-09-08T00:21:56.202Z","type":"message"}
+{"nick":"ThePendulum","message":"should I associate them to slugs instead, or make up IDs myself?","date":"2019-09-08T00:22:32.058Z","type":"message"}
+{"nick":"ThePendulum","message":"or do I write a more programmatic seed file that queries the network database first, and find the IDs?","date":"2019-09-08T00:24:47.439Z","type":"message"}
+{"nick":"catbusters","date":"2019-09-08T00:29:47.180Z","type":"join"}
+{"nick":"wildtrees","reason":"Quit: Leaving","date":"2019-09-08T00:30:02.868Z","type":"quit"}
+{"nick":"slajax","date":"2019-09-08T00:32:14.906Z","type":"join"}
+{"nick":"jaawerth","message":"I'd do that latter; you could likely do it with a subquery in the INSERT. Or insert everything, then run update to fill in the id's - you could wrap that in a transaction and you'd be good to go, though it would be slower than the subquery because of hte update","date":"2019-09-08T00:35:16.777Z","type":"message"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T00:35:21.997Z","type":"quit"}
+{"nick":"ThePendulum","message":"can't really update incremental IDs though?","date":"2019-09-08T00:36:14.812Z","type":"message"}
+{"nick":"jaawerth","message":"well, you'd just need to update to set the FK's. Oh but the constraint","date":"2019-09-08T00:36:43.964Z","type":"message"}
+{"nick":"jaawerth","message":"if you do it all in a transction, you would likely want to first load all the data into a temp table, then run `INSERT INTO .. SELECT ..` to insert from a query that joins the temp table to the network table, so you can have everything upon insertion","date":"2019-09-08T00:37:22.816Z","type":"message"}
+{"nick":"jaawerth","message":"but I'd see if I could get the subquery approach to work first","date":"2019-09-08T00:37:30.037Z","type":"message"}
+{"nick":"ThePendulum","message":"wondering in general how to combine seed files with manual addition of data later on","date":"2019-09-08T00:37:34.007Z","type":"message"}
+{"nick":"SoreGums","date":"2019-09-08T00:37:58.082Z","type":"join"}
+{"nick":"jaawerth","message":"alternatively, you could use a BEFORE INSERT hook to query the network id and modify the row about to be inserted","date":"2019-09-08T00:38:13.134Z","type":"message"}
+{"nick":"jaawerth","message":"s/hook/trigger/","date":"2019-09-08T00:38:22.696Z","type":"message"}
+{"nick":"jaawerth","message":"then you could just leave your seeding files as regular insertions and let the ID's handle themselves","date":"2019-09-08T00:38:31.744Z","type":"message"}
+{"nick":"jaawerth","message":"ThePendulum: yeah thinking about it I think the trigger approach is best. That way you can do inserts later without having to write up the subquery logic each time","date":"2019-09-08T00:42:11.645Z","type":"message"}
+{"nick":"jaawerth","message":"it'll make the non-db code a lot more maintainable","date":"2019-09-08T00:42:27.472Z","type":"message"}
+{"nick":"ThePendulum","message":"I'll see how to go about that","date":"2019-09-08T00:43:04.946Z","type":"message"}
+{"nick":"ThePendulum","message":"not really sure where I'm supposed to put the hook","date":"2019-09-08T00:44:08.353Z","type":"message"}
+{"nick":"ThePendulum","message":"in a migration I imagine?","date":"2019-09-08T00:44:32.311Z","type":"message"}
+{"nick":"ThePendulum","message":"but I'd still need a way to pass the 'metadata' that allows me to query for the ID","date":"2019-09-08T00:44:55.968Z","type":"message"}
+{"nick":"jaawerth","message":"ThePendulum: yeah it's part of the schema so a migration","date":"2019-09-08T00:46:00.794Z","type":"message"}
+{"nick":"Marenz","reason":"Ping timeout: 245 seconds","date":"2019-09-08T00:46:43.421Z","type":"quit"}
+{"nick":"slajax","reason":"Ping timeout: 268 seconds","date":"2019-09-08T00:47:17.898Z","type":"quit"}
+{"nick":"ThePendulum","message":"seems like I need to go raw with knex for that","date":"2019-09-08T00:49:02.498Z","type":"message"}
+{"nick":"deviantfero","reason":"Ping timeout: 265 seconds","date":"2019-09-08T00:51:49.561Z","type":"quit"}
+{"nick":"duderonomy","date":"2019-09-08T00:54:34.756Z","type":"join"}
+{"nick":"hoijui","date":"2019-09-08T01:02:00.244Z","type":"join"}
+{"nick":"sterns","reason":"Ping timeout: 244 seconds","date":"2019-09-08T01:11:37.492Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:13:57.486Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:13:58.995Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:14:39.190Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:14:40.553Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:15:17.445Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:15:18.701Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:15:57.435Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:15:58.693Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:16:37.067Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:16:38.398Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T01:17:19.297Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T01:17:20.610Z","type":"quit"}
+{"nick":"enoch85","date":"2019-09-08T01:17:24.555Z","type":"join"}
+{"nick":"hoijui","reason":"Ping timeout: 244 seconds","date":"2019-09-08T01:18:20.518Z","type":"quit"}
+{"nick":"ed209","reason":"Remote host closed the connection","date":"2019-09-08T01:20:00.533Z","type":"quit"}
+{"nick":"ed209","date":"2019-09-08T01:20:07.229Z","type":"join"}
+{"nick":"lucasb","reason":"Quit: Connection closed for inactivity","date":"2019-09-08T01:21:15.639Z","type":"quit"}
+{"nick":"imsky","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T01:21:28.112Z","type":"quit"}
+{"nick":"lord|","reason":"Read error: Connection reset by peer","date":"2019-09-08T01:30:42.935Z","type":"quit"}
+{"nick":"lord|","date":"2019-09-08T01:32:24.598Z","type":"join"}
+{"nick":"keggsmurph21","reason":"Ping timeout: 260 seconds","date":"2019-09-08T01:34:11.725Z","type":"quit"}
+{"nick":"feynhat","date":"2019-09-08T01:34:32.034Z","type":"join"}
+{"nick":"prestochango","date":"2019-09-08T01:37:32.607Z","type":"join"}
+{"nick":"prestochango","reason":"Client Quit","date":"2019-09-08T01:41:42.887Z","type":"quit"}
+{"nick":"twainwek","message":"how can i escape the backward slash in '\\m' to get just '\\m'","date":"2019-09-08T01:47:28.721Z","type":"message"}
+{"nick":"twainwek","message":"doing '\\\\m' gives '\\\\m'","date":"2019-09-08T01:47:54.710Z","type":"message"}
+{"nick":"Norrin","reason":"\"Textual IRC Client: www.textualapp.com\"","date":"2019-09-08T01:48:05.042Z","type":"part"}
+{"nick":"GreenJello","message":"twainwek, '\\\\m' is a string with two characters","date":"2019-09-08T01:48:14.949Z","type":"message"}
+{"nick":"twainwek","message":"oh","date":"2019-09-08T01:48:29.325Z","type":"message"}
+{"nick":"twainwek","message":"well that was easy","date":"2019-09-08T01:48:43.859Z","type":"message"}
+{"nick":"GreenJello","message":"twainwek, it can be confusing because some things that format the string will emulate the escape syntax","date":"2019-09-08T01:49:20.064Z","type":"message"}
+{"nick":"GreenJello","message":"n> console.log('\\\\m')","date":"2019-09-08T01:49:38.567Z","type":"message"}
+{"nick":"jellobot","message":"(okay) \\m undefined","date":"2019-09-08T01:49:40.194Z","type":"message"}
+{"nick":"GreenJello","message":"n> console.log({ x: '\\\\m' })","date":"2019-09-08T01:49:43.728Z","type":"message"}
+{"nick":"jellobot","message":"(okay) { x: '\\\\m' } undefined","date":"2019-09-08T01:49:44.650Z","type":"message"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-09-08T01:52:30.255Z","type":"quit"}
+{"nick":"feynhat","message":"hi","date":"2019-09-08T01:55:54.335Z","type":"message"}
+{"nick":"feynhat","message":"What is the best way to use node modules in a django project? I have installed node modules in the root level of my project, I would like to access them in a Django template.","date":"2019-09-08T01:57:06.123Z","type":"message"}
+{"nick":"GreenJello","message":"feynhat, if you want to use them in frontend code you need a bundler like webpack","date":"2019-09-08T01:59:28.275Z","type":"message"}
+{"nick":"feynhat","message":"I see.","date":"2019-09-08T01:59:46.767Z","type":"message"}
+{"nick":"kannarfr","reason":"Quit: ZNC 1.7.1 - https://znc.in","date":"2019-09-08T02:00:01.906Z","type":"quit"}
+{"nick":"kannarfr","date":"2019-09-08T02:01:32.112Z","type":"join"}
+{"nick":"ItsNotRSX","reason":"Remote host closed the connection","date":"2019-09-08T02:02:11.744Z","type":"quit"}
+{"nick":"ItsNotRSX","date":"2019-09-08T02:02:36.598Z","type":"join"}
+{"nick":"pknull","reason":"Quit: Departing.","date":"2019-09-08T02:03:38.992Z","type":"quit"}
+{"nick":"pknull","date":"2019-09-08T02:03:55.036Z","type":"join"}
+{"nick":"tm","reason":"Ping timeout: 245 seconds","date":"2019-09-08T02:07:58.581Z","type":"quit"}
+{"nick":"plutoniix","reason":"Quit: Leaving","date":"2019-09-08T02:09:44.380Z","type":"quit"}
+{"nick":"Cabanossi","reason":"Ping timeout: 252 seconds","date":"2019-09-08T02:10:00.163Z","type":"quit"}
+{"nick":"tm","date":"2019-09-08T02:11:43.115Z","type":"join"}
+{"nick":"Nicmavr","reason":"Read error: Connection reset by peer","date":"2019-09-08T02:13:41.088Z","type":"quit"}
+{"nick":"shush","date":"2019-09-08T02:13:51.140Z","type":"join"}
+{"nick":"Nicmavr","date":"2019-09-08T02:15:26.562Z","type":"join"}
+{"nick":"Cabanossi","date":"2019-09-08T02:16:43.033Z","type":"join"}
+{"nick":"gsimon","date":"2019-09-08T02:18:29.625Z","type":"join"}
+{"nick":"RoriconKnight","reason":"Remote host closed the connection","date":"2019-09-08T02:21:16.592Z","type":"quit"}
+{"nick":"RoriconKnight","date":"2019-09-08T02:21:47.853Z","type":"join"}
+{"nick":"oetjenj","date":"2019-09-08T02:28:43.407Z","type":"join"}
+{"nick":"jaawerth","message":"ThePendulum: yeah you'll need raw. anyway I got bored and wrote you an example that works - you'd just need to adapt this to knex.schema.raw migrations https://gist.github.com/jaawerth/7cb0c444078183c962a602c18c8ed858","date":"2019-09-08T02:29:19.356Z","type":"message"}
+{"nick":"ThePendulum","message":"thanks, I wrote it in code into the migration now, good to see how to move away from that at some point","date":"2019-09-08T02:30:52.554Z","type":"message"}
+{"nick":"nexii","date":"2019-09-08T02:31:23.603Z","type":"join"}
+{"nick":"__xor","date":"2019-09-08T02:35:42.418Z","type":"join"}
+{"nick":"_xor","reason":"Ping timeout: 245 seconds","date":"2019-09-08T02:37:57.262Z","type":"quit"}
+{"nick":"trevor","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T02:40:14.676Z","type":"quit"}
+{"nick":"RoriconKnight","reason":"Read error: Connection reset by peer","date":"2019-09-08T02:40:46.712Z","type":"quit"}
+{"nick":"RoriconKnight","date":"2019-09-08T02:41:18.802Z","type":"join"}
+{"nick":"slajax","date":"2019-09-08T02:43:41.318Z","type":"join"}
+{"nick":"nexii","reason":"Ping timeout: 268 seconds","date":"2019-09-08T02:44:05.604Z","type":"quit"}
+{"nick":"KempfCreative","date":"2019-09-08T02:47:49.579Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 264 seconds","date":"2019-09-08T02:48:04.029Z","type":"quit"}
+{"nick":"devc`diamond","new_nick":"devc","date":"2019-09-08T02:50:46.334Z","type":"nick"}
+{"nick":"RoriconKnight_","date":"2019-09-08T02:52:00.410Z","type":"join"}
+{"nick":"trevor","date":"2019-09-08T02:54:45.766Z","type":"join"}
+{"nick":"imsky","date":"2019-09-08T02:54:54.397Z","type":"join"}
+{"nick":"RoriconKnight","reason":"Ping timeout: 246 seconds","date":"2019-09-08T02:55:01.291Z","type":"quit"}
+{"nick":"slajax","reason":"Ping timeout: 246 seconds","date":"2019-09-08T02:58:52.374Z","type":"quit"}
+{"nick":"SferaDev8","date":"2019-09-08T03:01:35.730Z","type":"join"}
+{"nick":"jimlei","reason":"Quit: http://quassel-irc.org - Chat comfortably. Anywhere.","date":"2019-09-08T03:02:17.750Z","type":"quit"}
+{"nick":"jimlei","date":"2019-09-08T03:04:09.648Z","type":"join"}
+{"nick":"Roughy","reason":"Quit: Meadow Fresh milk","date":"2019-09-08T03:13:42.491Z","type":"quit"}
+{"nick":"catbusters","reason":"Quit: Connection closed for inactivity","date":"2019-09-08T03:19:12.189Z","type":"quit"}
+{"nick":"yakiza1","reason":"Ping timeout: 245 seconds","date":"2019-09-08T03:19:38.545Z","type":"quit"}
+{"nick":"glosoli","date":"2019-09-08T03:26:02.037Z","type":"join"}
+{"nick":"oetjenj","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T03:26:20.096Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:26:53.030Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:27:06.446Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:27:52.785Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:27:52.900Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:28:18.367Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:28:38.883Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:29:06.916Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:29:25.317Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:29:53.604Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:30:11.274Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:30:39.760Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:30:57.903Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:31:23.408Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:31:43.819Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:32:09.751Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:32:30.234Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:32:57.246Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:33:16.444Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:33:45.204Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:34:02.707Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:35:13.600Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:35:34.889Z","type":"quit"}
+{"nick":"jpstone","date":"2019-09-08T03:36:53.103Z","type":"join"}
+{"nick":"oetjenj","date":"2019-09-08T03:37:34.570Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:37:53.571Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:38:24.819Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:38:39.450Z","type":"quit"}
+{"nick":"oetjenj","date":"2019-09-08T03:39:05.744Z","type":"join"}
+{"nick":"oetjenj","reason":"Client Quit","date":"2019-09-08T03:39:25.612Z","type":"quit"}
+{"nick":"jud","date":"2019-09-08T03:57:47.067Z","type":"join"}
+{"nick":"feynhat","reason":"Read error: Connection reset by peer","date":"2019-09-08T04:02:47.549Z","type":"quit"}
+{"nick":"jeffyboh","reason":"Ping timeout: 245 seconds","date":"2019-09-08T04:14:37.292Z","type":"quit"}
+{"nick":"trevor","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T04:15:40.494Z","type":"quit"}
+{"nick":"KempfCreative","reason":"Ping timeout: 244 seconds","date":"2019-09-08T04:17:06.516Z","type":"quit"}
+{"nick":"glosoli","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T04:26:38.649Z","type":"quit"}
+{"nick":"nanoz","date":"2019-09-08T04:33:29.386Z","type":"join"}
+{"nick":"imsky","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T04:34:01.918Z","type":"quit"}
+{"nick":"RoriconKnight_","reason":"Quit: So, it has come to this.","date":"2019-09-08T04:35:18.630Z","type":"quit"}
+{"nick":"RoriconKnight","date":"2019-09-08T04:35:40.988Z","type":"join"}
+{"nick":"keith_miller","date":"2019-09-08T04:41:04.053Z","type":"join"}
+{"nick":"shush","date":"2019-09-08T04:44:45.659Z","type":"join"}
+{"nick":"jeffyboh_","date":"2019-09-08T04:46:43.601Z","type":"join"}
+{"nick":"fandi","reason":"Read error: Connection reset by peer","date":"2019-09-08T04:48:33.970Z","type":"quit"}
+{"nick":"fandi","date":"2019-09-08T04:50:01.613Z","type":"join"}
+{"nick":"slajax","date":"2019-09-08T04:55:27.042Z","type":"join"}
+{"nick":"a_chou","date":"2019-09-08T05:08:16.777Z","type":"join"}
+{"nick":"slajax","reason":"Ping timeout: 258 seconds","date":"2019-09-08T05:11:35.930Z","type":"quit"}
+{"nick":"shush","reason":"Ping timeout: 276 seconds","date":"2019-09-08T05:18:28.659Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T05:18:53.103Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:18:54.428Z","type":"quit"}
+{"nick":"wsieroci","date":"2019-09-08T05:19:35.866Z","type":"join"}
+{"nick":"^esc","date":"2019-09-08T05:19:36.599Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:19:37.925Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T05:20:19.583Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:20:20.978Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T05:21:02.592Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:21:03.988Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T05:21:45.673Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:21:47.029Z","type":"quit"}
+{"nick":"^esc","date":"2019-09-08T05:22:28.556Z","type":"join"}
+{"nick":"^esc","reason":"Excess Flood","date":"2019-09-08T05:22:30.032Z","type":"quit"}
+{"nick":"Anthaas","reason":"Ping timeout: 268 seconds","date":"2019-09-08T05:23:11.604Z","type":"quit"}
+{"nick":"Anthaas","date":"2019-09-08T05:25:34.108Z","type":"join"}
+{"nick":"spacesuitdiver","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-08T05:31:29.342Z","type":"quit"}
+{"nick":"SoreGums","reason":"Quit: Connection closed for inactivity","date":"2019-09-08T05:37:27.406Z","type":"quit"}
+{"nick":"hsn","date":"2019-09-08T05:39:09.337Z","type":"join"}
+{"nick":"sozuba","date":"2019-09-08T05:47:04.404Z","type":"join"}
+{"nick":"elphe","date":"2019-09-08T05:47:36.603Z","type":"join"}
+{"nick":"keith_miller","reason":"Ping timeout: 258 seconds","date":"2019-09-08T05:51:28.079Z","type":"quit"}
+{"nick":"keith_miller","date":"2019-09-08T05:53:14.466Z","type":"join"}
+{"nick":"RoriconKnight_","date":"2019-09-08T05:53:15.085Z","type":"join"}
+{"nick":"RoriconKnight_","reason":"Remote host closed the connection","date":"2019-09-08T05:54:47.985Z","type":"quit"}
+{"nick":"RoriconKnight_","date":"2019-09-08T05:55:59.984Z","type":"join"}
+{"nick":"RoriconKnight","reason":"Ping timeout: 268 seconds","date":"2019-09-08T05:56:29.601Z","type":"quit"}
+{"nick":"kannarfr","reason":"Quit: ZNC 1.7.1 - https://znc.in","date":"2019-09-08T06:00:01.666Z","type":"quit"}
+{"nick":"skylite","reason":"Ping timeout: 246 seconds","date":"2019-09-08T06:00:52.318Z","type":"quit"}
+{"nick":"kannarfr","date":"2019-09-08T06:01:29.440Z","type":"join"}
+{"nick":"renlol","reason":"Ping timeout: 268 seconds","date":"2019-09-08T06:07:20.953Z","type":"quit"}
+{"nick":"a_chou1","date":"2019-09-08T06:13:56.797Z","type":"join"}
+{"nick":"a_chou","reason":"Ping timeout: 250 seconds","date":"2019-09-08T06:15:05.795Z","type":"quit"}
+{"nick":"a_chou1","new_nick":"a_chou","date":"2019-09-08T06:15:06.025Z","type":"nick"}
+{"nick":"ahmedelgabri","date":"2019-09-08T06:17:57.303Z","type":"join"}
+{"nick":"ahmedelgabri","reason":"Ping timeout: 246 seconds","date":"2019-09-08T06:23:37.396Z","type":"quit"}
+{"nick":"renlol","date":"2019-09-08T06:26:58.350Z","type":"join"}
+{"nick":"wsieroci_","date":"2019-09-08T06:29:27.743Z","type":"join"}
+{"nick":"wsieroci","reason":"Ping timeout: 252 seconds","date":"2019-09-08T06:32:54.064Z","type":"quit"}
+{"nick":"shush","date":"2019-09-08T06:33:58.744Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 250 seconds","date":"2019-09-08T06:41:05.707Z","type":"quit"}
+{"nick":"theWhisper_","date":"2019-09-08T06:46:44.725Z","type":"join"}
+{"nick":"shush","date":"2019-09-08T06:48:03.048Z","type":"join"}
+{"nick":"wsieroci_","reason":"Remote host closed the connection","date":"2019-09-08T06:49:21.408Z","type":"quit"}
+{"nick":"jpstone","reason":"Quit: Connection closed for inactivity","date":"2019-09-08T06:52:39.918Z","type":"quit"}
+{"nick":"shush","reason":"Ping timeout: 264 seconds","date":"2019-09-08T06:52:52.003Z","type":"quit"}
+{"nick":"hemstock","date":"2019-09-08T06:53:34.162Z","type":"join"}
+{"nick":"eb0t","reason":"Ping timeout: 268 seconds","date":"2019-09-08T07:00:22.960Z","type":"quit"}
+{"nick":"eblip","reason":"Ping timeout: 240 seconds","date":"2019-09-08T07:00:58.746Z","type":"quit"}
+{"nick":"shush","date":"2019-09-08T07:03:18.609Z","type":"join"}
+{"nick":"a_chou","reason":"Quit: a_chou","date":"2019-09-08T07:06:35.019Z","type":"quit"}
+{"nick":"slajax","date":"2019-09-08T07:07:35.601Z","type":"join"}
+{"nick":"salad_g","date":"2019-09-08T07:09:02.365Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 276 seconds","date":"2019-09-08T07:10:55.593Z","type":"quit"}
+{"nick":"elphe","reason":"Quit: leaving","date":"2019-09-08T07:11:20.728Z","type":"quit"}
+{"nick":"igemnace","reason":"Quit: WeeChat 2.5","date":"2019-09-08T07:12:58.909Z","type":"quit"}
+{"nick":"unlink2","date":"2019-09-08T07:16:52.608Z","type":"join"}
+{"nick":"unlink_","reason":"Read error: Connection reset by peer","date":"2019-09-08T07:16:52.739Z","type":"quit"}
+{"nick":"unlink2","reason":"Remote host closed the connection","date":"2019-09-08T07:17:14.091Z","type":"quit"}
+{"nick":"rendar","date":"2019-09-08T07:17:17.588Z","type":"join"}
+{"nick":"unlink2","date":"2019-09-08T07:17:41.819Z","type":"join"}
+{"nick":"renlol","reason":"Ping timeout: 244 seconds","date":"2019-09-08T07:22:35.689Z","type":"quit"}
+{"nick":"slajax","reason":"Ping timeout: 268 seconds","date":"2019-09-08T07:22:49.600Z","type":"quit"}
+{"nick":"renn0xtk9","date":"2019-09-08T07:23:28.181Z","type":"join"}
+{"nick":"shush","date":"2019-09-08T07:24:14.756Z","type":"join"}
+{"nick":"renlol","date":"2019-09-08T07:26:21.362Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 250 seconds","date":"2019-09-08T07:28:45.716Z","type":"quit"}
+{"nick":"darkseid","date":"2019-09-08T07:31:26.607Z","type":"join"}
+{"nick":"shush","date":"2019-09-08T07:32:04.667Z","type":"join"}
+{"nick":"systemfault","reason":"Quit: Updating details, brb","date":"2019-09-08T07:33:20.781Z","type":"quit"}
+{"nick":"systemfault","date":"2019-09-08T07:33:33.130Z","type":"join"}
+{"nick":"pknull","reason":"Quit: Departing.","date":"2019-09-08T07:35:04.315Z","type":"quit"}
+{"nick":"pknull","date":"2019-09-08T07:35:20.369Z","type":"join"}
+{"nick":"futs_","reason":"Ping timeout: 258 seconds","date":"2019-09-08T07:35:44.054Z","type":"quit"}
+{"nick":"shush","reason":"Ping timeout: 276 seconds","date":"2019-09-08T07:36:55.629Z","type":"quit"}
+{"nick":"futs_","date":"2019-09-08T07:37:46.400Z","type":"join"}
+{"nick":"pknull","reason":"Quit: Departing.","date":"2019-09-08T07:40:26.604Z","type":"quit"}
+{"nick":"pknull","date":"2019-09-08T07:40:58.600Z","type":"join"}
+{"nick":"shush","date":"2019-09-08T07:42:51.670Z","type":"join"}
+{"nick":"avu","reason":"Quit: avu","date":"2019-09-08T07:45:09.260Z","type":"quit"}
+{"nick":"ahmedelgabri","date":"2019-09-08T07:45:51.112Z","type":"join"}
+{"nick":"avu","date":"2019-09-08T07:47:14.504Z","type":"join"}
+{"nick":"shush","reason":"Ping timeout: 276 seconds","date":"2019-09-08T07:49:55.684Z","type":"quit"}
+{"nick":"theWhisper_","reason":"Remote host closed the connection","date":"2019-09-08T07:50:01.822Z","type":"quit"}
+{"nick":"SferaDev8","reason":"Ping timeout: 268 seconds","date":"2019-09-08T07:51:11.600Z","type":"quit"}
+{"nick":"AMANEDIEL","date":"2019-09-08T07:53:31.695Z","type":"join"}
+{"nick":"Josse","date":"2019-09-08T07:56:22.116Z","type":"join"}
+{"nick":"renn0xtk9","reason":"Quit: Konversation terminated!","date":"2019-09-08T07:56:49.008Z","type":"quit"}
+{"nick":"hoijui","date":"2019-09-08T07:59:31.476Z","type":"join"}
+{"nick":"ahmedelgabri","reason":"Ping timeout: 268 seconds","date":"2019-09-08T07:59:49.601Z","type":"quit"}
