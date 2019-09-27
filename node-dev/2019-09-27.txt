@@ -1,0 +1,85 @@
+{"nick":"ljharb","message":"devsnek: code? isn't that just how the mac works?","date":"2019-09-27T01:02:58.697Z","type":"message"}
+{"nick":"ljharb","message":"keywise it's home and end, yeah","date":"2019-09-27T01:03:11.407Z","type":"message"}
+{"nick":"devsnek","message":"ljharb: apparently everything maps fn+left and fn+right to home and enf","date":"2019-09-27T01:03:39.672Z","type":"message"}
+{"nick":"devsnek","message":"end*","date":"2019-09-27T01:03:42.051Z","type":"message"}
+{"nick":"ljharb","message":"that's what the keyboard sends","date":"2019-09-27T01:04:50.652Z","type":"message"}
+{"nick":"ljharb","message":"p sure you can't make `home` and `fn+left` do anything different","date":"2019-09-27T01:05:00.534Z","type":"message"}
+{"nick":"joyee","message":"devsnek: we already have no control over invalid syntax, invalid JSON and undefined is not a function, so I can’t see what difference the errors of private fields make","date":"2019-09-27T01:05:21.860Z","type":"message"}
+{"nick":"devsnek","message":"joyee: just because we already have branding error codes","date":"2019-09-27T01:05:57.234Z","type":"message"}
+{"nick":"devsnek","message":"I'm not saying we should disallow private fields","date":"2019-09-27T01:06:12.728Z","type":"message"}
+{"nick":"devsnek","message":"just want to make sure it's brought up","date":"2019-09-27T01:06:20.644Z","type":"message"}
+{"nick":"joyee","message":"The brands are more like an implementation detail in my understanding?","date":"2019-09-27T01:07:08.367Z","type":"message"}
+{"nick":"devsnek","message":"well if we throw ERR_NOT_MODULE","date":"2019-09-27T01:07:28.071Z","type":"message"}
+{"nick":"devsnek","message":"and then on another method it's just a random TypeError","date":"2019-09-27T01:07:49.014Z","type":"message"}
+{"nick":"joyee","message":"Also to be exact it does not apply to private fields but private modules","date":"2019-09-27T01:07:51.981Z","type":"message"}
+{"nick":"joyee","message":"Oops, methods","date":"2019-09-27T01:08:00.888Z","type":"message"}
+{"nick":"devsnek","message":"accessing a private field that doesn't exist on an object throws a type error","date":"2019-09-27T01:08:25.984Z","type":"message"}
+{"nick":"devsnek","message":"I'm just clarifying if we might want to wrap that to a specific error code based on past errors we have about brands","date":"2019-09-27T01:09:12.220Z","type":"message"}
+{"nick":"joyee","message":"Yes but that’s not part of the brand checking (I am probably bikeshedding)","date":"2019-09-27T01:10:15.035Z","type":"message"}
+{"nick":"devsnek","message":"https://github.com/devsnek/node/blob/cbcdd96c9a393b15c577a8bc75c6e97d44b51c70/lib/internal/vm/source_text_module.js#L193","date":"2019-09-27T01:10:33.482Z","type":"message"}
+{"nick":"devsnek","message":"like this","date":"2019-09-27T01:10:37.107Z","type":"message"}
+{"nick":"joyee","message":"The implementation of classes are not controlled by Node.js so I can’t see what we can do about it...just like we can’t wrap undefined is not a function","date":"2019-09-27T01:11:46.469Z","type":"message"}
+{"nick":"devsnek","message":"maybe we're talking about different things","date":"2019-09-27T01:12:09.926Z","type":"message"}
+{"nick":"devsnek","message":"we've never had private fields, so all our brand errors are manual and have codes","date":"2019-09-27T01:12:48.129Z","type":"message"}
+{"nick":"gabrielschulhof","reason":"Ping timeout: 240 seconds","date":"2019-09-27T01:12:57.061Z","type":"quit"}
+{"nick":"devsnek","message":"I'm asking if we want to explicitly want to make the decision to have genetic typeerrors in the future","date":"2019-09-27T01:13:30.488Z","type":"message"}
+{"nick":"devsnek","message":"s/genetic/generic","date":"2019-09-27T01:13:43.169Z","type":"message"}
+{"nick":"devsnek","message":"s/have/allow","date":"2019-09-27T01:13:58.324Z","type":"message"}
+{"nick":"gabrielschulhof","date":"2019-09-27T01:15:06.069Z","type":"join"}
+{"nick":"joyee","message":"I think that should be an instanceof check instead?","date":"2019-09-27T01:15:11.268Z","type":"message"}
+{"nick":"devsnek","message":"I dunno","date":"2019-09-27T01:15:17.739Z","type":"message"}
+{"nick":"devsnek","message":"in the VM modules case it was done by weakmaps before","date":"2019-09-27T01:15:37.522Z","type":"message"}
+{"nick":"devsnek","message":"with some buffer stuff we use v8 typedarray brand checks","date":"2019-09-27T01:15:52.919Z","type":"message"}
+{"nick":"joyee","message":"We would need to throw something meaningful if [kWrap] is undefined or whatever anyway","date":"2019-09-27T01:16:03.518Z","type":"message"}
+{"nick":"devsnek","message":"some other stuff checks for symbol fields","date":"2019-09-27T01:16:09.991Z","type":"message"}
+{"nick":"mgol","date":"2019-09-27T01:16:39.797Z","type":"join"}
+{"nick":"joyee","message":"I think the symbol checks are used for perf reasons","date":"2019-09-27T01:16:51.854Z","type":"message"}
+{"nick":"joyee","message":"I am not sure which one is faster now, or it depends on specific cases","date":"2019-09-27T01:17:17.858Z","type":"message"}
+{"nick":"devsnek","message":"I'm taking more about the resulting errors","date":"2019-09-27T01:18:00.308Z","type":"message"}
+{"nick":"devsnek","message":"than whatever check results in throwing an error","date":"2019-09-27T01:18:10.869Z","type":"message"}
+{"nick":"joyee","message":"But it we want to micro-optimize we can always use a symbol for our on brand until instanceof is fast enough...or we may not bother doing that for non-perf-critical stuff anyway","date":"2019-09-27T01:18:15.067Z","type":"message"}
+{"nick":"devsnek","message":"using private fields is an implementation detail","date":"2019-09-27T01:18:17.315Z","type":"message"}
+{"nick":"devsnek","message":"it could be a weakmap.has(this) or this[kXyz] !== undefined","date":"2019-09-27T01:19:18.958Z","type":"message"}
+{"nick":"joyee","message":"I think access to these are usually guarded by some kind of brand checks anyway, using private fields do not make much difference in that regard.","date":"2019-09-27T01:19:24.365Z","type":"message"}
+{"nick":"devsnek","message":"🤷","date":"2019-09-27T01:19:34.514Z","type":"message"}
+{"nick":"joyee","message":"The issue is whether you want to replace brand check with private field access but that seems like a strange way to use private fields to me","date":"2019-09-27T01:20:09.478Z","type":"message"}
+{"nick":"devsnek","message":"I'm just saying like, if we replace this[kXyz] with this.#xyz","date":"2019-09-27T01:20:10.129Z","type":"message"}
+{"nick":"devsnek","message":"we should still throw the same error as before right","date":"2019-09-27T01:20:24.641Z","type":"message"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-27T01:22:01.006Z","type":"quit"}
+{"nick":"joyee","message":"what does old error look like anyway?","date":"2019-09-27T01:22:24.741Z","type":"message"}
+{"nick":"devsnek","message":"one of our coded errors","date":"2019-09-27T01:22:41.746Z","type":"message"}
+{"nick":"devsnek","message":"TypeError [ERR_XYX]","date":"2019-09-27T01:22:53.676Z","type":"message"}
+{"nick":"joyee","message":"But then you already need a block to check that this does not have cuz?","date":"2019-09-27T01:23:43.031Z","type":"message"}
+{"nick":"joyee","message":"s/cuz/xyz/","date":"2019-09-27T01:23:53.593Z","type":"message"}
+{"nick":"devsnek","message":"wdym","date":"2019-09-27T01:24:00.417Z","type":"message"}
+{"nick":"joyee","message":"Like how do you throw that ERR_XYZ?","date":"2019-09-27T01:25:31.340Z","type":"message"}
+{"nick":"devsnek","message":"if (some check) { throw new ERR_XYZ() }","date":"2019-09-27T01:27:27.039Z","type":"message"}
+{"nick":"devsnek","message":"so then you transform that into try { this.#xyz } catch { throw new ERR_XYZ() }","date":"2019-09-27T01:28:00.892Z","type":"message"}
+{"nick":"devsnek","message":"I'm asking about what our future policy should be, not what's possible on a technical level","date":"2019-09-27T01:28:19.358Z","type":"message"}
+{"nick":"joyee","message":"What does somecheck do?","date":"2019-09-27T01:28:20.833Z","type":"message"}
+{"nick":"devsnek","message":"idk","date":"2019-09-27T01:28:26.580Z","type":"message"}
+{"nick":"devsnek","message":"!weakmap.has(this)","date":"2019-09-27T01:28:38.426Z","type":"message"}
+{"nick":"devsnek","message":"!this[kXyz]","date":"2019-09-27T01:28:50.770Z","type":"message"}
+{"nick":"devsnek","message":"!(this instanceof Xyz)","date":"2019-09-27T01:29:13.014Z","type":"message"}
+{"nick":"devsnek","message":"whatever it happens to be","date":"2019-09-27T01:29:22.409Z","type":"message"}
+{"nick":"joyee","message":"I see, those are brand check conditions, I guess it comes down to whether we want to use try-catch private field access to replace other brand check mechanisms...which seems odd to me","date":"2019-09-27T01:30:55.811Z","type":"message"}
+{"nick":"joyee","message":"I would expect the code to look like some regular brand checks following by normal private field usage","date":"2019-09-27T01:31:30.341Z","type":"message"}
+{"nick":"devsnek","message":"yea","date":"2019-09-27T01:32:39.496Z","type":"message"}
+{"nick":"devsnek","message":"I just want to make sure we're all clear on what we want our patterns to be","date":"2019-09-27T01:32:52.879Z","type":"message"}
+{"nick":"devsnek","message":"consistency is key","date":"2019-09-27T01:32:59.846Z","type":"message"}
+{"nick":"joyee","message":"I think that’s what we already do in case obj[callback] is null","date":"2019-09-27T01:33:26.750Z","type":"message"}
+{"nick":"devsnek","message":"I was just thinking about this after reading the quic code","date":"2019-09-27T01:33:52.089Z","type":"message"}
+{"nick":"devsnek","message":"it uses a lot of private fields","date":"2019-09-27T01:33:58.129Z","type":"message"}
+{"nick":"joyee","message":"In the specific case of this being the receiver...it seems a bit too defensive though, the check only fails if someone tries to apply the methods to something not constructed by the class, even without private fields mocking those object already can be quite tricky to get right","date":"2019-09-27T01:36:15.197Z","type":"message"}
+{"nick":"devsnek","message":"it's not necessarily receivers, I just used that example cuz it's what was in my vm code","date":"2019-09-27T01:36:57.452Z","type":"message"}
+{"nick":"mgol","date":"2019-09-27T01:41:16.178Z","type":"join"}
+{"nick":"mgol","reason":"Client Quit","date":"2019-09-27T01:42:42.567Z","type":"quit"}
+{"nick":"joyee","message":"My impression is you'd generally use private with this. When accessing private stuff on something else you'd usually call a method in which case you will reach undefined is function first if it's not a desired instance.","date":"2019-09-27T02:08:44.506Z","type":"message"}
+{"nick":"joyee","message":"Or when you do care about the error, you'd check if obj.method is callable first.","date":"2019-09-27T02:10:08.501Z","type":"message"}
+{"nick":"AtumT","reason":"Quit: AtumT","date":"2019-09-27T02:21:22.756Z","type":"quit"}
+{"nick":"antsmartian","date":"2019-09-27T02:35:53.409Z","type":"join"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-09-27T04:37:14.635Z","type":"quit"}
+{"nick":"mgol","date":"2019-09-27T05:59:51.028Z","type":"join"}
+{"nick":"antsmartian","date":"2019-09-27T06:34:33.238Z","type":"join"}
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2019-09-27T06:49:26.351Z","type":"quit"}
+{"nick":"antsmartian","reason":"Remote host closed the connection","date":"2019-09-27T07:54:59.459Z","type":"quit"}
