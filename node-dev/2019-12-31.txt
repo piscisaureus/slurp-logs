@@ -12,3 +12,24 @@
 {"nick":"lineus","date":"2019-12-31T12:20:08.678Z","type":"join"}
 {"nick":"bradleymeck","message":"jgi: i spent a lot of time trying to figure out if we could get repl to not use domains and instead use setUncaughtExceptionCaptureCallback , and I don't think so","date":"2019-12-31T15:42:40.418Z","type":"message"}
 {"nick":"bradleymeck","message":"it doesn't mesh with if a user sets one, so likely any sort of --disable-domains CLI flag would need to disable the repl module as well","date":"2019-12-31T15:43:27.591Z","type":"message"}
+{"nick":"bradleymeck","message":"joyee: i'm staring at https://github.com/nodejs/node/blob/master/lib/internal/modules/esm/default_resolve.js#L13-L19 and it seems like if we moved files like this to have an init() method that properly set those values instead that a bunch of the boilerplate could be done in the snapshot? right now our snapshot doesn't do JIT warming right?","date":"2019-12-31T16:36:10.433Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: we can't init the ESM loader in the snapshot since it generates a promise in-flight (not completely hopeless but it would be tricky)","date":"2019-12-31T16:38:32.529Z","type":"message"}
+{"nick":"bradleymeck","message":"it doesn't anymore!","date":"2019-12-31T16:38:51.571Z","type":"message"}
+{"nick":"bradleymeck","message":"since it isn't init async/only sometimes","date":"2019-12-31T16:39:02.941Z","type":"message"}
+{"nick":"bradleymeck","message":"we can init almost everything except user provided options (loaders and config bits)","date":"2019-12-31T16:39:22.313Z","type":"message"}
+{"nick":"bradleymeck","message":"for those options I think if we moved from getOptionValue in the link above to expose module.exports.init(...) for all those in the process pre execution it seems possible to move more maps and stuff into the snapshot","date":"2019-12-31T16:40:03.678Z","type":"message"}
+{"nick":"joyee","message":"bradleymeck: I see, so you are talking about just requiring those internal modules without actually calling `esmLoader.initializeLoader()` (which returns a promise)?","date":"2019-12-31T16:43:09.852Z","type":"message"}
+{"nick":"bradleymeck","message":"yea","date":"2019-12-31T16:43:26.033Z","type":"message"}
+{"nick":"bradleymeck","message":"those values that will always be loaded","date":"2019-12-31T16:44:13.630Z","type":"message"}
+{"nick":"joyee","message":"We could technically do that to almost every native modules (after removing out these runtime-dependent code at the top level), though it would be pretty tricky to warm them up without...including runtime-dependent states","date":"2019-12-31T16:45:50.473Z","type":"message"}
+{"nick":"bradleymeck","message":"warming the fn types seems possible (which args are going to be strings etc.) but we don't actually annotate things to easily enforce things","date":"2019-12-31T16:57:29.820Z","type":"message"}
+{"nick":"joyee","message":"Maybe, though it will only become meaningful when the native ESM implementation gets enough adoption in Node.js","date":"2019-12-31T17:02:57.913Z","type":"message"}
+{"nick":"bradleymeck","message":";p","date":"2019-12-31T17:03:06.497Z","type":"message"}
+{"nick":"bradleymeck","message":"right now it always starts up so no matter what those things are pulled in before use code runs","date":"2019-12-31T17:03:31.888Z","type":"message"}
+{"nick":"joyee","message":"yes, though the optimized code & type feedback come with a footprint (not sure how significant those would be though)","date":"2019-12-31T17:06:05.436Z","type":"message"}
+{"nick":"AbedB","reason":"Read error: Connection reset by peer","date":"2019-12-31T18:07:40.100Z","type":"quit"}
+{"nick":"AbedB","date":"2019-12-31T18:09:27.755Z","type":"join"}
+{"nick":"early","reason":"Quit: Leaving","date":"2019-12-31T21:34:31.618Z","type":"quit"}
+{"nick":"early","date":"2019-12-31T21:48:29.543Z","type":"join"}
+{"nick":"nikc","reason":"Ping timeout: 252 seconds","date":"2019-12-31T23:57:52.057Z","type":"quit"}
+{"nick":"nikc","date":"2019-12-31T23:59:01.928Z","type":"join"}
