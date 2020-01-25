@@ -1,0 +1,80 @@
+{"nick":"mgol","reason":"Quit: My MacBook has gone to sleep. ZZZzzz…","date":"2020-01-25T00:58:06.021Z","type":"quit"}
+{"nick":"shu","message":"what is the easiest way to map node versions to v8 versions?","date":"2020-01-25T01:24:22.042Z","type":"message"}
+{"nick":"devsnek","message":"shu: parse the commit log maybe?","date":"2020-01-25T01:45:33.923Z","type":"message"}
+{"nick":"devsnek","message":"i thought we had a json file somewhere but i think i was thinking of our map of native versions to sync with electron","date":"2020-01-25T01:45:59.271Z","type":"message"}
+{"nick":"devsnek","message":"actually","date":"2020-01-25T01:47:01.779Z","type":"message"}
+{"nick":"devsnek","message":"shu: does this work for oyu? https://github.com/nodejs/node/blob/master/doc/abi_version_registry.json","date":"2020-01-25T01:47:05.153Z","type":"message"}
+{"nick":"devsnek","message":"unfortunately its only as granular as v8's abi breaking versions","date":"2020-01-25T01:49:03.206Z","type":"message"}
+{"nick":"joyee","message":"shu: for releases, check out https://nodejs.org/dist/index.json or https://nodejs.org/dist/index.tab","date":"2020-01-25T01:49:23.016Z","type":"message"}
+{"nick":"devsnek","message":"oh wow","date":"2020-01-25T01:49:44.413Z","type":"message"}
+{"nick":"joyee","message":"There are similar files for nightlies at https://nodejs.org/download/nightly/index.json but for commit hash mappings I think you'll have to checkout the branch and look at deps/v8/include/v8-version.h","date":"2020-01-25T01:51:41.683Z","type":"message"}
+{"nick":"shu","message":"joyee: yes it does, beautiful","date":"2020-01-25T01:51:51.153Z","type":"message"}
+{"nick":"shu","message":"joyee: tyvm","date":"2020-01-25T01:52:03.340Z","type":"message"}
+{"nick":"shu","message":"devsnek: you too","date":"2020-01-25T01:52:34.320Z","type":"message"}
+{"nick":"shu","message":"btw does node have a notion of an \"invalid context\"? like on the web, a navigated-away-from frame","date":"2020-01-25T01:53:05.890Z","type":"message"}
+{"nick":"joyee","message":"shu: I don't think I've seen something like that. Node.js applications typically have either the main context or vm contexts (if it creates any), the main context basically lives as long as the application is alive. I don't think there's option to make a vm context invalid from JS land..","date":"2020-01-25T01:55:45.796Z","type":"message"}
+{"nick":"shu","message":"joyee: ah okay, cool","date":"2020-01-25T01:55:58.301Z","type":"message"}
+{"nick":"devsnek","message":"in v8 is that","date":"2020-01-25T01:56:12.400Z","type":"message"}
+{"nick":"devsnek","message":"removing the global object","date":"2020-01-25T01:56:14.197Z","type":"message"}
+{"nick":"shu","message":"devsnek: no, v8 doesn't have visibility into it","date":"2020-01-25T01:56:21.520Z","type":"message"}
+{"nick":"devsnek","message":"oh ok","date":"2020-01-25T01:56:25.567Z","type":"message"}
+{"nick":"shu","message":"devsnek: in blink it's like ScriptState->ContextIsValid()","date":"2020-01-25T01:56:30.123Z","type":"message"}
+{"nick":"devsnek","message":"was gonna say, if its v8 functionality i could expose it on the new context api","date":"2020-01-25T01:56:50.598Z","type":"message"}
+{"nick":"shu","message":"from v8's POV, as long as the Context exists it's good to execute code","date":"2020-01-25T01:58:01.936Z","type":"message"}
+{"nick":"shu","message":"but from the host's POV, sometimes you might not want to even if the Context is still alive, if the frame has already navigated away","date":"2020-01-25T01:58:59.377Z","type":"message"}
+{"nick":"devsnek","message":"at that point i'd hope there was no more js","date":"2020-01-25T01:59:32.002Z","type":"message"}
+{"nick":"shu","message":"well, you can reach into an iframe and keep references to its objects","date":"2020-01-25T01:59:59.735Z","type":"message"}
+{"nick":"shu","message":"and then remove the iframe","date":"2020-01-25T02:00:11.424Z","type":"message"}
+{"nick":"devsnek","message":"oh hmm","date":"2020-01-25T02:00:15.693Z","type":"message"}
+{"nick":"devsnek","message":"the web is a strange place","date":"2020-01-25T02:00:23.776Z","type":"message"}
+{"nick":"shu","message":"currently there's no interop on what happens if you call into those functions","date":"2020-01-25T02:00:28.311Z","type":"message"}
+{"nick":"shu","message":"chrome lets you run","date":"2020-01-25T02:00:39.203Z","type":"message"}
+{"nick":"shu","message":"firefox doesn't, i think? would have to double check","date":"2020-01-25T02:00:49.623Z","type":"message"}
+{"nick":"shu","message":"anyways yeah it's bizarro","date":"2020-01-25T02:00:53.384Z","type":"message"}
+{"nick":"shu","message":"this is less bizarro for FinalizationGroup cleanups, since those are scheduled ahead of time","date":"2020-01-25T02:01:12.230Z","type":"message"}
+{"nick":"shu","message":"if an iframe has been removed by the time the cleanups got around to being called by the event loop, should they still do anything?","date":"2020-01-25T02:01:39.496Z","type":"message"}
+{"nick":"shu","message":"current thinking is no","date":"2020-01-25T02:01:47.213Z","type":"message"}
+{"nick":"devsnek","message":"are cleanups scoped to realms?","date":"2020-01-25T02:02:03.718Z","type":"message"}
+{"nick":"shu","message":"what does that mean?","date":"2020-01-25T02:02:11.111Z","type":"message"}
+{"nick":"joyee","message":"I don't think I have seen similar concepts in node core, there might be in user land projects that make heavy use of vm (jest or jsdom?)","date":"2020-01-25T02:02:11.572Z","type":"message"}
+{"nick":"devsnek","message":"oh this is artificial limitations","date":"2020-01-25T02:02:55.611Z","type":"message"}
+{"nick":"shu","message":"also not sure what that means :)","date":"2020-01-25T02:03:10.042Z","type":"message"}
+{"nick":"devsnek","message":"I dunno as long as an object is reachable I'd expect the browser to acknowledge it's existence","date":"2020-01-25T02:03:14.514Z","type":"message"}
+{"nick":"shu","message":"it's not a problem keeping contexts alive, if that's what you mean","date":"2020-01-25T02:03:22.595Z","type":"message"}
+{"nick":"devsnek","message":"no I just didn't immediately understand why there would need to be any special rules and finalization groups and contexts","date":"2020-01-25T02:03:48.976Z","type":"message"}
+{"nick":"devsnek","message":"s/and/about","date":"2020-01-25T02:03:58.572Z","type":"message"}
+{"nick":"shu","message":"well, one could say that cleanups must always be called, even if the frame is navigated","date":"2020-01-25T02:04:50.865Z","type":"message"}
+{"nick":"shu","message":"but that's kind of strange, or at least very wasteful","date":"2020-01-25T02:04:57.575Z","type":"message"}
+{"nick":"shu","message":"since presumably everything that it might cleanup is gone","date":"2020-01-25T02:05:05.646Z","type":"message"}
+{"nick":"devsnek","message":"well if they're gone they're gone","date":"2020-01-25T02:05:26.339Z","type":"message"}
+{"nick":"shu","message":"in any case this sounds like a non-issue for node","date":"2020-01-25T02:05:34.063Z","type":"message"}
+{"nick":"devsnek","message":"and finalization doesn't do anything","date":"2020-01-25T02:05:34.603Z","type":"message"}
+{"nick":"devsnek","message":"i mean we have a concept of collecting a context while objects created in that context still exist","date":"2020-01-25T02:05:54.884Z","type":"message"}
+{"nick":"shu","message":"we = node?","date":"2020-01-25T02:06:03.223Z","type":"message"}
+{"nick":"devsnek","message":"yeah","date":"2020-01-25T02:06:09.203Z","type":"message"}
+{"nick":"shu","message":"how does that work?","date":"2020-01-25T02:06:31.908Z","type":"message"}
+{"nick":"devsnek","message":"`const obj = new vm.Script('...').runInContext(new vm.Context())`","date":"2020-01-25T02:06:47.582Z","type":"message"}
+{"nick":"devsnek","message":"you don't hold onto the context","date":"2020-01-25T02:06:52.117Z","type":"message"}
+{"nick":"joyee","message":"I believe ultimately the obj would keep the context alive in GC","date":"2020-01-25T02:07:54.698Z","type":"message"}
+{"nick":"joyee","message":"e.g. it's constructor would eventually reference context","date":"2020-01-25T02:08:12.079Z","type":"message"}
+{"nick":"joyee","message":"the creation context","date":"2020-01-25T02:08:16.946Z","type":"message"}
+{"nick":"devsnek","message":"oh true","date":"2020-01-25T02:08:24.374Z","type":"message"}
+{"nick":"devsnek","message":"i guess its not a problem then","date":"2020-01-25T02:08:35.446Z","type":"message"}
+{"nick":"bradleymeck","message":"shu: i know the realms people and caridy are doing stuff with detached iframes so you might want to talk to them","date":"2020-01-25T02:33:17.462Z","type":"message"}
+{"nick":"bradleymeck","message":"seems bed if it isn't reliable","date":"2020-01-25T02:33:26.294Z","type":"message"}
+{"nick":"shu","message":"bradleymeck: agreed, in this case it's something to be specced on the html integration side for weakrefs","date":"2020-01-25T02:36:29.106Z","type":"message"}
+{"nick":"bradleymeck","message":"shu: its in prod i believe so ... might be a problem","date":"2020-01-25T02:36:57.840Z","type":"message"}
+{"nick":"shu","message":"what","date":"2020-01-25T02:38:00.571Z","type":"message"}
+{"nick":"shu","message":"what is in prod?","date":"2020-01-25T02:38:02.526Z","type":"message"}
+{"nick":"shu","message":"weakrefs cannot be in prod","date":"2020-01-25T02:38:09.971Z","type":"message"}
+{"nick":"bradleymeck","message":"shu: relying on behavior of detached iframe contexts","date":"2020-01-25T02:45:27.323Z","type":"message"}
+{"nick":"bradleymeck","message":"i know they are doing something a bit odd but don't have direct knowledge of the codebase except through dialog on calls","date":"2020-01-25T02:46:06.742Z","type":"message"}
+{"nick":"shu","message":"bradleymeck: ah, interesting datapoint","date":"2020-01-25T02:46:17.784Z","type":"message"}
+{"nick":"shu","message":"indeed i know historically running script in detached iframes is supported","date":"2020-01-25T02:46:31.004Z","type":"message"}
+{"nick":"shu","message":"so it might make sense to also run finalization group cleanups there","date":"2020-01-25T02:46:38.597Z","type":"message"}
+{"nick":"bradleymeck","message":"i'd talk to them, i'm not as clear on details","date":"2020-01-25T02:47:24.006Z","type":"message"}
+{"nick":"sg","date":"2020-01-25T04:34:03.981Z","type":"join"}
+{"nick":"sg","reason":"Quit: My MacBook Pro has gone to sleep. ZZZzzz…","date":"2020-01-25T05:21:10.128Z","type":"quit"}
+{"nick":"howdoi","reason":"Quit: Connection closed for inactivity","date":"2020-01-25T06:02:40.387Z","type":"quit"}
+{"nick":"lpin","date":"2020-01-25T06:07:39.225Z","type":"join"}
+{"nick":"sg","date":"2020-01-25T07:18:17.353Z","type":"join"}
